@@ -1,0 +1,510 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+//   霧の漂う山門				                                              //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp4105" , 0 )
+	MapHide( "@BG2_mp4109" , 0 )
+	MapHide( "@BG2_mp5103" , 0 )
+	MapHide( "@BG2_forest" , 0 )
+	MapHide( "@BG2_mp6101_2" , 0 )
+
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_act_0403" , 0 )	//アクティブボイス
+	EventAreaEnable( "ST_4109_Forest" , 0 )	//【ストッパー：4109から原生林方面へ行けない】
+
+	if( FLAG[SF_EVENT_ON] ){
+		//if(FLAG[GF_TBOX_DUMMY078]){			//[M05S360][王家の谷へ向かうことにする]
+		//	SetChrPos("LP_4109_to4105", -100000.00f, 00.00f, 00.00f)	// 【ストッパー：山門屋上東の竜人扉4109側】
+		//	MapAnime("dragon_gate_all_A1","open")
+		//	MapAnime("dragon_gate_all_A2","open")
+		//}
+
+		// ＬＰ制御
+		if( FLAG[GF_SUBEV_ST_410x_DOOR_OPEN] )	//【ストッパー：山門屋上東の竜人扉】扉を開いた
+		{
+			SetChrPos("LP_4109_to4105", -100000.00f, 00.00f, 00.00f)	// 【ストッパー：山門屋上東の竜人扉4109側】
+			MapAnime("dragon_gate_all_A1" , "open" )		//東門
+			MapAnime("dragon_gate_all_A2","open")
+		}
+
+		// ストッパー制御
+		if( FLAG[GF_TBOX_DUMMY087] &&		//調査のためジャンダルムへ向かう
+			!FLAG[GF_06MP4105B_START_ROOP] )	//霧の中で異形の古代種と戦う１
+		{
+			EventAreaEnable( "ST_4109_Forest" , 1 )	//【ストッパー：4109から原生林方面へ行けない】
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0403] && FLAG[GF_04MP4111_OUT_CAMP] && !FLAG[GF_04MP5102_MISS_RICOTTA]){
+			EventAreaEnable( "evb2_act_0403" , 1 )
+		}
+
+		// マップノード・アニメ
+		// -----------------------------------------------------------------
+		// 過去編ギミック_ヒモロギの樹開拓ルート_王宮側
+		// ※王宮が復活すると、遠景で見えている箇所は全て以下の対応が必要となります
+		// -----------------------------------------------------------------
+		if( FLAG[GF_05MP6204_APPEAR_CASTLE] )	//消滅した王宮が復活する
+		{
+			MapAnime("gim03" , "open" )		//ヒモロギの樹
+		}
+		else
+		{
+			MapAnime("gim03" , "close" )	//ヒモロギの樹
+		}
+
+		// -----------------------------------------------------------------
+		// 過去編ギミック_ヒモロギの樹開拓ルート_寺院側
+		// -----------------------------------------------------------------
+		if (FLAG[GF_04MP6201_DIS_OBSTACLE])		//参道の障害が消滅する
+		{
+			MapAnime("gim02" , "open" )		//ヒモロギの樹
+		}
+		else
+		{
+			MapAnime("gim02" , "close" )	//ヒモロギの樹
+		}
+
+		MapAnime("mistSphere", "off")	// 霧のマユ
+		if( FLAG[GF_TBOX_DUMMY087]				// ▼[M06S020][調査のためジャンダルムへ向かう]
+			&& !FLAG[GF_06MP4109_CLEAR_MIST] )		// ▽[M06S111][山門の霧を突破する２]
+		{
+			MapAnime("mistSphere", "on")	// 霧のマユ
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 2 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_4111.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//テンペル参道
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0403"
+{
+	if (!FLAG[GF_AVOICE_0403])
+	{
+		EventAreaEnable( "evb2_act_0403" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0403, 1, 0)	//4109下って王都の間近に来る
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー・ＬＰセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//	================================================
+//	【ストッパー：山門屋上東の竜人扉4109側】
+//	================================================
+function "LP_4109_to4105"
+{
+	//▼常時
+	//　　閉じた扉にＬＰを仕掛ける
+
+	//────────────────────
+	//	⇒ダーナが居ない場合
+	if( !FLAG[SF_DANA_JOINOK] )					// ダーナがいる
+	{
+	//開始処理ここから----------------------------------------------------
+		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		ResetStopFlag(STOPFLAG_NOCHARACLIP)
+		SaveCamera()
+		
+		ResetMotion( "PARTYALL" , 0 )
+		StopEffect(-1,PARTYALL,1)
+		StopEmotion( "PARTYALL" )
+		ResetMoveVec("PARTYALL")
+	//開始処理ここまで-----------------------------------------------
+	
+		TurnToChr( LEADER , this , 7.5f )
+		Wait(10)
+	
+		//	テキスト
+		TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{
+			"#7Cレリーフが刻まれた扉は、固く閉ざされている。\p"
+			"#7Cどれほど力を込めても開きそうにない。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+		//　　操作許可を戻す
+	
+	//終了処理ここから----------------------------------------------------
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+		//Turn("LEADER",0.00f,360.0f)
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	//終了処理ここまで----------------------------------------------------
+	}
+	//	⇒ダーナが居る場合
+	else
+	{
+		//　　クロスフェードで扉の前にアドルたちを再配置する。
+		//　　ダーナが扉の正面に立つ。
+	
+	//開始処理ここから----------------------------------------------------
+		CrossFade(FADE_CROSS)
+	
+		//CallFunc("system:event_begin")
+		SetStopFlag(STOPFLAG_EVENT)
+		ResetStopFlag(STOPFLAG_NOCHARACLIP)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+		//イベント開始前情報の保存
+		SaveEventState()
+		SaveCamera()
+	
+		//パーティ状態のリセット
+		CallFunc("system:party_reset")
+	
+		//環境の初期化・不要なものを隠す
+		ClearDebris()
+		ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+		ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+	
+		//キャラ初期状態の設定
+		SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("ADOL",-232.98f,672.43f,115.84f)
+		Turn("ADOL",68.32f,360.0f)
+		ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset( "ADOL" )
+		SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	
+		SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("DANA",-234.65f,671.74f,115.84f)
+		Turn("DANA",68.97f,360.0f)
+		ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset( "DANA" )
+		SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	
+		SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("LAXIA",-232.64f,671.31f,115.84f)
+		Turn("LAXIA",84.72f,360.0f)
+		ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset( "LAXIA" )
+		SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+	
+		SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("SAHAD",-234.28f,674.06f,115.84f)
+		Turn("SAHAD",21.69f,360.0f)
+		ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset( "SAHAD" )
+		SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+	
+		SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("RICOTTA",-233.41f,673.43f,115.84f)
+		Turn("RICOTTA",43.46f,360.0f)
+		ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset( "RICOTTA" )
+		SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	
+		SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("HUMMEL",-232.72f,670.20f,115.84f)
+		Turn("HUMMEL",106.26f,360.0f)
+		ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset( "HUMMEL" )
+		SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+	
+		//BGM設定◆
+		//PlayBGM( BGM_FIELD_101 , XX )
+	
+		//カメラ設定
+		MoveCameraAt( 0 , -236.516f , 670.458f , 118.600f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , -11.990f , 0 )	// 基本仰角
+		RotateCamera( 0 , 128.057f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+		// 被写界深度の設定
+		SetDoF(0, LERP_LINEAR, 2.000, 10.000 ,1.000 ,0.700 ,0.500)
+		// グレアの設定
+		SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+	
+		//スキップ許可
+		SetSkipScript("mp4109:LP_4109_to4105_ED")
+	
+		Wait(FADE_CROSS)
+	//開始処理ここまで-----------------------------------------------
+	
+		//────────────────────
+		//	⇒ＧＦで１回のみ
+		if( !FLAG[GF_SUBEV_ST_DOOR_1STTALK] )	//【ストッパー：山門屋上東の竜人扉】【ストッパー：山門屋上東の竜人扉】ＧＦ初回
+		{
+			TalkPopup("DANA",0,0,0,0,0)
+			{
+				"#000e#000mこれは、理力でしか動かない理封門だね。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		
+			TalkPopup("LAXIA",0,0,0,0,0)
+			{
+				"#000e#000mなるほど……重要な施設などに"
+				"使われていたようですね。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		
+			TalkPopup("DANA",0,0,0,0,0)
+			{
+				"#000e#000mうん、そんな所かな。\p"
+				"ちょっと待ってね、"
+				"私なら開けられるはずだから。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+		//────────────────────
+	
+		//　　ダーナ、祈りモーションなどで
+		//　　理力をまとう。	◆仮入力
+		ChangeAnimation( "DANA", "ANI_EV_PRAY_S", -1, 1 )
+		WaitAnimation2( "DANA" , -1, 1, "ANI_EV_PRAY_S",  0)
+		ChrEffect2( "DANA" , 3900600 , "Bone_root", "", 0 , 0 , 0 , 0.0f,0.0f,0, 1.0f, 1.0f)	//オーラ（ループ）
+		PlaySE(SE_DANA_STOPPER, 70, 0, 0, 0, 1.0f, 0)
+		Wait(30)
+	
+		//　　扉が光って反応し、開く。	◆未入力：扉が光るが未入力です
+	
+		MapAnime("dragon_gate_all_A1" , "close_open" )		//東門
+		PlaySE(SE_GIM_DOOR_ROCK,150,1,0,200,0.3f,0)	//gimse
+		//Wait(150)	//SE
+			Wait(120)	//SE
+			StopSE(SE_GIM_DOOR_ROCK,1000)	//gimse
+			PlaySE(SE_GIM_DOOR_ROCK_STOP,100,0,0,0,1.0f,0)	//gimse
+			Wait(30)	//SE
+	
+		//────────────────────
+		//	⇒ＧＦで１回のみ
+		if( !FLAG[GF_SUBEV_ST_DOOR_1STTALK] )	//【ストッパー：山門屋上東の竜人扉】【ストッパー：山門屋上東の竜人扉】ＧＦ初回
+		{
+			StopEffect( 3900600, ALL, 1)	// 理力エフェクト停止
+			ChangeAnimation( "DANA", "ANI_EV_PRAY_E", -1, 1 )
+			WaitAnimation2( "DANA" , -1, 1, "ANI_EV_PRAY_E",  0)
+			Turn("DANA",-109.83f,8.0f)
+		
+			TalkPopup("DANA",0,0,0,0,0)
+			{
+				"#000e#000m上手くいったみたいだね。\p"
+				"アドルさん、先へ進もう！"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		
+			//　　アドル頷く。
+			HeadYes("ADOL" , 1 , 25)
+			Wait(30)
+		}
+		//────────────────────
+	
+		//　　暗転を挟んで操作許可。
+		//　　以降扉は開いた状態になる。
+		FadeOut(FADE_BLACK, FADE_NORMAL)
+		WaitFade()
+	
+	//終了処理ここから----------------------------------------------------
+		CallFunc("mp4109:LP_4109_to4105_ED")
+	}
+	//────────────────────
+}
+function "LP_4109_to4105_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+	StopEffect( 3900600, ALL, 1)	// 理力エフェクト停止
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て・アイテム入手
+	SetFlag( GF_SUBEV_ST_410x_DOOR_OPEN, 1 )	// 【ストッパー：山門屋上東の竜人扉】扉を開いた
+	SetFlag( GF_SUBEV_ST_DOOR_1STTALK, 1 )		// 【ストッパー：山門屋上東の竜人扉】【ストッパー：山門屋上東の竜人扉】ＧＦ初回
+
+	CallFunc("mp4109:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-234.65f,671.74f,115.84f)
+	Turn("LEADER",68.97f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	//MoveCameraAt( 0 , 0.0f , 0.0f , 0.0f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 0.0f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 0.0f , 0 )		// 基本仰角
+	//RotateCamera( 0 , 0.0f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 0.0f , 0 )			// 視野角
+	//SetCameraZPlane( 0 , 0.0f )					// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )					// ロール回転
+
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+//	================================================
+//	【ストッパー：4109から原生林方面へ行けない】
+//	================================================
+function "ST_4109_Forest"
+{
+	//▼GF_TBOX_DUMMY087,				//調査のためジャンダルムへ向かう
+	//	～！GF_06MP4105B_START_ROOP,		//霧の中で異形の古代種と戦う１
+	//　　-182.37f	732.78f	115.83f	126.84f付近でストッパー
+	//	//0519追加
+
+//開始処理ここから----------------------------------------------------
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+//開始処理ここまで-----------------------------------------------
+
+	TalkPopup("DANA",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#000e#000mアドルさん、大樹の寺院は"
+		"さっきの道を左に入った所だよ。\p"
+		"一体何が起きてるんだろう……"
+		"急いで向かおう！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetChrPos("PLAYER1",-180.60f,733.54f,115.83f)
+	Turn("PLAYER1",-86.26f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}

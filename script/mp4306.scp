@@ -1,0 +1,662 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 浸食谷                                                                       //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+// init
+function "init"
+{
+	// ボス戦用扉開ける
+	MapAnime("CT_EVENT", "open");
+
+	// イベントエリア初期設定
+	EventAreaEnable("evb2_EV_M02S720", 0)	// イベントエリア無効化
+
+	// イベント発生制御
+	if( FLAG[SF_BOSS_BATTLE] )
+	{
+		//リトライやデバッグボスジャンプからのボス戦
+		SetWork( WK_BGM , BGM_Nothing )
+		EventCue("mp4306:EV_RetryBoss")
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+	// イベント発生制御
+		// 中ボス開始まだなら中ボス開始する為のイベントボックスオンにする
+		if ( !FLAG[GF_02MP4306_KILL_MIDBOSS] && !FLAG[GF_EVENT_CTL])
+		{
+			SetWork( WK_BGM , BGM_Nothing )
+			EventAreaEnable("evb2_EV_M02S720", 1)
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0220] && FLAG[GF_02MP4306_KILL_MIDBOSS] && !FLAG[GF_TBOX_DUMMY074]){
+			SetEventDriven( EED_TYPE_EQUIPMAGICITEM, ICON3D_TORCH, "mp4306:act_0220" )	//暗闇で初めて夜鉱石を装備した
+		}
+
+		if (FLAG[GF_02MP4306_KILL_MIDBOSS])
+		{
+			SetChrPos("TBOX01",115.11f,-77.10f,0.99f)
+			//Turn("TBOX01",61.92f,360.0f)
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0220"
+{
+	if (!FLAG[GF_AVOICE_0220])
+	{
+		EventAreaEnable( "evb2_act_0220" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0220, 1, 0)	//暗闇で初めて夜鉱石を装備した
+	}
+}
+
+//-------------------------------------------
+// ボス戦リトライ
+function "EV_RetryBoss"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("b101",108.02f,-80.71f,0.98f)
+	ChangeAnimation("b101", "ANI_UNI1", -1, 1)
+
+	SetChrPos("b101a",107.50f,-80.99f,1.30f)
+	SetChrPos("b101b",111.41f,-76.37f,0.98f)
+	SetChrPos("b101c",112.41f,-76.37f,0.98f)
+	SetChrPos("b101d",109.41f,-76.37f,0.98f)
+	ChangeAnimation("b101b", "ANI_UNI1", -1, 1)
+	ChangeAnimation("b101c", "ANI_UNI1", -1, 1)
+	ChangeAnimation("b101d", "ANI_UNI1", -1, 1)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos("PLAYER1",103.03f,-92.15f,1.02f)
+	Turn("PLAYER1",-158.49f,360.0f)
+
+	// 向き合わせ
+	TurnToChr("b101","PLAYER1",360.0f)
+	TurnToChr("b101a","PLAYER1",360.0f)
+	TurnToChr("b101b","PLAYER1",360.0f)
+	TurnToChr("b101c","PLAYER1",360.0f)
+	TurnToChr("b101d","PLAYER1",360.0f)
+	TurnToChr("PLAYER1", "b101a",360.0f)
+	TurnToChr("PLAYER2", "b101a",360.0f)
+	TurnToChr("PLAYER3", "b101a",360.0f)
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+	SetYs8Camera(7.0f, 65.0f, 5.0f, 0.4f, 0.4f);
+
+	MoveCameraAt( 0 , 103.030f , -92.150f , 3.280f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 12.515f , 0 )	// 基本仰角
+	RotateCamera( 0 , -27.632f , 0 )				// 角度
+	ChangeCameraPers( 0 , 65.000f , 0 )			// 視野角
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_001, 0)
+	MapAnime("CT_EVENT", "close")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+
+	if (FLAG[SF_TIMEATK])
+	{
+		// タイムアタックの場合はボス名出してあげる
+		VisualName("visual/bossname/bn_b101.itp", VN_NAMEBOSS2, VN_BOSSNAME_LT_X, VN_BOSSNAME_LT_Y,VN_BOSSNAME_TIME)
+	}
+
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+	//------------------------------------------------
+
+}
+
+
+//-------------------------------------------
+// ボス死亡（ワンクッション挟む）
+function "EV_BossDead"
+{
+
+	//無敵ON・色々終了させる---------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+
+	Wait(180)
+	StopBGM(120)
+	Wait(60)
+
+	//イベントバトル用CallFunc-------------------------
+	// SF_BOSS_BATTLEのみイベント内で対処して下さい
+	CallFunc("system:boss_end")
+
+
+	//封鎖解除・ボス消去-------------------------------
+	MapAnime("CT_EVENT", "open")
+	SetChrPos("b101",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+	SetChrPos("b101a",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+	SetChrPos("b101b",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+	SetChrPos("b101c",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+	SetChrPos("b101d",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+
+	//事後処理-----------------------------------------
+	// タイムアタック中
+	if (FLAG[SF_TIMEATK])
+	{
+		EndTimeAtk()		// タイムアタック終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+		EventCue("mp4306:EV_M02S721")
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else
+	{
+		// ボスラッシュ？
+		FadeIn(FADE_WHITE,FADE_FAST)
+		WaitFade()
+
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	//------------------------------------------------
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// サブイベント
+////////////////////////////////////////////////////////////////////////////////
+
+function "EV_M02S720"			//浸食谷中ボス登場演出
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin")
+
+//	SetStopFlag(STOPFLAG_EVENT)
+//	FadeOut(FADE_BLACK, 0)
+//	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrPos("PLAYER1",89.50f, -92.03f, 1.01f)
+	Turn("PLAYER1",-117.24f,360.0f)
+	SetChrPos("PLAYER2",88.50f, -92.81f, 0.99f)
+	Turn("PLAYER2",-124.34f,360.0f)
+	SetChrPos("PLAYER3",87.66f, -91.26f, 0.96f)
+	Turn("PLAYER3",-124.34f,360.0f)
+
+	SetChrWork("PLAYER1", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("PLAYER1", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("PLAYER1")
+	SetChrInfoFlag("PLAYER1", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("PLAYER2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("PLAYER2", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER2", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER2", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER2", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("PLAYER2")
+	SetChrInfoFlag("PLAYER2", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("PLAYER3", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("PLAYER3", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER3", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER3", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER3", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("PLAYER3")
+	SetChrInfoFlag("PLAYER3", INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	// ボスの位置セット
+	SetChrPos("ev_b101a",107.21f,-81.16f,1.28f)
+	Turn("ev_b101a",68.40f,360.0f)
+	ChangeAnimation("ev_b101a", "ANI_EV_WAIT_G", -1, 1)
+
+	//カメラ設定
+	MoveCameraAt( 0 , 90.570f , -92.878f , 3.296f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.276f , 0 )	// 基本仰角
+	RotateCamera( 0 , 162.571f , 0 )				// 角度
+	ChangeCameraPers( 0 , 49.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 90.000, 1.000, 0.700, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	SetFog(FOG_BOTH, 0x00000010, 0.0 , 1.0 , 1.0 ,10.00f, 0.70f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)		//暗すぎるので少し明るく
+
+	//スキップ許可
+	SetSkipScript("mp4306:EV_M02S720_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 95.377f , -87.671f , 2.744f, 150 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.172f , 150 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -8.225f , 150 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 113.203f , 150 )
+
+	ExecuteCmd(1, MoveTo, "PLAYER1", 95.72f, -87.56f, 1.06f, 0.1f, 0.23f)
+	Wait(5)
+	ExecuteCmd(2, MoveTo, "PLAYER2", 94.81f, -89.26f, 1.00f, 0.1f, 0.21f)
+	Wait(5)
+	ExecuteCmd(3, MoveTo, "PLAYER3", 93.95f, -87.66f, 1.05f, 0.1f, 0.21f)
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	Wait(110)
+	EarthQuake( 0.02f , 0.02f , 90 )	// 縦揺れ幅, 横揺れ幅, 時間
+	PlaySE(SE_M02S720_01, 100, 1, 1000, 0, 1.0f, 0)	//	地鳴り
+	VibrationPad(2004, 10 )		//地震
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	// 移動待ち
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+
+	EmotionEx("PLAYER1", 0.05f, EMO_EX, 0, 5, 1, 1, 1.0f )	// 「！」
+	EmotionEx("PLAYER2", 0.05f, EMO_EX, 0, 5, 1, 1, 1.0f )	// 「！」
+	EmotionEx("PLAYER3", 0.05f, EMO_EX, 0, 5, 1, 1, 1.0f )	// 「！」
+	ChangeSubAnimation("PLAYER1", SUBMOT_EYE, ANI_E_SUP_S, 1)	// 目
+	Wait(40)
+	
+	// カット2 -----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ
+	MoveCameraAt( 0 , 107.834f , -80.027f , 1.616f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.484f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 13.558f , 0 )	// 基本仰角
+	RotateCamera( 0 , 166.016f , 0 )				// 角度
+	ChangeCameraPers( 0 , 49.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 107.740f , -80.493f , 5.963f, 90 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.756f, 90 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 65.964f, 90)
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 333.195f, 90 )
+
+
+	EarthQuake( 0.05f , 0.05f , 40 )	// 縦揺れ幅, 横揺れ幅, 時間
+	Blur( BLUR_TYPE_AFTERIMAGE ,0.3f , 40 )	// 残像
+
+	Wait(10)
+
+	//MTDのSE鳴らさない
+	SetFlag( SF_NOUSE_MTDSE, 1 )
+
+	SetMotSpd("ev_b101a" ,-1 , 0.6f )
+	ChangeAnimation("ev_b101a", "ANI_EV_UP", -1, 1)	//地中飛び出し
+	Wait(40)
+
+	VibrationPad(1030, 0 )		//大揺れ汎用
+
+	PlaySE(SE_M02S720_02, 100, 0, 0, 0, 1.0f, 0)	//	出現
+	PlayBGM(BGM_BOSS_001, 0)
+	StopSE(SE_M02S720_01, 4000)
+
+	//MTDのSE鳴らす
+	SetFlag( SF_NOUSE_MTDSE, 0 )
+
+	EarthQuake( 0.2f , 0.2f , 40 )	// 縦揺れ幅, 横揺れ幅, 時間
+	Blur(BLUR_TYPE_EXPAND, 0.5f, 40)	//ブラー
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 106.155f , -81.446f , 3.808f, 160 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 9.460f, 160 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -9.238f , 160)
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 267.203f, 160 )
+
+	Blur( BLUR_TYPE_AFTERIMAGE ,0.3f , 40 )	// 残像
+	Wait(40)
+
+	//ボスネーム表示
+	VisualName("visual/bossname/bn_b101.itp", VN_NAMEBOSS, VN_BOSSNAME_LB_X, VN_BOSSNAME_LB_Y,VN_BOSSNAME_TIME)	// 《地中から迫る盲目の悪意》	ロンブリウス
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	Wait(30)
+	SetMotSpd("ev_b101a" ,-1 , 1.0f )
+	
+	// カット3 --------------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// カメラ
+	MoveCameraAt( 0 , 100.903f , -85.066f , 3.368f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 15.476f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 19.950f , 0 )	// 基本仰角
+	RotateCamera( 0 , 340.893f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , -6.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 再配置
+	SetChrPos("PLAYER1", 97.98f, -86.09f, 1.01f)
+	Turn("PLAYER1", -125.71f, 360.0f)
+	SetChrPos("PLAYER2", 97.65f, -87.39f, 1.02f)
+	Turn("PLAYER2", -119.36f, 360.0f)
+	SetChrPos("PLAYER3", 96.10f, -85.56f, 1.03f)
+	Turn("PLAYER3", -119.78f, 360.0f)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 97.931f , -84.970f , 2.848f, 120 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 8.364f , 120 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -7.839f, 120 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 275.575f, 120 )
+
+	Blur( BLUR_TYPE_AFTERIMAGE ,0.3f , 100 )	// 残像
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	ChangeAnimation("PLAYER1", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("PLAYER2", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("PLAYER3", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	
+	PlaySE(SE_M02S720_03, 70, 0, 0, 0, 1.0f, 0)	//	威嚇
+	PlaySE(SE_M02S720_04, 100, 0, 0, 0, 1.0f, 0)	//	威嚇
+	ChangeAnimation("ev_b101a", "ANI_EV_TAORE", -1, 1)	//威嚇
+	Wait(20)
+	EarthQuake( 0.1f , 0.1f , 10 )	// 縦揺れ幅, 横揺れ幅, 時間
+	Wait(20)
+	WaitAnimation( "ev_b101a" , -1 , 1 )
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp4306:EV_M02S720_ED")
+}
+
+function "EV_M02S720_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	// フォグ戻す
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT ,FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//イベント用NPC撤去
+	SetChrPos("ev_b101a",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+	EventAreaEnable("evb2_EV_M02S720", 0)	// イベントエリア無効化
+
+	EventCue("mp4306:EV_RetryBoss")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+
+function "EV_M02S721"			//浸食谷ボスを撃破
+{
+	//開始処理ここから-----------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_WHITE, 0)
+	WaitFade()
+
+	Wait(30)
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+
+	SetChrPos("TBOX01",115.11f,-77.10f,0.99f)
+
+	MoveCameraAt( 0 , 116.155f , -76.564f , 1.137f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 14.850f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.923f , 0 )	// 基本仰角
+	RotateCamera( 0 , 298.166f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	FadeIn(FADE_WHITE, FADE_NORMAL)
+	WaitFade()
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , 116.155f , -76.564f , 1.137f , 140 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE ,  6.150f , 140 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 17.109f , 140 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 298.166f ,  140 )		// 角度
+//	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,0.0f, 130 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 140 )		// 視野角
+
+	//MoveCameraAt( 0 , 116.155f , -76.564f , 1.137f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 6.150f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 17.109f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 298.166f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+	
+	
+	Wait(30)
+	
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//隠したものを復帰
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	//フラグ処理
+	SetFlag(SF_SETRAMSAVE,1)		//リトライセーブ
+	SetFlag(GF_02MP4306_KILL_MIDBOSS, 1)	//侵蝕谷中ボスを撃破
+	SetFlag(SF_BOSS_BATTLE,0)			//ボス戦解除
+
+	//イベント後の再配置
+	SetChrPos("LEADER",98.20f,-84.47f,1.01f)
+	Turn("LEADER",-112.66f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	CallFunc("mp4306:init")
+
+	Wait(20)
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 98.204f , -84.474f , 2.886f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 15.804f , 0 )	// 基本仰角
+	RotateCamera( 0 , -67.338f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	PlayBGM(BGM_4306, 0)
+	SetEnvSEPlayState(-1, 1)	//環境SE復帰
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+
+function "EV_M02S721b"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	
+	// チュートリアル =================================================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+		
+		// チュートリアルポートレート読み込み
+		Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+		Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+		Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+		Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+		Portrait_Load(2, "visual/help/hp_a30.itp" )	// help_a30：夜光石
+		Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+		
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.5f, FADE_FAST)
+		Wait(FADE_FAST)
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+		Portrait_Close(1)
+		Portrait_Close(2)
+		
+		// 擬似フェードアウト削除
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+		Portrait_Close(0)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+
+		// ポートレートリリース
+		Portrait_Close(-1)
+		Portrait_Unload(-1)
+	
+	}
+	// ================================================================================================
+
+
+//	SetFlag(SF_TORCHTIMER, 360000)	// 夜光石の蓄光量セット
+	SetFlag( GF_HELP_A30, 1 )	// チュートリアル：夜光石の効果
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+
+}

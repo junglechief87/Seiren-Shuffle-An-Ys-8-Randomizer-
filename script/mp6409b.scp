@@ -1,0 +1,1278 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 濃霧ループマップ（ボスマップ）
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+//◆メニューオープンを禁止する制御が必要
+
+function "init"
+{
+	MapAnime("CT_EVENT","open")	//逃げられないストッパーOFF
+
+	// イベント発生制御
+	if( FLAG[SF_BOSS_BATTLE] )
+	{
+		//リトライやデバッグボスジャンプからのボス戦
+		SetWork( WK_BGM , BGM_Nothing )
+		EventCue("mp6409b:EV_RetryBoss")
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+
+		if(FLAG[GF_06MP6202M_GOTO_GARDEN]){
+			EntryOn(02, 1 )		//ループ用エントリーON
+
+		}
+		if (FLAG[GF_06MP4105B_NONE_PARTY]){		//霧の中で異形の古代種と戦う２(mp6409b)
+			//霧の壁OPEN
+			MapAnime("mistSphere" ,  "wait3" )
+
+			EntryOn(00, 1 )		//逆走側エントリーON
+			EntryOn(01, 1 )		//霧の先側エントリーON
+
+			EventAreaEnable(evb2_M06S042,0)
+
+			SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT,FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT ,FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+		}
+		if(FLAG[GF_06MP4105B_START_ROOP] && !FLAG[GF_06MP4105B_NONE_PARTY]){
+			MapAnime("CT_EVENT","close")	//舞台に空気アタリを置いておく。
+		}
+		if (FLAG[GF_06MP4109_IN_GATE] && !FLAG[GF_06MP4105B_START_ROOP]){
+			EventCue("mp6409b:EV_M06S041")
+		}
+
+
+	}
+}
+
+
+//-------------------------------------------
+// ボス戦リトライ
+function "EV_RetryBoss"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("b012",-251.67f, 543.53f, 112.75f)
+	Turn("b012",180.00f,360.0f)
+	SetChrInfoFlag("ev_b012", INFOFLAG_NOSHADOW)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos("PLAYER1",-262.13f, 569.81f, 112.75f)
+	Turn("PLAYER1",0.00f,360.0f)
+	// 向き合わせ
+	TurnToChr("PLAYER1", "b012",360.0f)
+	TurnToChr("b012", "PLAYER1",360.0f)
+	//SetMapLightColor( 1.0f, 0.5f, 0.5f, 0.5f, 1.0f )//マップライト：デフォルトに戻す
+	SetMapLightColor( 1.0f, 0.6f, 0.5f, 0.45f, 1.0f )//マップライト：やや赤み
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+	SetYs8Camera(6.5f, 54.0f, 6.0f, -0.8f, -0.5f);
+
+	MoveCameraAt( 0 , -262.130f , 569.810f , 113.954f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.500f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.0f , 0 )	// 基本仰角
+	RotateCamera( 0 , -158.247f , 0 )				// 角度
+	ChangeCameraPers( 0 , 54.000f , 0 )			// 視野角
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+//	MoveCameraAt( 0 , -262.134f , 569.813f , 114.454f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 5.500f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 8.000f , 0 )	// 基本仰角
+//	RotateCamera( 0 , -158.247f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 54.000f , 0 )			// 視野角
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_003, 0)
+	MapAnime("CT_EVENT","close")	//逃げられないストッパー起動
+	SetFlag(SF_TOWNMODE,0)			//タウンモードOFF
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+
+	if (FLAG[SF_TIMEATK])
+	{
+		// タイムアタックの時はプレイヤーが３人いるので、ＨＰも３倍だ
+		SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
+		SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
+
+		// タイムアタックの場合はボス名出してあげる
+		VisualName("visual/bossname/bn_b012.itp", VN_NAMEBOSS2, VN_BOSSNAME_LT_X, VN_BOSSNAME_LT_Y,VN_BOSSNAME_TIME)
+	}
+
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//------------------------------------------------
+}
+
+//-------------------------------------------
+// ボス戦開始
+function "EV_BossStart"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	ClearDebris()
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+
+	ResetMoveVec("PARTYALL")
+	
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//	SetChrPos("ev_b101a",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+
+	EventCue("mp6329:EV_RetryBoss")
+}
+
+//-------------------------------------------
+// ボス死亡（ワンクッション挟む）
+function "EV_BossDead"
+{
+	//無敵ON・色々終了させる---------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+
+	Wait(200)
+	StopBGM(120)
+	Wait(60)
+
+	//イベントバトル用CallFunc-------------------------
+	// SF_BOSS_BATTLEのみイベント内で対処して下さい
+	CallFunc("system:boss_end")
+
+	//封鎖解除・ボス消去-------------------------------
+	// EV_RetryBossの初期カメラ設定に戻す
+	//SetYs8Camera(5.5f, 54.0f, 8.0, -0.3f, 0.0f);
+
+	MapAnime("CT_EVENT","open")	//逃げられないストッパー開ける
+
+	SetChrPos("b011",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+	SetChrPos("b012",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+
+	//事後処理-----------------------------------------
+	// タイムアタック中
+	if (FLAG[SF_TIMEATK])
+	{
+		EndTimeAtk()		// タイムアタック終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+		EventCue("mp6409b:EV_M06S042b")
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else
+	{
+		// ボスラッシュ？
+		FadeIn(FADE_WHITE,FADE_FAST)
+		WaitFade()
+
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	//------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//──────────────────────────────
+//▼霧の中で異形の古代種と戦う(mp6409b)
+//──────────────────────────────
+function "EV_M06S041"			//霧の中で異形の古代種と戦う(mp6409b)
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag("RICOTTA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("SAHAD")
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("LAXIA")
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("HUMMEL")
+	SetChrInfoFlag("HUMMEL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("DANA")
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+
+	SetChrPos("ADOL",-660.03f,1506.83f,110.14f)
+	Turn("ADOL",-30.49f,360.0f)
+	SetChrPos("LAXIA",-661.72f,1506.69f,110.14f)
+	Turn("LAXIA",-28.42f,360.0f)
+	SetChrPos("SAHAD",-660.34f,1509.57f,110.14f)
+	Turn("SAHAD",-24.87f,360.0f)
+	SetChrPos("RICOTTA",-659.14f,1507.61f,110.14f)
+	Turn("RICOTTA",-37.01f,360.0f)
+	SetChrPos("HUMMEL",-662.51f,1509.11f,110.14f)
+	Turn("HUMMEL",-32.82f,360.0f)
+	SetChrPos("DANA",-661.11f,1507.87f,110.14f)
+	Turn("DANA",-31.98f,360.0f)
+
+	//カメラ位置
+	MoveCameraAt( 0 , -660.354f , 1504.647f , 110.299f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 8.101f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.554f , 0 )	// 基本仰角
+	RotateCamera( 0 , 187.886f , 0 )				// 角度
+	ChangeCameraPers( 0 , 45.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 0.000, 20.000, 0.000, 0.450, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6409b:EV_M06S041_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd( 1, MoveTo, "ADOL",-658.49f,1503.02f,110.14f, 0.1f, 0.185f )
+	ExecuteCmd( 2, MoveTo, "LAXIA",-659.63f,1502.87f,110.14f, 0.1f, 0.175f )
+	Wait(5)
+	ExecuteCmd( 3, MoveTo, "SAHAD",-658.66f,1505.17f,110.14f, 0.1f, 0.16f )
+	ExecuteCmd( 4, MoveTo, "HUMMEL",-660.43f,1504.59f,110.14ff, 0.1f, 0.18f )
+
+	Wait(5)
+	ExecuteCmd( 5, MoveTo, "RICOTTA",-657.84f,1503.84f,110.14f, 0.1f, 0.18f )
+	ExecuteCmd( 6, MoveTo, "DANA",-659.37f,1504.02f,110.14f, 0.1f, 0.175f )
+
+	//SetChrPos("ADOL",-658.49f,1503.02f,110.14f)
+	//Turn("ADOL",-28.42f,360.0f)
+	//SetChrPos("DANA",-659.37f,1504.02f,110.14f)
+	//Turn("DANA",-24.87f,360.0f)
+	//SetChrPos("RICOTTA",-657.84f,1503.84f,110.14f)
+	//Turn("RICOTTA",-31.98f,360.0f)
+	//SetChrPos("HUMMEL",-660.43f,1504.59f,110.14f)
+	//Turn("HUMMEL",-17.15f,360.0f)
+	//SetChrPos("SAHAD",-658.66f,1505.17f,110.14f)
+	//Turn("SAHAD",-24.87f,360.0f)
+	//SetChrPos("LAXIA",-659.63f,1502.87f,110.14f)
+	//Turn("LAXIA",-28.42f,360.0f)
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , -658.883f , 1503.894f , 111.490f , 200 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.633f , 200 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 8.383f ,  200 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE ,  57.163f,  200 )		// 角度
+//	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 2.8f , 200 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 200 )		// 視野角
+
+	//MoveCameraAt( 0 , -658.883f , 1503.894f , 111.490f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.633f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 8.383f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 57.163f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 45.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+
+	//　　山門から入るとイベント開始
+	//　　霧で周囲がほとんど見えない状況。
+
+	WaitThread(3)
+	ChangeAnimation( "SAHAD" , "ANI_EV_RYOTEKOSI_S", -1 , 1 )
+
+	Wait(40)
+	LookSpd("SAHAD",0.08f,0.08f,0.08f)
+	Look("SAHAD" , 35 , 10 )
+
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0)
+	{
+		"#050e#010l#000mうへえ、この辺りは"
+			"霧が一段と濃くなってねえか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Look("RICOTTA" , -35 , 3 )
+	TalkPopup("RICOTTA", 0, 1, 0, 0, 0)
+	{
+		"#130e#020l#000m周り、ほとんど見えないぞ。"
+		"周り2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "LAXIA" , "ANI_EV_TEBURI", -1 , 1 )
+
+	Look("LAXIA" , -35 , 0 )
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0)
+	{
+		"#000m#020lみなさん、はぐれないように"
+			"気をつけましょう。"
+	}
+	WaitPrompt()
+		WaitCloseWindow()
+
+		//　　ここで一旦操作許可。
+	Wait(20)
+
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6409b:EV_M06S041_ED")
+}
+
+function "EV_M06S041_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag(GF_06MP4105B_START_ROOP, 1)
+	SetFlag(SF_CANTSAVE,1)				
+	SetFlag( SF_CAMP_FORCE_CAN_EQUIP, 1 )	//装備は許可
+	SetFlag(SF_CAMP_CANT_MAP,1)			
+	SetFlag(SF_TOWNMODE,1)				
+
+	//パーティ編成を控える
+	SavePartyMember()							// 現在のパーティ編成を覚える
+
+	//時間経過でイベント駆動
+	SetEventDriven(EED_TYPE_TIMER, 150 , "mp6409b:M06S041_EACT_EVID_0601")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-752.67f,1723.96f,110.14f)
+	Turn("LEADER",-23.79f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	ResetTracks() //パンくず消去
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -752.670f , 1723.960f , 111.981f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.706f , 0 )	// 基本仰角
+	RotateCamera( 0 , -155.087f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+//	SetStopFlag(STOPFLAG_NOEXTERIOR)	//エクステリア消す
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+}
+function "M06S041_EACT_EVID_0601"
+{
+	ActiveVoiceStart(EACT_EVID_0601, 1, 60)
+
+	SetEventDriven(EED_TYPE_TIMER, 600 , "mp6409b:M06S041_EACT_EVID_0602")
+
+//	Wait(600)
+//	EventCue("mp6409b:M06S041_EACT_EVID_0602")
+
+}
+function "M06S041_EACT_EVID_0602"
+{
+	ActiveVoiceStart(EACT_EVID_0602, 1, 60)
+
+	SetEventDriven(EED_TYPE_TIMER, 730 , "mp6409b:M06S041_EACT_EVID_0603")
+
+//	Wait(730)
+//	EventCue("mp6409b:M06S041_EACT_EVID_0603")
+
+}
+function "M06S041_EACT_EVID_0603"
+{
+	ActiveVoiceStart(EACT_EVID_0603, 1, 60)
+
+	SetEventDriven(EED_TYPE_TIMER, 550 , "mp6409b:EV_M06S041b")
+
+//	Wait(550)
+//	EventCue("mp6409b:EV_M06S041b")
+
+	//徐々にフォグを濃くしていく
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 5.0 , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 450)
+
+
+}
+
+function "EV_M06S041b"			//霧の中で異形の古代種と戦うｂ(mp6409b)
+{
+//開始処理ここから-----------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+
+	FadeOut(FADE_WHITE, FADE_SLOW)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//念のためイベント駆動をクリア
+	SetEventDriven(EED_TYPE_NONE, 0 , 0)
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+	SetChrPos("ADOL",-366.37f,814.71f,110.14f)
+	Turn("ADOL",-21.26f,360.0f)
+
+	MoveCameraAt( 0 , -364.856f , 811.544f , 111.762f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.927f , 0 )	// 基本仰角
+	RotateCamera( 0 , 217.965f , 0 )				// 角度
+	ChangeCameraPers( 0 , 43.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 5.0 , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 240)
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 0.000, 10.000, 0.000, 0.450, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6409b:EV_M06S041b_ED")
+
+//開始処理ここから-----------------------------------------------
+
+	Wait(45)
+
+	ExecuteCmd( 1, MoveTo, "ADOL",-364.61f,810.23f,110.14f, 0.1f, 0.18f )
+	//SetChrPos("ADOL",-364.61f,810.23f,110.14f)
+	//Turn("ADOL",-21.26f,360.0f)
+
+	//　　可能ならイベント用に霧のループマップを作成。
+	//　　敵は配置せず、ある程度ループしたところで
+	//　　パーティー解除してアドル一人でイベント開始。
+	//　　アドルに「！」エモーション。
+	//　　振り返ると辺り一面に霧が立ち込めているだけで
+	//　　周囲を見回しても誰もいない状態。
+
+	FadeIn(FADE_WHITE, FADE_SLOW)
+
+	Wait(30)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE ,  -364.330f , 810.332f , 111.440f, 190 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 3.380f , 190 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 1.585f , 190 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 32.159f, 190)				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 190 )				// ロール回転
+
+	//MoveCameraAt( 0 , -364.330f , 810.332f , 111.440f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.380f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 1.585f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 32.159f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 42.100f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , -0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+
+	WaitThread(1)
+
+	Wait(30)
+
+	LookSpd("ADOL",0.08f,0.08f,0.08f)
+	Look("ADOL" , -35 , 0 )
+
+	Wait(20)
+
+	ChangeAnimation( "ADOL" , "ANI_EV_ROTATE_L90", -1 , 1 )
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_ROTATE_L90",  0)
+
+//	Wait(45)
+//	Look("ADOL" , 35 , 0 )
+
+	//	テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+
+	{
+		"#7Cアドルはいつの間にか"
+		"#7C仲間がいなくなっていることに気づいた。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Look("ADOL" , -35 , 0 )
+	Wait(45)
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+
+	{
+		"#7Cラクシャたちを呼んでみたが、"
+		"#7C返事は返ってこない……"
+		"#7C周囲はただ霧と静寂に包まれている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("ADOL")
+	Wait(20)
+
+	//　　ここで操作許可。
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから-----------------------------------------------
+	CallFunc("mp6409b:EV_M06S041b_ED")
+}
+
+function "EV_M06S041b_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//パーティ編成を控える
+	SavePartyMember()							// 現在のパーティ編成を覚える
+
+	//アドル１人に
+	//SetPartyMember( PARTY_ADOL, -1 , -1 )
+	CallFunc("rng:soloStartingCharacterEvent")
+	CallFunc("rng:manageEarlyGameParty")
+	SetFlag(SF_CANTSAVE,1)				
+	SetFlag( SF_CAMP_FORCE_CAN_EQUIP, 1 )
+
+	SetFlag(SF_CAMP_CANT_FORMATION,1)	
+	SetFlag(SF_CAMP_CANT_MAP,1)			
+	SetFlag(SF_TOWNMODE,1)				
+	
+//	//SetFlag(SF_ADOL_JOINOK,		1)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+//	//SetFlag(SF_LAXIA_JOINOK,	0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+//	//SetFlag(SF_SAHAD_JOINOK,	0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+//	//SetFlag(SF_HUMMEL_JOINOK,	0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+//	//SetFlag(SF_RICOTTA_JOINOK,	0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+//	//SetFlag(SF_DANA_JOINOK,		0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+
+	CallFunc(mp6409b:init)
+
+	//時間経過でイベント駆動
+	SetEventDriven(EED_TYPE_TIMER, 400 , "mp6409b:EV_M06S042")
+
+	SetChrPos("ADOL",-364.61f,810.23f,110.14f)
+	Turn("ADOL",-21.26f,360.0f)
+
+	ResetTracks() //パンくず消去
+
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 5.0 , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 330)
+
+	RestoreCamera(0,0)
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+//終了処理ここまで-----------------------------------------------
+}
+
+//──────────────────────────────
+//▼霧の中で異形の古代種と戦う(mp6409b)
+//──────────────────────────────
+function "EV_M06S042"			//霧の中で異形の古代種と戦う２(mp6409b)
+{
+	//開始処理ここから-----------------------------------------------
+
+	//CallFunc("system:event_begin")
+	SetStopFlag(STOPFLAG_EVENT)
+	
+	FadeOut(FADE_WHITE, 60)
+	WaitFade()
+	
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//念のためイベント駆動をクリア
+	SetEventDriven(EED_TYPE_NONE, 0 , 0)
+
+	//念のためアドルひとりに
+	SetPartyMember( PARTY_ADOL, -1 , -1 )
+	//SetFlag(SF_ADOL_JOINOK,		1)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+	//SetFlag(SF_LAXIA_JOINOK,	0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+	//SetFlag(SF_SAHAD_JOINOK,	0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+	//SetFlag(SF_HUMMEL_JOINOK,	0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+	//SetFlag(SF_RICOTTA_JOINOK,	0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+	//SetFlag(SF_DANA_JOINOK,		0)			// パーティー加入可能！（０－加入不可　１－入れ替え自由　２－強制）
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	SetFlag(SF_TOWNMODE,0)				//タウンモードOFFを
+
+	MapAnime("CT_EVENT","open")
+
+	//キャラ初期状態の設定		
+	SetChrPos("ADOL",-267.90f,581.47f,110.14f)
+	Turn("ADOL",-26.97f,360.0f)
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrPos("ev_b012",-244.36f,526.56f,112.75f)
+	Turn("ev_b012",157.26f,360.0f)
+	PitchChr("ev_b012", 0.00f, 0)
+	RollChr("ev_b012", 0.00f, 0)
+	SetChrInfoFlag("ev_b012", INFOFLAG_NOSHADOW)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -266.789f , 578.155f , 113.004f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.923f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -17.626f , 0 )	// 基本仰角
+	RotateCamera( 0 , 182.603f , 0 )				// 角度
+	ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	////r	g	b	st	ed	intens	fog_min	fog_max	bokeblend	bloomblend
+	//170	180	185	5.0f	80.0f	5.0f	0.0f	1.0f	0.5f		0.5f
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT , 5.0f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 0.000, 16.000, 0.000, 0.450, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6409b:EV_M06S042_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+		//　　さらにマップを数ループ進んだところでイベント再開。
+		//　　霧の中を彷徨うように歩いていくアドルが
+
+		//　　霧をぽっかりとくり抜いたような異質な空間に出る。
+		//　　空間の奥に黒い塊がじっと佇んでいることに気づき、
+		//　　「！」エモーションを表示。
+
+		//　　塊が不意に立ち上がって咆哮を上げる（登場演出）。
+		//　　アドルが鞘を払って剣を構えたところで戦闘開始。
+		//　　⇒ボス戦へ
+
+		//　　ボス戦を終了したところでイベント再開。
+		//　　画面フェードインして、周囲を囲んでいた霧が
+		//　　あたかも道を指し示すかのように割れているのを
+		//　　スクロールして見せてから操作許可。
+
+	Wait(45)
+
+	ExecuteCmd(1, MoveTo, "ADOL", -260.81f,565.84f,112.75f, 0.1f, 0.24f)
+	//SetChrPos("ADOL",-262.86f,570.19f,112.75f)
+	//Turn("ADOL",-24.39f,360.0f)
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , -262.918f , 569.117f , 114.195f , 270 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.823f  , 270 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE ,-4.562f ,  270 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE ,   217.753f  ,  270 )		// 角度
+//	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 2.8f , 270 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 270 )		// 視野角
+
+	//MoveCameraAt( 0 , -262.918f , 569.117f , 114.195f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.823f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -4.562f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 217.753f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	FadeIn(FADE_WHITE, FADE_SLOW)
+	Wait(FADE_NORMAL)
+
+
+
+	LookSpd("ADOL",0.04f,0.04f,0.04f)
+	Look("ADOL" , -40 , 0 )
+	
+	Wait(90)
+	
+	Look("ADOL" , 40 , 0 )	
+	
+	Wait(45)
+	ExecuteCmd(2, MoveTo, "ev_b012", -251.21f,542.83f,112.75f, 0.1f, 0.32)
+	//SetChrPos("ev_b012",-251.21f,542.83f,112.75f)
+	//Turn("ev_b012",157.26f,360.0f)
+
+//	ExecuteFunc(98 , "mp6409b:se_foot")
+
+	Wait(45)
+	
+	LookReset("ADOL")
+	Wait(45)
+
+	EmotionEx("ADOL", 0.00f,EMO_EX,0,5,1,1,1.4f )
+	StopThread(1)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT , 2.0f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 200)
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , -255.646f , 550.811f , 116.558f, 90 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE ,  11.190f, 90 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 21.707f ,  90 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 232.102f  ,  90 )		// 角度
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,-6.0f  , 90 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f,  )		// 視野角
+
+	//MoveCameraAt( 0 , -255.646f , 550.811f , 116.558f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 11.190f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 21.707f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 232.102f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , -12.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	Wait(20)
+	
+	Blur(BLUR_TYPE_AFTERIMAGE,0.45f ,40 )
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE ,  -250.255f , 547.919f , 115.666f, 70 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.890f, 70 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , -17.543f ,  70 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE ,  146.062f,  70 )		// 角度
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,13.1f , 70 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f,  )		// 視野角
+
+	//MoveCameraAt( 0 , -250.255f , 547.919f , 115.666f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 7.890f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -17.543f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 146.062f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , 13.1f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	ChangeAnimation( "ev_b012" , "ANI_ATK6", -1 , 1 )
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , -256.846f , 555.046f , 116.286f, 70 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.470f, 70 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , -24.621f ,  70 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 235.586f,  70 )		// 角度
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,-20.6f , 70 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f,  )		// 視野角
+
+	//MoveCameraAt( 0 , -256.846f , 555.046f , 116.286f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 7.470f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -24.621f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 235.586f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , -16.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(10)
+	PlaySE(SE_M06S042_02, 100, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_M06S042_05, 100, 0, 0, 0, 1.0f, 0)
+	Wait(10)
+
+	Slow(0.20)		//足振り上げ	
+
+	Wait(6)
+	PlayBGM(BGM_BOSS_003, 0)
+	Wait(4)	
+
+	Slow(1.0)
+	Wait(17)
+
+	VibrationPad(1001, 0 )		//ボス着地汎用
+	EarthQuake(0.35, 0.45 , 25)
+	PlaySE(SE_M06S042_04, 100, 0, 0, 0, 1.0f, 0)	
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , -256.846f , 555.046f , 118.121f, 360 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 20.870f , 360 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE ,  -11.066f ,  360 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE ,  206.184f,  360 )		// 角度
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,0.0f  , 360 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f,  )		// 視野角
+
+	//MoveCameraAt( 0 , -256.846f , 555.046f , 118.121f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 20.870f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -11.066f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 206.184f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// ネームエフェクト
+	VisualName("visual/bossname/bn_b012.itp", VN_NAMEBOSS, VN_BOSSNAME_LT_X, VN_BOSSNAME_LT_Y,VN_BOSSNAME_TIME)	//
+
+	Wait(160)
+
+	SetChrInfoFlag("ADOL", INFOFLAG_FIXED)
+	ChangeAnimation( "ev_b012" , "ANI_EV_IKAKU", -1 , 1 )
+
+	Wait(50)
+
+	PlaySE(SE_M06S042_03, 100, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_M06S042_04, 70, 0, 300, 0, 1.0f, 0)
+	Wait(50)
+
+
+	ChangeAnimation( "ADOL" , "ANI_EV_SETARM", -1 , 1 )
+
+
+	Wait(60)
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6409b:EV_M06S042_ED")
+}
+
+function "EV_M06S042_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	//ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ADOL")
+
+	SetChrPos("ev_b012" , -100000.0f , 0 , 0 )
+
+	ResetChrInfoFlag("ADOL", INFOFLAG_FIXED)
+	//ResetChrInfoFlag("ADOL", INFOFLAG_MUTEKI)
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//メニュー禁止解除
+	SetFlag(SF_CANTSAVE,0)				
+	SetFlag( SF_CAMP_FORCE_CAN_EQUIP, 0 )
+
+	SetFlag(SF_CAMP_CANT_FORMATION,0)	
+	SetFlag(SF_CAMP_CANT_MAP,0)			
+	SetFlag(SF_TOWNMODE,0)				
+
+	EventCue("mp6409b:EV_RetryBoss")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//終了処理ここまで----------------------------------------------------
+}
+/*
+function "se_foot"
+{
+	Wait(55)
+	PlaySE(SE_M06S042_01, 5, 0, 0, 0, 1.0f, 0)
+	Wait(30)
+	PlaySE(SE_M06S042_01, 10, 0, 0, 0, 1.0f, 0)
+	Wait(30)
+	PlaySE(SE_M06S042_01, 15, 0, 0, 0, 1.0f, 0)
+	Wait(30)
+	PlaySE(SE_M06S042_01, 20, 0, 0, 0, 1.0f, 0)
+	Wait(30)
+	PlaySE(SE_M06S042_01, 30, 0, 0, 0, 1.0f, 0)
+	Wait(30)
+	PlaySE(SE_M06S042_01, 40, 0, 0, 0, 1.0f, 0)
+	Wait(30)
+	PlaySE(SE_M06S042_01, 50, 0, 0, 0, 1.0f, 0)
+}
+*/
+function "EV_M06S042b"		//霧が道を作っていく
+{
+	//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_WHITE, 0)
+	WaitFade()
+
+	ResetMapParam(-1)
+
+	//イベント開始前情報の保存
+	//SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	SetChrPos("ADOL",-261.42f,567.42f,112.75f)
+	Turn("ADOL",-23.94f,360.0f)
+
+	SetChrPos("b011",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+	SetChrPos("b012",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+
+	//MoveCameraAt( 0 , -259.135f , 561.943f , 126.530f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 10.700f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -48.578f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 202.283f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	MoveCameraAt( 0 , -259.135f , 561.943f , 115.343f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 14.900f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.745f , 0 )	// 基本仰角
+	RotateCamera( 0 , 202.284f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 20.000, 0.000, 0.450, 0.500)					//イベント毎に調整
+
+	SetLensFlare( 0, 0)		//レンズフレア
+
+	//65	90	160	400.0f	1800.0f	2.0f	0.2f	0.9f	0.5f		0.5f
+	//SetFogBack(FOG_BOTH, FOGPARAM_MAP_DEFAULT, 400.0f, 1200.0f , FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+	//SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT,FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT ,FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+
+
+	//開始処理ここまで----------------------------------------------------
+
+	//霧が分かれて道を指し示す
+
+	MapAnime("mistSphere" ,  "wait2" )
+
+	FadeIn(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+	Wait(15)
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , -259.135f , 561.943f , 126.530f , 300  )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 10.700f  , 300  )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , -48.578f , 300 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 202.284f , 300)		// 角度
+//	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 202.283f , 300  )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 300 )		// 視野角
+
+	//MoveCameraAt( 0 , -259.135f , 561.943f , 126.530f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 10.700f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -48.578f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 202.283f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	Wait(35)
+
+	PlaySE(SE_M06S042_06, 60, 0, 1000, 0, 1.0f, 0)
+	MapAnime("mistSphere" ,  "open" )
+	MapAnimeLast("mistSphere" ,  "wait3" )
+	Wait(45)
+
+	SetFog(FOG_BOTH, FOGPARAM_MAP_DEFAULT,FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT , FOGPARAM_MAP_DEFAULT ,0.55 , FOGPARAM_MAP_DEFAULT, 0.1, 175 )
+
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	Wait(60)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	//終了処理ここから----------------------------------------------------
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ADOL")
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//フラグ
+	//SetFlag(SF_WARP_DISABLED,1)					//ワープ禁止
+	SetFlag(GF_06MP4105B_NONE_PARTY,1)			//霧の中で異形の古代種と戦う２(mp6409b)
+	SetFlag(SF_BOSS_BATTLE,0)					//ボス終了
+
+	CallFunc("mp6409b:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-261.42f,567.42f,112.75f)
+	Turn("LEADER",-23.94f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -261.416f , 567.421f , 114.624f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.508f , 0 )	// 基本仰角
+	RotateCamera( 0 , -157.492f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー・ＬＰセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//	================================================
+//	【ストッパー：霧のマップを引き返せない】
+//	================================================
+function "ST_6409_Mist"
+{
+	//▼常時
+	//	mp6409b	-567.92f	1288.77f	110.14f	153.37f付近に来るとストッパー
+
+//開始処理ここから----------------------------------------------------
+//	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+//	// PLAYER1のそばにワープする
+//	SetFlag( TF_CHECK_DISTANCE, 1 )
+//	SetFlag( TF_CHECK_DISTANCE2, 1 )
+//	if( WORK[WK_ISEXIST_PLAYER2] )
+//	{
+//		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+//	}
+//	if( WORK[WK_ISEXIST_PLAYER3] )
+//	{
+//		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+//	}
+//
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+//
+//	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+//	{
+//		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+//		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+//		ResetPartyPos()
+//	}
+//	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+//	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+//	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+//	{
+//		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+//		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+//		WaitThread(3)
+//		WaitThread(4)
+//	}
+//	WaitThread(1)
+//	WaitThread(2)
+//開始処理ここまで-----------------------------------------------
+
+	//	テキスト
+	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7Cこっちは逆方向のようだ……"
+		"#7C大樹に向かって進まなくては。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetChrPos("LEADER",-767.20f,1757.97f,110.14f)
+	Turn("LEADER",-24.26f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}

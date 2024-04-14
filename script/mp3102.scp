@@ -1,0 +1,1893 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/temp/mp3102.h"
+//-------------------------------------------
+// 3102：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	//MapHide( "@BG2_mp3101_3" , 0 )
+	MapHide( "@BG2_mp3102" , 0 )
+
+	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW2" , 0 )	//遠景の板フォグを消す
+
+	// イベント発生制御
+	EventAreaEnable( "evb2_QS_311_Complete" , 0 )
+	EventAreaEnable( "evb2_QS_311_CheckNia01" , 0 )
+	EventAreaEnable( "evb2_QS_311_CheckNia02" , 0 )
+	EventAreaEnable( "evb2_QS_311_CheckNia03" , 0 )
+	EventAreaEnable( "ev2_EV_LOCATION016" , 0 )
+	EventAreaEnable( "evb2_act_0805" , 0 )	//アクティブボイス
+
+	if( FLAG[SF_EVENT_ON] ){
+	
+		// 【QS311】神に祈りを（シスター・ニア）
+		if (FLAG[GF_QUEST_311] == QUEST_START &&
+			FLAG[GF_QS311_ESCORT_START] && 			//【QS311】神に祈りを（シスター・ニア）　護衛中
+			!FLAG[GF_QS311_QUEST_CANCEL])		//【QS311】クエスト途中でキャンセル
+		{
+			if (!FLAG[GF_QS311_LOOK_EVENT])//【QS311】▼クエストイベント を見た
+			{
+				EventCue("mp3102:QS_311_Event")		// 【QS311】神に祈りを（シスター・ニア）	▼クエストイベント
+			}
+			else
+			{
+				EventAreaEnable("evb2_QS_311_Complete", 1)
+				EventAreaEnable("evb2_QS_311_CheckNia01", 1)
+				EventAreaEnable("evb2_QS_311_CheckNia02", 1)
+				EventAreaEnable("evb2_QS_311_CheckNia03", 1)
+
+				// Niaの再配置
+				if (FLAG[101] == 0 && FLAG[102] == 0 && FLAG[103] == 0)
+				{
+					// まだ一度も保存されていない　＝　クエスト開始直後
+					SetChrPos("Nia2", -377.64f, -1072.58f, 119.77f);
+				}
+				else
+				{
+					SetChrPos("Nia2", (FLAG[101] / 10.0f), (FLAG[102] / 10.0f), (FLAG[103] / 10.0f));
+				}
+				SetChrAtariFlag("Nia2", (CA_ON | CA_ATARI | CA_CHARA | CA_PUSH))
+				SetFlag(SF_SAVENPCMODE, 1)
+				SetFlag(105, 1)	// Niaの移動速度モード２
+			}
+		}
+
+		// アクティブボイス
+		if (!FLAG[GF_AVOICE_0805]){	
+			EventAreaEnable( "evb2_act_0805" , 1 )
+				
+			if (FLAG[GF_QUEST_311] == QUEST_START && // 【QS311】護衛中アクティブボイス一時停止
+				FLAG[GF_QS311_ESCORT_START])
+			{
+				EventAreaEnable("evb2_act_0805", 0)
+			}
+
+		}
+
+		if ( !FLAG[GF_LOCATION16] ) {		// ロケーション016
+			EventAreaEnable( "ev2_EV_LOCATION016" , 1 )
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 100  ){	
+			//ワープ
+			VisualName("visual/mapname/mn_3101.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//風見丘陵
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0805"
+{
+	if (!FLAG[GF_AVOICE_0805])
+	{
+		EventAreaEnable( "evb2_act_0805" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0805, 1, 0)	//少し進んで高いところに出たら
+	}
+}
+
+//////////////////////////////////////////////
+// ロケーションポイント016:清風の丘
+//////////////////////////////////////////////
+function "EV_LOCATION016"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+	Portrait_Load(4, "visual/mapname/lnmp3102.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , -238.209f , -1193.038f , 172.360f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 37.999f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.625f , 0 )	// 基本仰角
+	RotateCamera( 0 , 317.439f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp3102:EV_LOCATION016_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt , INTERPOLATE_SPHERE , -236.863f , -1181.267f , 172.360f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance , INTERPOLATE_SPHERE , 37.999f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation , INTERPOLATE_SPHERE , 25.149f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera , INTERPOLATE_SPHERE , 298.947f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3102:EV_LOCATION016_ED")
+}
+function "EV_LOCATION016_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION16, 1)	//清風の丘
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_F006, MARKER_EV_LC_MP3102, 0, 0)	//ロケ　：清風の丘
+	SetMapMarker( SMI_LOCATION ,PAGE_F006, MARKER_EV_LC_MP3102, -238.71f, -1189.07f, 171.47f, -238.71f, -1189.07f,LOCATION_MP3102,MN_F_MP3102,0)		//ロケ　：清風の丘
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_F006,0 ,-237.61f, -1194.39f ,100 )
+
+	CallFunc("mp3102:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , -238.267f , -1214.618f , 166.755f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.981f , 0 )	// 基本仰角
+	RotateCamera( 0 , -1.855f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", -238.27f, -1214.62f, 164.89f)
+	Turn("LEADER" ,-178.14f , 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//===============================================================
+//
+// 【QS311】神に祈りを（シスター・ニア）
+// ▼クエストイベント
+//
+function "QS_311_Event"
+{
+	//　　mp3101に入ったらイベント開始。	◆mp3102として処理しています
+
+//開始処理ここから----------------------------------------------------
+
+//	CallFunc("system:event_begin")
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_remove")
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -376.61f, -1072.18f, 119.72f)
+	Turn("ADOL", 6.79f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	SetChrWork("Nia", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Nia", -377.41f, -1070.98f, 119.68f)
+	Turn("Nia", -0.41f, 360.0f)
+	ChangeAnimation( "Nia" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Nia",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Nia",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Nia",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -377.086f, -1073.927f, 120.957f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.397f, 0)		// 基本距離
+	ChangeCameraElevation(0, 8.690f, 0)	// 基本仰角
+	RotateCamera(0, 285.147f, 0)				// 角度
+	ChangeCameraPers(0, 51.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 150.000 ,1.000 ,0.700 ,0.600)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp3102:QS_311_Event_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd(1, MoveTo, "ADOL", -377.19f, -1076.36f, 119.94f, 0.1f, 0.22f)
+	ExecuteCmd(2, MoveTo, "Nia", -377.78f, -1072.88f, 119.78f, 0.1f, 0.16f)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -376.182f, -1072.457f, 120.907f, 80)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 301.674f, 80)		// 角度
+
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	WaitThread(2)
+	ChangeSubAnimation("Nia", SUBMOT_EYE, ANI_E_SAD_CLOSE_S, 1)
+
+	WaitThread(1000)
+	WaitThread(1001)
+
+	TalkPopup("Nia",0,2,0,0,0)
+	{
+		"#061e#000mはぁ、はぁ……なかなか"
+		"どうして大変な道のりですね。\p"
+		"#062e#000mですがこれも試練と思えば……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	EmotionEx("Nia", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	ChangeSubAnimation("Nia",SUBMOT_EYE,ANI_E_SUP_S,1)
+	Wait(30)
+
+	Turn("Nia", 167.96f, 9.0f)
+	Wait(10)
+	EarthQuake(0.07,0.07,7)
+	ChangeAnimation("Nia", "ANI_EV_SUP_S", -1, 1)
+	TalkPopup("Nia", 0, 2, 0, 0, 0)
+	{
+		"#18S#070e#070mきゃあっ……！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	SetChrWork("ev_QS311_mons", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS311_mons", -375.07f, -1061.31f, 119.15f)
+	Turn("ev_QS311_mons", 8.45f, 360.0f)
+
+	ChangeAnimation( "ev_QS311_mons" , "ANI_WAIT", -1 , 1 )
+//	ChangeSubAnimation("ev_QS311_mons",SUBMOT_EYE,ANI_E_WAIT,1)
+//	ChangeSubAnimation("ev_QS311_mons",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS311_mons",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS311_mons" , INFOFLAG_NOCHRATARI)
+	LookReset( "ev_QS311_mons" )
+
+	StopThread(1)
+
+	//　　画面クロスフェードでシスターが尻餅をついており、
+	//　　そこに獣（m0340ナガゲカバ２）が現れる。
+	CrossFade(FADE_CROSS)
+
+	MoveCameraAt( 0 , -377.040f , -1067.198f , 120.931f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.690f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.015f , 0 )	// 基本仰角
+	RotateCamera( 0 , 318.949f , 0 )				// 角度
+	ChangeCameraPers( 0 , 41.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 7.5f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SetChrWork("ADOL",CWK_BATTLEMODE,1)
+
+	ChangeAnimation( "Nia" , "ANI_EV_SIRIMOTI", -1 , 1 )
+
+	SetChrPos("ADOL", -375.04f, -1073.27f, 119.72f)
+	Turn("ADOL", 149.79f, 360.0f)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE,  -376.450f , -1068.107f , 120.361f, 70)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 7.302f , 70)		// 角度
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE,  1.289f, 70)		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 339.332f, 70)		// 角度
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE, -4.3f, 70)		// 角度
+
+	//MoveCameraAt( 0 , -376.450f , -1068.107f , 120.361f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 7.302f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 1.289f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 339.332f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 41.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , -4.3f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	Wait(10)
+
+	PlaySE(SE_QS_311_01, 80, 0, 0, 0, 1.0f, 0)	//カバ
+
+	Wait(27)
+	ExecuteCmd(1, MoveTo, "ADOL", -375.70f, -1067.27f, 119.44f, 0.1f, 0.65f)
+	WaitThread(1)
+
+	//　　アドルがかばうように獣を攻撃する。
+	CrossFade(FADE_FAST)
+
+	SetChrPos("Nia", -377.64f, -1072.58f, 119.77f)
+	Turn("Nia", -176.62f, 360.0f)
+
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+//	MoveCameraAt(0, -376.073f, -1068.160f, 120.833f, 0)	// 注視点
+//	ChangeCameraDistance(0, 3.396f, 0)		// 基本距離
+//	ChangeCameraElevation(0, 8.899f, 0)	// 基本仰角
+//	RotateCamera(0, 24.234f, 0)				// 角度
+//	ChangeCameraPers(0, 38.000f, 0)			// 視野角
+//	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+//	RollCamera(0, 0.0f, 0)				// ロール回転
+//
+//	SetChrPos("ADOL", -375.35f, -1066.33f, 119.39f)
+//	Turn("ADOL", 174.69f, 360.0f)
+//
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -375.068f, -1067.409f, 120.833f, 40)		// 注視点
+//	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 9.793f, 40)		// 角度
+//
+//
+////	ChangeAnimation("ADOL", "ANI_EV_SETARM", -1, 1)
+////	WaitAnimation2("ADOL", -1, 1, "ANI_EV_SETARM", 0)
+//
+//	WaitThread(1000)
+//	WaitThread(1001)
+//
+//	CrossFade(FADE_NORMAL)
+	MoveCameraAt( 0 , -375.957f , -1064.084f , 120.510f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.988f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -6.805f , 0 )	// 基本仰角
+	RotateCamera( 0 , 28.472f , 0 )				// 角度
+	ChangeCameraPers( 0 , 54.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 14.6f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_COS, 4.578f, 15)		// 角度
+
+	//MoveCameraAt( 0 , -375.957f , -1064.084f , 120.510f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 4.578f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -6.804f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 28.468f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 54.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 14.6f , 0 )				// ロール回転
+
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	//アドルの攻撃
+	//MTDのSE鳴らさない
+	SetFlag( SF_NOUSE_MTDSE, 1 )
+	ChangeAnimation( "ADOL", "ANI_ATK0_2", -1, 1 )
+	ChrEffect("ev_QS311_mons", SYSEFX_BASH_BLOOD, 0.0f, -3.0f, 2.5f, 0, 0, IMPACT_NONE, KNOCK_EFXPOS, 0.0f, 0.0f, 0, 1.0f, 1.0f)
+	PlaySE(SE_C000_ATK2_1, 100, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_QS_311_02, 20, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_QS_311_04, 60, 0, 0, 0, 1.0f, 0)
+	Wait(5)
+	ChangeAnimation( "ev_QS311_mons", "ANI_KNOCKDOWN2_F", -1, 1 )
+
+	WaitAnimation2("ADOL", -1, 1, "ANI_ATK0_2", 0)
+//	WaitAnimation2("ev_QS311_mons", -1, 1, "ANI_KNOCKDOWN2_F", 0)
+	Wait(3)
+
+	CrossFade(FADE_CROSS)
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+
+	MoveCameraAt( 0 , -375.628f , -1064.911f , 122.114f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.190f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 9.783f , 0 )	// 基本仰角
+	RotateCamera( 0 , 328.975f , 0 )				// 角度
+	ChangeCameraPers( 0 , 37.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 11.7f , 0 )				// ロール回転
+
+	ChangeAnimation("ADOL", "ANI_AIRUP_ATK1", -1, 1)
+
+	ChangeAnimation("ev_QS311_mons", "ANI_DAMAGE_F", -1, 1)
+	ChrEffect("ev_QS311_mons", SYSEFX_BASH_BLOOD, 0.0f, -3.0f, 2.7f, 0, 0, IMPACT_NONE, KNOCK_EFXPOS, 0.0f, 0.0f, 0, 1.0f, 1.0f)
+	PlaySE(SE_C000_AIRUP_ATK3, 100, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_QS_311_02, 20, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_QS_311_04, 60, 0, 0, 0, 1.0f, 0)
+
+	//ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE,  -375.628f , -1064.911f , 122.114f , 15)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_COS, 4.190f , 17)		// 角度
+	//ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 9.788f, 15)		// 注視点
+	//ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE,328.976f , 15)		// 角度
+	//ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE, 0.0, 1015		// 角度
+
+	//MoveCameraAt( 0 , -375.628f , -1064.911f , 122.114f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 5.498f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 9.788f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 328.976f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 37.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 11.7f , 0 )				// ロール回転
+
+	//獣やられ
+	ChangeAnimation( "ev_QS311_mons", "ANI_DEAD_C", -1, 1 )
+	Wait(17)
+
+//	Slow(0.0000001)
+
+
+	//MTDのSE鳴らす
+	SetFlag( SF_NOUSE_MTDSE, 0 )
+
+	CrossFade(FADE_FAST)
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+
+	MoveCameraAt( 0 , -376.541f , -1063.173f , 120.403f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.840f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.118f , 0 )	// 基本仰角
+	RotateCamera( 0 , 34.795f , 0 )				// 角度
+	ChangeCameraPers( 0 , 42.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 5.0f , 0 )				// ロール回転
+
+	ChangeSubAnimation("Nia",SUBMOT_EYE,ANI_E_SAD,1)
+
+	Wait(15)
+
+	PlaySE(SE_QS_311_01, 90, 0, 0, 0, 1.0f, 0)	//カバ
+	PlaySE(SE_QS_311_03, 60, 0, 200, 0, 1.0f, 0)
+	Wait(15)
+	PlaySE(SE_QS_311_05, 80, 0, 0, 0, 1.0f, 0)
+
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -376.541f , -1063.173f , 120.899f , 100)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 3.609f , 100)		// 角度
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 1.284f, 100)		// 注視点
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 12.052f , 100)		// 角度
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE, 11.0, 100)		// 角度
+
+	//MoveCameraAt( 0 , -376.541f , -1063.173f , 120.899f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.609f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 1.284f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 12.052f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 42.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 5.0f , 0 )				// ロール回転
+
+	WaitAnimation2( "ev_QS311_mons" , -1, 1, "ANI_DEAD_C",  0)
+
+	ChangeAnimation( "ADOL" , "ANI_DISARM", -1 , 1 )
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_DISARM",  0)
+
+	Turn("ADOL", 17.85f, 8.0f)
+	Wait(25)
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+		
+	CrossFade(FADE_CROSS)
+	ChangeAnimation("Nia", "ANI_WAIT", -1, 1)
+
+	SetChrPos("ev_QS311_mons" , -100000.00f  , 0.00f ,0.00f )		// 獣を画面外に移動
+
+	MoveCameraAt(0, -377.904f, -1071.808f, 121.031f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.396f, 0)		// 基本距離
+	ChangeCameraElevation(0, 5.971f, 0)	// 基本仰角
+	RotateCamera(0, 244.064f, 0)				// 角度
+	ChangeCameraPers(0, 38.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	SetChrPos("ADOL", -376.50f, -1069.89f, 119.60f)
+	Turn("ADOL", 17.85f, 360.0f)
+	LookChr("Nia", "ADOL")
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -377.582f , -1071.219f , 121.105f , 80)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 2.476f  , 80)		// 角度
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 3.946f, 80)		// 注視点
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE,199.868f , 80)		// 角度
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE, 0.0, 80)		// 角度
+
+	//MoveCameraAt( 0 , -377.582f , -1071.219f , 121.105f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 2.476f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 3.946f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 199.868f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 38.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	Wait(10)
+	Wait(FADE_CROSS)
+	ExecuteCmd(1, MoveTo, "ADOL", -377.06f, -1071.00f, 119.67f, 0.1f, 0.15f)
+
+	WaitThread(1)
+	WaitThread(1000)
+	WaitThread(1001)
+
+	Look("Nia", 0.00f, -20.00f)
+	ChangeAnimation("Nia", "ANI_EV_TEMUNE_S", -1, 1)
+	TalkPopup("Nia",0,2,0,0,0)
+	{
+		"#061e#000mも、申し訳ありません。"
+		"裾を踏んでしまいました。\p"
+		"わたしのドジのせいで、"
+		"アドルさんまで危険な目に……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"それよりも無事でよかった")
+	MenuAdd(2,"そのための護衛さ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	
+	//──────────────────────
+	//	⇒それよりも無事でよかった
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		HeadYes("ADOL", 1, 25)
+		Wait(25)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		LookChr("Nia", "ADOL")
+		TalkPopup("Nia",0,2,0,0,0)
+		{
+			"#000e#000mアドルさん……"
+			"あなたは本当にお優しいですね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒そのための護衛さ
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_TEBURI", -1, 1)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(30)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		LookChr("Nia", "ADOL")
+		TalkPopup("Nia",0,2,0,0,0)
+		{
+			"#000e#000mすみません……"
+			"本当に助かりました。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE,  -377.517f , -1071.180f , 121.205f , 70)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE,  2.015f , 70)		// 角度
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 4.249f, 70)		// 注視点
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 195.692f, 70)		// 角度
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE, 0.0, 70)		// 角度
+
+	//MoveCameraAt( 0 , -377.517f , -1071.180f , 121.205f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 2.015f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 4.249f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 195.692f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 38.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	//　　シスター・ニアに「…」エモーション。
+	ChangeSubAnimation("Nia", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	EmotionEx("Nia", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+	Wait(52)
+
+	ChangeAnimation("Nia", "ANI_EV_TEMUNE_E", -1, 1)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+
+	TalkPopup("Nia",0,2,0,0,0)
+	{
+		"#012e#000mあの、アドルさん……少し後ろを"
+		"向いていただいてもよろしいですか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドルが「？」エモーションを出しつつ、後ろを向く。
+	EmotionEx("ADOL", -0.01f, EMO_Q, 0, 5, 1, 1, 0.85f)	//？
+	Wait(40)
+
+	Turn("ADOL",-135.63f, 8.0f)
+	Wait(15)
+	
+	FadeBGM(70,30)
+
+	//　　画面暗転し、シスターの声が聞こえる
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	PlaySE(SE_QS_311_06, 100, 0, 0, 0, 1.0f, 0)
+	Wait(45)
+
+
+	TalkPopup("Nia",0,0,0,0,0)
+	{
+		"#000e#000mえっと、もう大丈夫です。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　暗転が明けると、スカートが短くなったシスターがいる。
+	SetChrPos("Nia", -100000.00f , 0.00f, 0.00f)
+
+	SetChrWork("Nia2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	DestroyObj(-377.64f, -1072.58f, 119.77f , 1.0f, 0, 0, 0 )
+	
+	SetChrPos("Nia2", -377.64f, -1072.58f, 119.77f)
+	Turn("Nia2", -176.62f, 360.0f)
+	ChangeAnimation("Nia2", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("Nia2", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("Nia2", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookChr("Nia2", "ADOL")
+
+	// 非表示
+	SetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)
+
+	MoveCameraAt( 0 , -377.713f , -1072.545f , 120.015f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.525f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 15.711f , 0 )	// 基本仰角
+	RotateCamera( 0 , 103.687f , 0 )				// 角度
+	ChangeCameraPers( 0 , 36.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 10.7f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	FadeBGM(100,30)
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	Wait(15)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -377.467f , -1072.611f , 121.052f , 145)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 2.424f, 145)		// 角度
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, -5.560f , 145)		// 注視点
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 196.717f  , 145)		// 角度
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE,  -5.0f, 145)		// 角度
+
+//	MoveCameraAt( 0 , -377.467f , -1072.611f , 121.052f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 2.424f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -5.560f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 196.717f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 36.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , -5.0f , 0 )				// ロール回転
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+
+	Wait(20)
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt( 0 , -377.611f , -1072.161f , 120.833f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.656f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.975f , 0 )	// 基本仰角
+	RotateCamera( 0 , 190.877f , 0 )				// 角度
+	ChangeCameraPers( 0 , 38.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 再表示
+	ResetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -377.206f , -1072.131f , 121.056f, 70)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 3.076f, 70)		// 角度
+
+	//MoveCameraAt( 0 , -377.206f , -1072.131f , 121.056f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.076f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 5.977f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 190.878f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 38.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//　　アドルに「アセアセ」エモーション。
+	Turn("ADOL",44.92f, 8.0f)
+	LookChr("ADOL", "Nia2")
+
+	WaitThread(1000)
+	WaitThread(1001)
+	EmotionEx("ADOL", 0.00f, EMO_ASE, 0, 5, 1, 1, 1.0f)	//汗汗
+	Wait(50)
+
+	TalkPopup("Nia2",0,2,0,0,0)
+	{
+		"#020e#080mふふ、行儀が悪くて申し訳ありません。\p"
+		"#022eですが、これでもう転びません。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt(0, -376.794f, -1071.541f, 120.957f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.397f, 0)		// 基本距離
+	ChangeCameraElevation(0, 5.970f, 0)	// 基本仰角
+	RotateCamera(0, 307.293f, 0)				// 角度
+	ChangeCameraPers(0, 38.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -377.677f, -1072.393f, 120.957f, 140)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 321.877f, 140)		// 角度
+
+	//　　アドルが頭をかいて若干照れる表現。	
+
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_SAD_S, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKR, 1)
+	ChangeAnimation("ADOL", "ANI_EV_BORI", -1, 1)
+	WaitAnimation2("ADOL", -1, 1, "ANI_EV_BORI", 0)
+
+	Wait(60)
+
+	//　　イベント終了、操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	StopThread(1000)
+	StopThread(1001)
+
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3102:QS_311_Event_ED")
+}
+function "QS_311_Event_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	//CallFunc("system:reset_chrmot_ALL")
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_Nia")
+	// 再表示
+	ResetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	DestroyObj(-377.64f, -1072.58f, 119.77f , 1.0f, 0, 0, 1 )
+
+	//フラグ立て・アイテム入手
+	//SetFlag(SF_SETRAMSAVE, 1)		//リトライセーブ
+	SetFlag( GF_QS311_LOOK_EVENT, 1 )		// 【QS311】▼クエストイベント を見た
+	SetFlag(GF_QS311_QUEST_CANCEL, 0)		//【QS311】クエスト途中でキャンセル
+
+	//マーカー設置＆消去（頂上にマーカーを設置しています）
+	SetMapMarker( SMI_QUEST, PAGE_F006, MARKER_QS_311_LP2, -238.23f,-1198.56f,170.55f, 	-238.23f,-1198.56f,	MARKER_QS_311_LP2, MN_F_MP3102,	0)	// 【QS311】神に祈りを（シスター・ニア）「▼クエスト達成イベント」が発生するポイント用
+	DelMapMarker( SMI_QUEST, PAGE_F006, MARKER_QS_311_LP1, 0, 0)	// 【QS311】神に祈りを（シスター・ニア）「▼クエストイベント」が発生するポイント用
+
+	CallFunc("mp3102:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER", -374.14f, -1075.93f, 119.84f)
+	Turn("LEADER", -2.46f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	SetChrPos("Nia2", -373.81f, -1074.31f, 119.75f)
+
+	SetChrPos("Nia" , -100000.00f , 0.00f ,0.00f )		// NPCニアを画面外に移動
+	SetChrPos("ev_QS311_mons" , -100000.00f , 0.00f ,0.00f )		// 獣を画面外に移動
+	Wait(1)
+
+	//カメラ位置復帰
+	MoveCameraAt(0, -374.140f, -1075.930f, 121.712f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 13.193f, 0)	// 基本仰角
+	RotateCamera(0, -178.305f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	//RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+//===============================================================
+//
+// 【QS311】神に祈りを（シスター・ニア）
+// ▼クエスト達成イベント
+//
+function "QS_311_Complete"
+{
+	//　　頂上に着くとイベント開始。
+	//　　アドルのすぐ後ろにシスターがいる。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_remove")
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -238.30f, -1193.54f, 171.17f)
+	Turn("ADOL", -171.96f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	SetChrWork("Nia2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Nia2", -237.71f, -1195.03f, 171.01f)
+	Turn("Nia2", 176.80f, 360.0f)
+	ChangeAnimation( "Nia2" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Nia2",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Nia2",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Nia2",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -237.867f, -1191.968f, 172.601f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 0.102f, 0)	// 基本仰角
+	RotateCamera(0, 158.510f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 150.000 ,1.000 ,0.700 ,0.600)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp3102:QS_311_Complete_ED")
+
+//開始処理ここまで-----------------------------------------------
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -238.010f, -1192.777f, 172.601f, 100)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 165.104f, 100)		// 角度
+	ExecuteCmd(1, MoveTo, "ADOL", -237.98f, -1191.45f, 171.44f, 0.1f, 0.20f)
+	ExecuteCmd(2, MoveTo, "Nia2", -237.41f, -1192.47f, 171.33f, 0.1f, 0.20f)
+
+	StopBGM(200)
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+//	WaitThread(1000)
+//	WaitThread(1001)
+
+	TalkPopup("Nia2",0,1,0,0,0)
+	{
+		"#080e#080mふう、やっと辿り着きましたね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　シスターに「！」エモーション。
+	EmotionEx("Nia2", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	ChangeSubAnimation("Nia2",SUBMOT_EYE,ANI_E_SUP_S,1)
+	Wait(40)
+
+	Look("Nia2", 20.00f, 0.00f)
+	TalkPopup("Nia2",0,1,0,0,0)
+	{
+		"#080mこの眺望は……\p"
+		"#011eアドルさん、ここまで導いてくださって"
+		"どうもありがとうございます。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ここで画面を挟んで、頂上からの景色を
+	//　　ある程度ゆっくり写した後、アドルたちがフレームイン。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	StopThread(1000)
+	StopThread(1001)
+	
+//	MoveCameraAt(0, -235.653f, -1188.347f, 183.657f, 0)	// 注視点
+//	ChangeCameraDistance(0, 8.800f, 0)		// 基本距離
+//	ChangeCameraElevation(0, -13.232f, 0)	// 基本仰角
+//	RotateCamera(0, 13.572f, 0)				// 角度
+//	ChangeCameraPers(0, 58.000f, 0)			// 視野角
+//	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+//	RollCamera(0, 0.0f, 0)				// ロール回転
+
+//	MoveCameraAt( 0 , -237.923f , -1190.336f , 172.991f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 8.800f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -3.887f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 208.442f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 58.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	MoveCameraAt( 0 , -238.652f , -1190.645f , 173.413f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 8.407f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.619f , 0 )	// 基本仰角
+	RotateCamera( 0 , 197.899f , 0 )				// 角度
+	ChangeCameraPers( 0 , 58.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	
+	//　　シスターが崖の先で祈っており、アドルがその後ろにいる構図。
+	SetChrPos("ADOL",-239.24f,-1186.02f,171.47f)
+	Turn("ADOL",120.68f,360.0f)
+
+	LookReset("Nia2")
+	SetChrPos("Nia2",-241.03f,-1184.71f,171.53f)
+	Turn("Nia2",162.03f,360.0f)
+	ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_CLOSE, 1)
+	ChangeAnimation( "Nia2" , "ANI_EV_INORI", -1 , 1 )
+	
+	Wait(30)
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	PlayBGM(BGM_EVENT_016, 0)
+
+	Wait(40)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -235.653f, -1188.347f, 183.657f, 240)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -13.232f, 240)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 13.572f, 240)		// 角度
+
+	//MoveCameraAt( 0 , -237.923f , -1190.336f , 172.991f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 8.800f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -3.887f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 208.442f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 58.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+//	Wait(30)
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt(0, -239.838f, -1185.475f, 172.843f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.050f, 0)		// 基本距離
+	ChangeCameraElevation(0, 4.505f, 0)	// 基本仰角
+	RotateCamera(0, 21.452f, 0)				// 角度
+	ChangeCameraPers(0, 49.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(15)
+
+	ChangeAnimation( "Nia2" , "ANI_EV_INORI_E", -1 , 1 )
+	WaitAnimation2( "Nia2" , -1, 1, "ANI_EV_INORI_E",  0)
+
+	TurnToChr( "Nia2", "ADOL", 8.0f )
+
+	TalkPopup("Nia2",0,0,0,0,0)
+	{
+		"#000e#000m……お待たせしました、アドルさん。\p"
+		"そろそろ戻りましょうか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"神様の声が聞こえたかい？")
+	MenuAdd(2,"神様に何を祈ったんだい？")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	Wait(10)
+	
+	//──────────────────────
+	//	⇒神様の声が聞こえたかい？
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_TEBURI", -1, 1)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(30)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		HeadYes("Nia2", 1, 25)
+		ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+		Wait(15)
+		ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+		TalkPopup("Nia2",0,0,0,0,0)
+		{
+			"#000mええ、おそらくですが。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒神様に何を祈ったんだい？
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_TEBURI", -1, 1)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(30)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		HeadYes("Nia2", 1, 25)
+		ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+		Wait(15)
+		ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+		TalkPopup("Nia2",0,0,0,0,0)
+		{
+			"#000mええ、実は密かに"
+			"決意したことがありまして。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+
+	//　　シスターに「…」エモーション。
+	ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	EmotionEx("Nia2", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+	Wait(52)
+	ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+	//TalkPopup("Nia",0,0,0,0,0)
+	//{
+	//	"#000e#000mこれまでわたしは、運命とは"
+	//	"すなわち神のご意志であると……\p"
+	//	"そう思って憚りませんでした。\p"
+	//	"ですが、亡くなった"
+	//	"バルバロス船長のことを思うと……\p"
+	//	"その考えは間違っていたのだと"
+	//	"思い知らされました。\p"
+	//	"船長殿が亡くなった原因は"
+	//	"あくまでもキルゴール先生の凶刃……\p"
+	//	"そしてその凶刃は、我々の行動次第で"
+	//	"未然に防ぐこともできたはずです。"
+	//}
+	//WaitPrompt()
+	//WaitCloseWindow()
+
+	CrossFade(FADE_FAST)
+	MoveCameraAt(0, -241.561f, -1183.235f, 172.917f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.050f, 0)		// 基本距離
+	ChangeCameraElevation(0, 4.506f, 0)	// 基本仰角
+	RotateCamera(0, 24.216f, 0)				// 角度
+	ChangeCameraPers(0, 49.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -242.433f, -1184.066f, 172.917f, 1200)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 66.217f, 1200)		// 角度
+
+	Wait(FADE_FAST)
+
+	TalkPopup("Nia2", 0, 2, 0, 0, 0)
+	{
+		"#080e#080mこれまでわたしは皆さんの無事と"
+		"脱出の成功を神に祈ってきました。\p"
+		"必死に祈りさえすれば"
+		"神は必ずお救い下さると……\p"
+		"#011e#000mですが、キルゴール先生の事件があり、"
+		"お二人がお亡くなりになりました。\p"
+		"これも神のご意志なのでしょうか？"
+		"だとすれば、わたしは……\p"
+		"#012e#000mわたしはシスターです。"
+		"祈りを欠かすことは出来ませんが……\p"
+		"その……祈るより前に"
+		"“行動”すべきだったのではないかと……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　シスターが何かしらモーション。
+	ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	ChangeAnimation( "Nia2", "ANI_EV_TEMUNE_S", -1, 1 )
+	WaitAnimation2( "Nia2" , -1, 1, "ANI_EV_TEMUNE_S",  0)
+
+	//TalkPopup("Nia",0,0,0,0,0)
+	//{
+	//	"#000e#000m……わたしはここへ来ることで、"
+	//	"改めてその現実を確かめたかったんです。\p"
+	//	"今、わたしが無事でいるのも"
+	//	"獣の襲撃に必死で抗ったから……\p"
+	//	"そして何より、アドルさんの"
+	//	"助けがあったからこそ……\p"
+	//	"それは神のご意志とは"
+	//	"まったく別の所にあるもの……\p"
+	//	"なので改めてアドルさん、"
+	//	"あなた自身に感謝させてください。"
+	//}
+	//WaitPrompt()
+	//WaitCloseWindow()
+
+
+	TalkPopup("Nia2", 0, 2, 0, 0, 0)
+	{
+		"#000mもちろん“行動”したからと言って"
+		"わたしがお二人を救えたとは限りません。\p"
+		"でも……\p"
+		"#012e#000mまず人として出来る限りのことをして、"
+		"その上で聖職者として神に祈る。\p"
+		"そうすることで島からの脱出に……"
+		"皆さんのお役に立ちたいのです。\p"
+		"これは神のご意志ではなく、"
+		"わたし自身が望んでいることです。\p"
+		"#080e#080m気づかせてくれたのはアドルさん、"
+		"あなたたちの“行動”です。\p"
+		"#011e#080mアドルさん……あなたに感謝を。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	ChangeAnimation("Nia2", "ANI_EV_TEMUNE_E", -1, 1)
+	StopThread(1000)
+	StopThread(1001)
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , -240.333f , -1185.184f , 172.942f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.210f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.715f , 0 )	// 基本仰角
+	RotateCamera( 0 , 263.821f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	Wait(15)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"何だかむずがゆいな")
+	MenuAdd(2,"僕は何もしていないさ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	//Wait(20)
+	
+	//──────────────────────
+	//	⇒何だかむずがゆいな
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_TEBURI", -1, 1)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(30)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		PlayVoice(Y8V_4689, "Nia2", 100)	//ふふ（微笑）
+		TalkPopup("Nia2",0,0,0,0,0)
+		{
+			"#000e#000mふふ、アドルさんは"
+			"照れ屋でいらっしゃいますね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒僕は何もしていないさ
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_TEBURI", -1, 1)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(30)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		PlayVoice(Y8V_4689, "Nia2", 100)	//ふふ（微笑）
+		TalkPopup("Nia2",0,0,0,0,0)
+		{
+			"#000e#000mふふ、アドルさんは "
+			"謙虚でいらっしゃいますね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+
+	//TalkPopup("Nia",0,0,0,0,0)
+	//{
+	//	"#000e#000mきっと運命というものは"
+	//	"自らの力で掴み取るもの……\p"
+	//	"だからわたしは、ここで"
+	//	"神に誓いの祈りを捧げたのです。\p"
+	//	"これからもどうかお導き──"
+	//	"ではなく“見守っていてください”と。\p"
+	//	"ふふ、アドルさんもどうか"
+	//	"改めてよろしくお願いしますね。\p"
+	//	"これからわたしは、もっと必死に、"
+	//	"がむしゃらに頑張ります。\p"
+	//	"そのためにも、体面を気にせず……\p"
+	//	"この動きやすい格好で"
+	//	"過ごすことから始めるつもりです。\p"
+	//	"少々はしたないですが、"
+	//	"その点はどうかご勘弁くださいね。"
+	//}
+	//WaitPrompt()
+	//WaitCloseWindow()
+
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -240.588f, -1185.528f, 172.843f, 900)		// 注視点
+//	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 194.787f, 900)		// 角度
+
+	TalkPopup("Nia2", 0, 0, 0, 0, 0)
+	{
+		"#000e#000mわたしもまだまだ未熟ゆえ、"
+		"神のご真意は窺い知れませんが……\p"
+		"これからは、運命をただ漫然と"
+		"受け入れることのないよう努めます。\p"
+		"今日ここへ来たのはこのことを"
+		"神にご報告申し上げるため……\p"
+		"そして“行動”を伴うことで"
+		"誓いを胸に刻みつけるためです。\p"
+		"アドルさん、どうか"
+		"改めてよろしくお願いしますね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドルが頭をかいて若干照れる表現。
+	ChangeAnimation( "ADOL", "ANI_EV_BORI", -1, 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SAD_S,1)
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_BORI",  0)
+
+	StopBGM(120)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	//　　画面暗転。
+//	FadeOut(FADE_BLACK,FADE_NORMAL)
+	FadeOut(FADE_BLACK,45)
+	WaitFade()
+
+	Wait(10)
+
+	PlaySE(SE_QUEST_END, 100, 0, 0, 0, 1.0f, 0)		// クエスト達成	
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#8S"
+		"#-1W#4Cクエスト#8C【神に祈りを】#4Cを達成した！#10W" 
+		"#8S"
+	}
+	Wait(10)
+	CallFunc("system:QuestVoice_Success")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//──────────────────────
+	//	⇒好感度が一段階上がる場合
+	if( FLAG[GF_LIKELV_NIA] < 1 )
+	{
+		PlaySE(SE_BONDS_UP, 100, 0, 0, 0, 1.0f, 0)	//好感度アップ
+		//	ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4Cシスター・ニアの好感度が上がった！#10W" 
+			"#8S"
+		}
+		Wait(10)
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒好感度が最大になる場合
+	else
+	{
+		PlaySE(SE_BONDS_UP, 100, 0, 0, 0, 1.0f, 0)	//好感度アップ
+		//	ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4Cシスター・ニアの好感度が最大になった！#10W" 
+			"#8S"
+		}
+		Wait(10)
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+
+	//　　イベント終了、操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//	アイテム入手テキスト
+	GetItemMessageExPlus(ICON3D_US_HEALSOLO_01, 1, ITEMMSG_SE_JINGLE, "を手に入れた！" ,0 ,0 )		// ヒールポーション
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　集落の入口で操作許可。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3102:QS_311_Complete_ED")
+}
+function "QS_311_Complete_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+	
+	//イベント前の状態を復帰
+	RestoreEventState()
+	
+	// パーティ編成可能状況を戻す
+	SetFlag(SF_ADOL_JOINOK, FLAG[SF_ADOL_JOINOKBK])
+	SetFlag(SF_LAXIA_JOINOK, FLAG[SF_LAXIA_JOINOKBK])
+	SetFlag(SF_SAHAD_JOINOK, FLAG[SF_SAHAD_JOINOKBK])
+	SetFlag(SF_HUMMEL_JOINOK, FLAG[SF_HUMMEL_JOINOKBK])
+	SetFlag(SF_RICOTTA_JOINOK, FLAG[SF_RICOTTA_JOINOKBK])
+	SetFlag(SF_DANA_JOINOK, FLAG[SF_DANA_JOINOKBK])
+
+	//キャラ初期状態の設定
+	RestorePartyMember()						// パーティメンバーを戻す
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て
+	SetFlag( GF_QUEST_311, QUEST_SUCCESS )		// 【QS311】神に祈りを（シスター・ニア）　クエストを達成した
+	SetFlag( GF_LIKELV_NIA, ( FLAG[GF_LIKELV_NIA] + 1 ) )	// 好感度ＵＰ
+	SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 1) )			//クエスト達成【QS311】神に祈りを（シスター・ニア）	名声値+1
+	GetItem( ICON3D_US_HEALSOLO_01, 1 )			// 「ヒールポーション」
+	SetDiaryFlag( DF_QS311_END, 1 )				// 【QS311】★シスターを風見丘陵の頂上まで無事に送り届け
+	SetFlag(SF_WARP_DISABLED, 0)			//　護衛中ワープ禁止解除
+	//SetDiaryCharaFlag( DRCHA_NIA, DRCHA_FLAG_INFO2, 1 )		//★人物メモ：追加情報の開放２（シスター・ニア）
+	SetFlag(SF_SAVENPCMODE, 0)
+	SetFlag(GF_QS311_QUEST_CANCEL, 0)		//【QS311】クエスト途中でキャンセル
+
+	//マーカー消去
+	DelMapMarker( SMI_QUEST, PAGE_F006, MARKER_QS_311_LP2, 0, 0)	// 【QS311】神に祈りを（シスター・ニア）「▼クエスト達成イベント」が発生するポイント用
+	
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+	LoadArg("map/mp1201/mp1201.arg")
+	EventCue("mp1201:QS_311_Relocate")	//	  　集落の入口で操作許可。
+
+//終了処理ここまで----------------------------------------------------
+}
+
+// ▼ニアクエスト中・脱走を企てていないかチェック
+function "QS_311_CheckNia01"
+{
+	// 脱走して良いようにする場合、以下の２択
+	//
+	//	１、mp3101のinitスクリプトでmp3102から来た場合のNiaの再配置機能を追加する。
+	//	　　さらに、各種判定等Niaで行っている所をNia2にも対応する。
+	//
+	//	②、mp3101で行っている集落に戻るかどうかの選択肢を出してやる。
+	//		以降、再開時用の処理等でNia2にも対応する。
+	//
+	// 以下・仮で戻れないようにしています。
+	/*Message("◆今は戻れない。")
+	WaitPrompt()
+	
+	SetChrPos(LEADER, -373.62f, -1064.88f, 119.25f)
+	Turn(LEADER, 13.13f, 360.0f)
+	ResetPartyPos()
+	CrossFade(10)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)*/
+
+	//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -373.24f, -1064.99f, 119.24f)
+	Turn("ADOL", 176.68f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookChr("ADOL", "Nia2")
+
+	SetChrWork("Nia2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Nia2", -373.42f, -1063.80f, 119.19f)
+	Turn("Nia2", 10.65f, 360.0f)
+	ChangeAnimation("Nia2", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("Nia2", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("Nia2", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("Nia2", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookChr("Nia2", "ADOL")
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -372.602f, -1063.013f, 119.978f, 0)	// 注視点
+	ChangeCameraDistance(0, 5.100f, 0)		// 基本距離
+	ChangeCameraElevation(0, 12.428f, 0)	// 基本仰角
+	RotateCamera(0, 333.258f, 0)				// 角度
+	ChangeCameraPers(0, 49.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(10)
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 200.000, 1.000, 0.700, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+
+	//スキップ許可
+	//	SetSkipScript("mp3101:QS_311_Escort_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	TalkPopup("Nia2", 0, 0, 0, 0, 0)
+	{
+		"#000e#000mえっと……"
+		"漂流村に戻られるのですか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//TurnToChr( "ADOL", "Nia", 8.0f )
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT, 0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1, "準備し直させて欲しい")
+	MenuAdd(2, "いや、やはり先を目指そう")
+	MenuOpen(TF_MENU_SELECT, -1, ADOLMENU_PPOSY, -2, -2, 10, 0)
+	WaitMenu(0)
+	MenuClose(10, 0)
+	Wait(20)
+
+	//──────────────────────
+	//	⇒準備し直させて欲しい
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		HeadYes("ADOL", 1, 25)
+		Wait(30)
+
+		TalkPopup("Nia2", 0, 0, 0, 0, 0)
+		{
+			"#000e#000m分かりました、"
+			"そういうことであれば。\p"
+			"また改めて案内をお願い致します。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//	  　集落の入口で操作許可。
+		FadeOut(FADE_BLACK, FADE_NORMAL)
+		WaitFade()
+
+		//終了処理ここから----------------------------------------------------
+
+		//イベント前の状態を復帰
+		RestoreEventState()
+
+		// シスター・ニアを外す
+		SetChrPos("Nia2", -100000.00f, 0.00f, 0.00f)
+
+		// パーティ編成可能状況を戻す
+		SetFlag(SF_ADOL_JOINOK, FLAG[SF_ADOL_JOINOKBK])
+		SetFlag(SF_LAXIA_JOINOK, FLAG[SF_LAXIA_JOINOKBK])
+		SetFlag(SF_SAHAD_JOINOK, FLAG[SF_SAHAD_JOINOKBK])
+		SetFlag(SF_HUMMEL_JOINOK, FLAG[SF_HUMMEL_JOINOKBK])
+		SetFlag(SF_RICOTTA_JOINOK, FLAG[SF_RICOTTA_JOINOKBK])
+		SetFlag(SF_DANA_JOINOK, FLAG[SF_DANA_JOINOKBK])
+
+		//キャラ初期状態の設定
+		RestorePartyMember()						// パーティメンバーを戻す
+
+		//パーティ状態のリセット
+		CallFunc("system:party_reset")
+
+		//フラグ立て
+		SetFlag(GF_QS311_ESCORT_START, 0)		// 【QS311】▼護衛開始イベント を見た　を取り消す
+		//SetFlag(GF_QS311_LOOK_EVENT, 0)			// 【QS311】▼クエストイベント を見た
+		SetFlag(SF_WARP_DISABLED, 0)			//　護衛中ワープ禁止解除
+		SetFlag(SF_SAVENPCMODE, 0)
+		SetFlag(GF_QS311_QUEST_CANCEL, 1)		//【QS311】クエスト途中でキャンセル
+
+		// クエスト、シスターニア用のあたりオフ
+		MapAnime("@CM_quest", "off")
+
+		//マップパラメーターリセット
+		ResetMapParam(-1)
+
+		//キャラモーション初期化
+		//CallFunc("system:reset_chrmot_ALL")
+		CallFunc("system:reset_chrmot_ADOL")
+		CallFunc("system:reset_chrmot_Nia")
+
+		//マーカー消去
+		DelMapMarker(SMI_QUEST, PAGE_F006, MARKER_QS_311_LP1, 0, 0)	// 【QS311】神に祈りを（シスター・ニア）「▼クエストイベント」が発生するポイント用
+		DelMapMarker(SMI_QUEST, PAGE_F006, MARKER_QS_311_LP2, 0, 0)	// 【QS311】神に祈りを（シスター・ニア）「▼クエスト達成イベント」が発生するポイント用
+
+		SetFlag(TF_LOADING_TIPS_OFF, 1)	//NowLoading 時の Tips 表示をカット
+		LoadArg("map/mp1201/mp1201.arg")
+		EventCue("mp1201:QS_311_Relocate")	//	  　集落の入口で操作許可。
+
+		//終了処理ここまで----------------------------------------------------
+	}
+//	⇒いや、やはり先を目指そう
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		HeadNo("ADOL", 1, 35)
+		Wait(30)
+
+		TalkPopup("Nia2", 0, 0, 0, 0, 0)
+		{
+			"#000e#000m助かります……"
+			"では改めて頂上を目指しましょう。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		//──────────────────────
+
+		//　　イベント終了、操作許可。
+		FadeOut(FADE_BLACK, FADE_NORMAL)
+		WaitFade()
+
+		//終了処理ここから----------------------------------------------------
+
+		//イベント前のキャラ情報を復帰
+		RestoreEventState()
+
+		//隠したものを復帰。
+		ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+		//キャラモーション初期化
+		//CallFunc("system:reset_chrmot_ALL")
+		CallFunc("system:reset_chrmot_ADOL")
+		CallFunc("system:reset_chrmot_Nia")
+
+		//パーティキャラを解放
+		ReleaseEventPartyChr()
+
+		//マップパラメーターリセット
+		ResetMapParam(-1)
+
+		CallFunc("mp3102:init")
+
+		//イベント後の再配置
+		SetChrPos("LEADER", -374.49f, -1068.71f, 119.47f)
+		Turn("LEADER", 2.26f, 360.0f)
+		ResetPartyPos()
+		ResetFollowPoint()
+
+		// ニアをアドルの後ろに配置
+		SetChrPos("Nia2", -375.15f, -1067.52f, 119.44f)
+		TurnToChr("Nia2", LEADER, 360.0f)
+		SetChrAtariFlag("Nia2", (CA_ON | CA_ATARI | CA_CHARA | CA_PUSH))
+		SetFlag(SF_SAVENPCMODE, 1)
+		SetFlag(105, 0)	// Niaの移動速度モード１
+
+		Wait(1)
+
+		RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+		CallFunc("system:camera_reset")
+
+		ResetStopFlag(STOPFLAG_EVENT)
+
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+		//終了処理ここまで----------------------------------------------------
+	}
+}
+
+
+function "QS_311_mp3102_Relocate"
+{
+	//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion("PARTYALL", 0)
+	StopEffect(-1, PARTYALL, 1)
+	StopEmotion("PARTYALL")
+	ResetMoveVec("PARTYALL")
+	//開始処理ここまで-----------------------------------------------
+
+	//イベント後の再配置
+	SetChrPos("LEADER", -374.14f, -1075.93f, 119.84f)
+	Turn("LEADER", -2.46f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	SetChrPos("Nia2", -373.81f, -1074.31f, 119.75f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	MoveCameraAt(0, -374.140f, -1075.930f, 121.709f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 12.024f, 0)	// 基本仰角
+	RotateCamera(0, 175.790f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+}
+
+// ▼ニアクエスト中・別マップに行こうとしていないかチェック
+function "QS_311_CheckNia02"
+{
+
+	//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion("PARTYALL", 0)
+	StopEffect(-1, PARTYALL, 1)
+	StopEmotion("PARTYALL")
+	ResetMoveVec("PARTYALL")
+	//開始処理ここまで-----------------------------------------------
+
+	//	ナレーション
+	// 以下・仮
+	TalkPopup("UNDEF", 0, 3, STOPPER_PPOSX, STOPPER_PPOSY, 0)
+	{
+		"#7Cこの先は危険そうだ。"
+		"#7Cシスター・ニアを連れて行くわけにはいかない。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	SetChrPos("LEADER", -351.26f, -1159.24f, 123.07f)
+	Turn("LEADER", -121.48f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//CrossFade(10)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+}
+
+// ▼脱走前ニアチェック
+function "QS_311_CheckNia03"
+{
+	// シスターがついてきているかチェック
+	CheckChrDistance( TF_MENU_SELECT, LEADER, "Nia2", 0, 8.0f)
+	if (!FLAG[TF_MENU_SELECT])
+	{
+
+		//開始処理ここから----------------------------------------------------
+		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		ResetStopFlag(STOPFLAG_NOCHARACLIP)
+		SaveCamera()
+
+		ResetMotion("PARTYALL", 0)
+		StopEffect(-1, PARTYALL, 1)
+		StopEmotion("PARTYALL")
+		ResetMoveVec("PARTYALL")
+		//開始処理ここまで-----------------------------------------------
+
+		//	ナレーション
+		TalkPopup("UNDEF", 0, 3, STOPPER_PPOSX, STOPPER_PPOSY, 0)
+		{
+			"#7Cシスター・ニアがついてきていないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		SetChrPos(LEADER, -238.96f, -1209.86f, 166.49f)
+		Turn(LEADER, -3.5f, 360.0f)
+
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	}
+}
