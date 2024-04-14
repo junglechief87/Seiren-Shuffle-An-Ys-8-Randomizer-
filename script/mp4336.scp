@@ -1,0 +1,541 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// ジャンダルム                                                               //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+//mp4335タナトス小屋からの倒木ショートカット
+
+function "init"
+{
+	if(FLAG[GF_MP433x_GIM_01] ){		//◆TODO:フラグを正式なものに変更する
+		//ショートカット１を開通状態に
+		MapAnime( "gim02" , "wait2" )
+	}
+
+	if (FLAG[GF_QS300_GET_TREE]){
+		//祈願の木を消す処理
+		MapAnime("wishtree", "off")
+	}
+
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_act_0307" , 0 )	//アクティブボイス
+	EventAreaEnable( "ST_4336_to4337" , 0 )	// 第三部：【ストッパー：ジャンダルム中腹から先に進めない】
+
+	if (FLAG[SF_EVENT_ON]){
+		// クエスト制御
+		if( FLAG[GF_QUEST_300] == QUEST_START && !FLAG[GF_QS300_GET_TREE] )			// 【QS300】祈願の木（サハド）クエストを開始した
+		{
+			SetChrPos("LP_QS_300_TREE", -2.58f, -41.44f, 500.37f)
+			MapAnime("wishtree", "on")
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0307] && FLAG[GF_03MP4202_TALK_LODGE] && !FLAG[GF_03MP4202_JOIN_RICOTTA]){
+			EventAreaEnable( "evb2_act_0307" , 1 )
+		}
+		
+		// ストッパー制御
+		if( FLAG[GF_03MP4202_JOIN_RICOTTA]		//リコッタの話を聞く
+		&&(!FLAG[GF_TBOX_DUMMY073]		//再びジャンダルムへ向けて出発する
+		||!FLAG[GF_QS303_QUESTCLEAR]))			//密林の制圧戦をクリアした
+		{
+			EventAreaEnable( "ST_4336_to4337" , 0 )	// 第三部：【ストッパー：ジャンダルム中腹から先に進めない】
+		}
+
+		//迎撃戦ギリギリ
+		if (FLAG[GF_03MP433x_OCCUR_INTERCEPT5] && !FLAG[GF_03MP433x_AFTER_INTERCEPT5] )
+		{
+			//Intercept(INTERCEPT_STAGE05, 1)	// 時間切れ間近(赤)
+		}
+	}
+
+	EventAreaEnable("evb2_sefx_in_4336",1)	//サウンドエフェクト
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0307"
+{
+	if (!FLAG[GF_AVOICE_0307])
+	{
+		EventAreaEnable( "evb2_act_0307" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0307, 1, 0)	//小屋後、適当に進んだ所で
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■サウンドエフェクト
+//////////////////////////////////////////////////////////////////////
+function "sefx_in_4336" {
+	//洞窟内
+	EventAreaEnable("evb2_sefx_in_4336",0)	//
+	SoundEfx(SEFX_CAVE_L,1000)
+}
+
+function "sefx_out_4336" {
+	//外
+	EventAreaEnable("evb2_sefx_in_4336",1)	//
+	SoundEfx(SEFX_VALLEY,1000)	//マップデフォルト
+}
+//////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+//崩れる足場2
+function "otosi01"
+{
+	// マップのアニメ設定
+	EventAreaEnable("otosi01",0)
+	//Wait(5)
+	ChrEffect( PLAYER1 , 103950 , 0 , 0 , 0 , 0 , 0 , IMPACT_NONE , KNOCK_EFXPOS,0.0f,0.0f,0, 1.0f, 1.0f)
+	MapAnime( "gim81" , "action" )
+	Jump(PLAYER1  , 0.05)
+	PlaySE("SE_GIM_FALL_ROCK", 100, 0,  0, 0, 1.0f, 0)	//gimse
+	Wait(10)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//===============================================================
+//
+// 【QS300】祈願の木（サハド）
+// ▼木を入手する
+//
+function "QS_300_Tree"
+{
+	//　　ジャンダルム中腹mp4336 -5.50f	-40.73f	500.00f	-71.02f付近に祈願の木オブジェがある。	◆未入力：祈願の木
+	//　　ＬＰで調べるとイベント起動。
+
+	//　　暗転を挟んで木の前にアドルとサハドを再配置する。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -1.18f, -42.52f, 499.80f)
+	Turn("ADOL", 141.57f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	Look("ADOL", 1.00f, 15.00f)
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", -1.14f, -40.99f, 499.73f)
+	Turn("SAHAD", 81.06f, 360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	Look("SAHAD", -1.00f, 18.00f)
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -3.643f, -40.696f, 504.429f, 0)	// 注視点
+	ChangeCameraDistance(0, 6.500f, 0)		// 基本距離
+	ChangeCameraElevation(0, 3.019f, 0)	// 基本仰角
+	RotateCamera(0, 75.503f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 60.000 ,1.000 ,0.700 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp4336:QS_300_Tree_ED")
+
+//開始処理ここまで-----------------------------------------------
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -4.088f, -40.293f, 501.278f, 80)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 66.825f, 80)		// 角度
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	WaitThread(1000)
+	WaitThread(1001)
+
+	TalkPopup("SAHAD",0,0,0,0,0)
+	{
+		"#070e#000mお？　この木は……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("ADOL", "SAHAD")
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"祈願の木にピッタリだな")
+	MenuAdd(2,"早速持って帰ろう")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	//────────────────────
+	//	⇒祈願の木にピッタリだな
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_WAIT2_S", -1, 1)
+		Wait(35)
+
+		CrossFade(FADE_CROSS)
+		MoveCameraAt(0, 1.851f, -38.780f, 501.055f, 0)	// 注視点
+		ChangeCameraDistance(0, 6.500f, 0)		// 基本距離
+		ChangeCameraElevation(0, 3.019f, 0)	// 基本仰角
+		RotateCamera(0, 310.194f, 0)				// 角度
+		ChangeCameraPers(0, 60.000f, 0)			// 視野角
+		SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+		RollCamera(0, 0.0f, 0)				// ロール回転
+		Wait(FADE_CROSS)
+
+
+		HeadYes("SAHAD", 1, 25)
+		TalkPopup("SAHAD",0,0,0,0,0)
+		{
+			"#011e#000mおお、確かにそーだ！\p"
+			"#012e大きさといい、まったく"
+			"あつらえたみてーだぜ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		ChangeAnimation("SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1)
+
+		TalkPopup("SAHAD", 0, 0, 0, 0, 0)
+		{
+			"#080e#080mよし、村に持ち帰ったら"
+			"早速植えてやらねーとな。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+	//	⇒早速持って帰ろう
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		HeadYes("ADOL", 1, 25)
+		Wait(35)
+
+		CrossFade(FADE_CROSS)
+		MoveCameraAt(0, 1.851f, -38.780f, 501.055f, 0)	// 注視点
+		ChangeCameraDistance(0, 6.500f, 0)		// 基本距離
+		ChangeCameraElevation(0, 3.019f, 0)	// 基本仰角
+		RotateCamera(0, 310.194f, 0)				// 角度
+		ChangeCameraPers(0, 60.000f, 0)			// 視野角
+		SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+		RollCamera(0, 0.0f, 0)				// ロール回転
+		Wait(FADE_CROSS)
+
+		TalkPopup("SAHAD", 0, 0, 0, 0, 0)
+		{
+			"#080e#080mガハハ、確かにこいつは"
+			"祈願の木によさそーだ！"
+				
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		ChangeAnimation("SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1)
+
+		TalkPopup("SAHAD", 0, 0, 0, 0, 0)
+		{
+			"#080e#080mよし、さっそく持ち帰って"
+			"早速植えるとしよう。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+	LookChr("SAHAD", "ADOL")
+	Wait(10)
+	TalkPopup("SAHAD",0,0,0,0,0)
+	{
+		"#080e#080mアドル、また手が空いた時にでも"
+		"手伝ってくれ、頼んだぜ！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドルがうなずく。
+	HeadYes("ADOL" , 1 , 25)
+	Wait(35)
+
+	//　　暗転。
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	//	アイテム入手テキスト
+	//「『祈願の木』を手に入れた。」
+	GetItemMessageExPlus(ICON3D_PRAY_TREE, 1, ITEMMSG_SE_JINGLE, "を手に入れた。", 0, 0)		//（『祈願の木』）
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　画面を戻して操作許可。
+	//　　※マップの木は消してしまう。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp4336:QS_300_Tree_ED")
+}
+function "QS_300_Tree_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て・アイテム入手・アイテム回収
+	SetFlag( GF_QS300_GET_TREE, 1 )		// 【QS300】▼木を入手する を見た
+	GetItem( ICON3D_PRAY_TREE, 1 )			// 「祈願の木」
+	SetDiaryFlag( DF_QS300_001, 1 )		// 【QS300】★ジャンダルムで良さそうな木を見つけた。
+	//マーカー消去
+	DelMapMarker( SMI_QUEST, PAGE_MP433x, MARKER_QS_300_LP, 0, 0)	// 【QS300】祈願の木（サハド）「▼木を入手する」が発生するポイント用
+
+//	SetChrPos("祈願の木", -100000.00f, 0.00f, 0.00f)	//木を消す
+	SetChrPos("LP_QS_300_TREE", -100000.00f, 0.00f, 0.00f)
+
+	//祈願の木を消す処理
+	MapAnime("wishtree", "off")
+
+	//イベント後の再配置
+	SetChrPos("LEADER", 3.08f, -42.22f, 499.73f)
+	Turn("LEADER", 101.24f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt(0, 3.078f, -42.215f, 501.594f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+	RotateCamera(0, 78.759f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	//RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	================================================
+//	【ストッパー：ジャンダルム中腹から先に進めない】
+//	================================================
+function "ST_4336_to4337"
+{
+
+//開始処理ここから----------------------------------------------------
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+//開始処理ここまで-----------------------------------------------
+
+	if( FLAG[GF_03MP4202_JOIN_RICOTTA] && !FLAG[GF_03MP1201_ALARM_INTERCEPT] )
+	{
+		//▼GF_03MP4202_JOIN_RICOTTA,			//リコッタの話を聞く
+		//～！GF_03MP1201_ALARM_INTERCEPT,	//警鐘が鳴り響く
+		
+		//　　mp4336、中ボスマップに入る手前にストッパーを仕掛ける
+		
+		TalkPopup("RICOTTA",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{
+			"#000e#000mこの先、古代種多い。"
+			"オマエたち、大丈夫か？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		TalkPopup("LAXIA",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{
+			"#000e#000mそうですね……せっかく"
+			"リコッタちゃんに助けてもらったのです。\p"
+			"武器の目処が立つまで"
+			"進むのはやめておきましょう。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else if( FLAG[GF_03MP1201_ALARM_INTERCEPT] && !FLAG[GF_TBOX_DUMMY073] )
+	{
+		//▼GF_03MP1201_ALARM_INTERCEPT,		//警鐘が鳴り響く
+		//～！GF_TBOX_DUMMY073,			//再びジャンダルムへ向けて出発する
+		
+		//　　mp4336、中ボスマップに入る手前にストッパーを仕掛ける
+		
+		TalkPopup("LAXIA",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{
+			"#000e#000mアドル、漂流村に"
+			"古代種が迫っているようです。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		TalkPopup("SAHAD",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{
+			"#000e#000mおお、今はヤツを"
+			"追い返すのに集中しよーぜ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else //if(FLAG[GF_TBOX_DUMMY073] && !FLAG[GF_QS303_QUESTCLEAR] )
+	{
+		TalkPopup("LAXIA",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{
+			"#000e#000mアドル、ちょっと待ってください。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		TalkPopup("LAXIA",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{
+			"#000e#000mそういえばドギから"
+			"頼まれた制圧戦がまだです。\p"
+			"ジャンダルムを越えてしまうと"
+			"すぐには村へ帰れなくなります。\p"
+			"先に解決しておくべきでしょう。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//	"SAHAD"
+		TalkPopup("SAHAD",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{
+			"#000e#000mおお、村も危ねえって話だったな……\p"
+			"アドル、先にそっちを片付けちまおうぜ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetChrPos("PLAYER1",-3.75f, 17.46f, 509.87f)
+	Turn("PLAYER1" ,-172.09f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}

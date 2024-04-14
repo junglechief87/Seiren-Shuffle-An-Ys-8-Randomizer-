@@ -1,0 +1,737 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 珊瑚の穴                                                                   //
+//                                                                            //
+//----------------------------------------------------------------------------//
+function "init"
+{
+	//◆マップエフェクト
+	//胞子
+	Set3DParticle(PARTICLE_TYPE_SPORE, 0.0f,0.0f,0.0f, 0.05f,0.05f,0.02f, 0.0f,0.0f,0.0f, 0.0f,0.0f,0.0f, 180.0f, 0.0f)
+
+
+	if(FLAG[GF_MP130x_GIM_02] ){
+		//ショートカット１を開通状態に
+		MapAnime( "gim02" , "wait2" )
+		SetChrPos("lookp02",-100000.0f, 0.0f, 0.0f)
+	}
+
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_act_0204" , 0 )	//アクティブボイス
+	EventAreaEnable( "evb2_act_0205" , 0 )	//アクティブボイス
+	EventAreaEnable( "evb2_M02S190_Stop" , 0 )		// ２部 [M02S190][グリップグローブを入手する] ストッパー
+
+	if( FLAG[SF_EVENT_ON] ){
+	// イベント発生制御
+		if(!FLAG[GF_02MP1306_GET_GROVE] && FLAG[SF_LASTENTRY_NO] == 04 ){
+			EventCue("mp1303:EV_M02S190")
+		} else {
+			ChangeAnimation( "Skeleton" , "ANI_STOP2", -1 , 1 )		//取った後
+		}
+		if (FLAG[GF_02MP1306_GET_GROVE]	// ▼ [M02S190][グリップグローブを入手する]
+			&& !FLAG[GF_HELP_A29]) {	// ▽チュートリアル：グリップグローブの効果
+				EventAreaEnable( "evb2_M02S190_Stop" , 1 )		// ２部 [M02S190][グリップグローブを入手する] ストッパー
+				SetEventDriven(EED_TYPE_EQUIPMAGICITEM, ICON3D_CLIMBGLOVE, "mp1303:EV_M02S190_Help")
+		}
+
+//		if(!FLAG[GF_AVOICE_0204] && FLAG[GF_02MP1301_IN_CORAL] && !FLAG[GF_02MP1308_KILL_CHAMELEON]){
+//			EventAreaEnable( "evb2_act_0204" , 1 )
+//		}
+		if(!FLAG[GF_AVOICE_0205] && FLAG[GF_02MP1301_IN_CORAL] && !FLAG[GF_02MP1308_KILL_CHAMELEON]){
+			EventAreaEnable( "evb2_act_0205" , 1 )
+		}
+	}
+}
+
+
+function "shortcut02"
+{
+	// マップのアニメ設定
+	SetFlag(GF_MP130x_GIM_02,1)
+	SetChrPos("lookp02",-100000.0f, 0.0f, 0.0f)
+	MapAnime( "gim2" , "open" )
+	PlaySE("SE_GIM_STOP_WOOD_1", 100, 0,  0, 0, 1.0f, 0)	//gimse
+	Wait(50)
+	PlaySE("SE_GIM_STOP_WOOD_2", 100, 0,  0, 0, 1.0f, 0)	//gimse
+	EarthQuake(0.1f,0.1f,10)
+	Wait(30)
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0204"
+{
+//	if (!FLAG[GF_AVOICE_0204])
+//	{
+//		EventAreaEnable( "evb2_act_0204" , 0 )
+//		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+//		ActiveVoiceStart(EACT_EVID_0204, 1, 0)	//グローブ入手後
+//	}
+}
+
+function "act_0205"
+{
+	if (!FLAG[GF_AVOICE_0205])
+	{
+		EventAreaEnable( "evb2_act_0205" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0205, 1, 0)	//最初のツタを登った所で
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//──────────────────────────────
+//▼漂流者の亡骸からグリップグローブ入手(mp1303)
+//──────────────────────────────
+function "EV_M02S190"	// 漂流者の亡骸からグリップグローブ入手
+{
+	//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	SaveEventState()
+	SaveCamera()
+
+	//環境初期化＆不要なものを隠す
+	ClearDebris()
+	ResetMotion("ALL", 1)
+	StopEffect(-1, "ALL", 1)
+	StopEmotion("ALL")
+	ResetMoveVec("PARTYALL")
+
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+
+	//キャラクター初期化
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 30.33f, -185.98f, -49.67f)
+	Turn("ADOL", -61.09f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 31.84f, -183.94f, -49.67f)
+	Turn("LAXIA", -44.09f, 360.0f)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("LAXIA")
+
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 30.36f, -184.47f, -49.67f)
+	Turn("SAHAD",  -46.18f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("SAHAD")
+
+	ChangeAnimation("Skeleton", "ANI_WAIT0", -1, 1)		//キラキラ消す
+
+	// チュートリアルポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+	Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(2, "visual/help/hp_a28.itp" )	// help_a28：冒険具
+	Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+
+	MoveCameraAt( 0 , 35.673f , -189.812f , -48.333f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.190f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.485f , 0 )	// 基本仰角
+	RotateCamera( 0 , 35.276f , 0 )				// 角度
+	ChangeCameraPers( 0 , 45.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 140.000, 0.000, 0.150, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1303:EV_M02S190_ED")
+	//開始処理ここまで-----------------------------------------------
+
+	//　　中間地点マップ(要マップ相談)に到達するとイベント開始。
+	//　　入口から歩いてきて亡骸を囲む３人。
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	ExecuteCmd(1, MoveTo, "ADOL", 34.79f, -189.80f, -49.67f,  0.1f, 0.25f)
+	Wait(5)
+	ExecuteCmd(2, MoveTo, "LAXIA", 36.32f, -188.55f, -49.67f, 0.1f, 0.25f)
+	Wait(5)
+	ExecuteCmd(3, MoveTo, "SAHAD", 34.78f, -188.56f, -49.67f, 0.1f, 0.25f)
+
+	LookChr("LAXIA", "Skeleton")
+	LookChr("ADOL", "Skeleton")
+	LookChr("SAHAD", "Skeleton")
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 36.168f , -188.933f , -48.213f , 90 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE ,  1.710f , 90 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -9.075f , 90 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE ,  73.091f , 90 )
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+
+	//　　サハドに「！」エモーション。
+	//　　亡骸だと気づいて後ずさる。
+
+	WaitThread(2)
+	WaitThread(1)
+	WaitThread(3)
+
+	EmotionEx("SAHAD", 0.05f, EMO_EX, 0, 5, 1, 1, 1.0f )	// 「！」
+	ChangeAnimation("SAHAD", "ANI_EV_SUP_S", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_SUP_S, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_TAME_S, 1)
+	Wait(40)
+	
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	ChangeAnimation( "DANA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+		"#070e#000mこ、これはまさか……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// カメラ
+	MoveCameraAt( 0 , 35.747f , -189.339f , -48.253f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.330f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 13.186f , 0 )	// 基本仰角
+	RotateCamera( 0 , 208.851f , 0 )				// 角度
+	ChangeCameraPers( 0 , 45.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 34.38f, -190.08f, -49.67f)
+	Turn("ADOL", -67.17f, 360.0f)
+	SetChrPos("LAXIA", 36.39f, -188.56f, -49.67f)
+	Turn("LAXIA", -1.54f, 360.0f)
+	SetChrPos("SAHAD", 34.95f, -188.91f, -49.67f)
+	Turn("SAHAD", -50.76f, 360.0f)
+
+	// カメラ移動（基本距離）
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.290f , 20 )
+	Blur( BLUR_TYPE_AFTERIMAGE ,0.3f , 30 )	// 残像
+
+	// カメラ待ち
+	WaitThread(1001)
+
+	EarthQuake(0.1f, 0.1f, 4)
+	
+	// サハド
+	TalkPopup("SAHAD", 0, 1, 0, 0, 0) {
+		"#070e#110m#16Sひいいっ、し、死体！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "LAXIA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	//	"LAXIA"
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0) {
+		"#000e#000mわたくしたちが来るより"
+		"ずっと前のものみたいです……\p"
+		"格好からしても以前見つけた"
+		"海賊の仲間かもしれませんね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ラクシャにＰＡエモーション。
+	EmotionEx("LAXIA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f )	// 「PA」
+	ChangeAnimation( "LAXIA", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+	Wait(35)
+	
+	// 移動
+	ExecuteCmd(1, MoveTo, "LAXIA", 36.71f, -189.75f, -49.67f, 0.1f, 0.15f)
+
+	// 移動待ち
+	WaitThread(1)
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_SHAGAMI_S", -1, 1 )	// しゃがみ
+	Look("LAXIA", 0.0f, -10.0f)	// うつむく
+	WaitAnimation2("LAXIA", -1, 1, "ANI_EV_SHAGAMI_S", 0)
+	
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0) {
+		"#070e#000mあら？　これは……\p"
+		"#000e変わった手袋が落ちています。"
+		"探索に使えるかもしれませんが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	//　　ラクシャ、サハドのほうを見る。
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ
+	MoveCameraAt( 0 , 37.133f , -190.763f , -48.773f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.610f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.420f , 0 )	// 基本仰角
+	RotateCamera( 0 , 90.687f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 34.92f, -191.06f, -49.67f)
+	Turn("ADOL", -77.83f, 360.0f)
+	SetChrPos("LAXIA", 37.25f, -189.96f, -49.67f)
+	Turn("LAXIA", 7.11f, 360.0f)
+	SetChrPos("SAHAD", 35.37f, -189.92f, -49.67f)
+	Turn("SAHAD", -57.87f, 360.0f)
+	ChangeAnimation( "SAHAD", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)	// 口
+	
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 36.924f , -190.667f , -48.133f , 80 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.610f , 80 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.133f , 80 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 71.206f , 80 )
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	LookReset("LAXIA")
+	ChangeAnimation( "LAXIA", "ANI_EV_SHAGAMI_E", -1, 1 )	// しゃがみ
+	WaitAnimation2("LAXIA", -1, 1, "ANI_EV_SHAGAMI_E", 0)
+
+	LookChr("LAXIA", "SAHAD")
+	TurnToChr("LAXIA", "SAHAD", 8.0f)
+	Wait(10)
+	
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0) {
+		"#000e#000mサハド、拾っていただけますか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("ADOL", "LAXIA")
+
+	LookSpd(0.12 , 0.12 , 0.12 )
+	LookChr("SAHAD", "LAXIA")
+
+	EarthQuake( 0.02f , 0.02f , 10 )	// 縦揺れ幅, 横揺れ幅, 時間
+	ChangeAnimation("SAHAD", "ANI_EV_SUP_S", -1, 1)
+	
+	//	"SAHAD"
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#18S#050e#110mワ、ワシがか！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "LAXIA", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+
+	//	"LAXIA"
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0) {
+		"#000e#000mこういうことは"
+		"男性が率先して行動すべきです。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	EmotionEx("SAHAD", 0.00f, EMO_ASE, 0, 5, 1, 1, 1.5f )	// 「あせあせ」
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_SAD_CLOSE_S,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(40)
+
+	LookSpd(0.10 , 0.10 , 0.10 )
+	LookChr("SAHAD", "Skeleton")
+	ChangeAnimation("SAHAD", "ANI_EV_SUP_E", -1, 1)
+
+	//	"SAHAD"
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#000m……い、生き残るためだ。"
+		"ゴクリ……どうか安らかに……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("ADOL", "SAHAD")
+	LookChr("LAXIA", "SAHAD")
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_SAD_CLOSE_E,1)
+	
+	// 移動
+	ExecuteCmd(1, MoveTo, "SAHAD", 36.31f, -190.61f, -49.67f, 0.1f, 0.16f)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	
+	Wait(30)
+	
+	// 移動停止
+	StopThread(1)
+
+	//GetItemMessageExPlus(ICON3D_CLIMBGLOVE, 1, ITEMMSG_SE_JINGLE, "を手に入れた。", 0, 0)
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ここで[冒険具]のチュートリアル画像を表示。
+	//　　（１周目のみ）help_a28：冒険具
+	
+	// チュートリアル =================================================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+		
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+		FadeIn(FADE_BLACK, 0)
+		WaitFade()
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+		Portrait_Close(1)
+		Portrait_Close(2)
+		
+		// 擬似フェードアウト削除
+		FadeOut(FADE_BLACK, 0)
+		WaitFade()
+		Portrait_Close(0)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	}
+	// ================================================================================================
+
+
+	// カメラ
+//	MoveCameraAt( 0 , 34.739f , -189.860f , -48.259f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.470f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 6.329f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 263.138f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	MoveCameraAt( 0 , 34.739f , -189.860f , -48.113f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.470f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.329f , 0 )	// 基本仰角
+	RotateCamera( 0 , 263.138f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 33.96f, -190.79f, -49.67f)
+	Turn("ADOL", -131.13f, 360.0f)
+	SetChrPos("LAXIA", 35.67f, -189.95f, -49.67f)
+	Turn("LAXIA", 80.56f, 360.0f)
+	SetChrPos("SAHAD", 34.12f, -189.08f, -49.67f)
+	Turn("SAHAD", -57.28f, 360.0f)
+	LookChr("SAHAD", "LAXIA")
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 34.739f , -189.860f , -48.113f , 45 )
+
+	//MoveCameraAt( 0 , 34.739f , -189.860f , -48.113f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.470f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 6.329f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 263.138f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//SE埋め込み済み
+	ChangeAnimation("Skeleton", "ANI_OPEN", -1, 1)		//崩れる
+
+	ChangeAnimation( "LAXIA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#000e#000mせっかくですし、"
+		"早速身に着けてみたらいかが？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	//	"SAHAD"
+	TalkPopup("SAHAD",0,1,0,0,0) {
+		"#000e#000mええい、毒を食らわば皿までだ。"
+		"皿2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//	ナレーション
+	TalkPopup(UNDEF, 0, 3, SYSTEM_PPOSX, SYSTEM_PPOSY, 0) {
+		"#7C冒険具「グリップグローブ」を手に入れた。\p"
+		"#7C冒険具メニューで"
+		"#7Cグリップグローブをセットしてみよう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp1303:EV_M02S190_ED")
+}
+
+function "EV_M02S190_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+	RestoreEventState()
+
+	//モンスターを復帰
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//自動送り許可
+	SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	// ※セーブロードや同マップ切替をした場合、再度コマンドを呼び出す必要があります。
+	SetEventDriven(EED_TYPE_EQUIPMAGICITEM, ICON3D_CLIMBGLOVE, "mp1303:EV_M02S190_Help")
+
+	//フラグ処理
+	SetFlag( GF_02MP1306_GET_GROVE , 1 )			// グローブを入手した
+	//SetFlag( GF_HELP_A28, 1 )	// チュートリアル：冒険具
+	//GetItem(ICON3D_CLIMBGLOVE,1)
+	CallFunc("rng:0430")
+	//アイテムスロットなかったら１つにしておく
+	if (FLAG[SF_ITEMSLOT_NUM] < 1)
+	{
+		SetFlag(SF_ITEMSLOT_NUM,1)
+	}
+
+	//◆マップマーカー検証
+//	DelMapMarker( SMI_SYMBOL,PAGE_MP1301,MARKER_EV_M02S190, 0, 0)
+
+	CallFunc("mp1303:init" )
+
+	SetChrPos("PLAYER1", 26.23f, -185.51f, -49.67f)
+	Turn("PLAYER1", 109.40f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	MoveCameraAt(0, 26.225f, -185.507f, -47.797f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+	RotateCamera(0, 70.577f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+//		// リアルタイムヘルプ
+//		SetRealTimeHelp(RH_TUTE_TOOLITEM, 210)
+//	}
+
+//終了処理ここまで----------------------------------------------------
+}
+function "EV_M02S190_Stop"		// グリップグローブを入手する ストッパー
+{
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	LookChr("LAXIA", "ADOL")
+	TurnToChr("LAXIA", "ADOL", 5.0f)
+	Wait(20)
+
+	// ストッパーメッセージ
+	TalkPopup("LAXIA",0,0,0,0,0) {
+		"せっかくですから、"
+		"先ほどの手袋を身に着けてみましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookReset("LAXIA")
+
+	CrossFade(FADE_CROSS)
+
+	SetChrPos("LEADER", 19.31f, -181.89f, -49.67f)
+	Turn("LEADER", 102.68f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	
+}
+function "EV_M02S190_Help"	// チュートリアル
+{
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	CallFunc("system:party_reset")
+
+	// チュートリアルポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+	Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(2, "visual/help/hp_a29.itp" )	// help_a29：グリップグローブの効果
+	Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+
+	// チュートリアル =================================================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+		
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.7f, FADE_FAST)
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		
+		// 擬似フェードアウト削除
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+		
+		Portrait_Close(2)
+		Portrait_Close(1)
+		Portrait_Close(0)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	}
+	// ================================================================================================
+
+	//自動送り許可
+	SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	// フラグ処理
+	SetFlag( GF_HELP_A29, 1 )	// チュートリアル：グリップグローブの効果
+
+	CallFunc("mp1303:init")
+
+	//アクティブボイス
+	ActiveVoiceStart(EACT_EVID_0204, 1, 0)	//グローブ入手後
+
+//	// 未入力コメント
+//	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0) {
+//		"#7C◆アクティブボイス"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}

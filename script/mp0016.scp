@@ -1,0 +1,2539 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+#include "inc/music.h"
+#include "inc/temp/mp0016.h"
+
+//-------------------------------------------
+// 0016：
+//-------------------------------------------
+//////////////////////////////////////////////////////////////////////
+// ■initスクリプト
+//////////////////////////////////////////////////////////////////////
+function "init"
+{
+	// 船揺れ
+	CallFunc("system:default_Shake_set")
+
+	ChrNodeHide( "ADOL" , "Null_wp", 1, 1 )	//剣を消す
+	SetFlag(SF_CAMP_CANT_EQUIP,0)		// 装備メニュー許可			//★Patch1.01対応
+	SetFlag(SF_CAMP_CANT_ITEM,0)		// アイテムメニュー許可		//★Patch1.01対応
+
+	//一般配置ファンクション呼び出し
+	CallFunc("mp0016:NpcPosition")
+
+	//扉を強制的に閉じる
+	DoorClose("door_01",1,0)
+	DoorClose("door_02",1,0)
+
+	// イベント発生制御
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_00MP0011_GO_CAPTAINROOM] && !FLAG[GF_00MP0012_START_PATROL] ){
+			EventCue("mp0016:EV_M00S010")
+		}
+		if( FLAG[GF_00MP0012_GO_CAPTAINROOM2] && !FLAG[GF_00MP0016_HEAR_SCREAM] ){
+			EventCue("mp0016:EV_M00S040")
+		}
+
+	//ノード制御
+		//ノード制御
+		if( !FLAG[GF_00MP0012_START_PATROL] ){
+			//昼用ノードON
+			MapHide("m_daylight" , 1 )
+			SetChrPos("door_01" , 0.0f,-4.0f,0.0f)			
+
+			//夜用ノードOFF
+			MapHide("m_night" , 0 )
+			SetChrPos("door_02" , -100000.0f , 0 , 0  )
+
+		}
+		else if( FLAG[GF_00MP0012_START_PATROL] ){
+			//昼用ノードOFF
+			MapHide("m_daylight" , 0 )
+			SetChrPos("door_01" , -100000.0f , 0 , 0  )
+
+			//夜用ノードON
+			MapHide("m_night" , 1 )
+			SetChrPos("door_02" , 0.0f,-4.0f,0.0f)			
+		}
+
+	//エントリー制御
+		//エントリー制御
+		if( FLAG[GF_00MP0016_HEAR_SCREAM]){			// 出口は甲板の戦闘マップへ
+			EntryOn(0,0)
+			EntryOn(2,1)
+		}
+		else if( FLAG[GF_00MP0012_START_PATROL] ){	//巡回を開始する
+			//昼マップOFF
+			EntryOn(00,0)
+
+			//夜マップON
+			EntryOn(03,1)
+		}
+	//サウンド制御
+		if( FLAG[GF_00MP0016_HEAR_SCREAM]){			// 出口は甲板の戦闘マップへ
+			SetWork( WK_BGM , BGM_EVENT_011 )
+		}
+		else if( FLAG[GF_00MP0012_START_PATROL] ){	//巡回を開始する
+			SetWork( WK_BGM , BGM_EVENT_007 )
+		}
+	}
+}
+//////////////////////////////////////////////////////////////////////
+//■一般配置
+//////////////////////////////////////////////////////////////////////
+function "NpcPosition"
+{
+	if( FLAG[GF_NPC_1_01_IN_BASE] )					//▼第一部①漂流村予定地に到着
+	{
+	}
+	else if( FLAG[GF_NPC_0_03_ATTACK_SHIP] )		//▼序③船が襲われる（夜）
+	{
+	// ------- 船長室(mp0016) -----------------------------------
+		// バルバロス船長	//	場所		：船長室
+		SetChrPos("Barbaross",-2.53f	-2.86f	0.00f)
+		Turn("Barbaross",-37.70f,360.0f)
+//		ChangeAnimation( "Barbaross", "伝声管に向いて話す", -1, 1)	//モーション	：伝声管に向いて話す	◆未入力
+//		ChangeAnimation( "Barbaross", "ANI_EV_SUP", -1, 1 )
+		ChangeAnimation( "Barbaross", "ANI_EV_SIAN", -1, 1 )
+	}
+	else if( FLAG[GF_NPC_0_02_START_PATROL] )		//▼序②船内を巡回する（夜）
+	{
+	}
+	else if( FLAG[GF_NPC_0_01_GO_CAPTAINROOM] )		//▼序①バルバロス船長の所へ向かう
+	{
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベントセクション
+//////////////////////////////////////////////////////////////////////
+
+function "EV_M00S010"			//バルバロス船長登場
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENTIMPOSE)
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	SaveEventState()
+	SaveCamera()
+
+	//環境初期化＆不要なものを隠す
+	ResetMotion( "ALL" , 1 )  
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	//昼用ノードON
+	MapHide("m_daylight" , 1 )
+	SetChrPos("door_01" , 0.0f,-4.0f,0.0f)			
+
+	//夜用ノードOFF
+	MapHide("m_night" , 0 )
+	SetChrPos("door_02" , -100000.0f , 0 , 0  )
+
+	// イベント用船揺れ
+	CallFunc("system:event_Shake_set")
+	
+	//キャラクター初期化
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL",-0.100f,-4.520f,0.000f)
+	Turn("ADOL",-180.0f,360.0f)
+	ChangeAnimation("ADOL","ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetChrInfoFlag( "Barbaross" , INFOFLAG_NOCHRATARI )
+	SetChrInfoFlag( "Barbaross" , INFOFLAG_NOMAPATARICHECK )
+	SetChrPos("Barbaross",1.89f,3.24f,0.00f)
+	Turn("Barbaross",117.46f,360.0f)
+	SetChrPos("Barbaross",1.32f,3.25f,-0.00f)
+	Turn("Barbaross",-137.16f,360.0f)
+	ChangeAnimation("Barbaross","ANI_EV_UDEGUMI", -1 , 1 )
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Barbaross",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Barbaross",SUBMOT_EXT1,ANI_E_LOOKR,1)
+	Look("Barbaross" , -14 ,  0)
+	SetChrWork("Barbaross", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	//ドア隠す
+//	MapHide("door_01" , 0)
+//	MapHide("door_08" , 0)
+//	MapHide("door_12" , 0)
+	DoorOpen("door_01",1,0,1)
+	DoorOpen("door_02",1,0,1)
+
+	SetFlag(SF_CHARANORECVSHADOW,1)	//キャラ影受けない
+
+	SoundEfx( SEFX_EV_DEFAULT, 15 )
+
+	//カメラ設定
+	MoveCameraAt( 0 , -0.400f , 0.392f , 1.311f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.170f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 10.139f , 0 )	// 基本仰角
+	RotateCamera( 0 , 270.916f , 0 )				// 角度
+	ChangeCameraPers( 0 , 51.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 1.000, 20.000 ,0.000 ,0.150 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//SSAO消す
+	SetSSAOParam(24, 0 , 6.0f)
+
+	//スキップ許可
+	SetSkipScript("mp0016:EV_M00S010_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+//	FadeIn(FADE_BLACK,FADE_NORMAL)
+//	WaitFade()
+//
+//	Wait(10)
+//
+//	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , -0.501f , 1.523f , 1.311f  , 85 )	// 注視点
+////	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.170f ,  85 )				// 基本距離
+////	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 10.139f ,  85 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 285.369f ,  85 )				// 角度
+////	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+//
+////終点カメラ
+////	MoveCameraAt( 0 , -0.501f , 1.523f , 1.311f , 0 )	// 注視点
+////	ChangeCameraDistance( 0 , 1.170f , 0 )		// 基本距離
+////	ChangeCameraElevation( 0 , 10.139f , 0 )	// 基本仰角
+////	RotateCamera( 0 , 285.369f , 0 )				// 角度
+////	ChangeCameraPers( 0 , 51.000f , 0 )			// 視野角
+////	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+////	RollCamera( 0 , 2.5f , 0 )				// ロール回転
+//
+//	WaitThread(1001)
+//	WaitThread(1004)
+//
+////船長室に入るとイベント開始。
+//
+//
+//	CrossFade(FADE_NORMAL)
+	
+	MoveCameraAt( 0 , 0.320f , -1.502f , 1.435f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.786f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 2.272f , 0 )	// 基本仰角
+	RotateCamera( 0 , 357.876f , 0 )				// 角度
+	ChangeCameraPers( 0 , 44.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ExecuteCmd( 1, MoveTo, "ADOL", -0.465f , -1.766f , 0.00f, 0.1f, 0.17f )
+
+	Wait(15)
+	
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 0.366f , 0.216f , 1.435f   , 110 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 3.686f ,  110 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 2.272f ,  110 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 350.826f ,  110 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+//終点カメラ
+//	MoveCameraAt( 0 , 0.366f , 0.216f , 1.435f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.686f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 2.272f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 350.826f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 44.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 2.5f , 0 )				// ロール回転
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	WaitThread(1)
+
+	Wait(10)
+
+//バルバロスが外を眺めている状態から
+//　　「！」エモーション。
+	EmotionEx("Barbaross", 0.02f,EMO_PA,0,5,1,1,1.8f )
+
+	Wait(50)
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1004)
+
+	CrossFade(FADE_FAST)
+
+	ChangeAnimation( "Barbaross" , "ANI_EV_UDEGUMI_E", -1 , 1 )
+	LookReset("Barbaross")
+
+	MoveCameraAt( 0 , 1.361f , 2.916f , 1.757f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.670f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -0.212f , 0 )	// 基本仰角
+	RotateCamera( 0 , 86.841f , 0 )				// 角度
+	ChangeCameraPers( 0 , 37.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE ,1.379f , 3.257f , 1.757f  , 80 )	// 注視点
+//	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.960f ,  160 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 351.469f ,  110 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 285.369f ,  110 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+	//MoveCameraAt( 0 , 1.379f , 3.257f , 1.757f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.670f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -0.212f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 86.841f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 37.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 7.8f , 0 )				// ロール回転
+
+		//アドルのほうへ振り向く。
+
+	WaitAnimation2( "Barbaross" , -1, 1, "ANI_EV_UDEGUMI_E",  0)
+
+	Turn("Barbaross",-55.58f,8.0f)
+	Look("Barbaross", 22 , 0)
+	ChangeSubAnimation("Barbaross",SUBMOT_EXT1,ANI_E_LOOKR_S,1)
+
+	FadeBGM(60,15)
+
+	Wait(15)
+	
+
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+	TalkMes("Barbaross","#3741V#000e#080mおお、アドルだったか。",
+	"よく来てくれたな。","")
+	WaitPrompt()
+
+	ChangeAnimation( "Barbaross" , "ANI_EV_TEBURI", -1 , 1 )
+
+	TalkMes("Barbaross","#3742V#011e#080mまずは掛けたまえ。" , "" , "" )
+	WaitPrompt()
+	WaitCloseWindow()
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	SetChrPos("ADOL",0.48f,-0.46f,0.00f)
+	Turn("ADOL",-176.28f,360.0f)
+	
+	SetChrPos("Barbaross",0.86f,2.30f,0.00f)
+	Turn("Barbaross",50.14f,360.0f)
+	ChangeSubAnimation("Barbaross",SUBMOT_EXT1,ANI_E_LOOKL,1)
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_CLOSE,1)
+
+	Look("Barbaross", -27 , -10)
+
+	ChangeAnimation( "ADOL" , "ANI_EV_SIT_C_S", -1 , 1 )
+	Look("ADOL", 0 , 7)
+
+//	MoveCameraAt( 0 , -0.695f , -0.534f , 1.065f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 1.960f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 11.430f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 28.853f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 2.5f , 0 )				// ロール回転
+
+	MoveCameraAt( 0 , 0.534f , 0.143f , 1.065f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.700f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 11.430f , 0 )	// 基本仰角
+	RotateCamera( 0 , 28.853f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 2.5f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(20)
+
+//	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 0.534f , 0.143f , 1.065f  , 70 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.960f  ,  50 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 4.892f ,  95 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 206.734f ,  95 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 95 )				// ロール回転
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終点カメラ
+//	MoveCameraAt( 0 , 0.534f , 0.143f , 1.065f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 1.960f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 11.430f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 28.853f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 2.5f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	WaitThread(1002)
+	Wait(15)
+
+	CrossFade(FADE_NORMAL)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+
+	MoveCameraAt( 0 , 0.974f , 1.174f , 1.015f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.890f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.656f , 0 )	// 基本仰角
+	RotateCamera( 0 , 349.266f , 0 )				// 角度
+	ChangeCameraPers( 0 , 32.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 2.5f , 0 )				// ロール回転
+
+
+	//ドアを閉じる
+	DoorClose("door_01",1,0)
+
+//	Wait(FADE_FAST)
+//
+//	Wait(10)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 0.978f , 2.052f , 1.660f , 140 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 2.050f ,  140 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -5.339f  ,  140 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 290.669f ,  140 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+//	MoveCameraAt( 0 , 0.978f , 2.052f , 1.660f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 2.050f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -5.339f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 290.669f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 32.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 2.5f , 0 )				// ロール回転
+
+
+	Wait(80)
+
+	VisualName("visual/chrname/cn_c100.itp", VN_NAMEVOICE, VN_CHRNAME_RB_X, VN_CHRNAME_RB_Y , VN_PCNAME_TIME)		//バルバロス
+
+	Wait(60)
+
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 0.924f , 2.202f , 1.660f , 250 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.910f ,  250 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -5.339f  ,  250 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 336.226f ,  250 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+	//MoveCameraAt( 0 , 0.924f , 2.202f , 1.660f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.910f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -5.339f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 336.226f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 32.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 2.5f , 0 )				// ロール回転
+
+	//時限式選択肢
+	//◆SE無効化コマンド置換用
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuAdd( 1 , "" )
+	MenuOpen( TF_MENU_SELECT , 0 ,0 , 0 , 0 , 0 , 0 )
+	WaitMenu(150) //ウェイトしたい数値
+	MenuClose(0,0)
+
+	if(FLAG[TF_MENU_SELECT] == 1 )
+	{
+		CrossFade(FADE_FAST)
+		VisualNameEnd()
+
+		StopThread(1001)
+		StopThread(1002)
+		StopThread(1003)
+		StopThread(1004)
+		StopThread(1005)
+		ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_WAIT,1)
+
+		MoveCameraAt( 0 , 0.924f , 2.202f , 1.660f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 1.910f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , -5.339f , 0 )	// 基本仰角
+		RotateCamera( 0 , 336.226f , 0 )				// 角度
+		ChangeCameraPers( 0 , 32.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 2.5f , 0 )				// ロール回転
+
+		Wait(FADE_FAST)
+	}
+	else
+	{
+		Wait(30)
+	}
+
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+	Wait(10)
+
+	TalkMes("Barbaross","#3743V#000e#080mさて、君は確か",
+	"冒険家ということだったな。","")
+	WaitPrompt()
+
+	ChangeAnimation( "Barbaross" , "ANI_EV_TEBURI", -1 , 1 )
+
+	TalkMes("Barbaross","#3744V#000e#080mならば《セイレン島》を知っているか？" , "" , "")
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	CrossFade(FADE_CROSS)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+
+	MoveCameraAt( 0 , 1.212f , 1.615f , 1.462f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.090f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.843f , 0 )	// 基本仰角
+	RotateCamera( 0 , 334.886f , 0 )				// 角度
+	ChangeCameraPers( 0 , 27.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 4.3f , 0 )				// ロール回転
+
+	Wait(FADE_CROSS)
+	Wait(10)
+
+//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"初めて聞く名です……")
+	MenuAdd(2,"聞いたことがあります")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		PlayVoice(SVO_ADL_NO_2 ,"ADOL" , 100)	//いえ
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		PlayVoice(SVO_ADL_YES_4 ,"ADOL" ,100)	//ええ
+	}
+
+//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		HeadNo( "ADOL", 1 , 35 )
+		Wait(30)
+		//	⇒初めて聞く名です……
+
+		
+		SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+		Wait(10)
+
+		LookReset("Barbaross")
+		ChangeAnimation( "Barbaross" , "ANI_EV_SIAN_S", -1 , 1 )
+
+		TalkMes("Barbaross",
+		"#3745V#011e#000mそうか……",
+		"このゲーテ海は多島海と呼ばれている。","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		HeadYes( "ADOL", 1 , 25 )
+		Wait(30)
+		//	⇒聞いたことがあります
+		
+		SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+		Wait(10)
+	
+		ChangeAnimation( "Barbaross" , "ANI_EV_SIAN_S", -1 , 1 )
+		TalkMes("Barbaross",
+		"#3746V#011e#080mほう、さすがだな……",
+		"このゲーテ海は多島海と呼ばれている。","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+//─────────────────────────
+
+	Wait(10)
+
+	CrossFade(FADE_CROSS)
+
+
+	MoveCameraAt( 0 , -0.109f , 1.429f , 0.891f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.940f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 39.605f , 0 )	// 基本仰角
+	RotateCamera( 0 , 118.349f , 0 )				// 角度
+	ChangeCameraPers( 0 , 27.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 4.3f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 3.400 ,1.000 ,0.600 ,1.000)
+
+	Wait(FADE_CROSS)
+
+	Wait(10)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 0.269f , 0.164f , 0.891f , 300 )	// 注視点
+//	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 2.050f ,  130 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -5.339f  ,  130 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 290.669f ,  130 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+//終点カメラ
+//	MoveCameraAt( 0 , 0.269f , 0.164f , 0.891f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.940f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 39.605f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 118.349f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 27.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 4.3f , 0 )				// ロール回転
+
+
+	TalkMes("Barbaross",
+	"#3747V#000e#080m無数の島と複雑な海岸線によって、",
+	"難所としても有名な海域なのだ。","")
+	WaitPrompt()
+
+	ChangeAnimation( "Barbaross" , "ANI_EV_SIAN_E", -1 , 1 )
+
+	TalkMes("Barbaross",
+	"#3748V#000e#080mだが最も恐れられているのは、",
+	"近づく船がことごとく謎の沈没を遂げる島──",
+	"")
+	WaitPrompt()
+
+	TalkMes("Barbaross",
+	"#3749V#000e#080mそれが《セイレン島》だ。",
+		"セイレン2行目","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+	
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"謎の沈没？")
+	MenuAdd(2,"どの辺りにあるんですか？")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+//	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+//	Wait(5)
+	ChangeAnimation( "ADOL" , "ANI_EV_SC_TEBURI_L", -1 , 1 )
+
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		PlayVoice(SVO_ADL_TNK_1 ,"ADOL" , 100)	//ふむ…（思案）
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		PlayVoice(SVO_ADL_RES_2 ,"ADOL" ,100)	//それって…（質問に対して）
+	}
+
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_SC_TEBURI_L",  0)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(20)
+
+	CrossFade(FADE_CROSS)
+	StopThread(1001)
+
+	MoveCameraAt( 0 , -0.028f , 2.238f , 1.635f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.880f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.803f , 0 )	// 基本仰角
+	RotateCamera( 0 , 24.420f , 0 )				// 角度
+	ChangeCameraPers( 0 , 27.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 4.3f , 0 )				// ロール回転
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 3.500 ,2.000 ,0.100 ,0.500)
+	SetDoFFocus(0, 0, 3.5)
+
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 0.354f , 2.412f , 1.635f , 550 )	// 注視点
+//	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 2.050f ,  130 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -5.339f  ,  130 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 290.669f ,  130 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+//	MoveCameraAt( 0 , 0.354f , 2.412f , 1.635f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.880f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -3.803f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 24.420f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 27.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 4.3f , 0 )				// ロール回転
+
+	Wait(10)
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+	Wait(10)
+
+//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		//	⇒謎の沈没？
+		HeadYes( "Barbaross", 1 , 25 )
+
+		ChangeAnimation( "Barbaross" , "ANI_EV_TEBURI", -1 , 1 )
+		
+		TalkMes("Barbaross",
+		"#3750V#011e#000mうむ、確かに海流が複雑な場所だが",
+		"船が沈む明確な理由は#012e分からんのだ。","")
+		WaitPrompt()
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		//	⇒どの辺りにあるんですか？
+		ChangeAnimation( "Barbaross" , "ANI_EV_TEBURI", -1 , 1 )
+
+		TalkMes("Barbaross",
+		"#3751V#091e#080mフフ、これから本船が向かう海域だ。",
+		"海域2行目","")
+		WaitPrompt()
+		
+		TalkMes("Barbaross",
+		"#3752V#092e#080m……とは言え、島から","安全な距離を取って航行するがな。","")
+		WaitPrompt()
+	}
+	//─────────────────────────
+
+	WaitAnimation2( "Barbaross" , -1, 1, "ANI_EV_TEBURI",  0)
+	ChangeAnimation( "Barbaross" , "ANI_EV_UDEGUMI_S", -1 , 1 )
+
+	TalkMes("Barbaross",
+		"#3753V#000e#000m五年ほど前にもロムンの",
+		"調査船が島の近海を訪れたのだが……","")
+	WaitPrompt()
+	
+	TalkMes("Barbaross",
+		"#3754V#011e#000m岩礁もない凪いだ海に",
+		"突如引き込まれたと聞いている。","")
+	WaitPrompt()
+	
+	TalkMes("Barbaross",
+		"#3755V#000e#000m“セイレン”とはグリーク神話の",
+		"船を沈める魔物どもの名だ。","")
+	WaitPrompt()
+
+	HeadNo("Barbaross" , 1, 45)
+	
+	TalkMes("Barbaross",
+		"#3756V#011e#000m島を名づけた海賊に言わせれば、",
+		"永遠に呪われた地というわけだ。","")
+	WaitPrompt()
+	WaitCloseWindow()
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	CrossFade(FADE_FAST)
+	StopThread(1001)
+
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+	ChangeAnimation( "ADOL" , "ANI_EV_SC_SIAN_S", -1 , 1 )
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_WAIT,1)
+
+	MoveCameraAt( 0 , 1.208f , -0.751f , 1.040f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.450f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.966f , 0 )	// 基本仰角
+	RotateCamera( 0 , 224.843f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 3.2f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 1.000, 1.600 ,2.000 ,0.550 ,0.500)
+	SetDoFFocus(0, 0, 0)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE ,  1.208f , -0.751f , 1.189f , 90 )	// 注視点
+//	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 2.050f ,  130 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -5.339f  ,  130 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 290.669f ,  130 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+//	MoveCameraAt( 0 , 1.208f , -0.751f , 1.189f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 2.450f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 1.966f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 224.843f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 3.2f , 0 )				// ロール回転
+	Wait(FADE_FAST)
+	Wait(15)
+
+	EmotionEx("ADOL", 0.00f,EMO_3DOT,0,5,1,1,0.9f )
+
+
+	WaitThread(1001)
+
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+	
+//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"どんな島なんですか？")
+	MenuAdd(2,"上陸する方法はありますか？")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+//	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+//	Wait(10)
+
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		PlayVoice(SVO_ADL_RES_1 ,"ADOL" , 100)	//それは…（真剣な受け答え）
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		PlayVoice(SVO_ADL_RES_4 ,"ADOL" ,100)	//もしかして…（確信を持てない選択肢）
+	}
+
+	ChangeAnimation( "ADOL" , "ANI_EV_SC_SIAN_E", -1 , 1 )
+	Wait(35)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+
+//	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+//	Wait(10)
+
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+	Wait(10)
+	//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		//	⇒どんな島なんですか？
+		TalkMes("Barbaross",
+		"#3757V#000e#000mアドル、君の質問に",
+		"答えられる者はこの世にいない。","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		//	⇒上陸する方法はありますか？
+		TalkMes("Barbaross",
+		"#3758V#011e#000mふむ、そう来たか……","","")
+		WaitPrompt()
+		
+		TalkMes("Barbaross",
+		"#3759V#012e#000mだが、残念なことに","答えられる者はこの世にいない。","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+//─────────────────────────
+
+	CrossFade(FADE_FAST)
+//	SetChrPos("Barbaross",0.27f,3.05f,0.00f)
+//	Turn("Barbaross",175.75f,360.0f)
+	ChangeAnimation( "Barbaross" , "ANI_WAIT", -1 , 1 )
+	LookReset("Barbaross")
+
+	MoveCameraAt( 0 , 0.576f , 1.839f , 1.337f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.250f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -6.273f , 0 )	// 基本仰角
+	RotateCamera( 0 , 346.244f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 3.2f , 0 )				// ロール回転
+
+	TurnTo("Barbaross",0.27f,3.05f,0.00f, 5.0f)
+
+	Wait(10)
+
+	ExecuteCmd( 2, MoveTo, "Barbaross" , 0.27f,3.05f,0.00f , 0.1f , 0.15f )
+
+	Wait(10)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , -0.044f , 2.488f , 1.585f , 130 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.920f ,  130 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -6.273f  ,  130 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 346.244f ,  130 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+//終点カメラ
+//	MoveCameraAt( 0 , -0.044f , 2.488f , 1.585f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 1.920f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -6.273f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 346.244f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 3.2f , 0 )				// ロール回転
+
+
+	WaitThread(2)
+	Turn("Barbaross",175.75f,8.0f)
+
+	Wait(10)
+
+	ChangeAnimation( "Barbaross" , "ANI_EV_UDEGUMI_S", -1 , 1 )
+
+	TalkMes("Barbaross",
+		"#3760V#000l#011e#000m何故ならば上陸して戻った者が",
+		"過去に一人としていないからだ。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	CrossFade(FADE_CROSS)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+
+	SetChrPos("Barbaross",0.50f,3.09f,0.00f)
+	Turn("Barbaross",175.75f,360.0f)
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_CLOSE,1)
+
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE,1)
+
+	MoveCameraAt( 0 , 0.478f , 2.540f , 1.758f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.050f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.160f , 0 )	// 基本仰角
+	RotateCamera( 0 , 157.709f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.900f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 3.2f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 7.000 ,2.000 ,0.700 ,0.300)
+	SetDoFFocus(0, 0, 0)
+	Wait(FADE_CROSS)
+
+	Wait(15)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 0.478f , 2.540f , 1.610f  , 170 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 2.210f ,  170 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 3.160f  ,  170 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 157.709f ,  170 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+//終点カメラ
+//	MoveCameraAt( 0 , 0.478f , 2.540f , 1.610f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 2.210f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 3.160f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 157.709f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 40.900f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 3.2f , 0 )				// ロール回転
+
+	HeadNo("Barbaross" , 1 , 35)
+
+	TalkMes("Barbaross",
+		"#3761V#012e#000mゲーテ海の船乗りですら、",
+		"どんな場所なのか誰も知らないのだ。","")
+	WaitPrompt()
+	WaitCloseWindow()
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	Wait(10)
+
+	EmotionEx("ADOL", 0.00f,EMO_3DOT,0,5,1,1,1.8f )
+	Wait(55)
+
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"残念です……")
+	MenuAdd(2,"せめて見てみたいです")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	
+
+	PlayVoice(Y8V_0175,"ADOL",100)	//ふむ…（思案）
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SAD_CLOSE_S,1)
+	HeadNo("ADOL" ,1 ,35 )
+	Wait(45)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SAD_CLOSE_E,1)
+	Wait(10)
+
+	Look("Barbaross" , 25 , 0)
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+	Wait(10)
+
+//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		//	⇒残念です……
+
+		TalkMes("Barbaross",
+		"#3762V#010l#000e#080m#0L………………………………","","")
+		WaitPrompt()
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		//	⇒せめて見てみたいです
+		TalkMes("Barbaross",
+		"#3763V#010l#000e#080m島に近づくわけにはいかないが、",
+		"通過する時には教えよう。","")
+		WaitPrompt()
+	}
+//─────────────────────────
+
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+	ChangeAnimation( "Barbaross" , "ANI_EV_UDEGUMI_E", -1 , 1 )
+	
+	TalkMes("Barbaross",
+		"#3764V#080m……どうやら私は君の冒険家魂に",
+		"火をつけてしまったようだな。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("Barbaross")
+//	TurnToChr("Barbaross", "ADOL" , 8.0f )
+	Turn("Barbaross",-17.67f,8.0f)
+
+	LookChr("Barbarss" , "ADOL")
+
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SAD_E,1)
+
+	TalkMes("Barbaross","#3765V#000e#080mこの話は新米の水夫に、",
+		"必ず聞かせる類のものでな……","")
+	WaitPrompt()
+
+	ChangeAnimation( "Barbaross" , "ANI_EV_RYOTEBURI", -1 , 1 )
+
+	TalkMes("Barbaross","#3766V#000e#080mカシューなどは震え上がって、",
+		"船室から出てこなくなってしまった。","")
+	WaitPrompt()
+
+	WaitAnimation2( "Barbaross" , -1, 1, "ANI_EV_RYOTEBURI",  0)
+	ChangeAnimation( "Barbaross" , "ANI_EV_UDEGUMI_S", -1 , 1 )
+	ChangeSubAnimation("Barbaross",SUBMOT_EXT1,ANI_E_LOOKR_E,1)
+
+	TalkMes("Barbaross","#3767V#000e#080m君はなかなか見込みある若者のようだ。",
+		"見込み2行目","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	Wait(10)
+
+	CrossFade(FADE_CROSS)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+
+	MoveCameraAt( 0 , 0.659f , 0.646f , 1.188f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.420f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -12.325f , 0 )	// 基本仰角
+	RotateCamera( 0 , 334.712f , 0 )				// 角度
+	ChangeCameraPers( 0 , 27.900f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 3.2f , 0 )				// ロール回転
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 0.659f , 0.646f , 1.461f , 130 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 3.420f ,  130 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -12.325f ,  130 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 334.712f ,  130 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 130 )				// ロール回転
+
+	//MoveCameraAt( 0 , 0.659f , 0.646f , 1.461f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.420f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -12.325f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 334.712f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 27.900f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 3.2f , 0 )				// ロール回転
+	
+	Wait(FADE_CROSS)
+	Wait(10)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"ありがとうございます")
+	MenuAdd(2,"そんなことありません")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		PlayVoice(Y8V_0188,"ADOL",100)	//ええと…（相手に声をかける）
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		PlayVoice(SVO_ADL_NO_2 ,"ADOL", 100)	//いえ…（目上に対する否定）
+	}
+	
+//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		//	⇒ありがとうございます
+
+		ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+		HeadYes("ADOL" ,1 ,25 )
+		Wait(15)
+		ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+		Wait(20)
+	
+		SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+		Wait(10)
+
+		ChangeAnimation( "Barbaross" , "ANI_EV_UDEGUMI_E", -1 , 1 )
+		TalkMes("Barbaross",
+		"#3768V#011e#080mフフ……","","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		//	⇒そんなことありません
+		ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+		HeadNo("ADOL" ,1 ,35 )
+		Wait(45)
+		ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+
+		SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+		Wait(10)
+	
+		ChangeAnimation( "Barbaross" , "ANI_EV_UDEGUMI_E", -1 , 1 )
+		TalkMes("Barbaross",
+		"#3769V#011e#080m……その謙虚さも気に入ったぞ。","","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//─────────────────────────
+
+	Wait(20)
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp0016:EV_M00S010_ED")
+}
+
+function "EV_M00S010_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+	RestoreEventState()
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_Barbaross")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	DoorClose("door_01",1,0)	//ドア閉じる
+
+	// 通常
+	if ( !FLAG[SF_GALLERY_EVENT] )
+	{
+		EventCue("mp0016:EV_M00S011")
+		ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	}
+	// イベントギャラリー中　◆仮テスト
+	else
+	{
+		FadeBGM(100,15)
+		SoundEfx( SEFX_DEFAULT, 15 )
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+		GalleryEvEnd(0)		// イベントギャラリー終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	}
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+function "EV_M00S011"		//バルバロス登場２
+{
+
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+//	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	SaveEventState()
+	SaveCamera()
+
+	//環境初期化＆不要なものを隠す
+	ResetMotion( "ALL" , 1 )  
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+	
+	//キャラクター初期化
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL",0.27f,-0.55f,0.00f)
+	Turn("ADOL",125.58f,360.0f)
+	ChangeAnimation("ADOL","ANI_EV_SIT_C", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	LookChr("ADOL" , "Barbaross")
+
+	SetChrInfoFlag( "Barbaross" , INFOFLAG_NOCHRATARI )
+	SetChrInfoFlag( "Barbaross" , INFOFLAG_NOMAPATARICHECK )
+	SetChrPos("Barbaross",-3.43f,1.23f,0.00f)
+	TurnTo("Barbaross",-2.40f,-0.19f,0.00f,360.0f)
+	ChangeAnimation( "Barbaross" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Barbaross",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Barbaross",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("Barbaross" , "ADOL")
+	SetChrWork("Barbaross", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetFlag(SF_CHARANORECVSHADOW,1)	//キャラ影受けない
+
+	//カメラ設定
+	MoveCameraAt( 0 , 0.265f , -1.254f , 0.544f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.650f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 17.386f , 0 )	// 基本仰角
+	RotateCamera( 0 , 47.652f , 0 )				// 角度
+	ChangeCameraPers( 0 , 30.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 30.000 ,0.000 ,0.150 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//SSAO戻す
+	SetSSAOParam(24, 1.0f , 6.0f)
+
+	SoundEfx( SEFX_EV_DEFAULT, 15 )
+	FadeBGM(70,10)
+
+	//スキップ許可
+	SetSkipScript("mp0016:EV_M00S011_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	Wait(20)
+
+	ExecuteCmd( 2, MoveTo, "Barbaross" , -2.40f,-0.19f,0.00f , 0.1f , 0.14f )
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	Wait(10)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 0.265f , -1.254f , 1.288f, 100 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 2.390f ,  100 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE ,-0.802f ,  100 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 47.652f  ,  100 )				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 4000 )				// ロール回転
+
+	//終点カメラ
+	//MoveCameraAt( 0 , 0.265f , -1.254f , 1.288f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 2.390f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -0.802f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 47.652f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 30.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	WaitThread(2)
+	Wait(12)
+	Turn("Barbaross",-65.46f,5.0f)
+	Wait(15)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	ChangeAnimation( "Barbaross" , "ANI_EV_TEBURI", -1 , 1 )
+
+	TalkPopup("Barbaross",0,0,0,0,0)
+	{
+		"#3770V#000e#000mよし、前置きが長くなったが、"
+		"君に頼みたいことがあるのだ。\p"
+		"#3771Vこの船は乗客を迎え入れるごとに"
+		"ささやかな歓迎会を催している。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	HeadYes("barbaross" , 1 , 30 )
+
+	TalkPopup("Barbaross",0,0,0,0,0)
+	{
+		"#3772Vアドルにはこの歓迎会の"
+		"警備に当たってほしいのだ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+
+	EmotionEx("ADOL", 0.00f,EMO_Q,0,5,1,1,0.9f )
+	Wait(45)
+	
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"僕がですか？")
+	MenuAdd(2,"何か心配事でも？")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	//SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+
+		if (FLAG[TF_MENU_SELECT] == 1)
+		{
+			PlayVoice(SVO_ADL_CALL_4 ,"ADOL" , 100)	//ええと…（相手に声をかける）
+		}
+		else if (FLAG[TF_MENU_SELECT] == 2)
+		{
+			PlayVoice(SVO_ADL_QUE_1 ,"ADOL" ,100)	//え…？（疑問）
+		}
+
+		ChangeAnimation( "ADOL" , "ANI_EV_SC_TEBURI_L", -1 , 1 )
+		Wait(40)
+		
+		ChangeAnimation( "Barbaross" , "ANI_EV_SIAN_S", -1 , 1 )
+
+	//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		//	⇒僕がですか？
+
+
+		TalkPopup("Barbaross",0,0,0,0,0)
+		{
+			"#3773V#011e#000mああ、これでも職業柄、"
+			"色々な人間を見てきたつもりだ。\p"
+			"#012e#3774V君は気概も申し分ないし、"
+			"腕が立つことは見れば分かる。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		//	⇒何か心配事でも？
+
+		TalkPopup("Barbaross",0,0,0,0,0)
+		{
+			"#3775V#000e#000m何、こう見えて用心深いほうでな。\p"
+			"#3776V乗客の安全を預かるからには"
+			"万全を期したいというだけだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//─────────────────────────
+
+	ChangeAnimation( "Barbaross" , "ANI_EV_SIAN_E", -1 , 1 )
+
+	TalkPopup("Barbaross",0,0,0,0,0)
+	{
+		"#3777V#000e#000m具体的な段取りは後で"
+		"カシューにでも相談するといい。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	WaitAnimation2( "Barbaross" , -1, 1, "ANI_EV_SIAN_E",  0)
+	ChangeAnimation( "Barbaross" , "ANI_EV_TEBURI", -1 , 1 )
+
+	TalkPopup("Barbaross",0,0,0,0,0)
+	{
+		"#3778Vそれでは頼んだぞ、アドル。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	HeadYes( "ADOL", 1 , 25 )
+	Wait(30)
+
+	ChangeAnimation( "ADOL" , "ANI_EV_SIT_C_E", -1 , 1 )
+
+	Wait(10)
+
+	//　　画面フェードアウト
+
+	StopBGM(120)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp0016:EV_M00S011_ED")
+}
+
+function "EV_M00S011_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+	RestoreEventState()
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_Barbaross")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	SetFlag(SF_CHARANORECVSHADOW,0)	//キャラ影受ける
+
+	//フラグ処理
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+	SetFlag(GF_GALL_EV_PL_02,1)		// M00S010:バルバロス登場
+
+	//マーカー消し
+	DelMapMarker( SMI_EVENTPT_MAIN,PAGE_MP0011, MARKER_EV_M00S010, 0, 0)
+
+	SoundEfx( SEFX_DEFAULT, 15 )
+
+	LoadArg("map/mp0018/mp0018.arg")
+	EventCue("mp0018:EV_M00S020")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+//終了処理ここまで----------------------------------------------------
+}
+
+function "EV_M00S040"		//バルバロス船長と話す
+{
+//開始処理ここから----------------------------------------------------
+	
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	SaveEventState()
+	SaveCamera()
+
+	//環境初期化＆不要なものを隠す
+	ClearDebris()
+	ResetMotion( "ALL" , 1 )  
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	CallFunc("system:event_Shake_set")	// イベント用の揺れに設定する
+
+	//キャラクター初期化
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL",0f,-2.935f,0.00f)
+	Turn("ADOL",-180.00f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", 0 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	LookReset("ADOL")
+
+	SetChrInfoFlag( "Barbaross" , INFOFLAG_NOCHRATARI )
+	ResetChrInfoFlag( "Barbaross" , INFOFLAG_INVISIBLE )
+	SetChrPos("Barbaross",-0.00f,2.20f,0.00f)
+	Turn("Barbaross",0.0f,360.0f)
+	ChangeAnimation( "Barbaross" , "ANI_EV_SIAN", -1 , 1 )
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Barbaross",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("Barbaross", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	LookReset("Barbaross")
+
+	SetFlag(SF_CHARANORECVSHADOW,1)	//キャラ影受けない
+
+	//BGM設定
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt( 0 , 0.519f , 0.994f , 1.421f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.244f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -8.633f , 0 )	// 基本仰角
+	RotateCamera( 0 , 44.197f , 0 )				// 角度
+	ChangeCameraPers( 0 , 30.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 6.000 ,2.000 ,0.100 ,1.000)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp0016:EV_M00S040_ED")
+	
+	//開始処理ここまで-----------------------------------------------
+	
+	//　　船長室に入るとイベント開始。
+	//　　海図を見つめていたバルバロス船長が
+	//　　ふとアドルの気配に気づいて顔を上げる。
+	
+	// カット1 ----------------------------------------------------------------------------------------
+	
+	// 位置調整・表情・モーション
+	ChangeAnimation( "Barbaross", "ANI_EV_UDEGUMI", -1, 1 )	// 腕組
+	LookChr("ADOL", "Barbaross")
+	Look("Barbaross", 0.0f, -20.0f)	// うつむく
+	Wait(10)
+	
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 0.519f , 0.994f , 1.421f , 85 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.524f , 85 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -8.633f , 85 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 44.197f , 85 )
+
+	//MoveCameraAt( 0 , 0.519f , 0.994f , 1.421f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 2.524f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -8.633f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 44.197f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 30.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+	Wait(20)
+	
+	EmotionEx("Barbaross", 0.05f, EMO_PA, 0, 5, 1, 1, 1.2f )	// 「PA」
+	Look("Barbaross", 0.0f, 0.0f)	// うつむく戻す
+	Wait(35)
+
+	
+	// カット2 -----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_FAST)
+	// カメラ待ち
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	
+
+	// カメラ
+	MoveCameraAt( 0 , -0.001f , 1.050f , 1.361f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.972f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 7.149f , 0 )	// 基本仰角
+	RotateCamera( 0 , 154.805f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 30.000 ,2.000 ,0.500 ,1.000)
+
+
+	// カメラ移動（垂直）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -0.001f , 1.050f , 1.541f , 70 )
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "ADOL", -0.33f, -0.84f, 0.00f, 0.1f, 0.16f)
+	
+	// フェード待ち
+	Wait(FADE_FAST)
+
+	ChangeAnimation( "Barbaross", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+	LookChr("Barbaross", "ADOL")
+	
+	// バルバロス
+	TalkPopup("Barbaross", 0, 1, 0, 0, 0) {
+		"#000e#000mおお、来たか……"
+		"仕事中にすまないな。\p"
+		"何、大した用事ではないのだが、"
+		"もうすぐ例の海域を通過するのでな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	Wait(10)
+	
+	// 移動待ち
+	WaitThread(1)
+	
+	// カメラ待ち（垂直）
+	WaitThread(1000)
+	
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"もしかして……")
+	MenuAdd(2,"何のことですか？")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	// 手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI", -1, 1 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(20)
+	
+//	ChangeAnimation( "Barbaross", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+
+	//─────────────────────────
+	//	⇒もしかして……
+	if (FLAG[TF_MENU_SELECT] == 1 ) {
+
+		// バルバロス
+		TalkPopup("Barbaross", 0, 1, 0, 0, 0) {
+			"#000e#000mフフ、そうだ……"
+			"先ほど話したセイレン島だ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+	}
+	
+	//	⇒何のことですか？
+	if (FLAG[TF_MENU_SELECT] == 2 ) {
+
+		// バルバロス
+		TalkPopup("Barbaross", 0, 1, 0, 0, 0) {
+			"#000e#000mふむ、忘れてしまったのか？"
+			"先ほど話したセイレン島のことだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+	}
+
+	//─────────────────────────
+	
+	// カット3 -----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	
+	// カメラ
+	MoveCameraAt( 0 , -0.277f , 0.405f , 1.581f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.860f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.914f , 0 )	// 基本仰角
+	RotateCamera( 0 , 22.538f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -0.277f , 0.405f , 1.581f , 300 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.860f , 300 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -3.487f , 300 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 11.079f , 300 )
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+	
+	// バルバロス
+	TalkPopup("Barbaross", 0, 2 ,0 ,0 ,0) {
+		"#000e#080m今日は天気もいいから、"
+		"島影くらいは見えるはずだ。\p"
+		"#011e#000mセイレン島の面積は"
+		"およそ５００平方クリメライ……\p"
+		"#012e#000m中央には標高２０００メライほどの"
+		"山々が連なっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Barbaross", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	// バルバロス
+	TalkPopup("Barbaross", 0, 2 ,0 ,0 ,0) {
+		"#081e#080mもうすぐ通過するはずだから、"
+		"君に見てもらおうと思ってな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//　　次の瞬間、大きな衝撃がロンバルディア号の船体を襲う。
+	//　　アドルとバルバロスは体のバランスを崩しそうになり、
+	//　　咄嗟に近くの机や柱などに捕まる。
+
+	StopBGM(120)	//
+	SoundEfx( SEFX_EV_DEFAULT, 15 )
+	PlaySE(SE_M00S040_01, 100, 0, 500, 0, 1.0f, 0)	//船が大きく揺れる
+	VibrationPad(2000, 5 )
+
+	CallFunc("system:default_Shake_set")	// デフォルトの揺れにする
+
+	// カメラ移動
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -4.538f , 30 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 18.425f , 30 )		// 角度
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE , 3.4f , 30 )		// ロール回転
+
+	Blur( BLUR_TYPE_AFTERIMAGE ,0.3f , 100)	// 残像
+
+	Wait(10)
+
+	PlaySE(SE_M00S040_02, 60, 0, 500, 0, 1.0f, 0)	//船が大きく揺れる
+
+	EmotionEx("ADOL", 0.05f, EMO_EXQ, 0, 5, 1, 1, 1.2f )	// 「ぎくっ」
+	EmotionEx("Barbaross", 0.05f, EMO_EXQ, 0, 5, 1, 1, 1.2f )	// 「ぎくっ」
+
+	ChangeAnimation( "ADOL", "ANI_EV_SUP_S", -1, 1 )	// 驚く、軽くのけぞる
+	ChangeAnimation( "Barbaross", "ANI_EV_SUP_S", -1, 1 )	// 驚く、軽くのけぞる
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_ANGER_S,1)
+	//ChangeSubAnimation("Barbaross",SUBMOT_MOUTH,ANI_M_WAIT,1)
+
+	// カメラ待ち
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+
+	// カメラ移動
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -3.105f , 35 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 17.852f , 35 )		// 角度
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE , -2.4f , 35)		// ロール回転
+
+	// カメラ待ち
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+
+	// カメラ移動
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE , 2.0f , 30 )		// ロール回転
+
+	// カメラ待ち
+	WaitThread(1004)
+
+	// バルバロス
+	TalkPopup("Barbaross", 0, 2, 0, 0, 0) {
+		"#3783V#041e#000mむぅ！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// フェードアウト
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp0016:EV_M00S040_ED")
+}
+
+function "EV_M00S040_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+	RestoreEventState()
+
+	//モンスターを復帰
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_Barbaross")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	StopBGM(30)	//
+
+	EventCue("mp0016:EV_M00S041")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+function "EV_M00S041"		//バルバロス船長と話す２
+{
+//開始処理ここから----------------------------------------------------
+	
+	SetStopFlag(STOPFLAG_EVENTIMPOSE)
+	ResetStopFlag(STOPFLAG_CINEMA)
+	
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	SaveEventState()
+	SaveCamera()
+
+	CallFunc("system:event_Shake_set")	// イベント用の揺れに設定する
+
+	//環境初期化＆不要なものを隠す
+	ClearDebris()
+	ResetMotion( "ALL" , 1 )  
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラクター初期化
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL", -0.96f, -1.87f, -0.00f)
+	Turn("ADOL", 48.54f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	LookReset("ADOL")
+
+	SetChrInfoFlag( "Barbaross" , INFOFLAG_NOCHRATARI )
+	ResetChrInfoFlag( "Barbaross" , INFOFLAG_INVISIBLE )
+	SetChrPos("Barbaross", -3.23f, 0.74f, -0.00f)
+	Turn("Barbaross", -14.21f, 360.0f)
+	ChangeAnimation( "Barbaross" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Barbaross",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("Barbaross", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	LookReset("Barbaross")
+
+
+	SetFlag(SF_CHARANORECVSHADOW,1)	//キャラ影受けない
+
+	//BGM設定
+	//PlayBGM( BGM_FIELD_101 , XX )
+	SoundEfx( SEFX_EV_DEFAULT, 15 )
+
+	//カメラ設定
+	MoveCameraAt( 0 , -1.690f , -2.045f , 1.293f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.220f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.861f , 0 )	// 基本仰角
+	RotateCamera( 0 , 46.779f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , -4.9f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 20.000 ,0.000 ,0.150 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp0016:EV_M00S041_ED")
+	
+	//開始処理ここまで-----------------------------------------------
+	
+	// カット1 ----------------------------------------------------------------------------------------
+
+	//　　バルバロス船長が伝声管で船員に確認を取る。
+	
+	// カット1 ----------------------------------------------------------------------------------------
+	
+	// 非表示・再表示
+	SetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)	// 非表示
+	
+	// 位置調整・表情・モーション
+	LookTo("Barbaross", -2.012f , -3.502f , 1.473f)	// 伝声管
+	LookChr("ADOL", "Barbaross")
+	
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -2.004f , -3.095f , 1.693f, 100 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.940f , 100 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 8.311f , 100 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 127.852f , 100 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 35.000f , 100 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 15.2f , 100 )		// ロール回転
+	
+	// 移動
+	ExecuteCmd(1, MoveTo, "Barbaross", -2.24f, -2.67f, 0.00f, 0.1f, 0.192f)
+	
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	// カメラ待ち（Aイベント用）
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+
+	// 移動待ち
+	WaitThread(1)
+	
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -2.004f , -3.095f , 1.673f, 240 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.772f , 240 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -9.164f , 240 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 74.281f , 240 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 35.000f , 240 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 10.9f , 240 )		// ロール回転
+	
+	SetStopFlag(STOPFLAG_CINEMA)	// 字幕開始
+	Wait(10)	// 字幕待ち
+	
+	// バルバロス
+	TalkMes("Barbaross","#3784V#030e#000m何事だ？","","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// 船員
+	TalkMes(UNDEF,"#5732Vわ、わかりませんが、",
+		"何かにぶつかったようです！","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Barbaross", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+	ChangeSubAnimation("Barbaross", SUBMOT_EYE, ANI_E_ANGER_CLOSE_S, 1)	// 目
+	Look("Barbaross", -25.0f, -10.0f)	// ←↓
+
+	// バルバロス
+	TalkMes("Barbaross","#3785V#000m馬鹿な、この海域に",
+		"座礁するような場所はないはずだ。","")
+	WaitPrompt()
+
+	ChangeSubAnimation("Barbaross", SUBMOT_EYE, ANI_E_ANGER_CLOSE_E, 1)	// 目
+	LookTo("Barbaross", -2.012f , -3.502f , 1.473f)	// 伝声管
+
+	// バルバロス
+	TalkMes("Barbaross","#3786V#000mすぐに確認を取れ！","","")
+	WaitPrompt()
+
+	ChangeAnimation( "Barbaross", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+
+	// 船員
+	TalkMes(UNDEF,"#5733Vアイアイサー！","","")
+	WaitPrompt()
+	WaitCloseWindow()
+		
+	// アニメ待ち（バルバトス）
+	WaitAnimation2("Barbaross", -1, 1, "ANI_EV_RYOTEKOSI_E", 0)
+
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -1.456f , -2.300f , 1.673f , 180 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.276f , 180 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -2.576f , 180 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 88.604f , 180 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 35.000f , 180 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -5.7f , 180 )		// ロール回転
+	
+	// 非表示・再表示
+	ResetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)	// 再表示
+
+	// バルバロス
+	TalkMes("Barbaross","#3787V#041e#000m#0L……………………………………","","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドルを見やって呟くバルバロス船長
+	ChangeSubAnimation("Barbaross", SUBMOT_EYE, ANI_E_ANGER_CLOSE_E, 1)	// 目
+	LookChr("Barbaross", "ADOL")
+	TurnToChr("Barbaross", "ADOL", 7.0f)
+	Wait(15)
+	
+	ChangeAnimation( "Barbaross", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	// バルバロス
+	TalkMes("Barbaross","#3788V#000m島から距離は取っているはずだが、",
+		"まさかな……","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　不意に外から乗客たちの悲鳴と叫び声が聞こえる。
+	
+	// 女性の声(ディナ)
+	TalkMes(UNDEF,"#4377Vキャーッ！！","","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	EmotionEx("ADOL", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f )	// 「！」
+	EmotionEx("Barbaross", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f )	// 「！」
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_ANGER_S, 1)	// 目
+	ChangeSubAnimation("Barbaross", SUBMOT_EYE, ANI_E_SUP_S, 1)	// 目
+
+	Wait(20)
+
+	// 男の声(エアラン)
+	TalkMes(UNDEF,"#3907Vな、何だァ、あれは！？","","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -0.759f , -2.817f , 1.673f , 180 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 4.628f , 180 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 3.440f , 180 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 165.381f , 180 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 35.000f , 180 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 6.9f , 180 )		// ロール回転
+
+	LookTo("ADOL", 0.088f , -3.964f , 1.773f)	// 船長室の扉
+	LookTo("Barbaross", 0.088f , -3.964f , 1.773f)	// 船長室の扉
+	Turn("ADOL", -22.52f, 5.0f)
+	Turn("Barbaross", -69.68f, 5.0f)
+
+	// バルバロス
+	TalkMes("Barbaross","#3789V#030e#000m……む、何の騒ぎだ？","","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　操作許可。
+
+	// フェードアウト
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp0016:EV_M00S041_ED")
+}
+
+function "EV_M00S041_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+	RestoreEventState()
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_Barbaross")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+
+	SetFlag(SF_CHARANORECVSHADOW,0)	//キャラ影受ける
+
+	//フラグ処理
+	SetFlag( GF_00MP0016_HEAR_SCREAM, 1 )			// 悲鳴が聞こえる
+	//SetFlag( SF_MISSIONNO, MS_00_04 )	//★冒険メモ：外の様子を調べよう。
+
+	//マーカー消し
+	DelMapMarker( SMI_EVENTPT_MAIN,PAGE_MP0011, MARKER_EV_M00S040, 0, 0)
+
+	CallFunc("mp0016:init")
+	
+	//イベント後の再配置位置
+	SetChrPos("LEADER",1.24f,-2.06f,0.00f)
+	Turn("LEADER",40.54f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//BGM設定◆
+
+	PlayBGM( BGM_EVENT_011 , 0 )	//危機
+	SoundEfx( SEFX_DEFAULT, 15 )
+
+	MoveCameraAt( 0 , 1.243f , -2.062f , 1.713f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 20.685f , 0 )	// 基本仰角
+	RotateCamera( 0 , 139.457f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+	
+	ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//	================================================
+//	【クイナとすれ違う】（続き）
+//	================================================
+//===============================================================
+// 序②船長室でクイナのサブイベント（続き）
+function "SubEV_0_02_Kuina_2"
+{
+	//　　船長室にフェードイン。
+	//　　クイナが船長室の長持ち（-4.73f	2.34f	0.00f	-158.40f付近）前に立っている
+
+//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存										
+	SaveEventState()												
+	CallFunc("system:event_chrinfoflag_set")						
+	SaveCamera()
+
+	// イベント用船揺れ
+	CallFunc("system:event_Shake_set")
+	
+	//パーティ状態のリセット
+	CallFunc("system:party_remove")
+	CallFunc("system:party_reset")									
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))						
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -0.26f, -3.65f, 0.00f)
+	Turn("ADOL", 156.32f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+	
+	SetChrWork("Kuina", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Kuina", -4.58f, 2.34f, -0.00f)
+	Turn("Kuina", 175.82f, 360.0f)
+	ChangeAnimation("Kuina", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("Kuina", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("Kuina", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("Kuina", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("Kuina")
+	SetChrInfoFlag("Kuina", INFOFLAG_NOCHRATARI)
+
+	//カメラ設定
+	MoveCameraAt(0, -1.160f, -2.919f, 1.408f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.800f, 0)		// 基本距離
+	ChangeCameraElevation(0, -1.760f, 0)	// 基本仰角
+	RotateCamera(0, 201.012f, 0)				// 角度
+	ChangeCameraPers(0, 50.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	DoorClose("door_02", 1, 0)
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 40.000 ,0.000 ,0.150 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp0016:SubEV_0_02_Kuina_2_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd(1, MoveTo, "ADOL", -1.19f, -1.39f, -0.00f, 0.1f, 0.18f)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -0.919f, -3.677f, 1.408f, 60)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 184.727f, 60)		// 角度
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	WaitThread(1)
+	LookChr("ADOL", "Kuina")
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	
+	Wait(30)
+
+	CrossFade(FADE_CROSS)
+
+	Turn("ADOL", 135.03f, 360.0f)
+
+	MoveCameraAt(0, -3.402f, 1.908f, 0.589f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.800f, 0)		// 基本距離
+	ChangeCameraElevation(0, 14.265f, 0)	// 基本仰角
+	RotateCamera(0, 31.226f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -5.772f, 3.545f, 0.490f, 70)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 51.304f, 70)		// 角度
+
+	WaitThread(1000)
+	WaitThread(1001)
+	//　　クイナ、！エモーションで振り返る。
+	EmotionEx("Kuina", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	Wait(40)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -5.772f, 3.545f, 0.490f, 30)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 44.620f, 30)		// 角度
+	//クイナ振り返る
+	TurnToChr("Kuina", "ADOL", 10.0f)
+	Wait(5)
+	LookChr("Kuina", "ADOL")
+	WaitThread(1000)
+	WaitThread(1001)
+
+	ChangeSubAnimation("Kuina",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+	ChangeAnimation("Kuina", "ANI_EV_SEKI", -1, 1)
+	WaitAnimation2("Kuina", -1, 1, "ANI_EV_SEKI", 0)
+
+	SetName("小柄な少女")
+	TalkPopup("Kuina",0,0,0,0,0)
+	{
+		"#012e#000mコホン……"
+		"あーなんだ、キミか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	ChangeAnimation("Kuina", "ANI_EV_TEBURI", -1, 1)
+	SetName("小柄な少女")
+	TalkPopup("Kuina", 0, 0, 0, 0, 0)
+	{
+		"#000e#000mあれだろう？　最近入った船員の。\p"
+		"キミは知らんだろうがね、"
+		"私はこれでもベテランの船乗りなのだよ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	//　　ぶかぶかの船員服で、わざとらしい演技をするクイナ。
+
+	WaitAnimation2( "Kuina" , -1, 1, "ANI_EV_TEBURI",  0)
+	LookReset("Kuina")
+
+	Turn("Kuina", 161.85f, 8.0f)
+	Wait(10)
+	ChangeAnimation("Kuina", "ANI_EV_TEWATASI_S", -1, 1)
+	WaitAnimation2("Kuina", -1, 1, "ANI_EV_TEWATASI_S", 0)
+
+	EmotionEx("Kuina", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+	Wait(50)
+	ChangeAnimation("Kuina", "ANI_EV_TEWATASI_E", -1, 1)
+	WaitAnimation2("Kuina", -1, 1, "ANI_EV_TEWATASI_E", 0)
+	HeadYes("Kuina", 1, 25)
+	Wait(40)
+
+	//　　歩いて、戸口付近にいるアドルの傍にやってくる。
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE, -3.224f, -0.782f, 1.234f, 100)	// 注視点
+	ExecuteCmd( 1002,ChangeCameraElevation, INTERPOLATE_SPHERE , 4.050f,  100 )				// 基本仰角
+	ExecuteCmd( 1003,RotateCamera, INTERPOLATE_SPHERE , 83.292f ,  100 )				// 角度
+	Wait(10)
+	TurnTo("Kuina",-2.39f,-0.18f,-0.00f,8.0f)
+	ExecuteCmd( 1, MoveTo, "Kuina", -2.39f,-0.18f,-0.00f, 0.1f, 0.185f )
+	WaitThread(1)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	LookChr("Kuina", "ADOL")
+	SetName("小柄な少女")
+	TalkPopup("Kuina",0,0,0,0,0)
+	{
+		"#000e#000mさて、船長に報告でもしてくるかなあ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	ChangeAnimation("Kuina", "ANI_EV_RYOTEKOSI_S", -1, 1)
+	SetName("小柄な少女")
+	TalkPopup("Kuina", 0, 0, 0, 0, 0)
+	{
+		"#020e#080mキミは部屋の掃除でもしておきたまえ。"
+		"はっはっは！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	Wait(10)
+	
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"……わかりました")
+	MenuAdd(2,"ちょっと待ってくれ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	//Wait(20)
+	
+	//────────────────────
+	//	⇒……わかりました
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		HeadYes("ADOL", 1, 25)
+		Wait(20)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(20)
+
+		ChangeAnimation("Kuina", "ANI_EV_RYOTEKOSI_E", -1, 1)
+
+		SetName("小柄な少女")
+		TalkPopup("Kuina",0,0,0,0,0)
+		{
+			"#000e#080mうむうむ、すなおでよろしい。\p"
+			"#020e……じゃあねっ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		SetName("")
+
+		WaitAnimation2( "Kuina" , -1, 1, "ANI_EV_RYOTEKOSI_E",  0)
+		LookReset( "Kuina" )
+	
+		//	  　クイナ、走って出て行ってしまう。
+		TurnTo("Kuina",  -1.30f,-2.95f,0.00f , 10.0f)
+		ExecuteCmd( 1, MoveTo, "Kuina" , -1.30f,-2.95f,0.00f  , 0.1f , 0.60f )
+		Wait(30)
+		DoorOpen("door_02", 0, 1, -1)
+		WaitThread(1)
+		SetChrInfoFlag("Kuina", INFOFLAG_INVISIBLE)	// 非表示
+	
+		//	  　アドル、外に向いて・・・エモーション
+		ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , -1.492f , -2.573f , 1.482f, 90 )	// 注視点
+		ExecuteCmd( 1002,ChangeCameraElevation, INTERPOLATE_SPHERE , 4.050f,  90 )				// 基本仰角
+		ExecuteCmd( 1003,RotateCamera, INTERPOLATE_SPHERE , 155.024f ,  90 )				// 角度
+		
+		LookReset("ADOL")
+		TurnTo("ADOL",-0.24f,-3.21f,-0.00f, 7.0f)
+		Wait(50)
+		EmotionEx("ADOL", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+		Wait(52)
+		
+		WaitThread(1001)
+		WaitThread(1002)
+		WaitThread(1003)
+	
+		//	テキスト
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7C少女の足音が遠ざかっていく……"
+			"#7Cどこかへ行ってしまったようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒ちょっと待ってくれ
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_TEBURI", -1, 1)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(20)
+		ChangeAnimation("Kuina", "ANI_EV_RYOTEKOSI_E", -1, 1)
+
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(30)
+		//	  　クイナにガーンエモーション
+		//	  　ちょっと焦る
+
+		WaitAnimation2( "Kuina" , -1, 1, "ANI_EV_RYOTEKOSI_E",  0)
+		EmotionEx("Kuina", 0.00f, EMO_GIKU, 0, 5, 1, 1, 1.0f)	//ぎくっ／ガーン／ぎょっ
+		ChangeAnimation( "Kuina", "ANI_EV_SUP_S", -1, 1 )
+	
+		SetName("小柄な少女")
+		TalkPopup("Kuina",0,0,0,0,0)
+		{
+			"#050e#000mなな、何かね？\p"
+			"#061e私はこれでも"
+			"いそがしいんだけどな～っと。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		SetName("")
+
+		ChangeSubAnimation("Kuina",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+		Wait(10)
+
+		//	  　アドルとクイナに・・・エモーション
+		EmotionEx("ADOL", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+		EmotionEx("Kuina", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+		Wait(70)
+
+		WaitAnimation2( "Kuina" , -1, 1, "ANI_EV_SUP_S",  0)
+		ChangeAnimation( "Kuina", "ANI_EV_SUP_E", -1, 1 )
+		LookReset( "Kuina" )
+	
+		SetName("小柄な少女")
+		TalkPopup("Kuina",0,0,0,0,0)
+		{
+			"#061e#070mに、逃げろ～っ！！"
+		}
+		Wait(30)
+		ClosePrompt()
+		WaitCloseWindow()
+		SetName("")
+
+		WaitAnimation2( "Kuina" , -1, 1, "ANI_EV_SUP_E",  0)
+		TurnTo("Kuina", -1.30f,-2.95f,0.00f , 10.0f)
+
+		//	  　クイナ、走って出て行ってしまう。
+		ExecuteCmd( 1, MoveTo, "Kuina" , -1.30f,-2.95f,0.00f  , 0.1f , 0.60f )
+		Wait(30)
+		DoorOpen("door_02", 0, 1, -1)
+		WaitThread(1)
+		SetChrInfoFlag("Kuina", INFOFLAG_INVISIBLE)	// 非表示
+	
+		//	  　アドル、戸口に移動して外をうかがう仕草。
+		ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , -0.230f , -3.161f , 1.482f, 90 )	// 注視点
+		ExecuteCmd( 1002,ChangeCameraElevation, INTERPOLATE_SPHERE , 4.050f,  90 )				// 基本仰角
+		ExecuteCmd( 1003,RotateCamera, INTERPOLATE_SPHERE , 155.024f ,  90 )				// 角度
+		
+		LookReset("ADOL")
+		TurnTo("ADOL",0.01f, -3.32f, -0.00f, 7.0f)
+		Wait(50)
+		
+//		EmotionEx("ADOL", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+//		Wait(50)
+					
+		ExecuteCmd(1, MoveTo, "ADOL", 0.01f, -3.32f, -0.00f, 0.1f, 0.20f)
+		WaitThread(1)
+		Turn("ADOL", -2.46f, 7.0f)
+		Wait(10)
+
+		WaitThread(1001)
+		WaitThread(1002)
+		WaitThread(1003)
+
+		//	テキスト
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7C少女はどこかへ行ってしまったようだ……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	//　　暗転を挟んで操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//　　※その後、船長に話しかけると一般会話を更新する。
+	//　　　バルバロスのテキストを参照。
+	//　　※クイナはその後配置しない。
+	//　　モブ船員を用意し、奥のフロアに逃げていったこと、
+	//　　イタズラみたいだが気にしないで巡回を続けるようにフォローする。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp0016:SubEV_0_02_Kuina_2_ED")
+}
+function "SubEV_0_02_Kuina_2_ED"
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+
+	//イベント前のキャラ情報を復帰	
+	RestoreEventState()
+
+	//モンスターを復帰
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_Kuina")
+	
+	SetChrPos("Kuina",-100000.00f,0.00f,0.00f)
+	
+	//フラグ処理
+	SetFlag( GF_SUBEV_0_02_KUINA, 1 )			// 序②船長室でクイナのサブイベントを見た
+
+	CallFunc("mp0016:init")
+		
+	//イベント後の再配置位置
+	SetChrPos("LEADER",-0.58f,-1.20f,0.00f)
+	Turn("LEADER",-8.72f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	//カメラ位置復帰or初期位置設定
+	MoveCameraAt( 0 , -0.580f , -1.200f , 1.546f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 7.184f , 0 )	// 基本仰角
+	RotateCamera( 0 , 158.234f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+	
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+//終了処理ここまで----------------------------------------------------
+}
+
+//////////////////////////////////////////////////////////////////////
+//■一般会話セクション
+//////////////////////////////////////////////////////////////////////

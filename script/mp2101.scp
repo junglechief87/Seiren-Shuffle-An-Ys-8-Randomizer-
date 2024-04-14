@@ -1,0 +1,1155 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 2101：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp2101" , 0 )
+	MapHide( "@BG2_mp2102" , 0 )
+	MapHide( "@BG2_mp1104" , 0 )
+	MapHide( "@BG2_mp1106" , 0 )
+	MapHide( "@BG2_mp1112" , 0 )
+
+	//幽霊船濃霧
+	MapHide( "skyfog2" , 0 )		//濃霧非表示
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog2" , 1 )		//濃霧表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 120.0f , 2.0f, 0.3f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00939aa0, 200.0f, 1000.0f , 1.0f , 0.7f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.8f )
+		}
+	}
+
+//	SetFlag(GF_SUBEV_2101_CHECKED_ROCK, 0)	// デバッグ時のテスト用
+
+	//障害突破イベント（協力イベント）
+	//がれきLP設定
+	SetChrWork( "LP_STOP_2101_2102" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+	SetChrWork( "CP_STOP_2101_2102" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+	if( FLAG[SF_EVENT_ON] )
+	{
+		//障害物制御
+		if( FLAG[GF_SUBEV_2101_REMOVE_ROCK] )
+		{
+			MapAnime( "mp2101_stop01" , "open" )
+			// 処理を軽くする為吹っ飛ばす
+			SetChrPos("LP_STOP_2101_2102",  -100000.00f,0.00f,0.00f)
+			SetChrPos("CP_STOP_2101_2102",  -100000.00f,0.00f,0.00f)
+		}
+		else if (FLAG[GF_SUBEV_2101_CHECKED_ROCK])
+		{
+			// 初回チェック済み
+			SetChrWork("LP_STOP_2101_2102", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_2101_2102", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		}
+		else
+		{
+			SetChrWork("LP_STOP_2101_2102", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+			SetChrWork("CP_STOP_2101_2102", CWK_CHECKOFF, 1)		// 協力イベントルックポイントをオフに
+		}
+
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 2  ){
+			VisualName("visual/mapname/mn_1110.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//名知らず海岸
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//	================================================
+//	【ＬＰ：2101⇒2102の岩を調べる】
+//	================================================
+function "LP_STOP_2101_2102"
+{
+	//無条件で支援イベントへ分岐
+	
+	//▼支援イベントNo.03
+	EventCue("mp2101:SubEV_Sien03")
+}
+
+function "SubEV_Sien03_open"
+{
+	if(!FLAG[GF_SUBEV_2101_CHECKED_ROCK])
+	{
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_2101_CHECKED_ROCK, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_2101_2102", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_2101_2102", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+
+		//マップマーカー
+		DelMapMarker( SMI_SYMBOL,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+		DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_2101CE, 53.73f, -919.31f, 13.52f, 53.73f, -919.31f, COOPEVID_MP2101, MN_F_SOUTHWEST_PLANE_MP2101,0)
+	}
+}
+//──────────────────────────────
+//▼支援イベントNo.03		必要人数８人		mp2101：名も無き海岸
+//	土砂崩れを撤去		必須ルート／mp2102：大河流域に行けるようになる
+//──────────────────────────────
+function "SubEV_Sien03"
+{
+	//　　※カトリーン・キルゴール合流後、障害を撤去することが可能に。
+	//　　ＬＰを調べると以下の処理。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnTo( "LEADER", 53.73f,-919.31f,13.52f , 15.0f )
+
+	//	ナレーション
+	TalkPopup("UNDEF",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C土砂崩れが"
+		"#7C道を塞いでしまっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	GetCoopEvPeopleNum(COOPEVID_MP2101, TF_MENU_SELECT2)	//支援要請で必要な人数を取得
+	
+	//──────────────────────
+	//	⇒人数が足りていない
+	if( FLAG[TF_MENU_SELECT2] > WORK[WK_NPCNUM] )	//必要な人数 ＞ 漂流村の人数
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cこの土砂崩れを撤去するには、"
+			"#7C漂流村の人数が足りないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_2101_CHECKED_ROCK, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_2101_2102", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_2101_2102", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+
+		//マップマーカー
+		DelMapMarker( SMI_SYMBOL,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+		DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_2101CE, 53.73f, -919.31f, 13.52f, 53.73f, -919.31f, COOPEVID_MP2101, MN_F_SOUTHWEST_PLANE_MP2101,0)
+		
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//	⇒人数が足りている場合
+	else
+	{
+
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C支援要請を出しますか？",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+			//	  　以下の流れに接続
+			
+			//カーラン卿が帰るイベントを見る前
+			if( !FLAG[GF_SUBEV_2101_SIEN03_LOOK] )	//カーラン卿が帰るのを見た
+			{
+				FadeOut(FADE_BLACK,FADE_FAST)
+				WaitFade()
+				
+				SetFlag( TF_MENU_SELECT, 1 )	//支援イベントに接続
+			}
+			//カーラン卿が帰るイベントを見た後
+			else
+			{
+				//
+				// ※カーラン卿が帰るイベントを見た後に、支援可能な場合、
+				// 　他の支援イベントと同様の流れで処理してあります。
+				
+				//　　＞「▼支援イベント共通処理①」を呼び出す。
+				CallFunc("system:SubEV_Sien_Common1")
+				MapAnime( "mp2101_stop01" , "open" )
+				
+				//　　障害物撤去ＳＥ
+				PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+				Wait(80)
+
+				CallFunc("system:party_remove")
+				MoveCameraAt( 0 , 59.990f , -916.949f , 12.680f , 0 )	// 注視点
+				ChangeCameraDistance( 0 , 15.380f , 0 )		// 基本距離
+				ChangeCameraElevation( 0 , 18.175f , 0 )	// 基本仰角
+				RotateCamera( 0 , 341.483f , 0 )				// 角度
+				ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+				SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+				RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+				ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 59.702f , -916.712f , 15.160f , 150 )	// 注視点
+				ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 15.380f , 150 )		// 基本距離
+				ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.722f , 150 )	// 基本仰角
+				ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 320.694f , 150 )				// 角度
+
+				//MoveCameraAt( 0 , 59.702f , -916.712f , 15.160f , 0 )	// 注視点
+				//ChangeCameraDistance( 0 , 15.380f , 0 )		// 基本距離
+				//ChangeCameraElevation( 0 , -1.722f , 0 )	// 基本仰角
+				//RotateCamera( 0 , 320.694f , 0 )				// 角度
+				//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+				//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+				//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+				// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+				FadeIn(FADE_BLACK,FADE_FAST)
+				
+				PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+				
+				//	ナレーション
+				TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+				{
+					"#7C全員の力を合わせて、土砂崩れを撤去した！",
+					"撤去2行目"
+				}
+				Wait(30)
+
+				//	  　＞「▼支援イベント共通処理②」を呼び出す。
+				CallFunc("system:SubEV_Sien_Common2")
+				WaitPrompt()
+				WaitCloseWindow()
+				
+				FadeOut(FADE_BLACK,FADE_FAST)
+				WaitFade()
+				
+				//	  　イベント終了、操作許可。
+				
+				//障害物撤去処理
+				MapAnime( "mp2101_stop01" , "open" )
+				SetChrPos("LP_STOP_2101_2102",  -100000.00f	0.00f	0.00f)
+				SetChrPos("CP_STOP_2101_2102",  -100000.00f	0.00f	0.00f)
+				SetFlag(GF_SUBEV_2101_REMOVE_ROCK, 1)	// 【ＬＰ：2101⇒2102の岩を撤去した】
+				SetFlag(GF_SUBEV_2101_CHECKED_ROCK, 1)
+				SetFlag(GF_02MP2101_REMOVE_OBSTACLE,	1)// 土砂崩れを撤去した
+				SetDiaryFlag(DF_SUBEV_2101_REMOVE_ROCK, 1)		// ★名知らず海岸の森にあった土砂崩れを撤去した。
+				
+				//マップマーカー
+				DelMapMarker( SMI_SYMBOL,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+				DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+				// 協力イベントのマーカーも削除
+				DelMapMarker( SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_2101CE, 0, 0)
+
+				//追加
+			//	SetMapMarker(SMI_SYMBOL ,PAGE_F002, MARKER_EV_M02S270, 347.04f,-722.13f,7.75f, 347.04f,-722.13f ,MARKER_EV_M02S270, MN_F_MP1121,0)			//mp1121野営地
+				SetMapMarker( SMI_SUBEVENT ,PAGE_MP747x, MARKER_EV_LC_MP7471, -40.94f,88.52f,2.60f, -40.94f,88.52f,MARKER_EV_LC_MP7471,MN_D_MP7471,0)		//ロケ　：乳白色の鉱脈
+				SetMapMarker( SMI_SUBEVENT ,PAGE_MP747x, MARKER_PERSON_NIA, 15.75f,-59.14f,-7.09f, 15.75f,-59.14f,MARKER_PERSON_NIA,MN_D_MP7471,1)			//漂流者：シスターニア
+
+				SetFlag( TF_MENU_SELECT, 2 )	//支援イベント（２回目以降）として終了
+			}
+		}
+	}
+	//	⇒やめる
+	else
+	{
+		//	  　そのまま操作許可。
+		
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_2101_CHECKED_ROCK, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_2101_2102", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_2101_2102", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+
+		//マップマーカー
+		DelMapMarker( SMI_SYMBOL,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+		DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_2101CE, 53.73f, -919.31f, 13.52f, 53.73f, -919.31f, COOPEVID_MP2101, MN_F_SOUTHWEST_PLANE_MP2101,0)
+		
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//──────────────────────
+
+//終了処理ここから----------------------------------------------------
+
+	//ストッパーとして終了
+	if( FLAG[TF_MENU_SELECT] == 0 )
+	{
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1)
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	//支援イベントに接続
+	else if( FLAG[TF_MENU_SELECT] == 1 )
+	{
+		EventCue("mp2101:SubEV_Sien03_B")
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		
+	}
+	//支援イベント（２回目以降）として終了
+	else
+	{
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+		MoveCameraAt( 0 , 49.361f , -924.314f , 14.457f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+		RotateCamera( 0 , 311.999f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		
+		ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		//イベント後の再配置位置
+		SetChrPos("LEADER", 48.98f,-924.10f,12.44f)
+		Turn("LEADER", -126.73f,360.0f)
+		
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+		
+	}
+
+//終了処理ここまで----------------------------------------------------
+}
+
+function "SubEV_Sien03_B"
+{
+	//　⇒支援要請を出す
+	//	  　以下の流れに接続
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	LoadChr("Barbaross")	//"バルバロス船長"
+	LoadChr("Kiergaard")	//"キルゴール"	
+	LoadChr("Katrin")		//"カトリーン"	
+	LoadChr("Alison")		//"アリスン"		
+	LoadChr("Curran")		//"カーラン卿"	
+	LoadChr("Dogi"	)		//"ドギ"			
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	//1:アドル
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL",52.02f,-923.53f,12.48f)
+	Turn("ADOL",-145.60f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	
+	//2:サハド
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD",52.07f,-924.72f,12.46f)
+	Turn("SAHAD",-160.46f,360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("SAHAD")
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+	
+	//3:ラクシャ
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA",50.75f,-923.56f,12.46f)
+	Turn("LAXIA",-132.82f,360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("LAXIA")
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+	
+	//4:アリスン
+	SetChrWork("Alison", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Alison",49.90f,-922.36f,12.46f)
+	Turn("Alison",-126.00f,360.0f)
+	ChangeAnimation( "Alison" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Alison",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Alison",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Alison",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Alison")
+	SetChrInfoFlag( "Alison" , INFOFLAG_NOCHRATARI)
+	
+	//5:バルバロス
+	SetChrWork("Barbaross", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Barbaross",52.61f,-921.80f,12.50f)
+	Turn("Barbaross",-136.28f,360.0f)
+	ChangeAnimation( "Barbaross" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Barbaross",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Barbaross",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Barbaross",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Barbaross")
+	SetChrInfoFlag( "Barbaross" , INFOFLAG_NOCHRATARI)
+	
+	//6:カーラン卿
+	SetChrWork("Curran", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Curran",46.67f,-927.11f,12.40f)
+	Turn("Curran",-134.55f,360.0f)
+	ChangeAnimation( "Curran" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Curran",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Curran",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Curran",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Curran")
+	SetChrInfoFlag( "Curran" , INFOFLAG_NOCHRATARI)
+	
+	//7:ドギ
+	SetChrWork("Dogi", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Dogi",51.27f,-921.63f,12.49f)
+	Turn("Dogi",-135.08f,360.0f)
+	ChangeAnimation( "Dogi" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Dogi",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Dogi",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Dogi",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Dogi")
+	SetChrInfoFlag( "Dogi" , INFOFLAG_NOCHRATARI)
+	
+	//8:キルゴール
+	SetChrWork("Kiergaard", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Kiergaard",49.45f,-921.18f,12.47f)
+	Turn("Kiergaard",-98.31f,360.0f)
+	ChangeAnimation( "Kiergaard" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Kiergaard",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Kiergaard",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Kiergaard",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Kiergaard")
+	SetChrInfoFlag( "Kiergaard" , INFOFLAG_NOCHRATARI)
+	
+	//9:カトリーン
+	if( FLAG[GF_02MP1201_JOIN_KATRIN] )		// カトリーンが合流した（武器の強化が可能になる２）
+	{
+		SetChrWork("Katrin", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("Katrin",49.02f,-921.96f,12.46f)
+		Turn("Katrin",-97.68f,360.0f)
+		ChangeAnimation( "Katrin" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("Katrin",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("Katrin",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("Katrin",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset("Katrin")
+		SetChrInfoFlag( "Katrin" , INFOFLAG_NOCHRATARI)
+	}
+
+	//カメラ設定
+	MoveCameraAt( 0 , 52.949f , -920.448f , 14.689f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -7.710f , 0 )	// 基本仰角
+	RotateCamera( 0 , 325.370f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 90.000 ,1.000 ,0.700 ,0.300)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp2101:SubEV_Sien03_B_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cリトル・パロに頼んで支援要請を出し、"
+		"#7C漂流村のみんなに集まってもらった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//　　暗転明けで土砂崩れの前
+	//　　アドルたち＋漂流者全員が並んでいる状態。
+	//　　（ただしカーラン卿は映っていない）
+	
+	FadeBGM(70, 30)
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+	ChangeAnimation( "Dogi", "ANI_EV_BORI", -1, 1 )	// 頭かき
+	
+	TalkPopup("Dogi",0,2,0,0,0)
+	{
+		"#000e#000mやれやれ、派手に"
+		"埋まっちまってるようだな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	TalkPopup("Barbaross",0,2,0,0,0)
+	{
+		"#000e#000mうむ、早速取り掛かるとしよう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//　　バルバロス、みんなに振り返る
+	Turn("Barbaross",49.62f,9.5f)
+	
+	TalkPopup("Barbaross",0,2,0,0,0)
+	{
+		"#000e#000m皆さん、どうか"
+		"お力添えのほどを……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//	男の声
+	SetName("男の声")
+	TalkPopup("Curran",0,3,40,60,0)
+	{
+		"はあはあ……疲れたのである。\p"
+		"誰か、ワインを持ってまいれ。"
+		"よく冷えたものにするのだぞ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+	
+	//　　カーラン卿がやってくる。
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , 50.072f , -923.368f , 13.448f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.800f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 10.503f , 0 )	// 基本仰角
+	RotateCamera( 0 , 335.611f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	
+	ExecuteCmd( 1, MoveTo, "Curran",48.41f,-925.46f,12.42f, 0.1f, 0.20f )
+	Wait(FADE_CROSS)
+	
+	Wait(20)
+	
+	ExecuteCmd(2,TurnToChr, "ADOL"		,Curran,8.5f)
+	ExecuteCmd(3,TurnToChr, "LAXIA"		,Curran,9.0f)
+	ExecuteCmd(4,TurnToChr, "SAHAD"		,Curran,7.0f)
+	ExecuteCmd(5,TurnToChr, "Alison"	,Curran,7.5f)
+	ExecuteCmd(6,TurnToChr, "Dogi"		,Curran,8.0f)
+	ExecuteCmd(7,TurnToChr, "Kiergaard"	,Curran,8.5f)
+	ExecuteCmd(8,TurnToChr, "Katrin"	,Curran,8.0f)
+
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+	WaitThread(4)
+	WaitThread(5)
+	WaitThread(6)
+	WaitThread(7)
+	WaitThread(8)
+	LookChr("Kiergaard","Curran")
+	LookChr("Alison","Curran")	
+	LookChr("Katrin","Curran")
+	
+	//　　カーラン卿以外に冷や汗エモーション
+	EmotionEx("ADOL", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.2f)	//冷や汗
+	EmotionEx("SAHAD", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.2f)	//冷や汗
+	EmotionEx("LAXIA", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.2f)	//冷や汗
+	EmotionEx("Alison", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.2f)	//冷や汗
+	EmotionEx("Barbaross", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.2f)	//冷や汗
+	EmotionEx("Dogi", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.2f)	//冷や汗
+	EmotionEx("Kiergaard", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.2f)	//冷や汗
+	EmotionEx("Katrin", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.2f)	//冷や汗
+	Wait(40)
+	
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000mカーラン卿……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	TalkPopup("Curran",0,1,0,0,0)
+	{
+		"#000e#000mむ？　もしや……\p"
+		"私を呼び出したのは"
+		"その土砂のためではあるまいな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Dogi", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	TalkPopup("Dogi",0,2,0,0,0)
+	{
+		"#000e#000mその通りですぜ。\p"
+		"これから力を合わせて"
+		"こいつを撤去するんでさ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Curran", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+	
+	TalkPopup("Curran",0,1,0,0,0)
+	{
+		"#000e#000mフン、戯言をぬかすでない！\p"
+		"大体そんな無駄をする必要が"
+		"どこにあるというのだ！\p"
+		"それよりも早く船を用意するのだ。"
+		"もたもたしおって……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+	
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000mこれは無駄ではありません。\p"
+		"まだこの先に"
+		"漂流者がいるかもしれないのです。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+	
+	TalkPopup("Alison",0,2,0,0,0)
+	{
+		"#011e#000mは、はい……主人もきっと"
+		"どこかに流れ着いているはずです……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Kiergaard", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	TalkPopup("Kiergaard",0,2,0,0,0)
+	{
+		"#000e#000mそうですよ、カーラン卿。"
+		"ここはやはり人命優先で……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "SAHAD" , "ANI_EV_RYOTEKOSI_S", -1 , 1 )
+	
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#000e#000mだな、ともかく"
+		"いける所は回ってみるべきだぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeSubAnimation("Alison",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+	
+	//────────────────────
+	//	⇒カトリーンが居る
+	if( FLAG[GF_02MP1201_JOIN_KATRIN] )		// カトリーンが合流した（武器の強化が可能になる２）
+	{
+		TalkPopup("Katrin",0,2,0,0,0)
+		{
+			"#000e#000m私も力を貸しましょう。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+	
+	ChangeAnimation( "Curran", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+	
+	TalkPopup("Curran",0,1,0,0,0)
+	{
+		"#000e#000mぬぬ～貴様ら！"
+		"この私に意見するつもりか！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//　　カーラン卿は皆を見渡すが、
+	//　　皆は困り顔で相手をしてくれず、孤立無縁な状態。
+	Look("Curran", 40.0f, 0.0f)
+	Wait(30)
+	Look("Curran", -30.0f, 0.0f)
+	Wait(25)
+	LookReset("Curran")
+	
+	ChangeAnimation( "Curran", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	TalkPopup("Curran",0,1,0,0,0)
+	{
+		"#000e#000mえ、ええい！"
+		"何なのだ、その迷惑そうな顔は！！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	TalkPopup("Barbaross",0,2,0,0,0)
+	{
+		"#000e#000mカーラン卿、お話はわかりました。\p"
+		"ですがやはり、"
+		"今は探索を優先させて下さい。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Curran", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	
+	TalkPopup("Curran",0,1,0,0,0)
+	{
+		"#000e#000mなんだと！？"
+		"船長、それはいかなる了見であるか！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Barbaross" , "ANI_EV_RYOTEBURI", -1 , 1 )
+
+	TalkPopup("Barbaross",0,2,0,0,0)
+	{
+		"#000e#000m助けられる命があるのなら、"
+		"それを見捨てるわけに参りません。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Dogi", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	
+	TalkPopup("Dogi",0,2,0,0,0)
+	{
+		"#011e#000mま、当然ですな。\p"
+		"#012e#000mカーラン卿、お急ぎなら"
+		"手伝っちゃくれませんかね？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Curran", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+	
+	TalkPopup("Curran",0,1,0,0,0)
+	{
+		"#030e#000mぬぬぬぬ～……\p"
+		"フン、付き合ってられるか！！\p"
+		"勝手にするがいいのである！！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("Kiergaard")
+	LookReset("Alison")	
+	LookReset("Katrin")
+	
+	//　　カーラン卿、歩いて去っていく。
+	ExecuteCmd( 1, MoveTo, "Curran", 46.67f,-927.11f,12.40f, 0.1f, 0.20f )
+	WaitThread(1)
+	SetChrPos("Curran",-1000000.00f,00.00f,00.00f)
+	
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cカーラン卿は帰ってしまった……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#-1W#4C支援イベントに参加する人数が"
+		"#4C１人減った。#10W"
+	}
+	Wait(10)
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , 52.949f , -920.448f , 14.689f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.321f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -7.709f , 0 )	// 基本仰角
+	RotateCamera( 0 , 325.374f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	Wait(FADE_CROSS)
+	
+	ChangeAnimation( "SAHAD" , "ANI_EV_RYOTEKOSI_E", -1 , 1 )
+	
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#050e#000mお？　……帰っちまったが。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	ChangeAnimation( "Dogi", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+	
+	TalkPopup("Dogi",0,2,0,0,0)
+	{
+		"#011e#000mあの様子じゃ、今後も"
+		"協力は望めそうにねえなぁ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//────────────────────
+	//	⇒カトリーンが居る
+	if( FLAG[GF_02MP1201_JOIN_KATRIN] )		// カトリーンが合流した（武器の強化が可能になる２）
+	{
+		TalkPopup("Barbaross",0,2,0,0,0)
+		{
+			"#011e#000mふむ、後で私の方から"
+			"もう一度話をしてみよう……\p"
+			"#012e#000mだが今は、この土砂崩れを"
+			"撤去するのが先決だろう。\p"
+			"皆さん、改めて"
+			"お力添えをお願いします。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		ExecuteCmd(2,TurnToChr, "ADOL", "Barbaross", 8.0f)
+		ExecuteCmd(3,TurnToChr, "LAXIA", "Barbaross", 8.0f)
+		ExecuteCmd(4,TurnToChr, "SAHAD", "Barbaross", 7.0f)
+		ExecuteCmd(5,TurnToChr, "Alison", "Barbaross", 7.5f)
+		ExecuteCmd(6,TurnToChr, "Dogi", "Barbaross", 8.0f)
+		ExecuteCmd(7,TurnToChr, "Kiergaard", "Barbaross", 7.0f)
+		ExecuteCmd(8,TurnToChr, "Katrin", "Barbaross", 7.5f)
+		WaitThread(1)
+		WaitThread(2)
+		WaitThread(3)
+		WaitThread(4)
+		WaitThread(5)
+		WaitThread(6)
+		WaitThread(7)
+		WaitThread(8)
+		
+		ChangeAnimation( "Kiergaard", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+		
+		TalkPopup("Kiergaard",0,1,0,0,0)
+		{
+			"#000e#000mええ、お任せ下さい。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		TalkPopup("Katrin",0,1,0,0,0)
+		{
+			"#000e#000mそれでは始めるとしましょうか。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		Wait(10)
+		
+		//	  　暗転。
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		MapAnime( "mp2101_stop01" , "open" )
+		CallFunc("system:party_remove")
+		ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+		
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cこうして漂流者たちは"
+			"#7C土砂崩れの撤去に取り掛かるのだった。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+				
+		//	  　障害物撤去ＳＥ
+		PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+		Wait(80)
+
+		MoveCameraAt( 0 , 59.990f , -916.949f , 12.680f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 15.380f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 18.175f , 0 )	// 基本仰角
+		RotateCamera( 0 , 341.483f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 59.702f , -916.712f , 15.160f , 150 )	// 注視点
+		ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 15.380f , 150 )		// 基本距離
+		ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.722f , 150 )	// 基本仰角
+		ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 320.694f , 150 )				// 角度
+
+		//MoveCameraAt( 0 , 59.702f , -916.712f , 15.160f , 0 )	// 注視点
+		//ChangeCameraDistance( 0 , 15.380f , 0 )		// 基本距離
+		//ChangeCameraElevation( 0 , -1.722f , 0 )	// 基本仰角
+		//RotateCamera( 0 , 320.694f , 0 )				// 角度
+		//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+		//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		FadeIn(FADE_BLACK,FADE_FAST)
+
+		PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+		
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7C全員の力を合わせて、土砂崩れを撤去した！",
+			"撤去2行目2"
+		}
+		Wait(30)
+
+		//	  　＞「▼支援イベント共通処理②」を呼び出す。
+		CallFunc("system:SubEV_Sien_Common2")
+
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		//	  　イベント終了、操作許可。
+		FadeOut(FADE_BLACK,FADE_FAST)
+		WaitFade()
+		StopThread(1000)
+		StopThread(1001)
+		StopThread(1002)
+		StopThread(1003)
+
+	}
+	//	⇒いない
+	else
+	{
+		TalkPopup("Barbaross",0,2,0,0,0)
+		{
+			"#011e#000mふむ、ともかくこの土砂崩れを"
+			"撤去するには人手が足りないようだ……\p"
+			"#012e#000mアドル、すまないが"
+			"またの機会としよう。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+//		ExecuteCmd(2,TurnToChr, "ADOL", "Barbaross", 8.0f)
+//		ExecuteCmd(3,TurnToChr, "LAXIA", "Barbaross", 8.0f)
+//		ExecuteCmd(4,TurnToChr, "SAHAD", "Barbaross", 8.0f)
+//		ExecuteCmd(5,TurnToChr, "Alison", "Barbaross", 8.0f)
+//		ExecuteCmd(6,TurnToChr, "Dogi", "Barbaross", 8.0f)
+//		ExecuteCmd(7,TurnToChr, "Kiergaard", "Barbaross", 8.0f)
+//		WaitThread(1)
+//		WaitThread(2)
+//		WaitThread(3)
+//		WaitThread(4)
+//		WaitThread(5)
+//		WaitThread(6)
+//		WaitThread(7)
+		
+		//	  　アドル頷く
+		HeadYes("ADOL" , 1 , 25)
+		Wait(30)
+		
+		//	  　暗転。
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+		
+		//────────────────────
+		//	⇒地図に未登録の場合
+		if (!FLAG[GF_SUBEV_2101_CHECKED_ROCK])
+		{
+			PlaySE(SE_EV_POINT, 100, 0, 0, 0, 1.0f, 0)	//マップ登録
+			//	ナレーション
+			TalkPopup(UNDEF,0,5,0,0,0)
+			{
+				"#8S"
+				"#-1W#4C障害がある場所として地図に登録した。#10W" 
+				"#8S"
+			}
+			Wait(10)
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+		//────────────────────
+	}
+	//────────────────────
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp2101:SubEV_Sien03_B_ED")
+}
+function "SubEV_Sien03_B_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て
+	//JoinNPC( NPC_CURRAN, JOIN_NPC_LEAVE )		//このイベント以降、支援イベント現在人数がマイナス1表記になる。
+	//SetDiaryCharaFlag( DRCHA_CURRAN, DRCHA_FLAG_INFO1, 1 )	//★人物メモ：追加情報の開放１（カーラン卿）
+	//SetDiaryCharaFlag( DRCHA_CURRAN2, DRCHA_FLAG_INFO1, 1 )	//★人物メモ：追加情報の開放１（カーラン卿）
+	//SetDiaryCharaFlag( DRCHA_CURRAN3, DRCHA_FLAG_INFO1, 1 )	//★人物メモ：追加情報の開放１（カーラン卿）
+
+	SetFlag(GF_SUBEV_2101_SIEN03_LOOK, 1)		//【ＬＰ：2101⇒2102の岩を調べた】の支援イベントNo.03でカーラン卿が帰るのを見た
+
+	//────────────────────
+	//	⇒カトリーンが居る
+	if( FLAG[GF_02MP1201_JOIN_KATRIN] )		// カトリーンが合流した（武器の強化が可能になる２）
+	{
+		//障害物撤去処理
+		MapAnime( "mp2101_stop01" , "open" )
+		SetChrPos("LP_STOP_2101_2102",  -100000.00f	0.00f	0.00f)
+		SetChrPos("CP_STOP_2101_2102",  -100000.00f	0.00f	0.00f)
+		SetFlag(GF_SUBEV_2101_REMOVE_ROCK, 1)	// 【ＬＰ：2101⇒2102の岩を撤去した】
+		SetFlag(GF_SUBEV_2101_CHECKED_ROCK, 1)
+		SetFlag(GF_02MP2101_REMOVE_OBSTACLE,	1)// 土砂崩れを撤去した
+		SetDiaryFlag(DF_SUBEV_2101_REMOVE_ROCK, 1)		// ★名知らず海岸の森にあった土砂崩れを撤去した。
+		
+		//マップマーカー
+		DelMapMarker( SMI_SYMBOL,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+		DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+		// 協力イベントのマーカーも削除
+		DelMapMarker( SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_2101CE, 0, 0)
+
+		//追加
+	//	SetMapMarker(SMI_SYMBOL ,PAGE_F002, MARKER_EV_M02S270, 347.04f,-722.13f,7.75f, 347.04f,-722.13f ,MARKER_EV_M02S270, MN_F_MP1121,0)			//mp1121野営地
+		SetMapMarker( SMI_SUBEVENT ,PAGE_MP747x, MARKER_EV_LC_MP7471, -40.94f,88.52f,2.60f, -40.94f,88.52f,MARKER_EV_LC_MP7471,MN_D_MP7471,0)		//ロケ　：乳白色の鉱脈
+		SetMapMarker( SMI_SUBEVENT ,PAGE_F002, MARKER_PERSON_NIA, -26.39f,-738.59f,16.23f, -26.39f,-738.59f,MARKER_PERSON_NIA,MN_F_MP2102,1)			//漂流者：シスターニア
+	}
+	//	⇒いない
+	else
+	{
+		//────────────────────
+		//	⇒地図に未登録の場合
+		if (!FLAG[GF_SUBEV_2101_CHECKED_ROCK])
+		{
+			// マーカーの切り替え処理
+			
+			// 見たフラグセット
+			SetFlag(GF_SUBEV_2101_CHECKED_ROCK, 1)
+			// ルックポイント切り替え
+			SetChrWork("LP_STOP_2101_2102", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_2101_2102", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+			
+			//マップマーカー
+			DelMapMarker( SMI_SYMBOL,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+			DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_2101, 0, 0)
+			
+			// 協力イベントのマーカーもセット
+			SetMapMarker(SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_2101CE, 53, -919, 14, 53, -919, COOPEVID_MP2101, MN_F_SOUTHWEST_PLANE_MP2101,0)
+		}
+		//────────────────────
+	}
+	//────────────────────
+
+	//NPCを消去
+	SetChrPos("Alison",-1000000.00f,00.00f,00.00f)
+	SetChrPos("Barbaross",-1000000.00f,00.00f,00.00f)
+	SetChrPos("Curran",-1000000.00f,00.00f,00.00f)
+	SetChrPos("Dogi",-1000000.00f,00.00f,00.00f)
+	SetChrPos("Kiergaard",-1000000.00f,00.00f,00.00f)
+	SetChrPos("Katrin",-1000000.00f,00.00f,00.00f)
+
+	CallFunc("mp2101:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , 49.361f , -924.314f , 14.457f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 311.999f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	//イベント後の再配置位置
+	SetChrPos("LEADER", 48.98f,-924.10f,12.44f)
+	Turn("LEADER", -126.73f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+	
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeBGM(100, 30)
+	
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}

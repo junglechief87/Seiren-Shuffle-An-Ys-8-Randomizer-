@@ -1,0 +1,1032 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/temp/mp7471.h"
+
+
+//----------------------------------------------------------------------------//
+// 7471:
+//----------------------------------------------------------------------------//
+// initスクリプト
+function "init"
+{
+//-----------------------------------------------------------------------------------------------------------
+// イベントエリア・イベントＬＰ制御
+	EventAreaEnable( "evb2_Join_Nia2" , 0 )
+	EventAreaEnable( "ev2_EV_LOCATION018" , 0 )
+	EventAreaEnable( "evb2_act_0801" , 0 )
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		// シスター・ニア：合流イベント
+		if( !FLAG[GF_SUBEV_JOIN_NIA] )	// シスター・ニアの合流イベントを見た
+		{
+			EventAreaEnable( "evb2_Join_Nia2" , 1 )
+		}
+
+		if ( !FLAG[GF_LOCATION18] ) {		// ロケーション018
+			EventAreaEnable( "ev2_EV_LOCATION018" , 1 )
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0800] && FLAG[SF_LASTENTRY_NO] == 0 ){
+			//ActiveVoiceStart(EACT_EVID_0800, 1, 0)	//初めてエリアに入ったら
+			SetEventDriven(EED_TYPE_TIMER,40,"mp7471:act_0800")
+		}
+
+		if( (!FLAG[GF_AVOICE_0801] && !FLAG[GF_AVOICE_0801B]) && !FLAG[TF_FALL]){
+			EventAreaEnable( "evb2_act_0801" , 1 )
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 100  ){	
+			//ワープ
+			VisualName("visual/mapname/mn_7471.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//滝裏の鍾乳洞
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+
+function "act_0800"
+{
+	ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+	ActiveVoiceStart(EACT_EVID_0800, 1, 0)	//初めてエリアに入ったら
+}
+
+function "act_0801"
+{
+	if ((!FLAG[GF_AVOICE_0801] && !FLAG[GF_AVOICE_0801]) && !FLAG[TF_FALL])
+	{
+		EventAreaEnable( "evb2_act_0801" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		if( IsMagicItem(ICON3D_TORCH) ) {
+			ActiveVoiceStart(EACT_EVID_0801B, 1, 0)	//下に落下したら　明るい版
+		} else {
+			ActiveVoiceStart(EACT_EVID_0801, 1, 0)	//下に落下したら
+		}
+	}
+}
+
+function "act_0801_off"
+{
+	SetFlag( TF_FALL, 1)
+}
+
+function "act_0801_on"
+{
+	SetFlag( TF_FALL, 0)
+}
+
+//////////////////////////////////////////////
+// ロケーションポイント018:乳白色の鉱脈
+//////////////////////////////////////////////
+function "EV_LOCATION018"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+	Portrait_Load(4, "visual/mapname/lnmp7471.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , -39.137f , 79.618f , 3.642f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 15.800f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 25.079f , 0 )	// 基本仰角
+	RotateCamera( 0 , 35.028f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp7471:EV_LOCATION018_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt , INTERPOLATE_SPHERE , -39.137f , 79.618f , 7.858f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance , INTERPOLATE_SPHERE , 14.900f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation , INTERPOLATE_SPHERE , -3.290f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera , INTERPOLATE_SPHERE , 313.057f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp7471:EV_LOCATION018_ED")
+}
+function "EV_LOCATION018_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION18, 1)	//乳白色の鉱脈
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_MP747x, MARKER_EV_LC_MP7471, 0, 0)	//ロケ　：乳白色の鉱脈
+	SetMapMarker( SMI_LOCATION ,PAGE_MP747x, MARKER_EV_LC_MP7471, -40.94f,88.52f,2.60f, -40.94f,88.52f,LOCATION_MP7471,MN_D_MP7471,0)		//ロケ　：乳白色の鉱脈
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_MP747x,0 ,-40.71f, 76.19f ,100 )
+
+	CallFunc("mp7471:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , -39.855f , 56.072f , 3.017f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.764f , 0 )	// 基本仰角
+	RotateCamera( 0 , -1.020f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", -39.85f, 56.07f, 1.18f )
+	Turn("LEADER" ,177.40f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//■メインイベントセクション
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//============================================================
+// シスター・ニア：合流イベント
+//============================================================
+function "Join_Nia2"
+{
+	//　　鍾乳洞（mp7471）の（16.82f, -73.58f, -8.22f）付近に近づくとイベント開始。
+	//　　アドル、ラクシャ、サハド、ヒュンメル（いれば）が前方を眺める構図。
+	
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL",17.25f, -72.30f, -8.28f)
+	Turn("ADOL",116.29f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA",16.99f, -73.48f, -8.24f)
+	Turn("LAXIA",133.05f,360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("LAXIA")
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD",18.08f, -71.43f, -8.35f)
+	Turn("SAHAD",120.00f,360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("SAHAD")
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("HUMMEL",18.37f,-73.82f,-8.11f)
+		Turn("HUMMEL",137.96f,360.0f)
+		ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset("HUMMEL")
+		SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+	}
+	if( FLAG[SF_RICOTTA_JOINOK] )	// リコッタがいる
+	{
+		SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("RICOTTA",18.79f,-72.12f,-8.16f)
+		Turn("RICOTTA",132.92f,360.0f)
+		ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset("RICOTTA")
+		SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	}
+	if( FLAG[SF_DANA_JOINOK] )	// ダーナがいる
+	{
+		SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("DANA",18.57f,-72.86f,-8.18f)
+		Turn("DANA",124.08f,360.0f)
+		ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset("DANA")
+		SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	}
+	SetChrWork("Nia", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Nia",0.0f,0.0f,0.0f)
+	Turn("Nia",0.0f,360.0f)
+	ChangeAnimation( "Nia" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Nia",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Nia",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Nia",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Nia")
+	SetChrInfoFlag( "Nia" , INFOFLAG_NOCHRATARI)
+
+
+	//カメラ設定
+//	MoveCameraAt( 0 , 18.618f , -72.506f , -5.935f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 2.550f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 4.253f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 60.941f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 0.8f , 0 )				// ロール回転
+
+	MoveCameraAt( 0 , 18.237f , -72.491f , -6.715f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.550f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.539f , 0 )	// 基本仰角
+	RotateCamera( 0 , 79.562f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.8f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 50.000 ,1.000 ,0.700 ,0.500)
+
+	// グレアの設定
+//	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp7471:Join_Nia2_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	Wait(10)
+
+	SoundEfx( SEFX_EV_CAVE_L, 15 )
+
+	// カットX ----------------------------------------------------------------------------------------
+
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE   , 18.237f , -72.491f , -6.715f , 90 )	// 注視点
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE   , 2.550f , 90 )		// 基本距離
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE   , 4.539f , 90 )	// 基本仰角
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE   , 79.562f , 90 )				// 角度
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+
+	if( IsMagicItem(ICON3D_TORCH) )
+	{
+
+		TalkPopup("LAXIA",0,1,0,0,0)
+		{
+			"#051e#000mそ、それにしても"
+			"暗くて足場の悪い場所ですね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+	else
+	{
+		TalkPopup("LAXIA",0,1,0,0,0)
+		{
+		"#051e#000mそ、それにしても"
+		"暗くて足場の悪い場所ですね。\p"
+		"#052e#000m奥へ進むには"
+		"灯りが必要かもしれません。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+
+	TalkPopup("SAHAD",0,1,0,0,0)
+	{
+		"#061e#000mお、おお……"
+		"正直かなりおっかねぇぜ。\p"
+		"#062e#000mさっきの姉ちゃんを"
+		"見つけたらとっと……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	SetChrPos("Nia",15.75f,-59.14f,-7.09f)
+	Turn("Nia",153.68f,360.0f)
+
+	//	女性の声（フォント小）
+	SetName("女性の声")
+	TalkPopup("Nia",0,3,360,10,0)
+	{
+		"#12S感謝……ます……大い……主よ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	//　　アドルたちに「パッ」エモーション。
+	EmotionEx("ADOL", 0.05f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	EmotionEx("LAXIA", 0.05f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	EmotionEx("SAHAD", 0.1f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	if( FLAG[SF_HUMMEL_JOINOK] ) {	// ヒュンメルがいる
+		EmotionEx("HUMMEL", 0.05f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	}
+	if( FLAG[SF_RICOTTA_JOINOK] )	// リコッタがいる
+	{
+		EmotionEx("RICOTTA", 0.05f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	}
+	if( FLAG[SF_DANA_JOINOK] )	// ダーナがいる
+	{
+		EmotionEx("DANA", 0.05f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	}
+
+	LookChr("ADOL" , "Nia")
+	Wait(3)
+	LookChr("LAXIA" , "Nia")
+	Wait(2)
+	if( FLAG[SF_HUMMEL_JOINOK] ) {	// ヒュンメルがいる
+		LookChr("HUMMEL" , "Nia")
+	}
+	if( FLAG[SF_RICOTTA_JOINOK] )	// リコッタがいる
+	{
+		LookChr("RICOTTA" , "Nia")
+	}
+	if( FLAG[SF_DANA_JOINOK] )	// ダーナがいる
+	{
+		LookChr("DANA" , "Nia")
+	}
+	LookChr("SAHAD" , "Nia")
+
+	Wait(35)
+
+	PlayVoice(Y8V_1414,"SAHAD",100)	//お？（疑問）
+
+	TalkPopup("SAHAD",0,1,0,0,0)
+	{
+		"#000e#000mお？　近くにいたみてぇだな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#000e#000mあの格好……星刻教会の"
+		"シスターのようですが……\p"
+		"一体何をされているのでしょうか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	//　　15.28f, -59.12f, -7.10f）付近にシスター・ニアを配置し、
+	//　　シスター・ニアに「！」エモーション。
+	CrossFade(FADE_FAST)
+	MoveCameraAt( 0 , 14.717f , -69.699f , -3.725f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.300f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 22.589f , 0 )	// 基本仰角
+	RotateCamera( 0 , 349.331f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	
+	ChangeAnimation( "LAXIA", "ANI_WAIT", -1, 1 )	// 待機
+	
+	Wait(FADE_FAST)
+		
+	EmotionEx("Nia", 0.02f, EMO_EX, 0, 5, 1, 1, 2.7f)	//！
+
+	//　　そこへアドルたちがやって来る。
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE  , 15.796f , -66.759f , -6.319f , 90 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE  , 1.960f , 90 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE  , 7.127f , 90 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE  , 352.769f , 90 )				// 角度
+
+	ExecuteFunc( 100 , "mp7471:Join_Nia_Adol_move" )
+	ExecuteFunc( 101 , "mp7471:Join_Nia_Laxia_move" )
+	ExecuteFunc( 102 , "mp7471:Join_Nia_Sahad_move" )
+
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		ExecuteFunc( 103 , "mp7471:Join_Nia_Hummel_move" )
+	}
+	Wait(10)
+	if( FLAG[SF_RICOTTA_JOINOK] )	// リコッタがいる
+	{
+		SetChrPos("RICOTTA",15.52f,-73.48f,-8.17f)
+		Turn("RICOTTA",152.71f,360.0f)
+		ExecuteCmd(104, MoveTo, "RICOTTA", 15.31f,-67.07f,-8.08f, 0.1f, 0.22f)
+	}
+	if( FLAG[SF_DANA_JOINOK] )	// ダーナがいる
+	{
+		SetChrPos("DANA",17.98f,-70.78f,-8.32f)
+		Turn("DANA",162.88f,360.0f)
+		ExecuteCmd(105, MoveTo, "DANA", 17.43f,-66.75f,-8.16f , 0.1f, 0.18f)
+	}
+	
+	Wait(10)
+	Turn("Nia",-1.96f,6.0f)
+	
+	WaitThread(100)
+	WaitThread(101)
+	WaitThread(102)
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		WaitThread(103)
+	}
+
+	LookChr("Nia" , "ADOL")
+	
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	TalkPopup("Nia",0,2,0,0,0)
+	{
+		"#000e#000mあなたたちは……もしかして"
+		"ロンバルディア号の……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	HeadYes("LAXIA", 1, 25)	// キャラ, うなずき回数, 速さ
+
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#000e#000mええ、その通りです。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+	// カットX ----------------------------------------------------------------------------------------
+
+	FadeBGM(60,30)
+
+	//　　ここでシスター・ニアを注目するカメラ。
+	CrossFade(FADE_CROSS)
+	
+	MoveCameraAt( 0 , 15.346f , -59.530f , -5.645f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.890f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.711f , 0 )	// 基本仰角
+	RotateCamera( 0 , 196.399f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	
+	Wait(FADE_CROSS)
+
+	ChangeAnimation( "Nia", "ANI_EV_INORI_S", -1, 1 )	// 祈り
+
+	TalkPopup("Nia",0,2,0,0,0)
+	{
+		"#011e#000mおお、神よ……"
+		"ご加護に感謝いたします。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cアドルたちはシスターに状況を説明した。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	Wait(15)
+
+	WaitAnimation2( "Nia" , -1, 1, "ANI_EV_INORI_S",  0)
+	ChangeAnimation( "Nia", "ANI_EV_INORI_E", -1, 1 )	// 祈り
+
+	//	シスター（ボイス付き）
+	SetName("シスター")
+	TalkPopup("Nia",0,2,0,0,0)
+	{
+		"#4717V#012e#000mなるほど……では我々は"
+		"完全に孤立無援というわけですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	Wait(10)
+	//　　ここでシスター・ニアの名前演出。
+	CrossFade(FADE_NORMAL)
+	ChangeSubAnimation("Nia",SUBMOT_EYE,ANI_E_CLOSE,1)
+
+	MoveCameraAt( 0 , 15.868f , -59.308f , -6.337f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.306f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.735f , 0 )	// 基本仰角
+	RotateCamera( 0 , 317.174f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 15.851f , -59.167f , -5.561f , 180 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.150f , 180 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.834f , 180 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 338.098f , 180 )				// 角度
+
+	//MoveCameraAt( 0 , 15.851f , -59.167f , -5.561f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.150f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -1.834f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 338.098f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	Wait(40)
+
+	VisualName("visual/chrname/cn_c112.itp", VN_NAMEVOICE, VN_CHRNAME_RB_X, VN_CHRNAME_RB_Y,VN_NPCNAME_TIME)	//シスターニア
+	ChangeSubAnimation("Nia",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+
+	Wait(60)
+
+	//時限式選択肢
+	//◆SE無効化コマンド置換用
+	SetFlag(TF_MENU_SELECT2,0)
+	MenuReset()
+	MenuAdd( 1 , "" )
+	MenuOpen( TF_MENU_SELECT2 , 0 ,0 , 0 , 0 , 0 , 0 )
+	WaitMenu(VN_NPCNAME_SKIP) //ウェイトしたい数値
+	MenuClose(0,0)
+
+	if(FLAG[TF_MENU_SELECT2] == 1 )
+	{
+		CrossFade(FADE_FAST)
+		VisualNameEnd()
+		StopThread(1000)
+		StopThread(1001)
+		StopThread(1002)
+		StopThread(1003)
+
+		MoveCameraAt( 0 , 15.851f , -59.167f , -5.561f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 1.150f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , -1.834f , 0 )	// 基本仰角
+		RotateCamera( 0 , 338.098f , 0 )				// 角度
+		ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+		Wait(FADE_FAST)
+	}
+	else
+	{
+		Wait(30)
+	}
+
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+//
+//	ChangeAnimation( "Nia", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+//
+//	Wait(50)
+
+	ChangeAnimation( "Nia", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+	//	シスター（ボイス付き）
+	SetName("シスター")
+	TalkPopup("Nia",0,2,0,0,0)
+	{
+		"#4718V#011e#000m改めまして、星刻教会に仕える"
+		"シスターのニアと申します。\p"
+		"#4719V#012e#000mどうか、わたしも"
+		"皆さんのお役に立てたらと思います。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	Wait(10)
+	// カットX ----------------------------------------------------------------------------------------
+
+	FadeBGM(100,30)
+
+	CrossFade(FADE_CROSS)
+
+	MoveCameraAt( 0 , 15.775f , -66.353f , -6.313f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.600f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.240f , 0 )	// 基本仰角
+	RotateCamera( 0 , 344.427f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	Wait(FADE_CROSS)
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	//	"SAHAD"
+	TalkPopup("SAHAD",0,1,0,0,0) {
+		"#000e#000mそいつはいいんだが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "LAXIA", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+
+	//	"LAXIA"
+	TalkPopup("LAXIA",0,1,0,0,0) {
+		"#000e#000mなぜ一人でこのような"
+		"危険な場所に入られたのですか？\p"
+		"下手をすれば、命の危険すら"
+		"あったかと思いますが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Nia", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+
+	//	"Nia"
+	TalkPopup("Nia",0,2,0,0,0) {
+		"#011e#000m主は仰いました……"
+		"『苦難は大いなる恵みの糧』と。\p"
+		"#012e#000mわたしの目的はこちらです。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	WaitAnimation2( "Nia" , -1, 1, "ANI_EV_TEMUNE_E",  0)
+
+	//　　シスターが手を差し出すモーション。
+	ChangeAnimation( "Nia", "ANI_EV_TEWATASI_S", -1, 1 )	// 手渡し
+	Wait(20)
+	
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0) {
+		"#7Cシスターはキノコを差し出した。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"こ、これのために洞窟に？")
+	MenuAdd(2,"美味しそうだね")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	
+	// 手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI", -1, 1 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(20)
+	
+	ChangeAnimation( "Nia", "ANI_EV_TEWATASI_E", -1, 1 )	// 手渡し
+
+	// うなずきセット
+	HeadYes("Nia" , 1 , 25 )
+	ChangeSubAnimation("Nia", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Wait(15)
+	ChangeSubAnimation("Nia", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+	
+	//──────────────────────
+	//	⇒こ、これのために洞窟に？
+	if (FLAG[TF_MENU_SELECT] == 1 ) {
+
+		// ニア
+		TalkPopup("Nia",0,2,0,0,0) {
+			"#000mはい、そうですが……\p"
+			"命を繋ぐ糧を得るためです。"
+			"十分な理由ではないですか？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		ChangeAnimation( "LAXIA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+		//	"LAXIA"
+		TalkPopup("LAXIA",0,1,0,0,0) {
+			"#000e#000mそ、それにしてもです。\p"
+			"もっと安全な場所で探すべきかと。"
+			"もっと安全3行目"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+	//	⇒美味しそうだね
+	} else if (FLAG[TF_MENU_SELECT] == 2 ) {
+	
+		TalkPopup("Nia",0,2,0,0,0) {
+			"#000mはい、それにとても大きいので"
+			"お腹も膨れそうです。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		ChangeAnimation( "LAXIA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+		
+		//	"LAXIA"
+		TalkPopup("LAXIA",0,1,0,0,0) {
+			"#000e#000mああもう──そうではなくて！\p"
+			"食料を調達するにしても、"
+			"もっと安全な場所を選ぶべきかと。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+	//──────────────────────
+	
+	LookChr("Nia", "LAXIA")
+	
+	ChangeAnimation( "Nia", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	// ニア
+	TalkPopup("Nia",0,2,0,0,0) {
+		"#011e#080mですが、こうして"
+		"皆さんが助けに来て下さいました。\p"
+		"#012e#080mこれは紛れもなく私の祈りに"
+		"神がお応えくださった証拠です。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	WaitAnimation2( "Nia" , -1, 1, "ANI_EV_TEBURI",  0)
+	ChangeAnimation( "Nia", "ANI_EV_INORI_S", -1, 1 )	// 祈り
+
+	// ニア
+	TalkPopup("Nia",0,2,0,0,0) {
+		"#011e#000m神に感謝を……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"LAXIA"
+	TalkPopup("LAXIA",0,1,0,0,0) {
+		"#000e#000mそ、そういうものなのでしょうか……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	PlayVoice(Y8V_1411,"SAHAD",100)	//ガハハ（控えめな笑い）
+
+	//	"SAHAD"
+	TalkPopup("SAHAD",0,1,0,0,0) {
+		"#000e#000mガハハ、なかなか"
+		"逞しいシスターみてーだな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　画面暗転。
+	
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0) {
+		"#7Cこうしてアドルたちはドギを呼び、"
+		"#7Cニアを漂流村に送り届けてもらうのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	PlaySE(SE_PARTYIN, 100, 0, 0, 0, 1.0f, 0)	//仲間に加わる
+
+	//	システムテキスト
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#8S"
+		"#-1W#4Cシスター・ニアが漂流村に参加することになった！#10W" 
+		"#8S"
+	}
+	Wait(10)
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(10)
+	
+	//　　イベント終了、操作許可。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp7471:Join_Nia2_ED")
+}
+function "Join_Nia2_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")	
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag( GF_SUBEV_JOIN_NIA, 1 )			// シスター・ニアと合流した
+	CallFunc("rng:0410")
+
+	SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )			//シスター・ニア合流	名声値+2
+
+	//クエスト関連
+	if (FLAG[GF_SUBEV_1131_REMOVE_ROCK]){// 【ＬＰ：1131⇒3101の岩を撤去した】
+
+		SetFlag(GF_QS311_START_READY, 1)	//【QS311】開始条件を満たす
+	}
+
+	CallFunc( "system:Get_DrifterRescue" )		//漂流村の合流トロフィー判定
+
+	CallFunc("mp7471:init")
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_MP747x, MARKER_PERSON_NIA, 0,0)		//漂流者：シスターニア
+
+	//イベント後の再配置
+	SetChrPos("LEADER",43.62f,-74.62f,-0.01f)
+	Turn("LEADER",-45.95f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	
+	SetChrPos("Nia" , -100000.00f  , 0.00f ,0.00f )	// シスター・ニアを画面外に移動
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 43.620f , -74.620f , 1.859f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -152.775f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	SoundEfx( SEFX_CAVE_L, 15 )
+	SetEnvSEPlayState(-1, 1)
+	ActiveVoiceStop(ACTIVEVOICESTOP_FORCE)
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+function "Join_Nia_Adol_move"
+{
+	SetChrPos("ADOL",17.49f,-71.66f,-8.30f)
+	Turn("ADOL",150.17f,360.0f)
+
+	MoveTo( "ADOL",16.02f,-65.52f,-8.06f, 0.1f, 0.30f )
+	TurnToChr("ADOL", "Nia", 8.0f)
+}
+function "Join_Nia_Laxia_move"
+{
+	SetChrPos("LAXIA",16.86f,-72.46f,-8.24f)
+	Turn("LAXIA",159.33f,360.0f)
+
+	MoveTo("LAXIA",15.02f,-66.38f,-8.05f, 0.1f, 0.30f )
+	TurnToChr("LAXIA", "Nia", 8.0f)
+}
+function "Join_Nia_Sahad_move"
+{
+	SetChrPos("SAHAD",18.75f,-71.23f,-8.31f)
+	Turn("SAHAD",150.17f,360.0f)
+
+	MoveTo("SAHAD",17.01f,-66.16f,-8.12f, 0.1f, 0.30f )
+	TurnToChr("SAHAD", "Nia", 8.0f)
+}
+function "Join_Nia_Hummel_move"
+{
+	SetChrPos("HUMMEL",18.68f,-72.57f,-8.16f)
+	Turn("HUMMEL",151.13f,360.0f)
+
+	MoveTo("HUMMEL",16.08f,-67.31f,-8.13f, 0.1f, 0.30f )
+	TurnToChr("HUMMEL", "Nia", 8.0f)
+}

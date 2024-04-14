@@ -1,0 +1,197 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// mp6212    			                 			                         //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	// イベントエリア設定制御
+	EventAreaEnable( "ST_6212_to6201" , 0 )	//【ストッパー：6212から6201へ行けない】
+
+	if( FLAG[SF_EVENT_ON] ){
+		// エントリー制御
+		if( FLAG[GF_TBOX_DUMMY087] && !FLAG[GF_06MP4109_CLEAR_MIST]){			// 霧の漂う山門に入る
+			EntryOn( 03 , 1)	//mp6409v1 濃霧版大樹マップON
+			EntryOn( 00 , 0)	//mp4105 通常マップOFF
+		}
+	
+		// ＬＰ制御
+		if( FLAG[GF_05MP1201_IN_MEETING] )	//ドギたちに北部の状況を伝える
+		{
+			SetChrPos("LP_6212_Altar", -100000.00f, 00.00f, 00.00f)	// 【ＬＰ：6212中央の祭壇】
+		}
+
+		// ストッパー制御
+		if( FLAG[GF_TBOX_DUMMY087] &&		//調査のためジャンダルムへ向かう
+			!FLAG[GF_06MP4105B_START_ROOP] )	//霧の中で異形の古代種と戦う１
+		{
+			EventAreaEnable( "ST_6212_to6201" , 1 )	//【ストッパー：6212から6201へ行けない】
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0415] && FLAG[GF_04MP6201_DIS_OBSTACLE] && !FLAG[GF_04MP6409_IN_TEM]){
+			//ActiveVoiceStart(EACT_EVID_0415, 1, 0)	//山門内に入ると
+			SetEventDriven(EED_TYPE_TIMER,60,"mp6212:act_0415")
+		}
+	}
+}
+
+function "act_0415"
+{
+	ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+	ActiveVoiceStart(EACT_EVID_0415, 1, 0)	//山門内に入ると
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー・ＬＰセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//	================================================
+//	【ＬＰ：6212中央の祭壇】
+//	================================================
+function "LP_6212_Altar"
+{
+	//▼～！GF_05MP1201_IN_MEETING,			//ドギたちに北部の状況を伝える
+	//　　-316.04f	691.74f	51.36f	-25.29f付近の祭壇にＬＰをしかける
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	//	テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C何かの祭壇のようだが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+//	SetChrPos("LEADER",0.00f,0.00f,0.00f)
+//	Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+//	================================================
+//	【ストッパー：6212から6201へ行けない】
+//	================================================
+function "ST_6212_to6201"
+{
+	//▼GF_TBOX_DUMMY087,				//調査のためジャンダルムへ向かう
+	//	～！GF_06MP4105B_START_ROOP,		//霧の中で異形の古代種と戦う１
+	//	//0519追加
+
+//開始処理ここから----------------------------------------------------
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+//開始処理ここまで-----------------------------------------------
+
+	TalkPopup("DANA",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#000e#000m大樹の寺院は"
+		"ここを南に抜けた所だね。\p"
+		"アドルさん、急いで向かおう！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetChrPos("PLAYER1",-329.34f,724.53f,42.90f)
+	Turn("PLAYER1",-22.58f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}

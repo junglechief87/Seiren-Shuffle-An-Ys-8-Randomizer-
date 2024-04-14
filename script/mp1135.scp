@@ -1,0 +1,2817 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 1135：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1117" , 0 )
+	MapHide( "@BG2_mp1135" , 0 )
+	MapHide( "BG2_groundfog_main" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW1" , 0 )	//遠景の板フォグを消す
+
+	if( FLAG[SF_EVENT_ON] ){
+		//一般配置ファンクション呼び出し
+		CallFunc("mp1135:NpcPosition")
+	}
+
+//-----------------------------------------------------------------------------------------------------------
+// イベントエリア・イベントＬＰ制御
+	EventAreaEnable( "evb2_QS_400_Event" , 0 )
+	EventAreaEnable( "ev2_EV_LOCATION005" , 0 )
+
+	// ボス戦用扉開ける
+	MapAnime("CT_EVENT", "open")
+
+	// イベント発生制御
+	if (FLAG[SF_BOSS_BATTLE])
+	{
+		//リトライやデバッグボスジャンプからのボス戦
+		//if( FLAG[GF_QUEST_400] == QUEST_START )		// ししょーへの献上（リコッタ）
+		//{		
+			SetWork(WK_BGM, BGM_Nothing)
+			EventCue("mp1135:Retry_QS_400")
+		//}
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+		// クエスト制御
+		if( FLAG[GF_QUEST_400] == QUEST_START &&	// ししょーへの献上（リコッタ）
+			!FLAG[GF_QS400_CHECK_EVENT] )			// ！【QS400】▼クエストイベント を見た
+		{
+			EventAreaEnable( "evb2_QS_400_Event" , 1 )
+		}
+
+		//ロケーション
+		if ( !FLAG[GF_LOCATION05] ) {		// ロケーション005
+			EventAreaEnable( "ev2_EV_LOCATION005" , 1 )
+		}
+
+		//ＮＰＣマーカーセット
+		CallFunc("system:SetMarkerNPC")
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_1117.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//遠鳴り浜
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■一般配置
+//////////////////////////////////////////////////////////////////////
+//一般配置
+function "NpcPosition"
+{
+	if( FLAG[GF_QUEST_400] == QUEST_START )		// ししょーへの献上（リコッタ）
+	{
+		//スキル猿
+		SetChrPos("ev_QS400_Monkey", -745.62f, -831.41f, 148.57f)
+		if (FLAG[GF_QS400_CHECK_EVENT]){
+
+			Turn("ev_QS400_Monkey", -162.13f, 360.0f)
+			ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI", -1, 1)
+		}else{
+
+			Turn("ev_QS400_Monkey", -1.21f, 360.0f)
+			ChangeAnimation("ev_QS400_Monkey", "ANI_WAIT", -1, 1)
+		}
+		
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■一般会話
+//////////////////////////////////////////////////////////////////////
+function "Talk_ev_QS400_Monkey"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+	LookChr("this", "LEADER")
+
+//──────────────────────────────
+// 【QS400】ししょーへの献上（リコッタ）
+//▼スキル猿の選択肢
+//──────────────────────────────
+//スキル猿に話しかけると、以下の処理。
+
+//──────────────────────
+//⇒完熟マンゴーを所持している場合
+
+	if (ALLITEMWORK[ICON3D_US_MANGO_S])		//「完熟マンゴー」を持っている
+	{
+
+		//「うほほ（肯定「そうじゃな」）」を再生
+		PlayVoice(Y8V_5663, "xxx", 100)	//うほほ（肯定「そうじゃな」）
+
+		//	ナレーション
+		TalkPopup(UNDEF, 0, 3, SYSTEM_PPOSX, SYSTEM_PPOSY, 0)
+		{
+			//		"#7Cししょーに『完熟マンゴー』を献上しますか？"
+			"#7Cししょーに#2C「#245I完熟マンゴー」#7Cを献上しますか？"
+			"#7C※献上すると、リコッタ一人で"
+			"#7C  ししょーと戦闘を行います。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//選択肢
+		SetFlag(TF_MENU_SELECT, 0)
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		//	MenuAdd(1,"『完熟マンゴー』を献上する")
+		MenuAdd(1, "#245I完熟マンゴーを献上する")	
+		MenuAdd(2, "やめておく")
+		MenuOpen(TF_MENU_SELECT, -1, ADOLMENU_PPOSY, -2, -2, 10, 0)
+		WaitMenu(0)
+		MenuClose(10, 0)
+		Wait(20)
+
+		//──────────────────────
+		//	⇒『完熟マンゴー』を献上する
+		if(FLAG[SF_RICOTTA_JOINOK])
+		{
+			if (FLAG[TF_MENU_SELECT] == 1)
+			{
+				////	アイテム譲渡メッセージ
+				//TalkPopup(UNDEF, 0, 3, SYSTEM_PPOSX, SYSTEM_PPOSY, 0)
+				//{
+				//	//"ししょーに『完熟マンゴー』を献上した！"
+				//	"#7Cししょーに#2C#245I完熟マンゴー#7Cを献上した！"
+				//}
+				//WaitPrompt()
+				//WaitCloseWindow()
+
+				//	システムメッセージ
+				TalkPopup(UNDEF, 0, 5, 0, 0, 0)
+				{
+					"#8S"
+					"#-1W#4Cししょーに#2C「#245I完熟マンゴー」#4Cを献上した！#10W"
+					"#8S"
+				}
+				Wait(10)
+				WaitPrompt()
+				WaitCloseWindow()
+
+				DeleteItem(ICON3D_US_MANGO_S, 1)			// 『完熟マンゴー』
+
+				//　　＞画面暗転して「戦闘開始イベント」に接続
+				FadeOut(FADE_BLACK, FADE_NORMAL)
+				WaitFade()
+
+				EventCue("mp1135:QS_400_Battle")	// 【QS400】ししょーへの献上（リコッタ）	▼クエスト開始イベント
+
+			}
+		}
+	//	⇒やめておく
+		else if (FLAG[TF_MENU_SELECT] == 2)
+		{
+			//　　何もなしで操作許可。
+		}
+	//──────────────────────
+	}
+	else{
+
+		//⇒完熟マンゴーを所持していない場合
+
+		//猿が目を閉じて首を振る。
+
+		ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+		ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI_NO", -1, 1)
+		WaitAnimation2("ev_QS400_Monkey", -1, 1, "ANI_EV_UDEGUMI_NO", 0)
+		ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+		TalkPopup("RICOTTA", 0, 0, 0, 0, 0)
+		{
+			"#000e#000mししょー言ってる。"
+			"『礼儀を欠く者は相手にせぬ』\p"
+			"みんな、『完熟マンゴー』用意する！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+//////////////////////////////////////////////
+// ロケーションポイント0005:パラセコイア
+//////////////////////////////////////////////
+function "EV_LOCATION005"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+
+	Portrait_Load(4, "visual/mapname/lnmp1135.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , -724.065f , -819.058f , 168.661f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 85.009f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 22.359f , 0 )	// 基本仰角
+	RotateCamera( 0 , 347.874f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp1135:EV_LOCATION005_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -724.065f , -819.058f , 214.797f , 400 )	// 注視点
+	ExecuteCmd(1000, ChangeCameraDistance, INTERPOLATE_SPHERE , 60.512f , 400 )		// 基本距離
+	ExecuteCmd(1000, ChangeCameraElevation, INTERPOLATE_SPHERE , -47.806f , 400 )	// 基本仰角
+	ExecuteCmd(1000, RotateCamera, INTERPOLATE_SPHERE , 317.321f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1135:EV_LOCATION005_ED")
+}
+function "EV_LOCATION005_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION05, 1)	//パラセコイア
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_F008, MARKER_EV_LC_MP1135, 0, 0)	//ロケ　：パラセコイア
+	SetMapMarker( SMI_LOCATION ,PAGE_F008, MARKER_EV_LC_MP1135, -724.75f, -824.40f, 151.63f,-724.75f, -824.40f,LOCATION_MP1135,MN_F_MP1135,0)		//ロケ　：パラセコイア
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_F008,0 ,-724.59f, -827.75f ,100 )
+	OpenMinimap(PAGE_F008,0 ,-801.6f, -731.6f ,40 )		// 通常徒歩だけでは踏破不可能範囲を踏破した扱いにできるように設定
+
+	CallFunc("mp1135:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , -720.492f , -839.253f , 150.147f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 21.250f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", -720.49f, -839.25f, 148.28f)
+	Turn("LEADER" ,158.67f , 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function "EV_OpenChack"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C漂流者と思わしき人物が佇んでいる。"		//◆仮　ストッパー用メッセージ
+		"#7C声をかけてみようか？"
+	}
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "PLAYER1" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "PARTYALL" , 0 )
+//	StopEffect(-1,PARTYALL,1)
+//	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1, "声をかける")
+	MenuAdd(-1,"後にする")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	//─────────────────────────
+	//	⇒声をかける
+	if (FLAG[TF_MENU_SELECT] == 1){
+
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		EventCue("mp1135:EV_M02S220")
+
+	}
+	//─────────────────────────
+	//	⇒後にする
+	else {
+
+		CrossFade(FADE_NORMAL)
+	
+		// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+		// PLAYER1のそばにワープする
+		SetFlag( TF_CHECK_DISTANCE, 1 )
+		SetFlag( TF_CHECK_DISTANCE2, 1 )
+		if( WORK[WK_ISEXIST_PLAYER2] )
+		{
+			CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+		}
+		if( WORK[WK_ISEXIST_PLAYER3] )
+		{
+			CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+		}
+	
+		if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+		{
+			ChrAlpha( "PLAYER2" , 0.0f , 0 )
+			ChrAlpha( "PLAYER3" , 0.0f , 0 )
+			ResetPartyPos()
+		}
+
+		if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+		{
+			ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+			ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+			WaitThread(3)
+			WaitThread(4)
+		}
+
+		//再配置	
+		SetChrPos("LEADER",-720.27f,-753.02f,149.34f)
+		Turn("LEADER",142.17f,360.0f)
+		
+		ResetPartyPos()
+		ResetFollowPoint()
+	
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+
+		//マップマーカー更新
+//		DelMapMarker( SMI_EVENTPT_MAIN,PAGE_F008,MARKER_EV_M02S220, 0, 0)
+//		SetMapMarker(SMI_EVENTPT_MAIN ,PAGE_F008, MARKER_EV_M02S220　,-754.52f, -824.71f, 148.57f , -754.52f, -824.71f ,0, MN_F_MP1135,0)	//カトリーンに出会う
+		WaitFade()
+
+	}
+	//─────────────────────────
+
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+
+//──────────────────────────────
+//▼カトリーンに出会う(mp1117)
+//──────────────────────────────
+function "EV_M02S220"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	//SetChrWork("ADOL",CWK_BATTLEMODE,1)
+	SetChrPos("ADOL", -718.05f, -756.18f, 149.25f)
+	Turn("ADOL", -55.11f, 360.0f)	
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("ADOL" , "Katrin")
+
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	//SetChrWork("LAXIA",CWK_BATTLEMODE,1)
+	SetChrPos("LAXIA", -719.10f, -756.72f, 149.27f)
+	Turn("LAXIA", -55.03f, 360.0f)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("LAXIA" , "Katrin")
+
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI )
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrWork("SAHAD",CWK_BATTLEMODE,1)
+	SetChrPos("SAHAD", -720.41f, -757.39f, 149.28f)
+	Turn("SAHAD", -55.00f, 360.0f)
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("SAHAD" , "Katrin")
+
+	SetChrInfoFlag( "Katrin" , INFOFLAG_NOCHRATARI )
+	SetChrWork("Katrin", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Katrin",-716.24f,-758.21f,149.28f)
+	Turn("Katrin",-37.57f,360.0f)
+	ChangeSubAnimation("Katrin",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Katrin",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Katrin",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	MoveCameraAt(0, -717.153f, -759.594f, 150.279f, 0)	// 注視点
+	ChangeCameraDistance(0, 6.748f, 0)		// 基本距離
+	ChangeCameraElevation(0, 5.792f, 0)	// 基本仰角
+	RotateCamera(0, 195.798f, 0)				// 角度
+	ChangeCameraPers(0, 40.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -715.788f, -760.314f, 150.279f, 120)				// 注視点
+
+//	ExecuteCmd( 1, MoveTo, "ADOL", -752.70f, -823.48f, 148.57f , 0.1f, 0.21f )
+//	ExecuteCmd( 2, MoveTo, "LAXIA", -751.94f, -823.94f, 148.57f, 0.1f, 0.20f )
+//	ExecuteCmd( 3, MoveTo, "SAHAD", -751.06f, -822.21f, 148.57f , 0.1f, 0.17f )
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 180.000 ,2.000 ,0.550 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1135:EV_M02S220_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//──────────────────────────────
+	//▼カトリーンに出会う(mp1117)
+	//──────────────────────────────
+	//　　mp1117の海岸に出ると
+	//　　焚火の後があるものの誰もいない状態。
+	//　　獣を退けながら南側の山を登っていくと、
+	//　　巨木の根元で海を眺めている女性を発見する。
+	//　　近づくと、女性が気配を察してイベント開始。
+	//　　フェードインして巨木の根元に立っているカトリーン。
+	//　　手前から歩いてフレームインするアドルたち。
+	//　　アドルたちは抜身の武器を持っている状態。
+	//　　カトリーンＰＡエモーション表示して振り向く。
+	WaitThread(1000)
+	EmotionEx("Katrin", 0.00f, 38, 39, 5, 1, 1, 1.0f)	// ＰＡエモーション
+	Wait(45)
+
+	FadeBGM(60,30)
+
+	Turn("Katrin", 134.50f, 10.0f)
+	Wait(60)
+	//	凛とした女性
+	SetName("凛とした女性")
+	TalkPopup("Katrin",0,0,0,0,0)
+	{
+		"#4105V#011e#000m……ふむ、お前たちは？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_NORMAL)
+
+	MoveCameraAt(0, -720.520f, -757.428f, 150.279f, 0)	// 注視点
+	ChangeCameraDistance(0, 6.749f, 0)		// 基本距離
+	ChangeCameraElevation(0, 5.792f, 0)	// 基本仰角
+	RotateCamera(0, 89.768f, 0)				// 角度
+	ChangeCameraPers(0, 40.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	Wait(FADE_NORMAL)
+
+	SetName("")
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#0651V#000e#000mロンバルディアの乗客の方ですね？\p"
+		"#0652Vキルゴールさんに"
+		"あなたのことを聞いて迎えに来ました。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	テキスト
+	ChangeAnimation("ADOL", "ANI_EV_TEBURI", -1, 1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+	Wait(35)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cアドルたちは名乗って、"
+		"#7C状況を女性に説明するのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_NORMAL)
+	SetChrPos("SAHAD", -718.31f, -757.83f, 149.30f)
+	Turn("SAHAD", -109.86f, 360.0f)
+
+	SetChrPos("LAXIA", -717.73f, -756.85f, 149.29f)
+	Turn("LAXIA", -46.81f, 360.0f)
+
+	SetChrPos("ADOL", -716.79f, -756.21f, 149.26f)
+	Turn("ADOL", -25.17f, 360.0f)
+
+	SetChrPos("Katrin", -716.24f, -758.21f, 149.28f)
+	Turn("Katrin", 155.64f, 360.0f)
+	ChangeAnimation("Katrin", "ANI_EV_SIAN", -1, 1)
+
+	MoveCameraAt(0, -717.868f, -760.391f, 150.849f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 1.660f, 0)	// 基本仰角
+	RotateCamera(0, 160.791f, 0)				// 角度
+	ChangeCameraPers(0, 32.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -717.868f, -760.391f, 150.551f, 120)		// 注視点
+
+	Wait(FADE_NORMAL)
+	WaitThread(1000)
+	//	凛とした女性
+
+	SetName("凛とした女性")
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4106V#012e#000m無人島……"
+		"なるほど合点が行ったわ。\p"
+		"#4107V#011m私のことを知らせてくれた"
+		"キルゴール殿には感謝しなくては。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4108V#061e#000mそれにしても……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Katrin", "ADOL")
+	ChangeAnimation("Katrin", "ANI_EV_SIAN_E", -1, 1)
+
+	//	凛とした女性
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4109V#030e#000m赤毛のあなた……"
+		"腰に佩#2Rは#Rいた剣は拾い物なの？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Look("ADOL", -30, -10)
+	LookChr("LAXIA", "ADOL")
+	LookChr("SAHAD", "ADOL")
+
+	//	name2()
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4110V#041e#000mずいぶんと古びている上、"
+		"刃こぼれが酷く錆びも浮いている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4111V#042e#000m腕は確かなようだけど、"
+		"その鈍#2Rなまくら#Rではろくに力を発揮できないはず。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　次にラクシャを見るカトリーン。
+	LookChr("Katrin", "LAXIA")
+
+	//	凛とした女性
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4112V#030e#000mそのレイピアは良い品だけど、"
+		"きちんと刃が入っていないようね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("ADOL" , "LAXIA")
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC_S,1)
+	Look("LAXIA", -5, -10)
+
+	//	name2()
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4113V#041e#000mくすんだ剣身から察するに仕舞いっ放しの"
+		"練習用でも持ち出したのかしら。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	SetName("")
+
+	LookChr("LAXIA", "Katrin")
+	//　　ラクシャにアセアセエモーション。
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#0653V#000e#000mあ……一瞬見ただけで……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　最後にサハドを見るカトリーン。
+	LookChr("Katrin" , "SAHAD")
+	TurnToChr("Katrin", "SAHAD", 10.0f)
+	LookChr("SAHAD", "Katrin")
+
+	SetName("凛とした女性")
+
+	//	凛とした女性
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4114V#042e#000mあなたの武器は…………"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("LAXIA", "SAHAD")
+	LookChr("ADOL", "SAHAD")
+
+	//	name2()
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4115V#041e#000m…………まるでデタラメね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4116V#042e#000mそんなものを振り回し続けたら、"
+		"そのうち身体を痛めることになるわ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	SetName("")
+
+	//	"SAHAD"
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#1614V#080e#080mガハハ、参ったな。"
+		"確かに腰に来るんだよな……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	HeadNo("Katrin", 1, 35)
+	Wait(35)
+	LookReset("Katrin")
+	SetName("凛とした女性")
+	//	凛とした女性
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#4117V#011e#000mよくもまあ、そのような得物で"
+		"あの森を抜けて来たわね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	SetName("")
+
+	CrossFade(FADE_NORMAL)
+
+	SetChrPos("ADOL", -716.41f, -757.12f, 149.29f)
+	Turn("ADOL", 18.00f, 360.0f)
+	SetChrPos("LAXIA", -717.35f, -757.27f, 149.29f)
+	Turn("LAXIA", 1.92f, 360.0f)
+	SetChrPos("SAHAD", -717.85f, -757.11f, 149.30f)
+	Turn("SAHAD", -48.54f, 360.0f)
+	SetChrWork("SAHAD", CWK_BATTLEMODE, 0)
+	SetChrPos("Katrin", -716.24f, -758.21f, 149.28f)
+	Turn("Katrin", 131.53f, 360.0f)
+	LookChr("ADOL", "Katrin")
+	LookChr("LAXIA", "Katrin")
+
+	MoveCameraAt(0, -713.401f, -755.716f, 150.303f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.702f, 0)		// 基本距離
+	ChangeCameraElevation(0, 4.599f, 0)	// 基本仰角
+	RotateCamera(0, 298.457f, 0)				// 角度
+	ChangeCameraPers(0, 31.200f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_NORMAL)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"あなたは一体？")
+	MenuAdd(2,"武器に詳しいですね")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	//─────────────────────────
+	//	⇒あなたは一体？
+	if (FLAG[TF_MENU_SELECT] == 1){
+
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(35)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+		LookChr("Katrin", "ADOL")
+		ChangeAnimation("Katrin", "ANI_EV_TEBURI", -1, 1)
+		SetName("凛とした女性")
+		//	凛とした女性
+		TalkPopup("Katrin",0,2,0,0,0)
+		{
+			"#4118V#012e#000m私の名はカトリーン。"
+			"代々鍛冶屋を営む家に生まれた。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//	name2()
+		TalkPopup("Katrin",0,2,0,0,0)
+		{
+			"#4119V#000e#000m鍛冶の腕には少々覚えがあるわ。"
+			"鍛冶2行目"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒武器に詳しいですね
+	if (FLAG[TF_MENU_SELECT] == 2){
+
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(35)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+		LookChr("Katrin", "ADOL")
+		ChangeAnimation("Katrin", "ANI_EV_TEBURI", -1, 1)
+		SetName("凛とした女性")
+		//	凛とした女性
+		TalkPopup("Katrin",0,2,0,0,0)
+		{
+			"#4120V#012e#000mこう見えても鍛冶屋の娘よ。"
+			"鍛冶の腕には少々覚えがあるわ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//	name2()
+		TalkPopup("Katrin",0,2,0,0,0)
+		{
+			"#4121V#000e#000m私の名前はカトリーン。"
+			"以後お見知りおきを願うわ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//─────────────────────────
+
+	LookChr("Katrin", "LAXIA")
+	SetName("")
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#000e#000m鍛冶屋……\p"
+		"ということは、わたくしたちの"
+		"武器の手入れもお願いできるのですか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	HeadYes("Katrin" , 1 , 20)
+	ChangeAnimation("Katrin", "ANI_EV_UDEGUMI_S", -1, 1)
+	//	"Katrin"
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#000e#000mもちろん、と言いたいところだけど、"
+		"私も設備なしではどうにもならない。\p"
+		"鍛冶場さえあれば、武器を"
+		"強化することもできるのだけれど……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"SAHAD"
+	TalkPopup("SAHAD", 0, 1, 80, 180, 0)
+	{
+		"#011e#000m島の奥に進むにつれて"
+		"獣たちも手強くなってきてるしな。\p"
+		"このセイレン島じゃあ、"
+		"買い替えることは絶対にできん。\p"
+		"頼めるものなら是非頼みたいんだが……"
+		"是非6行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("LAXIA", "ADOL")
+
+	//	"LAXIA"
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#000e#000mアドル・クリスティン、"
+		"船長やドギに相談してみたらいかが？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("ADOL", "LAXIA")
+	//	"Katrin"
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#000e#000mふむ……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	//	"SAHAD"
+	TalkPopup("SAHAD",0,1,80,180,0)
+	{
+		"#000e#000mおーよ、すぐに漂流村へ戻ろうぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　暗転のまま以下のメッセージを表示
+	FadeOut(FADE_BLACK,FADE_SLOW)
+
+
+	//	テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cアドルたちはカトリーンを連れて"
+		"#7C漂流村へ一旦戻ることにした。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cその後、バルバロスとドギに相談して、"
+		"#7C漂流村に鍛冶場を作ることにする。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C急ごしらえだが漂着物を使って"
+		"#7C炉や金床が用意されることになり……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cカトリーンが何とか"
+		"#7C鍛冶を行える設備が整うのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp1135:EV_M02S220_ED")
+}
+
+function "EV_M02S220_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//モンスターを復帰
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+
+	ChangeSubAnimation("Katrin", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("Katrin", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("Katrin", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeAnimation("Katrin", "ANI_WAIT", -1, 1)
+
+	SetFlag(GF_SMITHY_LV,2)		//◆鍛冶屋レベル設定
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+	LoadArg("map/mp1201/mp1201.arg")
+	EventCue("mp1201:EV_M02S230")
+
+//終了処理ここまで----------------------------------------------------
+
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//===============================================================
+//
+// 【QS400】ししょーへの献上（リコッタ）
+// ▼クエストイベント
+//
+function "QS_400_Event"
+{
+
+//　　遠鳴り浜mp1135（-765.24f, -746.80f, 156.69f ,-120.33f）付近に
+//　　腕を組んで立っているスキル猿（※モンスター名は後日別途用意）がおり、
+//　　近づいたらイベント開始。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -744.37f, -819.10f, 147.54f)
+	Turn("ADOL", 7.06f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	LookReset( "ADOL" )
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", -742.90f, -818.22f, 147.31f)
+	Turn("RICOTTA", -10.86f, 360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	LookReset( "RICOTTA" )
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", -742.24f, -818.44f, 147.36f)
+	Turn("LAXIA", 32.09f, 360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+	LookReset( "LAXIA" )
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", -742.95f, -815.38f, 146.93f)
+	Turn("SAHAD", 6.66f, 360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+	LookReset( "SAHAD" )
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", -744.72f, -816.80f, 147.27f)
+	Turn("HUMMEL", -2.74f, 360.0f)
+	ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+	LookReset( "HUMMEL" )
+
+	//	⇒ダーナがいる場合
+	if( FLAG[SF_DANA_JOINOK] )		// ダーナがいる
+	{
+		SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("DANA", -743.16f, -817.09f, 147.18f)
+		Turn("DANA", 6.66f, 360.0f)
+		ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+		LookReset( "DANA" )
+	}
+
+	//スキル猿
+	SetChrWork("ev_QS400_Monkey", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS400_Monkey", -745.62f, -831.41f, 148.57f)
+	Turn("ev_QS400_Monkey", 1.36f, 360.0f)
+	ChangeAnimation( "ev_QS400_Monkey" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS400_Monkey" , INFOFLAG_NOCHRATARI)
+	LookReset( "ev_QS400_Monkey" )
+
+	//SetChrPos("ev_QS400_Monkey", -745.62f, -831.41f, 148.57f)
+	//Turn("ev_QS400_Monkey", -162.13f, 360.0f)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -740.514f, -813.653f, 149.139f, 0)	// 注視点
+	ChangeCameraDistance(0, 2.158f, 0)		// 基本距離
+	ChangeCameraElevation(0, 0.121f, 0)	// 基本仰角
+	RotateCamera(0, 162.007f, 0)				// 角度
+	ChangeCameraPers(0, 38.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 180.000 ,1.000 ,0.700 ,0.500)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1135:QS_400_Event_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	FadeBGM(70,30)
+	SoundEfx( SEFX_EV_VALLEY, 15 )
+
+	ExecuteCmd(1, MoveTo, "RICOTTA", -744.92f, -825.82f, 148.56f, 0.1f, 0.40f)
+
+	ExecuteCmd(2, MoveTo, "ADOL", -745.63f, -825.53f, 148.53f, 0.1f, 0.22f)
+	if (FLAG[SF_DANA_JOINOK])		// ダーナがいる
+	{
+		ExecuteCmd(3, MoveTo, "DANA", -744.09f, -823.81f, 148.24f, 0.1f, 0.25f)
+	}
+	ExecuteCmd(4, MoveTo, "LAXIA", -743.72f, -825.13f, 148.43f, 0.1f, 0.22f)
+	ExecuteCmd(5, MoveTo, "SAHAD", -744.92f, -823.46f, 148.22f, 0.1f, 0.26f)
+	ExecuteCmd(6, MoveTo, "HUMMEL", -745.89f, -823.97f, 148.30f, 0.1f, 0.26f)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -741.373f, -819.947f, 150.901f, 120)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 0.121f, 120)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 153.006f, 120)		// 角度
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	
+	Wait(20)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	WaitThread(1)	//目的地まで歩く
+	LookChr("RICOTTA", "ev_QS400_Monkey")
+
+	WaitThread(2)
+	if (FLAG[SF_DANA_JOINOK])		// ダーナがいる
+	{
+		WaitThread(3)
+	}
+	WaitThread(4)
+	WaitThread(5)
+	WaitThread(6)
+
+	LookChr("ADOL", "ev_QS400_Monkey")
+	LookChr("LAXIA", "ev_QS400_Monkey")
+	LookChr("SAHAD", "ev_QS400_Monkey")
+
+	LookChr("HUMMEL", "ev_QS400_Monkey")
+	LookChr("DANA", "ev_QS400_Monkey")
+	Wait(20)
+
+//　　リコッタ、アドル、ラクシャ、サハド、
+//　　ヒュンメル、いればダーナが歩いて猿の背中に近づく。
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt(0, -748.805f, -826.268f, 153.543f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.958f, 0)		// 基本距離
+	ChangeCameraElevation(0, 8.198f, 0)	// 基本仰角
+	RotateCamera(0, 211.717f, 0)				// 角度
+	ChangeCameraPers(0, 28.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	Wait(FADE_CROSS)
+
+//　　スキル猿に「…」エモーションの後、アドルたちの方を振り向く。
+	EmotionEx("ev_QS400_Monkey", 0.00f, EMO_3DOT, 0, 5, 1, 1, 2.5f)	//…
+	Wait(50)
+	VisualName("visual/chrname/cn_b151.itp", VN_NAMEVOICE, VN_CHRNAME_RB_X, VN_CHRNAME_RB_Y,VN_NPCNAME_TIME) //マスターコング
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -746.014f, -826.207f, 152.947f, 200)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 7.708f, 200)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 182.667f, 200)		// 角度
+
+	Turn("ev_QS400_Monkey",171.51f,8.0f)
+	Wait(8)
+	ChangeAnimation("ev_QS400_Monkey", "ANI_WAIT", -1, 1)
+
+	Look("ev_QS400_Monkey", 0.00f, -20.00f)
+
+	Wait(50)
+
+	PlayVoice(Y8V_5661, "xxx", 100)	//ほっほっ（笑い）
+	ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI_S", -1, 1)
+	WaitAnimation2("ev_QS400_Monkey", -1, 1, "ANI_EV_UDEGUMI_S", 0)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	Wait(10)
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt(0, -746.260f, -828.331f, 151.360f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.958f, 0)		// 基本距離
+	ChangeCameraElevation(0, 23.033f, 0)	// 基本仰角
+	RotateCamera(0, 334.491f, 0)				// 角度
+	ChangeCameraPers(0, 28.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	ChangeAnimation("RICOTTA", "ANI_EV_GUTSPOSE_S", -1, 1)
+
+	PlayVoice(Y8V_2565, "RICOTTA", 100)	//わわっ（嬉しい）
+
+	TalkPopup("RICOTTA",0,2,0,0,0)
+	{
+		"#000e#000m流石はししょー。"
+		"リコッタが来ること知ってた。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("SAHAD", "ANI_EV_BORI", -1, 1)
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#000e#000mそ、そうなのか……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("HUMMEL", "ANI_EV_TEBURI", -1, 1)
+	TalkPopup("HUMMEL",0,2,0,0,0)
+	{
+		"#000e#000mフム、確かに只ならぬ風格だな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//──────────────────────
+	//	⇒ダーナがいる場合
+	if( FLAG[SF_DANA_JOINOK] )		// ダーナがいる
+	{
+		TalkPopup("DANA",0,2,0,0,0)
+		{
+			"#000e#000mこの方がリコッタちゃんの"
+			"お師匠さん……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+
+	ChangeAnimation("LAXIA", "ANI_EV_UDEGUMI_S", -1, 1)
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000mヒヒ、いやゴリラ……\p"
+		"ゴリラ2行目"
+		"このような種は"
+		"見たことがありませんが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+
+	//MoveCameraAt(0, -775.810f, -741.494f, 159.482f, 0)	// 注視点
+	//ChangeCameraDistance(0, 1.959f, 0)		// 基本距離
+	//ChangeCameraElevation(0, -5.485f, 0)	// 基本仰角
+	//RotateCamera(0, 227.721f, 0)				// 角度
+	//ChangeCameraPers(0, 31.000f, 0)			// 視野角
+	//SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	//RollCamera(0, 0.0f, 0)				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -775.418f, -741.063f, 158.539f, 110)		// 注視点
+	//ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -5.485f, 110)		// 基本仰角
+	//ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 227.721f, 110)		// 角度
+
+	MoveCameraAt(0, -744.254f, -822.899f, 150.492f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.959f, 0)		// 基本距離
+	ChangeCameraElevation(0, -11.515f, 0)	// 基本仰角
+	RotateCamera(0, 172.254f, 0)				// 角度
+	ChangeCameraPers(0, 28.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -742.926f, -823.273f, 149.673f, 70)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -15.441f, 70)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 152.016f, 70)		// 角度
+
+	Wait(FADE_CROSS)
+
+	//　　スキル猿がラクシャを睨む。
+	LookChr( "ev_QS400_Monkey", "LAXIA" )
+
+	PlayVoice(Y8V_5665, "xxx", 100)	//ううほ…（否定「そうではない」）
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt(0, -744.322f, -826.554f, 150.269f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.959f, 0)		// 基本距離
+	ChangeCameraElevation(0, 17.578f, 0)	// 基本仰角
+	RotateCamera(0, 6.649f, 0)				// 角度
+	ChangeCameraPers(0, 33.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ChangeAnimation("LAXIA", "ANI_EV_SUP_S", -1, 1)
+
+	Wait(FADE_CROSS)
+
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#050e#000mひっ……"
+		"な、なんなのです！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("RICOTTA",0,1,0,0,0)
+	{
+		"#000e#000mししょー言ってる。2"
+		"『私は私だ』"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("SAHAD",0,1,0,0,0)
+	{
+		"#080e#080mガハハ、なるほど。"
+		"そこいらの猿と一緒にするなってか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("LAXIA", "ANI_EV_SUP_E", -1, 1)
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#061e#000mえ、えっと……すみません。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt(0, -743.435f, -826.099f, 151.906f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.959f, 0)		// 基本距離
+	ChangeCameraElevation(0, -6.080f, 0)	// 基本仰角
+	RotateCamera(0, 148.297f, 0)				// 角度
+	ChangeCameraPers(0, 29.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -744.677f, -826.416f, 151.955f, 70)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -6.080f, 70)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 165.633f, 70)		// 角度
+
+	Wait(FADE_CROSS)
+	//　　スキル猿が目を閉じて頷く。
+	LookReset( "ev_QS400_Monkey" )
+
+	ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Wait(10)
+	ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI_YES", -1, 1)
+	PlayVoice(Y8V_5664, "xxx", 100)	//うほ！（強い肯定「その通り！」）
+	Wait(80)
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt(0, -744.165f, -826.207f, 150.221f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.258f, 0)		// 基本距離
+	ChangeCameraElevation(0, -14.694f, 0)	// 基本仰角
+	RotateCamera(0, 147.097f, 0)				// 角度
+	ChangeCameraPers(0, 40.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	TalkPopup("RICOTTA",0,1,0,0,0)
+	{
+		"#000e#000mししょー言ってる。3"
+		"『分かればいい』"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ラクシャに「冷や汗」エモーション。
+	EmotionEx("LAXIA", 0.04f, EMO_TARA, 0, 5, 1, 1, 0.9f)	//冷や汗
+	Wait(50)
+
+	//PlayVoice(Y8V_0375, "LAXIA", 100)	//ふう…（溜息）
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#12S#000e#000m（ず、ずいぶん誇り高いんですね。）"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Look("ev_QS400_Monkey", 0.00f, -20.00f)
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt(0, -744.466f, -823.386f, 150.120f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.959f, 0)		// 基本距離
+	ChangeCameraElevation(0, -6.103f, 0)	// 基本仰角
+	RotateCamera(0, 161.990f, 0)				// 角度
+	ChangeCameraPers(0, 44.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	Wait(FADE_CROSS)
+
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000mところでししょー、"
+		"今日はお願いがあって来た。\p"
+		"実は──"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	//　　スキル猿が制止するポーズ。
+	PlayVoice(Y8V_5665, "xxx", 100)	//ううほ…（否定「そうではない」）
+	ChangeAnimation( "ev_QS400_Monkey", "ANI_EV_UDEGUMI_NO", -1, 1 )
+	WaitAnimation2( "ev_QS400_Monkey" , -1, 1, "ANI_EV_UDEGUMI_NO",  0)
+
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000m『みなまで言うな』……"
+		"流石はししょー！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("SAHAD", "ANI_EV_UDEGUMI_S", -1, 1)
+
+	//PlayVoice(Y8V_1411, "SAHAD", 100)	//ガハハ（控えめな笑い）
+
+	TalkPopup("SAHAD",0,0,0,0,0)
+	{
+		"#000e#000mガハハ、すげーな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()	
+
+	HeadYes("HUMMEL", 1, 25)
+
+	//PlayVoice(Y8V_2165, "HUMMEL", 100)	//ああ（平常のテンション。あらゆる場面で使用）
+
+	TalkPopup("HUMMEL",0,0,0,0,0)
+	{
+		"#000e#000mああ、まさか"
+		"ここまで意思が疎通できるとは。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　スキル猿が「ちょいちょい」のポーズ。
+	PlayVoice(Y8V_5664, "xxx", 100)	//うほ！（強い肯定「その通り！」）
+	ChangeAnimation( "ev_QS400_Monkey", "ANI_EV_UDEGUMI_TEBURI", -1, 1 )
+	WaitAnimation2( "ev_QS400_Monkey" , -1, 1, "ANI_EV_UDEGUMI_TEBURI",  0)
+
+	EmotionEx("RICOTTA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.6f)	//パッ
+	Wait(35)
+
+	PlayVoice(Y8V_2567, "RICOTTA", 100)	//そうだ（何かを思いつく）
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000mそうだ、完熟マンゴー！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt(0, -745.737f, -826.127f, 149.946f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.959f, 0)		// 基本距離
+	ChangeCameraElevation(0, 10.634f, 0)	// 基本仰角
+	RotateCamera(0, 302.988f, 0)				// 角度
+	ChangeCameraPers(0, 38.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	LookReset("RICOTTA")
+	Turn("RICOTTA", 65.95f, 10.0f)
+	LookChr("RICOTTA", "ADOL")
+
+	//──────────────────────
+	//	⇒「GF_04MP6101_MAKE_CAMP」が立っている＝リコッタがアドル兄と呼ぶ
+	if( FLAG[GF_04MP6101_MAKE_CAMP] )
+	{
+		//PlayVoice(Y8V_2555, "RICOTTA", 100)	//アドル兄（平常のテンション）
+
+		TalkPopup("RICOTTA",0,0,0,0,0)
+		{
+			"#000e#000mアドル兄、ししょーに渡していいか？\p"
+			"そしたらリコッタ、稽古付けてもらえる。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒立っていない
+	else
+	{
+		//PlayVoice(Y8V_2555, "RICOTTA", 100)	//アドル兄（平常のテンション）
+
+		TalkPopup("RICOTTA",0,0,0,0,0)
+		{
+			"#000e#000mアドル、ししょーに渡していいか？\p"
+			"そしたらリコッタ、稽古付けてもらえる。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+	LookReset("ADOL")
+
+	Turn("ADOL", -49.09f, 8.0f)
+	LookChr("ADOL", "RICOTTA")
+	Wait(10)
+	//　　アドルが頷く。
+	HeadYes("ADOL" , 1 , 25)
+	Wait(35)
+
+	ChangeAnimation("RICOTTA", "ANI_EV_GUTSPOSE_S", -1, 1)
+
+	PlayVoice(Y8V_2564, "RICOTTA", 100)	//なはは（楽しそうに）
+
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#020e#080mなはは、やった！"
+		"それじゃあさっそく献上！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　イベント終了、操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1135:QS_400_Event_ED")
+}
+function "QS_400_Event_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")	
+	SetChrPos("ev_QS400_Monkey", -100000.00f, 0.00f, 0.00f)
+	ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+//	ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeAnimation("ev_QS400_Monkey", "ANI_WAIT", -1, 1)
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag( GF_QS400_CHECK_EVENT, 1 )			// 【QS400】▼クエストイベント を見た
+
+	// 人物メモを切り替える・マスターコング（１）	漂流村合流前（サポートスキル表記無し版）
+	//SetDiaryCharaFlag( DRCHA_SKILLMONKY, DRCHA_FLAG_OPEN, 1 )	//★人物メモ：合流時に登録（マスターコング）
+	//SetDiaryCharaFlag( DRCHA_SKILLMONKY2, DRCHA_FLAG_OPEN, 0 )	//★人物メモ：合流時に登録（マスターコング）
+	//SetDiaryCharaFlag( DRCHA_SKILLMONKY, DRCHA_FLAG_INFO1, 1 )	//★人物メモ：追加情報の開放１（マスターコング）
+	//SetDiaryCharaFlag( DRCHA_SKILLMONKY2, DRCHA_FLAG_INFO1, 1 )	//★人物メモ：追加情報の開放１（マスターコング）
+
+	CallFunc("mp1135:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER", -742.75f, -820.16f, 147.59f)
+	Turn("LEADER", 10.39f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt(0, -742.750f, -820.160f, 149.457f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+	RotateCamera(0, 163.165f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	//RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	SoundEfx( SEFX_VALLEY, 15 )
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+//──────────────────────────────
+// 【QS400】ししょーへの献上（リコッタ）
+//▼戦闘開始イベント
+//──────────────────────────────
+function "QS_400_Battle"
+{
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_remove")
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", -745.09f, -825.72f, 148.55f)
+	Turn("RICOTTA", 13.68f, 360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	LookChr( "RICOTTA", "ev_QS400_Monkey")
+	SetChrWork( "RICOTTA" , CWK_BATTLEMODE , 1 )
+
+	//スキル猿
+	SetChrWork("ev_QS400_Monkey", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS400_Monkey", -745.62f, -831.41f, 148.57f)
+	Turn("ev_QS400_Monkey", -169.46f, 360.0f)
+	ChangeAnimation( "ev_QS400_Monkey" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS400_Monkey" , INFOFLAG_NOCHRATARI)
+	LookChr( "ev_QS400_Monkey", "RICOTTA" )
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -744.534f, -826.801f, 150.023f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.900f, 0)		// 基本距離
+	ChangeCameraElevation(0, -12.572f, 0)	// 基本仰角
+	RotateCamera(0, 133.007f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 180.000 ,1.000 ,0.700 ,0.500)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+//	SetSkipScript("mp1135:QS_400_Battle_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	StopBGM(60)
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//　　画面フェードインして、スキル猿と向き合うリコッタ。
+
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000mではししょー、ムネ借りる！"
+		"ムネ2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	PlayBGM(BGM_BOSS_002, 0)
+	FadeBGM(100,0)
+
+	//　　スキル猿が威嚇モーションを取って戦闘開始。
+	if (!FLAG[GF_QS400_SEE_KONG_VISUAL]){//【QS400】マスターコングビジュアル名を見ていない
+		
+		CrossFade(FADE_NORMAL)
+		MoveCameraAt(0, -743.974f, -830.308f, 149.329f, 0)	// 注視点
+		ChangeCameraDistance(0, 3.800f, 0)		// 基本距離
+		ChangeCameraElevation(0, 1.155f, 0)	// 基本仰角
+		RotateCamera(0, 110.853f, 0)				// 角度
+		ChangeCameraPers(0, 37.000f, 0)			// 視野角
+		SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+		RollCamera(0, 0.0f, 0)				// ロール回転
+
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -746.332f, -829.184f, 151.982f, 230)		// 注視点
+		ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -20.414f, 230)		// 基本仰角
+		ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 212.956f, 230)		// 角度
+
+		Wait(100)
+		VisualName("visual/bossname/bn_b151.itp", VN_NAMEBOSS, VN_BOSSNAME_LB_X, VN_BOSSNAME_LB_Y,VN_BOSSNAME_TIME)	//マスターコング
+		SetFlag(GF_QS400_SEE_KONG_VISUAL, 1)	//【QS400】マスターコングビジュアル名を見ました
+
+		WaitThread(1000)
+		WaitThread(1001)
+		WaitThread(1002)
+		//PlayVoice(Y8V_5658, "xxx", 100)	//うほ！（強い肯定「その通り！」）
+		Wait(60)
+
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -745.441f, -828.953f, 150.717f, 40)		// 注視点
+		ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -13.923f, 40)		// 基本仰角
+		ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 184.393f, 40)		// 角度
+
+		//MTDのSE鳴らさない
+		//SetFlag( SF_NOUSE_MTDSE, 1 )
+		PlaySE(SE_QS_400_01, 80, 0, 0, 0, 1.0f, 0)
+
+		ChangeAnimation("ev_QS400_Monkey", "ANI_UNI1", -1, 1)
+		
+		Wait(10)
+		PlayVoice(Y8V_5652, "xxx", 100)	//うほおおおっ…（気合いを溜める 
+		//Blur(BLUR_TYPE_AFTERIMAGE, 0.7f, 50)	// 残像
+		//EarthQuake(0.05f, 0.05f, 40)	// 縦揺れ幅, 横揺れ幅, 時間
+
+		Wait(30)
+		FadeOut(FADE_WHITE, FADE_NORMAL)
+		WaitFade()
+
+		Wait(35)
+
+		//MTDのSE鳴らす
+		//SetFlag( SF_NOUSE_MTDSE, 0 )
+
+		StopThread(1000)
+		StopThread(1001)
+		StopThread(1002)
+	}
+	else{
+
+		ChangeAnimation("ev_QS400_Monkey", "ANI_UNI1", -1, 1)
+		Wait(40)
+
+		FadeOut(FADE_WHITE, FADE_NORMAL)
+		WaitFade()
+		
+		Wait(35)
+	}
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1135:QS_400_Battle_ED")
+}
+function "QS_400_Battle_ED"
+{
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	// スキル猿を画面外に移動
+	SetChrPos("ev_QS400_Monkey" , -100000.00f , 0.00f ,0.00f )
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//NowLoading 時の Tips 表示をカット
+	SetFlag(TF_LOADING_TIPS_OFF, 1)
+
+	CallFunc("system:camera_reset")
+
+	EventCue("mp1135:Retry_QS_400")	
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+
+function "Retry_QS_400"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_WHITE, 0)
+	WaitFade()
+
+	//リコッタひとり -----------------------------------
+	SavePartyMember()							// 現在のパーティ編成を覚える
+	// パーティ編成可能状況バックアップ
+	SetFlag(SF_ADOL_JOINOKBK, FLAG[SF_ADOL_JOINOK])
+	SetFlag(SF_LAXIA_JOINOKBK, FLAG[SF_LAXIA_JOINOK])
+	SetFlag(SF_SAHAD_JOINOKBK, FLAG[SF_SAHAD_JOINOK])
+	SetFlag(SF_HUMMEL_JOINOKBK, FLAG[SF_HUMMEL_JOINOK])
+	SetFlag(SF_RICOTTA_JOINOKBK, FLAG[SF_RICOTTA_JOINOK])
+	SetFlag(SF_DANA_JOINOKBK, FLAG[SF_DANA_JOINOK])
+	// ひとりだけにする
+	SetFlag(SF_ADOL_JOINOK, 0)
+	SetFlag(SF_LAXIA_JOINOK, 0)
+	SetFlag(SF_SAHAD_JOINOK, 0)
+	SetFlag(SF_HUMMEL_JOINOK, 0)
+	SetFlag(SF_RICOTTA_JOINOK, 1)
+	SetFlag(SF_DANA_JOINOK, 0)
+	SetPartyMember(PARTY_RICOTTA, -1, -1)
+
+	//環境の初期化・不要なものを隠す
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("QS400_mons", -744.62f, -830.33f, 148.55f)
+	Turn("QS400_mons", -168.45f, 360.0f)
+	ChangeAnimation("QS400_mons", "ANI_WAIT", -1, 1)
+	
+	//PLAYER配置--------------------------------------
+	SetChrPos("PLAYER1", -742.66f, -820.53f, 147.65f)
+	Turn("PLAYER1",4.6f,360.0f)
+	//TurnToChr("PLAYER1" , "QS400_mons" , 360.0f )
+	//TurnToChr("QS400_mons" , "PLAYER1" , 360.0f )
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+//	SetYs8Camera(7.0f, 60.0f, 10.0f, 0.0f, 0.0f)		//……ボスルーチン作成者の指定があれば入力
+	MoveCameraAt(0, -743.600f, -823.060f, 149.952f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+	RotateCamera(0, 166.358f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start")						//……イベントバトル用の色々な処理を行うfunction
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_002, 15)	//◆検証版用仮
+	MapAnime("CT_EVENT", "close")						//……逃げられないストッパー起動
+	SetFlag( GF_QS400_QUEST_BATTLE, 1)				// 【QS400】クエスト戦闘状態判定用	戦闘中
+	SetFlag( GF_QS400_KONG_LV, 0)					// マスターコングのキャラモード（リコッタ）
+	SetLevel( "QS400_mons", 38 )					// マスターコングのLv.38
+	
+	EventAreaEnable("ev2_EV_LOCATION005", 0)		//ロケーション　ボス戦中一時的に無効にする
+
+	FadeIn(FADE_WHITE, FADE_FAST)
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+	//------------------------------------------------
+
+	//──────────────────────
+	//	⇒戦闘に勝利
+	//		QS_400_Complete
+	//	⇒敗北
+	//		QS_400_Lose
+	//──────────────────────
+}
+//===============================================================
+//
+// 【QS400】ししょーへの献上（リコッタ）
+// 戦闘敗北時イベント
+//
+function "QS_400_Lose"
+{
+	//	⇒敗北
+
+//戦闘終了処理ここから-----------------------------------------------
+
+	//無敵ON・色々終了させる---------------------------
+	SetFlag(SF_ALLMUTEKI,1)								//……無敵ＯＮ
+
+	Wait(90)											//……ボス死亡モーション見せる＆ドロップアイテムを拾う時間
+	StopBGM(90)
+	Wait(60)
+
+	//イベントバトル用CallFunc-------------------------
+	CallFunc("system:boss_end")							//……イベントバトル用の色々な処理を行うfunction
+
+	//封鎖解除・ボス消去-------------------------------
+	MapAnime("CT_EVENT", "open")							//……逃げられないストッパー解除。マップによってアニメ名は異なります。
+	SetChrPos(QS400_mons,-100000.00f,0.00f,0.00f)		//……ボスを見えない位置に飛ばす
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))			//……ザコならこちら
+
+	//事後処理-----------------------------------------
+		////-----------------------------------
+		//// タイムアタック中
+		//if (FLAG[SF_TIMEATK])
+		//{
+		//	EndTimeAtk()		// タイムアタック終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		//}
+		////-----------------------------------
+
+	FadeOut(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+
+	SetFlag( GF_QS400_QUEST_BATTLE, 0)	// 【QS400】クエスト戦闘状態判定用	戦闘終了
+
+//戦闘終了処理ここまで-----------------------------------------------
+//開始処理ここから-----------------------------------------------
+
+//	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	// パーティ編成可能状況を戻す
+	SetFlag(SF_ADOL_JOINOK, FLAG[SF_ADOL_JOINOKBK])
+	SetFlag(SF_LAXIA_JOINOK, FLAG[SF_LAXIA_JOINOKBK])
+	SetFlag(SF_SAHAD_JOINOK, FLAG[SF_SAHAD_JOINOKBK])
+	SetFlag(SF_HUMMEL_JOINOK, FLAG[SF_HUMMEL_JOINOKBK])
+	SetFlag(SF_RICOTTA_JOINOK, FLAG[SF_RICOTTA_JOINOKBK])
+	SetFlag(SF_DANA_JOINOK, FLAG[SF_DANA_JOINOKBK])
+
+	//キャラ初期状態の設定
+	RestorePartyMember()						// パーティメンバーを戻す
+
+	//パーティ状態のリセット
+	CallFunc("system:party_remove")
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", -751.28f, -826.00f, 148.58f)
+	Turn("RICOTTA",-49.83f,360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_EV_ZEEWAIT2", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	//LookChr( "RICOTTA", "ev_QS400_Monkey")
+	LookReset("RICOTTA")
+
+	//スキル猿
+	SetChrWork("ev_QS400_Monkey", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS400_Monkey", -744.62f, -830.33f, 148.55f)
+	Turn("ev_QS400_Monkey",136.63f,360.0f)
+	ChangeAnimation( "ev_QS400_Monkey" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS400_Monkey" , INFOFLAG_NOCHRATARI)
+	LookChr( "ev_QS400_Monkey", "RICOTTA" )
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -749.889f, -826.994f, 149.676f, 0)	// 注視点
+	ChangeCameraDistance(0, 3.900f, 0)		// 基本距離
+	ChangeCameraElevation(0, -9.717f, 0)	// 基本仰角
+	RotateCamera(0, 208.208f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, -1.1f, 0)				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 180.000 ,1.000 ,0.700 ,0.500)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+//	SetSkipScript("mp1135:QS_400_Lose_ED")
+	
+//開始処理ここまで-----------------------------------------------
+	
+	FadeIn(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+	
+	//　　リコッタが膝をついている。
+	
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000m流石はししょー……完敗。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cししょーと再戦したい場合は、"
+//		"#7C再び『完熟マンゴー』を献上してください。"
+		"#7C再び#2C「#245I完熟マンゴー」#7Cを献上してください。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//　　イベント終了、操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1135:QS_400_Lose_ED")
+}
+function "QS_400_Lose_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")	
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+//	SetFlag( GF_QS400_BATTLE_LOSE, 0 )		// 【QS400】クエスト戦闘で敗北	再戦時用にリセット
+	SetFlag(SF_BOSS_BATTLE, 0)		//ボス戦終了
+
+	// スキル猿を画面外に移動
+	SetChrPos("ev_QS400_Monkey" , -100000.00f , 0.00f ,0.00f )
+
+	CallFunc("mp1135:init")
+
+	//イベント後の再配置
+
+	SetChrPos("LEADER", -744.44f, -824.39f, 148.35f)
+	Turn("LEADER", 25.31f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	//MoveCameraAt( 0 , 0.0f , 0.0f , 0.0f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 0.0f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 0.0f , 0 )		// 基本仰角
+	//RotateCamera( 0 , 0.0f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 0.0f , 0 )			// 視野角
+	//SetCameraZPlane( 0 , 0.0f )					// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )					// ロール回転
+
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	PlayBGM(BGM_1135, 0)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+//===============================================================
+//
+// 【QS400】ししょーへの献上（リコッタ）
+// ▼クエスト達成イベント
+//
+function "QS_400_Complete"
+{
+	//	⇒戦闘に勝利
+
+//戦闘終了処理ここから-----------------------------------------------
+
+	//無敵ON・色々終了させる---------------------------
+	SetFlag(SF_ALLMUTEKI,1)								//……無敵ＯＮ
+
+	Wait(90)											//……ボス死亡モーション見せる＆ドロップアイテムを拾う時間
+	StopBGM(90)
+	Wait(60)
+
+	//イベントバトル用CallFunc-------------------------
+	CallFunc("system:boss_end")							//……イベントバトル用の色々な処理を行うfunction
+
+	//封鎖解除・ボス消去-------------------------------
+	MapAnime("CT_EVENT", "open")							//……逃げられないストッパー解除。マップによってアニメ名は異なります。
+	SetChrPos(QS400_mons,-100000.00f,0.00f,0.00f)		//……ボスを見えない位置に飛ばす
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))			//……ザコならこちら
+
+	//事後処理-----------------------------------------
+		////-----------------------------------
+		//// タイムアタック中
+		//if (FLAG[SF_TIMEATK])
+		//{
+		//	EndTimeAtk()		// タイムアタック終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		//}
+		////-----------------------------------
+
+	FadeOut(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+
+	SetFlag( GF_QS400_QUEST_BATTLE, 0)	// 【QS400】クエスト戦闘状態判定用	戦闘終了
+
+//戦闘終了処理ここまで-----------------------------------------------
+//開始処理ここから----------------------------------------------------
+
+//	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	// パーティ編成可能状況を戻す
+	SetFlag(SF_ADOL_JOINOK, FLAG[SF_ADOL_JOINOKBK])
+	SetFlag(SF_LAXIA_JOINOK, FLAG[SF_LAXIA_JOINOKBK])
+	SetFlag(SF_SAHAD_JOINOK, FLAG[SF_SAHAD_JOINOKBK])
+	SetFlag(SF_HUMMEL_JOINOK, FLAG[SF_HUMMEL_JOINOKBK])
+	SetFlag(SF_RICOTTA_JOINOK, FLAG[SF_RICOTTA_JOINOKBK])
+	SetFlag(SF_DANA_JOINOK, FLAG[SF_DANA_JOINOKBK])
+
+	//キャラ初期状態の設定
+	RestorePartyMember()						// パーティメンバーを戻す
+
+	//パーティ状態のリセット
+	CallFunc("system:party_remove")
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -752.79f, -827.31f, 148.58f)
+	Turn("ADOL", -98.56f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	LookReset( "ADOL" )
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", -751.28f, -826f, 148.58f)
+	Turn("RICOTTA",-49.83f,360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_EV_ZEEWAIT2", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	LookChr( "RICOTTA", "ev_QS400_Monkey")
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", -752.89f, -826.27f, 148.57f)
+	Turn("LAXIA", -44.54f, 360.0f)
+	PitchChr("LAXIA", 0.00f, 0)
+	RollChr("LAXIA", 0.00f, 0)
+
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+	LookReset( "LAXIA" )
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", -753.02f, -828.34f, 148.57f)
+	Turn("SAHAD", -83.56f, 360.0f)
+	PitchChr("SAHAD", 0.00f, 0)
+	RollChr("SAHAD", 0.00f, 0)
+
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+	LookReset( "SAHAD" )
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", -753.90f, -828.54f, 148.57f)
+	Turn("HUMMEL", -107.70f, 360.0f)
+	PitchChr("HUMMEL", 0.00f, 0)
+	RollChr("HUMMEL", 0.00f, 0)
+
+	ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+	LookReset( "HUMMEL" )
+
+	//	⇒ダーナがいる場合
+	if( FLAG[SF_DANA_JOINOK] )		// ダーナがいる
+	{
+		SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+			SetChrPos("DANA", -753.55f, -827.42f, 148.57f)
+			Turn("DANA", -100.35f, 360.0f)
+			PitchChr("DANA", 0.00f, 0)
+			RollChr("DANA", 0.00f, 0)
+
+		ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+		LookReset( "DANA" )
+	}
+
+	//スキル猿
+	SetChrWork("ev_QS400_Monkey", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS400_Monkey", -747.95f, -829.2f, 148.58f)
+	Turn("ev_QS400_Monkey",136.63f,360.0f)
+	ChangeAnimation( "ev_QS400_Monkey" , "ANI_DEAD2", -1 , 1 )	//「方膝をついている」は死亡で代用しています
+	ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_CLOSE, 1)
+	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS400_Monkey",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS400_Monkey" , INFOFLAG_NOCHRATARI)
+
+	LookReset("ev_QS400_Monkey")
+	LookChr("ADOL", "ev_QS400_Monkey")
+	LookChr("LAXIA", "ev_QS400_Monkey")
+	LookChr("SAHAD", "ev_QS400_Monkey")
+	LookChr("RICOTTA", "ev_QS400_Monkey")
+	LookChr("HUMMEL", "ev_QS400_Monkey")
+	LookChr("DANA", "ev_QS400_Monkey")
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -747.239f, -830.061f, 149.435f, 0)	// 注視点
+	ChangeCameraDistance(0, 4.999f, 0)		// 基本距離
+	ChangeCameraElevation(0, -0.287f, 0)	// 基本仰角
+	RotateCamera(0, 151.895f, 0)				// 角度
+	ChangeCameraPers(0, 44.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -746.346f, -832.084f, 149.435f, 105)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -0.287f, 105)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 117.778f, 105)		// 角度
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 180.000 ,1.000 ,0.700 ,0.500)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1135:QS_400_Complete_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	SoundEfx( SEFX_EV_VALLEY, 15 )
+
+	FadeIn(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	Wait(20)
+
+//　　画面フェードインして、
+//　　方膝をついているスキル猿とその前にリコッタ。
+//　　仲間は周囲にいる。
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt(0, -749.531f, -828.935f, 149.435f, 0)	// 注視点
+	ChangeCameraDistance(0, 4.999f, 0)		// 基本距離
+	ChangeCameraElevation(0, -0.287f, 0)	// 基本仰角
+	RotateCamera(0, 184.256f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -750.656f, -828.226f, 149.435f, 55)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 186.406f, 55)		// 角度
+
+
+	WaitThread(1000)
+	WaitThread(1001)
+
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000mはぁはぁ……やった！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("RICOTTA", "ANI_EV_ZEEWAIT2_E", -1, 1)
+	WaitAnimation2("RICOTTA", -1, 1, "ANI_EV_ZEEWAIT2_E", 0)
+
+	ChangeAnimation("RICOTTA", "ANI_DISARM", -1, 1)
+	WaitAnimation2("RICOTTA", -1, 1, "ANI_DISARM", 0)
+
+	//PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)	//チュートリアル
+	PlaySE( SE_SKILLLEARN , 100 , 0,  0, 0, 1.0f, 0)
+
+	//	ナレーション
+	//TalkPopup(UNDEF,0,5,0,0,0)
+	//{
+	//	""
+	//	"#4Cリコッタはスキル#2C「スパイラルダイヴ」#4Cを習得した！"
+	//}
+	//WaitPrompt()
+	//WaitCloseWindow()
+
+	Message("#4Cリコッタはスキル#2C「スパイラルダイヴ」#4Cを習得した！")
+	WaitPrompt()
+	Wait(10)
+	PlayVoice(Y8V_2564, "RICOTTA", 100)	//なはは（楽しそうに）
+
+	PlayBGM(BGM_EVENT_001, 0)
+	FadeBGM(70,0)
+
+	ChangeAnimation("RICOTTA", "ANI_EV_TEMUNE_S", -1, 1)
+
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000mししょーの技、しかと授かった！\p"
+		"有難き幸せ！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -751.608f, -826.422f, 150.966f, 90)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 7.545f, 90)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 217.308f, 90)		// 角度
+
+	//　　スキル猿が立ち上がる。
+	PlaySE(SE_QS_400_01, 60, 0, 0, 0, 1.0f, 0)
+	ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeAnimation( "ev_QS400_Monkey", "ANI_RESURRECT", -1, 1 )
+	Wait(10)
+	PlayVoice(Y8V_5664, "xxx", 100)	//うほ！（強い肯定「その通り！」）
+	Wait(10)
+	PlaySE(SE_QS_400_02, 60, 0, 0, 0, 1.0f, 0)
+	WaitAnimation2( "ev_QS400_Monkey" , -1, 1, "ANI_RESURRECT",  0)
+	LookChr("ev_QS400_Monkey", "RICOTTA")
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	TalkPopup("SAHAD",0,0,0,0,0)
+	{
+		"#000e#000mへえ、どうやら全力じゃあ"
+		"なかったみたいだな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("RICOTTA", "SAHAD")
+	ChangeAnimation("RICOTTA", "ANI_EV_TEMUNE_E", -1, 1)
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000m当然、ししょーの本気は"
+		"こんなものじゃない！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	
+	//　　スキル猿が、脇で観戦していたアドルたちの方を見て
+	//　　会話モーション。
+	LookChr( "ev_QS400_Monkey", "ADOL" )
+//	ChangeAnimation( "ev_QS400_Monkey", "スキル猿が会話モーション", -1, 1 )
+//	WaitAnimation2( "ev_QS400_Monkey" , -1, 1, "スキル猿が会話モーション",  0)
+	LookChr("RICOTTA", "ev_QS400_Monkey")
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -751.729f, -827.910f, 150.843f, 90)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -0.213f, 90)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 240.919f, 90)		// 角度
+	ExecuteCmd(1003 ChangeCameraPers, INTERPOLATE_SPHERE, 54.000f, 90)		// 視野角
+
+	PlayVoice(Y8V_5662, "xxx", 100)	//うほう…（感心「ほう…」）
+	ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI_S", -1, 1)
+	WaitAnimation2("ev_QS400_Monkey", -1, 1, "ANI_EV_UDEGUMI_S", 0)
+
+	//Wait(10)
+	PlayVoice(Y8V_5663, "xxx", 100)	//うほほ（肯定「そうじゃな」）
+	ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI_YES", -1, 1)
+	WaitAnimation2("ev_QS400_Monkey", -1, 1, "ANI_EV_UDEGUMI_YES", 0)
+
+//	//Wait(10)
+//	PlayVoice(Y8V_5664, "xxx", 100)	//うほ！（強い肯定「その通り！」）
+//	ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI_TEBURI", -1, 1)
+//	WaitAnimation2("ev_QS400_Monkey", -1, 1, "ANI_EV_UDEGUMI_TEBURI", 0)
+
+	//WaitThread(1000)
+	//WaitThread(1001)
+	//WaitThread(1002)
+
+	ChangeAnimation("LAXIA", "ANI_EV_TEBURI", -1, 1)
+	TalkPopup("LAXIA",0,0,0,0,0)
+	{
+		"#000e#000mえっと、今のはなんと……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000m『お前たちも見込みある』\p"
+		"『機会があればそれぞれ"
+		"　稽古を付けてやろう』\p"
+		"『ただし完熟マンゴーを忘れるな』"
+		"そう言ってる。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("RICOTTA", "ADOL")
+	ChangeAnimation("RICOTTA", "ANI_EV_RYOTEKOSI_S", -1, 1)
+	TalkPopup("RICOTTA", 0, 0, 0, 0, 0)
+	{
+		"#000e#000mなはは。よかったな、みんな！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"ああ、楽しみだ")
+	MenuAdd(2,"すぐにでもお願いしたい")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	//Wait(20)
+	
+	//──────────────────────
+	//	⇒ああ、楽しみだ
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_TEBURI_L", -1, 1)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(30)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		LookChr("RICOTTA", "ev_QS400_Monkey")
+
+		//　　スキル猿が目を閉じて頷く。
+		PlayVoice(Y8V_5661, "xxx", 100)	//ほっほっ（笑い）
+		ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+		ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI_YES", -1, 1)
+
+		WaitAnimation2("ev_QS400_Monkey", -1, 1, "ANI_EV_UDEGUMI_YES", 0)
+		ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+		TalkPopup("RICOTTA",0,0,0,0,0)
+		{
+			"#000e#000m『ああ、私もだ』"
+			"と言ってる。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒すぐにでもお願いしたい
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_TEBURI_L", -1, 1)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		Wait(30)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		LookChr("RICOTTA", "ev_QS400_Monkey")
+
+		//　　スキル猿が目を閉じて首を振る。
+		PlayVoice(Y8V_5665, "xxx", 100)	//ううほ…（否定「そうではない」）
+		ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+		ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI_NO", -1, 1)
+
+		WaitAnimation2("ev_QS400_Monkey", -1, 1, "ANI_EV_UDEGUMI_NO", 0)
+		ChangeSubAnimation("ev_QS400_Monkey", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+		
+		TalkPopup("RICOTTA",0,0,0,0,0)
+		{
+			"#000e#000m『そう急くな、私も消耗している』"
+			"と言ってる。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+
+	TalkPopup("LAXIA",0,0,0,0,0)
+	{
+		"#000e#000m……まあ、ともかく今回は"
+		"ここまでということですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("HUMMEL",0,0,0,0,0)
+	{
+		"#000e#000mフッ、いずれ相手をするなら"
+		"備えておかないとな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//──────────────────────
+	//	⇒ダーナがいる場合
+	if( FLAG[SF_DANA_JOINOK] )		// ダーナがいる
+	{
+		TalkPopup("DANA",0,0,0,0,0)
+		{
+			"#000e#000mふふ、そうですね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+
+	//　　スキル猿が会話モーション。
+//	ChangeAnimation( "ev_QS400_Monkey", "スキル猿が会話モーション", -1, 1 )
+//	WaitAnimation2( "ev_QS400_Monkey" , -1, 1, "スキル猿が会話モーション",  0)
+	ChangeAnimation("ev_QS400_Monkey", "ANI_EV_UDEGUMI_E", -1, 1)
+	WaitAnimation2("ev_QS400_Monkey", -1, 1, "ANI_EV_UDEGUMI_E", 0)
+	LookReset("ev_QS400_Monkey")
+	ExecuteCmd(1, MoveTo, "ev_QS400_Monkey", -742.44f, -837.36f, 148.53f, 0.1f, 0.40f)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -751.136f, -828.411f, 150.272f, 120)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -1.080f, 120)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 213.136f, 120)		// 角度
+
+
+	WaitThread(1)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	PlayVoice(Y8V_5666, "xxx", 100)	//うっほうっほ！（ご機嫌）
+	HeadYes("ev_QS400_Monkey", 1, 25)
+	Wait(30)
+
+	ChangeAnimation("RICOTTA", "ANI_EV_RYOTEKOSI_E", -1, 1)
+	TalkPopup("RICOTTA",0,1,0,0,0)
+	{
+		"#000e#000m『それではさらばだ……』\p"
+		"『今度は“日いずる浜”"
+		"　にて会うとしよう』"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("RICOTTA", "ANI_EV_GUTSPOSE_S", -1, 1)
+	TalkPopup("RICOTTA", 0, 1, 0, 0, 0)
+	{
+		"#000e#000mなはは、御意！\p"
+		"ししょー、稽古を付けてくれて"
+		"本当に感謝！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　スキル猿が退場するモーション。（ジャンプしながら消える）
+	SetChrInfoFlag("ev_QS400_Monkey" , INFOFLAG_NOMAPATARICHECK)
+	ChangeAnimation( "ev_QS400_Monkey", "ANI_EV_JUMP_S", -1, 1 )
+	Wait(23)
+	Dash("ev_QS400_Monkey" , 7.0f , 0 )
+	Jump("ev_QS400_Monkey" , 6.0f )
+
+	PlaySE(SE_QS_400_02, 50, 0, 100, 0, 1.0f, 0)
+	Wait(25)
+
+	//SetChrPos("ev_QS400_Monkey", -731.59f, -853.91f, 167.35f)
+	//Jump("ev_QS400_Monkey" , 0 )
+	//Turn("ev_QS400_Monkey", -14.83f, 360.0f)
+
+	ChangeAnimation("ev_QS400_Monkey", "ANI_EV_JUMP_DOWN", -1, 1)
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -751.313f, -828.508f, 149.900f, 80)		// 注視点
+
+	Wait(40)
+	LookReset("ADOL")
+	LookReset("LAXIA")
+	LookReset("SAHAD")
+	LookReset("HUMMEL")
+	LookReset("DANA")
+
+	WaitThread(1000)
+	EarthQuake(0.12f, 0.12f, 8)
+	SetChrPos("ev_QS400_Monkey", -100000.00f, 0.00f, 0.00f)
+	PlaySE(SE_QS_400_03, 40, 0, 100, 0, 1.0f, 0)
+
+	ChangeAnimation("RICOTTA", "ANI_EV_GUTSPOSE_E", -1, 1)
+	WaitAnimation2("RICOTTA", -1, 1, "ANI_EV_GUTSPOSE_E", 0)
+
+	StopSE(SE_QS_400_03, 1000)
+
+	LookChr("RICOTTA", "ADOL")
+	TalkPopup("RICOTTA",0,1,0,0,0)
+	{
+		"#000e#000mさ、みんな行く！"
+		"ししょーにはまた会える！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -751.313f, -828.508f, 152.282f, 200)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 208.775f, 200)		// 角度
+	Wait(35)
+
+	StopBGM(90)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	//　　画面暗転。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	StopThread(1000)
+	StopThread(1001)
+
+	PlaySE(SE_QUEST_END, 100, 0, 0, 0, 1.0f, 0)		// クエスト達成	
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#8S"
+		"#-1W#4Cクエスト#8C【ししょーへの献上】#4Cを達成した！#10W" 
+		"#8S"
+	}
+	Wait(10)
+	if(rand()%100 < 50) {
+		PlayVoice(SVO_RCT_QST_1,"RICOTTA",100)		// なはは、やったな！
+	} else {
+		PlayVoice(SVO_RCT_QST_2,"RICOTTA",100)		// これにて一件落着！
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//──────────────────────
+	//	⇒好感度が一段階上がる場合
+	if( FLAG[GF_LIKELV_RICOTTA] < 2 )
+	{
+		PlaySE(SE_BONDS_UP, 100, 0, 0, 0, 1.0f, 0)	//好感度アップ
+		//	ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4Cリコッタの好感度が上がった！#10W" 
+			"#8S"
+		}
+		Wait(10)
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒好感度が最大になる場合
+	else
+	{
+		PlaySE(SE_BONDS_UP, 100, 0, 0, 0, 1.0f, 0)	//好感度アップ
+		//	ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4Cリコッタの好感度が最大になった！#10W" 
+			"#8S"
+		}
+		Wait(10)
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+
+	PlaySE( SE_HEAL , 100 , 0,  0, 0, 1.0f, 0)
+	Message("#-1W#4CリコッタのＨＰの最大値が１００増えた。#10W")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	PlaySE( SE_HEAL , 100 , 0,  0, 0, 1.0f, 0)
+	Message("#-1W#4CアドルのＨＰの最大値が５０増えた。#10W")
+	WaitPrompt()
+	WaitCloseWindow()
+
+//　　イベント終了、操作許可。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1135:QS_400_Complete_ED")
+}
+function "QS_400_Complete_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")	
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag( GF_QUEST_400, QUEST_SUCCESS )		// 【QS400】ししょーへの献上（リコッタ）　クエストを達成した
+	SetFlag( GF_LIKELV_RICOTTA, ( FLAG[GF_LIKELV_RICOTTA] + 1 ) )	// 好感度ＵＰ
+	GetSkill(PARTY_RICOTTA, SKILL_RICOTTA_SP_A2, 1)	// スキル「スパイラルダイヴ」
+	SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 1) )			//クエスト達成【QS400】ししょーへの献上（リコッタ）	名声値+1
+	SetDiaryFlag( DF_QS400_END, 1 )				//【QS400】★リコッタがししょーに稽古をつけてもらった！
+	//SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO3, 1 )	//★人物メモ：追加情報の開放３（リコッタ）
+
+	SetChrWork("RICOTTA",CWK_SUP_MAXHP,(RICOTTA.CHRWORK[CWK_SUP_MAXHP] + 100))		//好感度と合わせてアップ
+	SetChrWork("ADOL",CWK_SUP_MAXHP,(ADOL.CHRWORK[CWK_SUP_MAXHP] + 50))				//好感度と合わせてアップ
+
+	//マーカー設置
+	SetMapMarker( SMI_SUBEVENT, PAGE_F010, MARKER_SPEEDRUN_SKILL1, 785.02f, 785.21f, 3.41f, 	785.02f, 785.21f,	MARKER_SPEEDRUN_SKILL1, MN_F_MP1119,	0)	// やり込みスキル習得：日の出ヶ浜に居るマスターコング用
+
+	SetFlag(SF_BOSS_BATTLE, 0)		//ボス戦終了
+	//マーカー消去
+	DelMapMarker( SMI_QUEST, PAGE_F008, MARKER_QS_400_LP, 0, 0)	// 【QS400】ししょーへの献上（リコッタ）スキル猿が居る場所用
+
+	// スキル猿を画面外に移動（イベントスキップした場合用に入れてあります）
+	SetChrPos("ev_QS400_Monkey" , -100000.00f , 0.00f ,0.00f )
+
+	CallFunc("mp1135:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-741.65f,-816.50f,147.11f)
+	Turn("LEADER",-166.36f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -741.652f , -816.497f , 148.932f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.434f , 0 )	// 基本仰角
+	RotateCamera( 0 , 166.358f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	SoundEfx( SEFX_VALLEY, 15 )
+	SetEnvSEPlayState(-1, 1)	//環境SE
+	PlayBGM(BGM_1135, 0)
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}

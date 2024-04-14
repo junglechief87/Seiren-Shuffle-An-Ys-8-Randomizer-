@@ -1,0 +1,1946 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+
+//-------------------------------------------
+// 1117：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1117" , 0 )
+	MapHide( "@BG2_mp1135" , 0 )
+	MapHide( "BG2_groundfog_main" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+
+	MapHide( "camp_fire1" , 0)
+	MapHide( "camp_fire2" , 0)
+	MapHide( "camp_smoke1" , 0)
+
+	// イベントエリア/設定制御
+	EventAreaEnable( "evc_M02S220" , 0 )
+	EventAreaEnable( "evb2_act_0209" , 0 )	//アクティブボイス
+	EventAreaEnable( "ev2_EV_LOCATION004" , 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+
+	// イベント発生制御
+		if( !FLAG[GF_TBOX_DUMMY058]){
+		//if( FLAG[GF_02MP1202_GET_CLOTHES] &&	// ラクシャから探索服をもらう
+			//!FLAG[GF_02MP1201_JOIN_KATRIN] ){	// カトリーンが合流した（武器の強化が可能になる２）
+
+			//焚き火
+			MapHide( "camp_smoke1" , 1)
+			SetChrPos("SubEV_Check_Camp",-865.69f,-518.89f,2.3f )	// 【ＬＰ：1117浜辺の焚き火跡】
+			SetChrPos("LP_cook",-100000.00f,0.00f,0.00f )	// 【ＬＰ：1117浜辺の焚き火跡】
+
+			//カトリーン
+			SetChrPos("Katrin",-945.59f,-548.90f,0.34f)
+			Turn("Katrin",93.86f,360.0f)
+			EventAreaEnable( "evc_M02S220" , 1 )
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0208] && FLAG[GF_02MP1308_KILL_CHAMELEON] && !FLAG[GF_02MP1201_JOIN_KATRIN]){
+//			ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+//			ActiveVoiceStart(EACT_EVID_0208, 1, 0)		//初めてエリアに入ったら
+			SetEventDriven(EED_TYPE_TIMER,120,"mp1117:act_0208")
+
+		}
+		if(!FLAG[GF_AVOICE_0209] && FLAG[GF_02MP1308_KILL_CHAMELEON] && !FLAG[GF_02MP1201_JOIN_KATRIN]){
+			EventAreaEnable( "evb2_act_0209" , 1 )
+		}
+
+		//トロフィー
+		if(FLAG[GF_02MP1308_KILL_CHAMELEON] && !FLAG[GF_SUBEV_1117_INTOSEASHORE])
+		{
+			SetFlag(GF_SUBEV_1117_INTOSEASHORE,1)		//遠鳴り浜に初めて入った
+			GetTrophy("TROPHY_SCENE_C2_CORAL_END")		//隆起珊瑚の森			《隆起珊瑚の森》を抜けた。
+		}
+
+		//ロケーション
+		if ( !FLAG[GF_LOCATION04] ) {		// ロケーション004
+			EventAreaEnable( "ev2_EV_LOCATION004" , 1 )
+		}
+
+	//ＮＰＣマーカーセット
+		CallFunc("system:SetMarkerNPC")
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_1117.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//遠鳴り浜
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+	//障害突破イベント（協力イベント）
+	//がれきLP設定
+	SetChrWork( "LP_STOP_1117_1135" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+	SetChrWork( "CP_STOP_1117_1135" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+	if( FLAG[SF_EVENT_ON] )
+	{
+		//障害物制御
+		if( FLAG[GF_SUBEV_1117_REMOVE_ROCK] )
+		{
+			MapAnime( "mp1117_stop01" , "open" )
+			// 処理を軽くする為吹っ飛ばす
+			SetChrPos("LP_STOP_1117_1135",  -100000.00f,0.00f,0.00f)
+			SetChrPos("CP_STOP_1117_1135",  -100000.00f,0.00f,0.00f)
+		}
+		else if (FLAG[GF_SUBEV_1117_CHECKED_ROCK])
+		{
+			// 初回チェック済み
+			SetChrWork("LP_STOP_1117_1135", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1117_1135", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		}
+		else
+		{
+			SetChrWork("LP_STOP_1117_1135", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+			SetChrWork("CP_STOP_1117_1135", CWK_CHECKOFF, 1)		// 協力イベントルックポイントをオフに
+		}
+
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0209"
+{
+	if (!FLAG[GF_AVOICE_0209])
+	{
+		EventAreaEnable( "evb2_act_0209" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0209, 1, 0)	//焚き火の跡に近づいたら
+	}
+}
+
+function "act_0208"
+{
+	ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+	ActiveVoiceStart(EACT_EVID_0208, 1, 0)		//初めてエリアに入ったら
+}
+
+function "SubEV_Check_Camp"
+{
+	//	================================================
+	//	【ＬＰ：1117浜辺の焚き火跡】
+	//	================================================
+	//▼GF_02MP1202_GET_CLOTHES,		// ラクシャから探索服をもらう
+	//	～！GF_02MP1201_JOIN_KATRIN,	// カトリーンが合流した（武器の強化が可能になる２）
+
+	SetStopFlag(STOPFLAG_TALK)
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C炭がまだ燻#2Rくすぶ#Rっている。"
+		"#7C火が消されてから間がないようだ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_TALK)
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//	================================================
+//	【ＬＰ：1117⇒1135の岩を調べる】
+//	================================================
+function "LP_STOP_1117_1135"
+{
+	//無条件で支援イベントへ分岐
+	
+	//▼支援イベントNo.07
+	EventCue("mp1117:SubEV_Sien07")
+}
+
+function "SubEV_Sien07_open"
+{
+	if( !FLAG[GF_SUBEV_1117_CHECKED_ROCK] )
+	{
+		// フラグセット
+		SetFlag(GF_SUBEV_1117_CHECKED_ROCK, 1)
+		
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1117_1135", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1117_1135", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F008,REMOVE_OBJ_1117, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker( SMI_COOPEVENT, PAGE_F008, REMOVE_OBJ_1117CE, -854.11f,-615.99f,21.02f, -854.11f,-615.99f, COOPEVID_MP1117, MN_F_MP1117,1)
+	}
+}
+//──────────────────────────────
+//▼支援イベントNo.07		必要人数１４人		mp1117：遠鳴り浜
+//	大岩を撤去②			mp1135：遠鳴り浜・奥に行けるようになり、宝箱入手
+//──────────────────────────────
+function "SubEV_Sien07"
+{
+	//	※第四部のリコッタのクエストで、スキル猿が登場
+	//　　※最速で「▼第二部⑪ディナを助けた」以降、エアラン合流後に撤去可能。
+	//　　　ＮＰＣを３／３人以上助けた後に撤去可能。
+	//　　ＬＰを調べると以下の処理。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnTo( "LEADER", -854.11f,-615.99f,21.02f , 15.0f )
+
+	//	ナレーション
+	TalkPopup("UNDEF",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C巨大な岩が道を塞いでしまっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	
+	GetCoopEvPeopleNum(COOPEVID_MP1117, TF_MENU_SELECT2)	//支援要請で必要な人数を取得
+	
+	//──────────────────────
+	//	⇒人数が足りていない
+	if( FLAG[TF_MENU_SELECT2] > WORK[WK_NPCNUM] )	//必要な人数 ＞ 漂流村の人数
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cこの岩を撤去するには、"
+			"#7C漂流村の人数が足りないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_1117_CHECKED_ROCK, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1117_1135", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1117_1135", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F008,REMOVE_OBJ_1117, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker( SMI_COOPEVENT, PAGE_F008, REMOVE_OBJ_1117CE, -854.11f,-615.99f,21.02f, -854.11f,-615.99f, COOPEVID_MP1117, MN_F_MP1117,1)
+/*
+		// 地図登録ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4C障害のある場所として地図に登録した。"
+			"#8S"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+*/
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//	⇒人数が足りている場合
+	else
+	{
+
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C支援要請を出しますか？",1)
+
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+
+			//	  　以下の流れに接続
+			//──────────────────────
+			
+			//　　＞「▼支援イベント共通処理①」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common1")
+			
+			//　　障害物撤去ＳＥ
+			PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+			Wait(80)
+			MapAnime( "mp1117_stop01" , "open" )
+
+			CallFunc("system:party_remove")
+			MoveCameraAt( 0 , -854.082f , -622.420f , 23.580f , 0 )	// 注視点
+			ChangeCameraDistance( 0 , 26.820f , 0 )		// 基本距離
+			ChangeCameraElevation( 0 , -3.373f , 0 )	// 基本仰角
+			RotateCamera( 0 , 223.527f , 0 )				// 角度
+			ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+			ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , -854.082f , -622.420f , 28.293f , 180 )		// 注視点
+			ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 25.450f , 180 )		// 基本距離
+			ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 8.623f , 180 )		// 基本仰角
+			ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 142.367f , 180 )		// 角度
+			//ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,2.5f , 180 )		// ロール回転
+			//ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 50 )		// 視野角
+
+			//MoveCameraAt( 0 , -854.082f , -622.420f , 28.293f , 0 )	// 注視点
+			//ChangeCameraDistance( 0 , 25.450f , 0 )		// 基本距離
+			//ChangeCameraElevation( 0 , 8.623f , 0 )	// 基本仰角
+			//RotateCamera( 0 , 142.367f , 0 )				// 角度
+			//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			
+			FadeIn(FADE_BLACK,FADE_FAST)
+			//WaitFade()
+
+			PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+			
+			//	ナレーション
+			TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+			{
+				"#7C全員の力を合わせて、巨大な岩を撤去した！"
+				"撤去2行目"
+			}
+			Wait(30)
+			//　　＞「▼支援イベント共通処理②」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common2")
+			WaitPrompt()
+			WaitCloseWindow()
+
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+
+			StopThread(1001)
+			StopThread(1002)
+			StopThread(1003)
+			StopThread(1004)
+			//　　イベント終了、操作許可。
+			
+			//障害物撤去処理
+			SetChrPos("LP_STOP_1117_1135",  -100000.00f	0.00f	0.00f)
+			SetChrPos("CP_STOP_1117_1135",  -100000.00f	0.00f	0.00f)
+			SetFlag(GF_SUBEV_1117_REMOVE_ROCK, 1)	// 【ＬＰ：1117⇒1135の岩を撤去した】
+			SetFlag(GF_SUBEV_1117_CHECKED_ROCK, 1)
+			SetDiaryFlag(DF_SUBEV_1117_REMOVE_ROCK, 1)		// ★遠鳴り浜にあった大岩を撤去した。
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F008,REMOVE_OBJ_1117, 0, 0)
+			// 協力イベントのマーカーも削除
+			DelMapMarker( SMI_COOPEVENT, PAGE_F008, REMOVE_OBJ_1117CE, 0, 0)
+			
+			SetFlag( TF_MENU_SELECT, 1 )	//支援イベントとして終了
+		}
+		//	⇒やめる
+		else
+		{
+			//	  　そのまま操作許可。
+			
+			// マーカーの切り替え処理
+			
+			// 見たフラグセット
+			SetFlag(GF_SUBEV_1117_CHECKED_ROCK, 1)
+			// ルックポイント切り替え
+			SetChrWork("LP_STOP_1117_1135", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1117_1135", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F008,REMOVE_OBJ_1117, 0, 0)
+			
+			// 協力イベントのマーカーもセット
+			SetMapMarker( SMI_COOPEVENT, PAGE_F008, REMOVE_OBJ_1117CE, -854.11f,-615.99f,21.02f, -854.11f,-615.99f, COOPEVID_MP1117, MN_F_MP1117,1)
+			
+			SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+		}
+		//──────────────────────
+	}
+
+//終了処理ここから----------------------------------------------------
+
+	//ストッパーとして終了
+	if( FLAG[TF_MENU_SELECT] == 0 )
+	{
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		RestoreCamera(0,0)
+		CallFunc("system:camera_reset")
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	//支援イベントとして終了
+	else
+	{
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+		MoveCameraAt( 0 , -853.505f , -615.972f , 22.887f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , -4.425f , 0 )	// 基本仰角
+		RotateCamera( 0 , 167.012f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		
+		ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		//イベント後の再配置位置
+		SetChrPos("LEADER", -853.50f, -615.97f, 21.05f )
+		Turn("LEADER" ,12.99f, 360.0f)
+		
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+		
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+
+//終了処理ここまで----------------------------------------------------
+}
+
+//================================================
+//【Ｔのメモ②】（遠鳴り浜）				GF_MP1117_TBOX02,		//遠鳴り浜
+//================================================
+function "SubEV_Memo_T_02"
+{
+	//	※宝箱から入手するようにする。
+	//	※入手時に、Ｔのメモのポートレートと
+	//	　メモの内容を表示する。
+	//	　メモの内容はその後冒険日誌の「ストーリー」「メモ」タブにに登録される。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	// ポートレート読み込み
+	Portrait_Load(1, "visual/portrait/p_30012.itp")	// タナトスのメモ
+	Portrait_Create(1, SUBP_POS_X, SUBP_POS_Y,
+	0, 0, SUBP_SCALE_X, SUBP_SCALE_Y,
+	0.0f, 0x00ffffff, 0x00000000)
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+//	TurnToChr( LEADER , this , 7.5f )
+//	Wait(10)
+
+	//ポートレート表示
+	Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+	Wait(20)
+
+//	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+//	{
+//		"#7C狩りや漁ならば心得もある"
+//		"#7C次第に生き延びる自信もついてきた"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+//
+//	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+//	{
+//		"#7Cだがいくら彷徨っても"
+//		"#7C脱出に繋がる物はなにもない……"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+//
+//	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+//	{
+//		"#7C筏を造ってもみたが、"
+//		"#7C潮が早く遠洋へは出られなかった"
+//		"#7C八方塞がりとはこの事か……"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+//
+//	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+//	{
+//		"#7Cいや、挫けてはならない"
+//		"#7C私はまだ生きているのだから　“Ｔ”"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C狩りや漁ならば心得もある"
+		"#7C次第に生き延びる自信もついてきた\p"
+		"#7Cだがいくら彷徨っても"
+		"#7C脱出に繋がる物はなにもない……\p"
+		"#7C筏を造ってもみたが、"
+		"#7C潮が速く遠洋へは出られなかった"
+		"#7C八方塞がりとはこの事か……\p"
+		"#7Cいや、挫けてはならない"
+		"#7C私はまだ生きているのだから　“Ｔ”"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+	CallFunc("system:SubEV_FirstTalk_T_Memo")
+
+	//ポートレートを消去
+	Portrait_Anime(1, PR_ANIME_COLOR, 0.0f, 0.0f, 0.0f, 0.0f, FADE_FAST)
+	Wait(FADE_FAST)
+
+	Portrait_Close(1)
+	Portrait_Unload(1)
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+	//フラグ処理
+	SetFlag( GF_SUBEV_GET_MEMO, 1 )		//Ｔ・海賊のメモを手に入れた（１つでも手に入れたら立つ）
+	SetFlag( GF_SUBEV_GET_MEMO_T_02, 1 )		//Ｔのメモ②を手に入れた
+	
+	//イベント後の再配置
+	//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+	//Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+	
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+//////////////////////////////////////////////
+// ロケーションポイント0004:メタボリカレス
+//////////////////////////////////////////////
+function "EV_LOCATION004"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+
+	Portrait_Load(4, "visual/mapname/lnmp1117.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , -904.765f , -532.197f , 21.563f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 42.299f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 11.352f , 0 )	// 基本仰角
+	RotateCamera( 0 , 139.235f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp1117:EV_LOCATION004_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE  , -904.765f , -532.197f , 25.532f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 42.299f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -13.100f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 87.842f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1117:EV_LOCATION004_ED")
+}
+function "EV_LOCATION004_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION04, 1)	//メタボリカレス
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_F008, MARKER_EV_LC_MP1117, 0, 0)	//ロケ　：メタボリカレス
+	SetMapMarker( SMI_LOCATION ,PAGE_F008, MARKER_EV_LC_MP1117, -904.35f, -537.19f, 6.24f, -904.35f, -537.19f,LOCATION_MP1117,MN_F_MP1117,1)		//ロケ　：メタボリカレス
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_F008,1 ,-909.23f, -533.66f ,100 )
+
+	CallFunc("mp1117:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , -913.907f , -547.696f , 8.143f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -28.569f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", -913.78f, -547.47f, 6.27f)
+	Turn("LEADER" ,-157.08f , 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function "EV_OpenChack"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C漂流者と思わしき人物が佇んでいる。"		//◆仮　ストッパー用メッセージ
+		"#7C声をかけてみようか？"
+	}
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"声をかける")
+	MenuAdd(-1, "後にする")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	//─────────────────────────
+	//	⇒声をかける
+	if (FLAG[TF_MENU_SELECT] == 1){
+
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		EventCue("mp1117:EV_M02S220")
+
+	}
+	//─────────────────────────
+	//	⇒後にする
+	else {
+
+		CrossFade(FADE_NORMAL)
+	
+		// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+		// PLAYER1のそばにワープする
+		SetFlag( TF_CHECK_DISTANCE, 1 )
+		SetFlag( TF_CHECK_DISTANCE2, 1 )
+		if( WORK[WK_ISEXIST_PLAYER2] )
+		{
+			CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+		}
+		if( WORK[WK_ISEXIST_PLAYER3] )
+		{
+			CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+		}
+	
+		if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+		{
+			ChrAlpha( "PLAYER2" , 0.0f , 0 )
+			ChrAlpha( "PLAYER3" , 0.0f , 0 )
+			ResetPartyPos()
+		}
+
+		if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+		{
+			ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+			ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+			WaitThread(3)
+			WaitThread(4)
+		}
+
+		//再配置	
+		SetChrPos("LEADER",-935.45f,-544.66f,1.14f)
+		Turn("LEADER",-110.24f,360.0f)
+
+		ResetPartyPos()
+		ResetFollowPoint()
+	
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+
+	}
+	//─────────────────────────
+
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+
+//──────────────────────────────
+//▼カトリーンに出会う(mp1117)
+//──────────────────────────────
+function "EV_M02S220"		//カトリーンに出会う
+{
+//開始処理ここから----------------------------------------------------
+	
+	CallFunc("system:event_begin")
+
+	SetStopFlag(STOPFLAG_EVENTIMPOSE)
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrPos("ADOL", -939.72f, -543.08f, 0.85f)	//-940.06f, -543.44f, 0.82)
+	Turn("ADOL", 49.65f, 360.0f)
+	SetChrPos("LAXIA", -939.75f, -541.43f, 0.88f)
+	Turn("LAXIA", 38.99f, 360.0f)
+	SetChrPos("SAHAD", -938.13f, -542.98f, 0.97f)
+	Turn("SAHAD", 43.69f, 360.0f)
+	SetChrPos("Katrin", -945.59f,-548.90f,0.34f)
+	Turn("Katrin", 93.86f, 360.0f)
+
+	SetChrWork("ADOL", CWK_BATTLEMODE, 1)
+	SetChrWork("LAXIA", CWK_BATTLEMODE, 1)
+	SetChrWork("SAHAD", CWK_BATTLEMODE, 1)
+
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	//SetChrWork("ADOL",CWK_BATTLEMODE,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	//SetChrWork("LAXIA",CWK_BATTLEMODE,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("LAXIA")
+
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI )
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrWork("SAHAD",CWK_BATTLEMODE,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("SAHAD")
+
+	SetChrInfoFlag( "Katrin" , INFOFLAG_NOCHRATARI )
+	SetChrWork("Katrin", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeSubAnimation("Katrin",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Katrin",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Katrin",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	SetFlag(SF_CHARANORECVSHADOW,1)	//キャラ影受けない
+
+	// 初期カメラ
+//	MoveCameraAt( 0 , -939.138f , -542.895f , 2.843f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 4.700f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 5.516f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 133.524f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 0.1f , 0 )				// ロール回転
+	MoveCameraAt( 0 , -939.681f , -543.217f , 2.404f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.176f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.376f , 0 )	// 基本仰角
+	RotateCamera( 0 , 277.819f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , -0.3f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 170.000 ,0.000 ,0.550 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1117:EV_M02S220_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　　mp1117の海岸に出ると
+	//　　焚火の跡があり、近づくとアクティブボイス。
+	//　　波打ち際に佇んでいるカトリーンを発見すると
+	//　　彼女が気配を察してイベント開始。
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+	//　　手前から歩いてフレームインするアドルたち。
+	//　　アドルたちは抜身の武器を持っている状態。
+	//　　カトリーンＰＡエモーション表示して振り向く。
+
+	// 移動
+	ChangeAnimation( "ADOL" , "ANI_EV_EQWALK", -1 , 1 )
+	ExecuteCmd(1, MoveToEx, "ADOL", -943.56f, -547.01f, 0.53f, 0.1f, 0.187f, 0 ,0)
+	Wait(3)
+	ExecuteCmd(2, MoveTo, "LAXIA", -944.30f, -546.07f, 0.49f, 0.1f, 0.18f)
+	Wait(3)
+	ExecuteCmd(3, MoveTo, "SAHAD", -942.31f, -547.29f, 0.61f, 0.1f, 0.18f)
+
+	// カメラ移動（Aイベント用）
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -943.556f , -546.924f , 1.776f , 135 )		// 注視点
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.900f , 135 )		// 基本距離
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 2.683f , 135 )		// 基本仰角
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 152.666f , 135 )		// 角度
+//	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 40.000f , 135 )		// 視野角
+//	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -6.9f , 135)		// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -944.464f , -547.841f , 1.695f , 150 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.737f , 150 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 5.167f , 150 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 294.753f , 150 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 40.000f , 150 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -5.5f , 150)		// ロール回転
+
+	FadeBGM(50,30)
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+//	WaitFade()
+	
+	Wait(10)
+	
+	// Wait(80) ---------------- ▼
+	LookSpd("LAXIA", 0.08f, 0.08f, 0.08f )// ゆっくりめに首向き
+	LookSpd("SAHAD", 0.08f, 0.08f, 0.08f )// ゆっくりめに首向き
+	Look("SAHAD", -40.0f, 5.0f)	// （＾＾）↑→
+	Wait(15)
+	Look("LAXIA", 40.0f, 10.0f)	// ←↑（＾＾）
+	Wait(20)
+	LookChr("ADOL", "Katrin")
+	Wait(20)
+	LookChr("LAXIA", "Katrin")
+	Wait(20)
+	LookChr("SAHAD", "Katrin")
+	LookSpd( "SAHAD", LOOKSPD_DEFAULT, LOOKSPD_DEFAULT, LOOKSPD_DEFAULT )
+	LookSpd( "LAXIA", LOOKSPD_DEFAULT, LOOKSPD_DEFAULT, LOOKSPD_DEFAULT )
+	// ------------------------- ▲
+	
+	// 移動待ち
+	WaitThread(1)
+	ChangeAnimation( "ADOL" , "ANI_EV_EQWAIT", -1 , 1 )
+//	WaitThread(2)
+//	WaitThread(3)
+	
+	EmotionEx("Katrin", 0.00f, EMO_PA, 0, 5, 1, 1, 1.2f )	// 「PA」
+	Wait(25)
+	TurnToChr("Katrin", "ADOL", 5.0f)
+	Wait(25)
+
+
+	// カット2 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	// カメラ待ち（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	// カメラ
+	MoveCameraAt( 0 , -945.448f , -548.752f , 1.776f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.324f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.911f , 0 )	// 基本仰角
+	RotateCamera( 0 , 105.437f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , -4.9f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -945.401f , -548.717f , 1.836f, 90 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.212f, 90 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE ,-5.623f , 90 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE ,91.400f , 90 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 35.000f , 90 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 0.3f , 90)		// ロール回転
+	
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+
+	SetStopFlag(STOPFLAG_CINEMA)		//字幕帯を表示
+	Wait(10)							//帯表示までのウェイト
+
+	ChangeAnimation( "Katrin", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	// 凛とした女性（カトリーン）
+	SetName("凛とした女性")
+	TalkMes("Katrin","#4105V……ふむ、お前たちは？","","")
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+	
+//	ResetStopFlag(STOPFLAG_CINEMA)		//字幕帯を非表示	
+	Wait(10)	
+
+	
+	// カット3 -----------------------------------------------------------------------------------------
+
+	//　　立ち止まってそれぞれ武器を仕舞うアドルたち。
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	// カメラ待ち（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	// カメラ
+	MoveCameraAt( 0 , -944.424f , -547.735f , 1.483f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.640f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.728f , 0 )	// 基本仰角
+	RotateCamera( 0 , 312.414f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.7f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", -943.58f, -547.02f, 0.53f)
+	Turn("ADOL", 48.86f, 360.0f)
+	SetChrPos("LAXIA", -944.39f, -546.71f, 0.48f)
+	Turn("LAXIA", 44.49f, 360.0f)
+	SetChrPos("SAHAD", -942.72f, -547.36f, 0.58f)
+	Turn("SAHAD", 61.86f, 360.0f)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_SMILE_S, 1)	// 目
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_SMILE_S, 1)	// 口
+	
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -944.424f , -547.735f , 1.836f, 70 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.912f , 70)		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -4.926f , 70 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 299.828f , 70 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 35.000f , 70 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -9.2f , 70 )		// ロール回転
+	
+	ChangeAnimation( "LAXIA" , "ANI_DISARM", -1 , 1 )	// 武器しまう
+	Wait(5)
+	ChangeAnimation( "ADOL" , "ANI_DISARM", -1 , 1 )	// 武器しまう
+	Wait(5)
+	ChangeAnimation( "SAHAD" , "ANI_DISARM", -1 , 1 )	// 武器しまう
+	
+	// カメラ待ち（Aイベント用）
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+//	WaitThread(1004)
+//	WaitThread(1005)
+	
+//	SetStopFlag(STOPFLAG_CINEMA)		//字幕帯を表示
+//	Wait(10)							//帯表示までのウェイト
+	
+	WaitAnimation2( "LAXIA" , -1, 1, "ANI_DISARM",  0)
+	ChangeAnimation( "LAXIA", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	// ラクシャ
+	TalkMes("LAXIA","#0651V#000e#000mロンバルディアの乗客の方ですね？","","")
+	WaitPrompt()
+	
+	WaitAnimation2("LAXIA", -1, 1, "ANI_EV_TEBURI", 0)
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+	
+	// ラクシャ
+	TalkMes("LAXIA","#0652V#080e#080mキルゴールさんに",
+		"あなたのことを聞いて迎えに来ました。","")
+	WaitPrompt()
+	WaitCloseWindow()
+	
+
+	ResetStopFlag(STOPFLAG_CINEMA)		//字幕帯を非表示
+
+//	// カメラ移動
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -944.424f , -547.735f , 1.836f , 70 )
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.472f , 70 )
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -4.926f , 70 )
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 299.831f , 70 )
+
+	Wait(10)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	Wait(10)
+
+	// テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0) {
+		"#7Cアドルたちは名乗って、"
+		"#7C状況を女性に説明するのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(15)
+	
+	// カット4 ----------------------------------------------------------------------------------------
+	
+	// カメラ
+	MoveCameraAt( 0 , -945.353f , -548.633f , 1.856f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.754f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.436f , 0 )	// 基本仰角
+	RotateCamera( 0 , 149.761f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 12.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", -944.30f, -547.71f, 0.47f)
+	Turn("ADOL", 48.86f, 360.0f)
+	SetChrPos("LAXIA", -944.93f, -547.23f, 0.43f)
+	Turn("LAXIA", 30.28f, 360.0f)
+	SetChrPos("SAHAD", -943.79f, -548.41f, 0.47f)
+	Turn("SAHAD", 79.63f, 360.0f)
+	ChangeSubAnimation("Katrin", SUBMOT_EYE, ANI_E_CLOSE, 1)	// 目
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)	// 口
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)	// 口
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)	// 口
+	ChangeAnimation( "LAXIA", "ANI_WAIT", -1, 1 )	// 待機
+	
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -945.353f , -548.633f , 1.856f , 210 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.186f , 210 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 3.435f , 210 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 149.760f , 210 )
+
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	
+	// フェード待ち
+	WaitFade()
+	
+	SetStopFlag(STOPFLAG_CINEMA)		//字幕帯を表示
+	Wait(10)							//帯表示までのウェイト
+
+	// 凛とした女性（カトリーン）
+	SetName("凛とした女性")
+	TalkMes("Katrin","#4106V#000e#000m無人島……",
+		"なるほど合点が行ったわ。","")
+	WaitPrompt()
+
+	ChangeAnimation( "Katrin", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+	Look("Katrin", 0.0f, -10.0f)	// うつむく
+	ChangeSubAnimation("Katrin", SUBMOT_EYE, ANI_E_CLOSE_S, 1)	// 目
+
+	// 凛とした女性（カトリーン）
+	TalkMes("Katrin","#4107V#000m私のことを知らせてくれた",
+		"キルゴール殿には感謝しなくては。","")
+	WaitPrompt()
+
+	// 凛とした女性（カトリーン）
+	TalkMes("Katrin","#4108V#000e#000mそれにしても……","","")
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("Katrin", "ADOL")
+	
+//	ResetStopFlag(STOPFLAG_CINEMA)	// 字幕終了
+	Wait(10)
+	// カット5 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	
+	// カメラ
+	MoveCameraAt( 0 , -945.368f , -548.596f , 1.736f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.410f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.438f , 0 )	// 基本仰角
+	RotateCamera( 0 , 291.838f , 0 )				// 角度
+	ChangeCameraPers( 0 , 30.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 12.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -945.368f , -548.596f , 1.856f , 70 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.410f , 70 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -3.438f , 70 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 291.838f, 70 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 30.000f , 70 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 12.0f , 70)		// ロール回転
+
+	Wait(FADE_CROSS)
+
+	//　　アドルに「？」エモーション。
+	EmotionEx("ADOL", 0.00f, EMO_Q, 0, 5, 1, 1, 1.0f )	// 「？」
+	LookRoll("ADOL", -7.0f)	// かしげる
+	Wait(45)
+	LookRoll("ADOL", 0.0f)	// かしげる戻す
+	
+	//　　まずはアドルを見やるカトリーン。
+	
+	// カメラ待ち（Aイベント用）
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	
+//	SetStopFlag(STOPFLAG_CINEMA)	// 字幕開始
+//	Wait(10)		// 字幕待ち
+	
+	// 凛とした女性（カトリーン）
+	TalkMes("Katrin","#4109V赤毛のあなた……",
+		"腰に佩#2Rは#Rいた剣は拾い物なの？","")
+	WaitPrompt()
+	
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -945.368f , -548.596f , 1.856f, 80 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.410f , 80 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 4.869f , 80 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 299.291f , 80 )
+	
+	LookTo("Katrin", -944.406f , -547.277f , 1.556f)
+
+	// 凛とした女性（カトリーン）
+	TalkMes("Katrin","#4110Vずいぶんと古びている上、",
+		"刃こぼれが酷く錆びも浮いている。","")
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("Katrin", "ADOL")
+
+	// 凛とした女性（カトリーン）
+	TalkMes("Katrin","#4111V腕は確かなようだけど、",
+		"その鈍#2Rなまくら#Rではろくに力を発揮できないはず。","")
+	WaitPrompt()
+
+	//　　次にラクシャを見るカトリーン。
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -945.475f , -548.478f , 1.856f , 55 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.410f , 55 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 2.291f , 55 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 316.777f , 55 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 30.000f , 55 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 12.0f , 55 )		// ロール回転
+
+	LookChr("Katrin", "LAXIA")
+
+
+	// 凛とした女性（カトリーン）
+	TalkMes("Katrin","#4112Vそのレイピアは良い品だけど、",
+		"きちんと刃が入っていないようね。","")
+	WaitPrompt()
+
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_SUP_S, 1)	// 目
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_OPEN_S,1)
+	EmotionEx("LAXIA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f )
+	Wait(35)
+
+	// 凛とした女性（カトリーン）
+	TalkMes("Katrin","#4113Vくすんだ剣身から察するに仕舞いっ放しの",
+		"練習用でも持ち出したのかしら。","")
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+	
+	// ラクシャ
+	TalkMes("LAXIA","#0653V#070e#200mあ……一瞬見ただけで……","","")
+	WaitPrompt()
+	WaitCloseWindow()
+	
+//	ResetStopFlag(STOPFLAG_CINEMA)	// 字幕終了
+
+	// カット5 ----------------------------------------------------------------------------------------
+
+	//　　最後にサハドを見るカトリーン。
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	// カメラ待ち（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	// カメラ
+	MoveCameraAt( 0 , -944.798f , -548.844f , 1.996f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.474f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.740f , 0 )	// 基本仰角
+	RotateCamera( 0 , 78.012f , 0 )				// 角度
+	ChangeCameraPers( 0 , 30.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.5f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)	// 目
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -944.729f , -548.613f , 2.056f, 180 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE ,2.194f , 180 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 14.048f , 180 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 80.591f, 180 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 30.000f , 180 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 0.5f , 180 )		// ロール回転
+	
+	// フェード待ち
+	Wait(FADE_CROSS)
+	
+	LookChr("Katrin", "SAHAD")
+	ChangeAnimation( "Katrin", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+//	SetStopFlag(STOPFLAG_CINEMA)	// 字幕開始
+//	Wait(10)		// 字幕待ち
+
+	// 凛とした女性（カトリーン）
+	SetName("凛とした女性")
+	TalkMes("Katrin","#4114V#000e#000mあなたの武器は…………","","")
+	WaitPrompt()
+
+	LookReset("Katrin")
+
+	// 凛とした女性（カトリーン）
+	TalkMes("Katrin","#4115V#011e#000m…………まるでデタラメね。","","")
+	WaitPrompt()
+	
+	LookChr("Katrin", "SAHAD")
+
+	ChangeAnimation( "Katrin", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+
+	// 凛とした女性（カトリーン）
+	TalkMes("Katrin","#4116V#042e#000mそんなものを振り回し続けたら、",
+		"そのうち身体を痛めることになるわ。","")
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+	
+	Wait(10)
+
+	// カット6 -----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	// カメラ
+	MoveCameraAt( 0 , -944.680f , -548.299f , 1.856f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.258f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.145f , 0 )	// 基本仰角
+	RotateCamera( 0 , 329.446f , 0 )				// 角度
+	ChangeCameraPers( 0 , 30.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , -7.5f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("SAHAD", -943.66f, -548.34f, 0.48f)
+	Turn("SAHAD", 93.84f, 360.0f)
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -944.680f , -548.299f , 1.856f , 300 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.258f , 300 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -5.431f , 300 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 338.327f , 300 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 30.000f , 300 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -7.5f , 300 )		// ロール回転
+	
+	// フェード待ち
+	Wait(FADE_CROSS)
+	
+	ChangeAnimation( "SAHAD", "ANI_EV_BORI", -1, 1 )	// 頭かき
+	
+	// サハド
+	TalkMes("SAHAD","#1614V#020e#000mガハハ、参ったな。",
+		"確かに腰に来るんだよな……","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Katrin", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	// 凛とした女性（カトリーン）
+	SetName("凛とした女性")
+	TalkMes("Katrin","#4117Vよくもまあ、そのような得物で",
+		"あの森を抜けて来たわね。","")
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	ResetStopFlag(STOPFLAG_CINEMA)	// 字幕終了
+	Wait(10)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"あなたは一体？")
+	MenuAdd(2,"武器に詳しいですね")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	
+	// （アドル）手振り
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI", -1, 1 )
+	PlayVoice(Y8V_0188,"ADOL",100)	//ええと…（相手に声をかける）
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(20)
+	
+	// カット7 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	// カメラ
+	MoveCameraAt( 0 , -945.660f , -548.641f , 1.165f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.522f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 19.489f , 0 )	// 基本仰角
+	RotateCamera( 0 , 78.934f , 0 )				// 角度
+	ChangeCameraPers( 0 , 30.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 2.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	LookReset("Katrin")
+	ChangeSubAnimation("Katrin", SUBMOT_EYE, ANI_E_WAIT, 1)	// 目
+
+	// 非表示・再表示
+	SetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 非表示
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -945.508f , -548.730f , 1.796f, 200 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.522f , 200 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -3.137f , 200 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 97.486f, 200)		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 30.000f , 200 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 2.0f , 200 )		// ロール回転
+
+	Wait(60)
+
+	ChangeAnimation( "Katrin", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+	VisualName("visual/chrname/cn_c106.itp", VN_NAMEVOICE, VN_CHRNAME_RB_X, VN_CHRNAME_RB_Y,VN_NPCNAME_TIME)	// カトリーン
+	Wait(60)		
+
+	//時限式選択肢
+	//◆SE無効化コマンド置換用
+	SetFlag(TF_MENU_SELECT2,0)
+	MenuReset()
+	MenuAdd( 1 , "" )
+	MenuOpen( TF_MENU_SELECT2 , 0 ,0 , 0 , 0 , 0 , 0 )
+	WaitMenu(VN_NPCNAME_SKIP) //ウェイトしたい数値
+	MenuClose(0,0)
+
+	if(FLAG[TF_MENU_SELECT2] == 1 )
+	{
+		CrossFade(FADE_FAST)
+		VisualNameEnd()
+		StopThread(1000)
+		StopThread(1001)
+		StopThread(1002)
+		StopThread(1003)
+
+		MoveCameraAt( 0 , -945.508f , -548.730f , 1.796f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 1.522f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , -3.137f , 0 )	// 基本仰角
+		RotateCamera( 0 , 97.486f , 0 )				// 角度
+		ChangeCameraPers( 0 , 30.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 2.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		Wait(FADE_FAST)
+	}
+	else
+	{
+		Wait(30)
+	}
+
+	//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1 ) {
+
+		//	⇒あなたは一体？
+		
+
+		SetStopFlag(STOPFLAG_CINEMA)	// 字幕開始
+		Wait(10)	// 字幕待ち
+		
+		// 凛とした女性（カトリーン）
+		SetName("凛とした女性")
+		TalkMes("Katrin","#4118V#000e#000m私の名はカトリーン。",
+			"代々鍛冶屋を営む家に生まれた。","")
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// 凛とした女性（カトリーン）
+		TalkMes("Katrin","#4119V#011e#000m鍛冶の腕には少々覚えがあるわ。",
+		"鍛冶2行目","")
+		WaitPrompt()
+		WaitCloseWindow()
+		SetName("")
+
+	} else if (FLAG[TF_MENU_SELECT] == 2 ) {
+
+		//	⇒武器に詳しいですね
+		
+		SetStopFlag(STOPFLAG_CINEMA)	// 字幕開始
+		Wait(10)	// 字幕待ち
+		
+		// 凛とした女性（カトリーン）
+		SetName("凛とした女性")
+		TalkMes("Katrin","#4120V#011e#000mこう見えても鍛冶屋の娘よ。",
+			"鍛冶の腕には少々覚えがあるわ。","")
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// 凛とした女性（カトリーン）
+		TalkMes("Katrin","#4121V#012e#000m私の名前はカトリーン。",
+			"以後お見知りおきを願うわ。","")
+		WaitPrompt()
+		WaitCloseWindow()
+		SetName("")
+
+	}
+
+	//─────────────────────────
+
+	Wait(10)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1117:EV_M02S220_ED")
+}
+
+function "EV_M02S220_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	ResetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 再表示
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+	CallFunc("system:reset_chrmot_Katrin")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+
+	EventCue("mp1117:EV_M02S221")
+
+	ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+
+//終了処理ここまで----------------------------------------------------
+
+}
+
+
+function "EV_M02S221"		//カトリーンに出会う２
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrPos("ADOL", -944.09f, -547.69f, 0.48f)
+	Turn("ADOL", 38.20f, 360.0f)
+	SetChrPos("LAXIA", -944.90f, -547.43f, 0.43f)
+	Turn("LAXIA", 8.96f, 360.0f)
+	SetChrPos("SAHAD", -943.49f, -548.75f, 0.48f)
+	Turn("SAHAD", 108.05f, 360.0f)
+	SetChrPos("Katrin", -945.03f, -548.85f, 0.37f)
+	Turn("Katrin", -142.39f, 360.0f)
+
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+//	SetChrWork("ADOL",CWK_BATTLEMODE,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("ADOL" , "Katrin")
+
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+//	SetChrWork("LAXIA",CWK_BATTLEMODE,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("LAXIA" , "Katrin")
+
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI )
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+//	SetChrWork("SAHAD",CWK_BATTLEMODE,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("SAHAD" , "Katrin")
+
+	SetChrInfoFlag( "Katrin" , INFOFLAG_NOCHRATARI )
+	SetChrWork("Katrin", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeSubAnimation("Katrin",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Katrin",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Katrin",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	// 初期カメラ
+	//MoveCameraAt( 0 , -944.383f , -547.978f , 2.255f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.487f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 1.949f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 165.976f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SetFlag(SF_CHARANORECVSHADOW,1)	//キャラ影受けない
+
+	MoveCameraAt( 0 , -944.339f , -547.989f , 1.990f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.117f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.128f , 0 )	// 基本仰角
+	RotateCamera( 0 , 165.978f , 0 )				// 角度
+	ChangeCameraPers( 0 , 49.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 90.000 ,0.000 ,0.550 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	FadeBGM(70,30)
+
+	//スキップ許可
+	SetSkipScript("mp1117:EV_M02S221_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	// カット1 --------------------------------------------------------------------------------------
+
+	// 位置調整・表情・モーション
+	LookChr("ADOL", "Katrin")
+	LookChr("LAXIA", "Katrin")
+	LookChr("SAHAD", "Katrin")
+
+	Wait(20)
+
+	// カメラ移動
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -944.383f , -547.978f , 2.015f, 60 )
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.487f, 60 )
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 1.949f , 60 )
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 165.976f , 60 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	// カメラ待ち
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0) {
+		"#011e#000m鍛冶屋……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+	
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0) {
+		"#012e#000mということは、わたくしたちの"
+		"武器の手入れもお願いできるのですか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Katrin", "LAXIA")
+
+	// カトリーン
+	TalkPopup("Katrin", 0, 2, 0, 0, 0) {
+		"#000e#000mもちろん、と言いたいところだけど、"
+		"私も設備なしではどうにもならない。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Katrin", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	LookReset("Katrin")
+	
+	// カトリーン
+	TalkPopup("Katrin", 0, 2, 0, 0, 0) {
+		"#061e#000m鍛冶場さえあれば、武器を"
+		"打ち直すこともできるのだけれど……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+	
+	// サハド
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#000e#000m島の奥に進むにつれて"
+		"獣たちも手強くなってきてるしな。\p"
+		"#061e#000mこのセイレン島じゃあ、"
+		"買い替えることは絶対にできん。\p"
+		"#062e#000m頼めるものなら是非頼みたいんだが……"
+		"是非6行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	// カット2 ------------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ
+	MoveCameraAt( 0 , -944.452f , -548.068f , 1.852f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.933f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -0.970f , 0 )	// 基本仰角
+	RotateCamera( 0 , 278.344f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// フェード待ち
+	Wait(10)
+
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0) {
+		"#011e#000m漂流村に鍛冶場を"
+		"作れないものでしょうか……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("LAXIA", "ADOL")
+	TurnToChr("LAXIA", "ADOL", 8.0f)
+	Wait(10)
+	ChangeAnimation( "LAXIA", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	LookChr("ADOL", "LAXIA")
+	
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0) {
+		"アドル・クリスティン、"
+		"船長やドギに相談してみたらいかが？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Katrin", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+
+	// カトリーン
+	TalkPopup("Katrin", 0, 1, 0, 0, 0) {
+		"#000e#000mふむ……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("SAHAD", "ADOL")
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+
+	// サハド
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#000e#000mおーよ、すぐに漂流村へ戻ろうぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("ADOL", "SAHAD")
+	Wait(15)
+	
+	
+	//　　アドル、頷きモーション見せて画面フェードアウト。
+	HeadYes("ADOL" , 1 , 25 )
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Wait(15)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -944.465f , -547.982f , 3.092f, 130 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.851f , 130 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -7.273f , 130 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 277.199f, 130 )
+	
+	Wait(25)
+
+	StopBGM(120)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	// フェードアウト
+	FadeOut(FADE_BLACK,45)
+	WaitFade()
+	
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	Wait(10)
+	
+	//　　暗転のまま以下のメッセージを表示
+	
+	// テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0) {
+		"#7Cアドルたちはカトリーンを連れて"
+		"#7C漂流村へ一旦戻ることにした。\p"
+		"#7Cその後、バルバロスとドギに相談して、"
+		"#7C漂流村に鍛冶場を作ることにする。\p"
+		"#7C急ごしらえだが漂着物を使って"
+		"#7C炉や吹子#4Rふいご#Rが用意されることになり……\p"
+		"#7Cカトリーンが何とか"
+		"#7C鍛冶を行える設備が整うのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+	
+	PlaySE(SE_PARTYIN, 100, 0, 0, 0, 1.0f, 0)	//仲間に加わる
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#8S"
+		"#-1W#4Cカトリーンが漂流村に参加することになった！#10W" 
+		"#8S"
+	}
+	Wait(10)
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp1117:EV_M02S221_ED")
+}
+
+function "EV_M02S221_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+	CallFunc("system:reset_chrmot_Katrin")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	SetFlag(SF_CHARANORECVSHADOW,0)	//キャラ影受ける
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	SetFlag(GF_SMITHY_LV,2)		//◆鍛冶屋レベル設定
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+	StopBGM(30)
+
+	LoadArg("map/mp1201/mp1201.arg")
+	EventCue("mp1201:EV_M02S230")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+//終了処理ここまで----------------------------------------------------
+
+}
