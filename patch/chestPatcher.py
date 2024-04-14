@@ -72,6 +72,7 @@ def clearBytes(byteArray,startOffset,clearType):
         byteArray[makeChestsClosed] = 1
     elif clearType == "itemID":
         byteArray[makeChestsClosed] = 139
+        byteArray[makeChestsClosed+1] = 00 #I thought I had an issue fixed with some chests with two bytes for their item ID still spawning an item but it cropped up again, so this is an extra failsafe
     
     return byteArray
     
