@@ -62,7 +62,6 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.setCheckBox("party", ticked=True)
     app.stopLabelFrame()
 
-    
     app.startLabelFrame("Progression Placement Modifiers")
     app.startFrame("progression placement modifiers1",3,0)
     app.addLabelOptionBox("Jewel Trade Items: ", ["None","Jewel Trades Costing 1","Jewel Trades Costing <= 2","Jewel Trades Costing <= 3","Jewel Trades Costing <= 10","All"],1)
