@@ -1,0 +1,787 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+
+//-------------------------------------------
+// 7303：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//骸骨：宝箱
+	if( FLAG[GF_MP7303_SKELETON01] ){
+		ChangeAnimation( "Skeleton" , "ANI_STOP2", -1 , 1 )		//取った後
+		SetChrPos( "TBOX01",-100000.00f,0.00f,0.00f)
+	}
+
+	EventAreaEnable( "evb2_M01S141" , 0 )
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_01MP7302_IN_RUIN] && !FLAG[GF_01MP7303_ADVICE_LAXIA] ){
+
+			if(FLAG[SF_2NDSTART])	//２周目の時はフラグだけ立てる
+			{
+				SetFlag(GF_01MP7303_ADVICE_LAXIA,		1)// ラクシャにアドバイスされた
+				SetFlag(GF_01MP7303_ADVICE_LAXIA_NOTEA,		1)// ラクシャにアドバイスされた
+				SetFlag( GF_HELP_B08, 1 )	// チュートリアル：戦闘ボーナス
+				SetFlag( GF_HELP_B10, 1 )	// チュートリアル：ブレイクオブジェ
+			}
+			else		//１周目はイベントを見る
+			{
+				EventCue("mp7303:EV_M01S140")
+			}
+		}
+		if( !FLAG[GF_01MP7303_CHECK_SKELETON] )
+		{
+			EventAreaEnable( "evb2_M01S141" , 1 )
+			ChangeAnimation( "Skeleton" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+			SetChrPos( "TBOX01",-100000.00f,0.00f,0.00f)
+			SetChrPos( "M0110_e1",-100000.00f,0.00f,0.00f)
+			SetChrPos( "M0109_e1",-100000.00f,0.00f,0.00f)
+			SetChrPos( "M0109_e2",-100000.00f,0.00f,0.00f)
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 100  ){	
+			//ワープ
+			VisualName("visual/mapname/mn_7301.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//水音の洞窟
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+}
+
+function "TBox01"
+{
+//	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_TALK)
+
+	LookChr("PLAYER1","this")
+	TurnToChr("PLAYER1","Skeleton",16.0)
+	Wait(5)
+
+	ChangeAnimation( "PLAYER1" , "ANI_GET_ITEM", -1 , 1 )
+	Wait(10)
+	ChangeAnimation( "Skeleton" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+
+	//GetItemMessageExPlus( ICON3D_US_RESSURECT_01, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+	//WaitPrompt()
+	//WaitCloseWindow()
+	//GetItem(ICON3D_US_RESSURECT_01,1)
+	
+	CallFunc("rng:0493")
+
+	//SE埋め込み済み
+	ChangeAnimation( "Skeleton" , "ANI_OPEN", -1 , 1 )		//崩れる
+
+	//開けた
+	SetFlag( GF_MP7303_SKELETON01, 1 )
+	SetChrPos( "this",-100000.00f,0.00f,0.00f)
+	LookReset("PLAYER1")
+
+//	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_TALK)
+
+}
+
+
+function "EV_M01S140"		//ラクシャにアドバイスされる
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	SaveEventState()
+	SaveCamera()
+
+	ClearDebris()
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL",-46.60f,-113.70f,-12.02f)
+	Turn("ADOL",60.00f,360.0f)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	SetChrPos("LAXIA",-45.60f,-114.60f,-12.05f)
+	Turn("LAXIA",60.00f,360.0f)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	// チュートリアルポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+	Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(2, "visual/help/hp_b08.itp" )	// help_b08：戦闘ボーナス
+	Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(3, "visual/help/hp_b10.itp" )	// help_b10：ブレイクオブジェ
+	Portrait_Create(3, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+		
+	MoveCameraAt( 0 , -48.354f , -115.484f , -10.696f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.810f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 13.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 267.001f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 1.000, 20.000 ,0.000 ,0.150 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	SetSkipScript("mp7303:EV_M01S140_ED")		//スキップ許可
+
+//開始処理ここまで-----------------------------------------------
+	ExecuteCmd( 1, MoveTo, "ADOL", -48.90f,-115.10f,-12.02f, 0.1f, 0.20f )
+	Wait(5)
+	ExecuteCmd( 2, MoveTo, "LAXIA", -47.90f,-116.00f,-12.05f, 0.1f, 0.19f )
+
+	ExecuteCmd(1000, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.990f , 70 )
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	WaitThread(1)
+	WaitThread(2)
+
+	//　　マップに入るとイベント開始。
+	//　　歩いてきて向き合うアドルとラクシャ。
+	LookChr( "LAXIA" , "ADOL" )
+	TurnToChr("LAXIA",  "ADOL", 10.0f)
+	Wait(10)
+	WaitThread(1000)
+
+	ChangeAnimation( "LAXIA" , "ANI_EV_TEMUNE_S", -1 , 1 )
+
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000mアドル・クリスティン、"
+		"少々よろしいでしょうか？\p"
+		"わたくし、先ほどの戦いで"
+		"気づいたことがあるのですが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	//WaitThread(1000)
+
+	TurnToChr("ADOL",  "LAXIA", 10.0f)
+	LookChr( "ADOL" , "LAXIA" )
+	Wait(10)
+
+	//　　[溜め攻撃]のチュートリアルを表示。
+
+	// チュートリアル =================================================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+		
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.5f, FADE_FAST)
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+
+		Wait(FADE_FAST)
+
+		Portrait_Close(2)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	}
+	// ================================================================================================
+	//　　チュートリアルを閉じるとイベント再開。
+
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#091e積極的にジャンプ攻撃やスキルを使うと"
+		"良いことがあるようです。\p"
+		"#000eいかがですか？"
+		"きっと役に立つと思うのですが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"早速試してみるよ")
+	MenuAdd(2,"もう気づいてるよ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		SetFlag(GF_01MP7303_ADVICE_LAXIA_NOTEB,			1)// ラクシャにアドバイスされたB
+
+		//	⇒早速試してみるよ
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		HeadYes("ADOL" ,1 , 25 )
+		Wait(25)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		ChangeAnimation( "LAXIA" , "ANI_EV_TEMUNE_E", -1 , 1 )
+
+		TalkPopup("LAXIA",0,2,0,0,0)
+		{
+			"#011e#000mええ、これを知っていれば"
+			"色々と有利に進められそうです。\p"
+			"#012eそれともう一点……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//　　[ブレイクオブジェ]のチュートリアルを表示。
+
+		// チュートリアル =================================================================================
+		if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+			
+			//自動送り禁止
+			ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+			Wait(10)
+
+			// 擬似フェードアウト表示
+			Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+			Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.5f, FADE_FAST)
+
+			// ポートレート表示
+			PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+			Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+			Portrait_Anime(3, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+			Wait(FADE_NORMAL)
+			Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+			WaitPrompt()
+			Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+			Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)	// チュートリアル背景
+			Portrait_Anime(3, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+			Wait(FADE_FAST)
+			
+			// 擬似フェードアウト削除
+			Portrait_Close(0)
+			Portrait_Close(1)
+			Portrait_Close(3)
+
+			//自動送り許可
+			SetStopFlag(STOPFLAG_AUTOMESSAGE)
+		
+		}
+		// ================================================================================================
+
+		Wait(5)
+
+		//選択肢
+		SetFlag(TF_MENU_SELECT,0)
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(1,"なるほどな……")
+		MenuAdd(2,"知ってたよ")
+		MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+		WaitMenu(0)
+		MenuClose(10,0)
+
+		if (FLAG[TF_MENU_SELECT] == 1)
+		{
+
+			SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+			ChangeAnimation( "ADOL" , "ANI_EV_SIAN_S", -1 , 1 )
+			WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_SIAN_S",  0)
+			SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+			Wait(10)
+
+			ChangeAnimation( "LAXIA" , "ANI_EV_WAIT2_S", -1 , 1 )
+			TalkPopup("LAXIA",0,2,0,0,0)
+			{
+				"#080e#080mふふ、感謝なさい。"
+				"こちらも役立つはずです。"
+			}
+			WaitPrompt()		
+		}
+		else
+		{
+			SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+			ChangeAnimation( "ADOL" , "ANI_EV_TEBURI", -1 , 1 )
+			WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_TEBURI",  0)
+			SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+			Wait(10)
+
+			ChangeAnimation( "LAXIA" , "ANI_EV_UDEGUMI_S", -1 , 1 )
+			TalkPopup("LAXIA",0,2,0,0,0)
+			{
+				"#110e#000mそ、そうなのですか？\p"
+				"#041e#000mコホン、知っていたのなら"
+				"教えてくださればいいのに……"
+			}
+			WaitPrompt()
+		}
+		//　　チュートリアルを閉じるとイベント再開。
+
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		SetFlag(GF_01MP7303_ADVICE_LAXIA_NOTEA,			1)// ラクシャにアドバイスされたA
+
+		//	⇒もう気づいてるよ
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+		ChangeAnimation( "ADOL" , "ANI_EV_WAIT2_S", -1 , 1 )
+		WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_WAIT2_S",  0)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+
+		ChangeAnimation( "LAXIA" , "ANI_EV_TEMUNE_E", -1 , 1 )
+
+		ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_SUP_S,1)
+		EmotionEx("LAXIA", 0.00f,EMO_EX,0,5,1,1,1.0f )
+		Wait(40)
+
+		TalkPopup("LAXIA",0,2,0,0,0)
+		{
+			"#130e#000mき、気づいていたのなら、"
+			"わたくしに教えてくださればいいのに。\p"
+			"#030eで、ではこれはどうなのです？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//　　[ブレイクオブジェ]のチュートリアルを表示。
+
+		// チュートリアル =================================================================================
+		if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+			
+			//自動送り禁止
+			ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+			Wait(10)
+
+			// 擬似フェードアウト表示
+			Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+			Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.5f, FADE_FAST)
+
+			// ポートレート表示
+			PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+			Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+			Portrait_Anime(3, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+			Wait(FADE_NORMAL)
+			Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+			WaitPrompt()
+			Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+			Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)	// チュートリアル背景
+			Portrait_Anime(3, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+			Wait(FADE_FAST)
+			
+			// 擬似フェードアウト削除
+			Portrait_Close(0)
+			Portrait_Close(1)
+			Portrait_Close(3)
+
+			//自動送り許可
+			SetStopFlag(STOPFLAG_AUTOMESSAGE)
+		
+		}
+		// ================================================================================================
+
+		//選択肢
+		SetFlag(TF_MENU_SELECT,0)
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(1,"なるほどな……")
+		MenuAdd(2,"知ってたよ ")
+		MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+		WaitMenu(0)
+		MenuClose(10,0)
+
+		if (FLAG[TF_MENU_SELECT] == 1)
+		{
+
+			SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+			ChangeAnimation( "ADOL" , "ANI_EV_WAIT2_E", -1 , 1 )
+			WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_WAIT2_E",  0)
+			SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+			Wait(10)
+
+			ChangeAnimation( "LAXIA" , "ANI_EV_WAIT2_S", -1 , 1 )
+			TalkPopup("LAXIA",0,2,0,0,0)
+			{
+				"#080e#080mふふ、どうやら"
+				"こちらはご存じなかったようですね。\p"
+				"#011e#000m……コホン、感謝なさい。"
+			}
+			WaitPrompt()		
+
+			SetFlag(GF_01MP7303_ADVICE_LAXIA_NOTEB,			1)// ラクシャにアドバイスされたB
+		}
+		else
+		{
+			SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+			ChangeAnimation( "ADOL" , "ANI_EV_WAIT2_TEBURI", -1 , 1 )
+			WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_WAIT2_TEBURI",  0)
+			SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+			Wait(10)
+
+			ChangeAnimation( "LAXIA" , "ANI_EV_UDEGUMI_S", -1 , 1 )
+			TalkPopup("LAXIA",0,2,0,0,0)
+			{
+				"#110e#000m#0L……………………………………\p"
+				"#110e#000mあなた……性格が悪いって"
+				"言われたことはありませんか？"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+
+		
+	}
+	//─────────────────────────
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp7303:EV_M01S140_ED")
+}
+
+function "EV_M01S140_ED"
+{
+	SetSkipScript("")
+	RestoreEventState()
+
+	//スキップ専用処理
+	if (FLAG[TF_EVSKIP])
+	{
+		if(!FLAG[GF_01MP7303_ADVICE_LAXIA_NOTEB] && !FLAG[GF_01MP7303_ADVICE_LAXIA_NOTEA]){
+			SetFlag(GF_01MP7303_ADVICE_LAXIA_NOTEB,			1)// ラクシャにアドバイスされたB
+		}
+	}
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//自動送り許可
+	SetStopFlag(STOPFLAG_AUTOMESSAGE)
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	// フラグ処理
+	SetFlag(GF_01MP7303_ADVICE_LAXIA,		1)// ラクシャにアドバイスされた
+	SetFlag( GF_HELP_B08, 1 )	// チュートリアル：戦闘ボーナス
+	SetFlag( GF_HELP_B10, 1 )	// チュートリアル：ブレイクオブジェ
+
+	CallFunc( "mp7303:init" )
+
+	SetChrPos("PLAYER1",-47.17f,-114.87f,-12.10f)
+	Turn("PLAYER1",60.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	RotateCamera( 0 , 120.000f , 0 )				// 角度
+	FixCamera()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+function "EV_M01S141"		//海賊の遺体を発見する
+{
+//開始処理ここから----------------------------------------------------
+	CallFunc("system:event_begin")
+
+	SaveEventState()
+	SaveCamera()
+
+	ClearDebris()
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL",-139.45f,-186.10f,-23.06f)
+	Turn("ADOL",88.21f,360.0f)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	SetChrPos("LAXIA",-139.84f,-187.99f,-23.06f)
+	Turn("LAXIA",88.21f,360.0f)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetChrPos("ADOL",-131.31f,-187.19f,-22.65f)
+	Turn("ADOL",97.08f,360.0f)
+	SetChrPos("LAXIA",-132.00f,-189.05f,-22.74f)
+	Turn("LAXIA",105.62f,360.0f)
+	
+	//SetChrPos("ADOL",-133.73f,-186.68f,-22.99f)
+	//Turn("ADOL",98.81f,360.0f)
+	//SetChrPos("LAXIA",-134.22f,-188.69f,-23.00f)
+	//Turn("LAXIA",105.62f,360.0f)
+	SetChrPos("ADOL",-130.55f,-187.61f,-22.55f)
+	Turn("ADOL",91.56f,360.0f)
+	
+	SetChrPos("LAXIA",-130.76f,-189.30f,-22.60f)
+	Turn("LAXIA",105.62f,360.0f)
+	
+	MoveCameraAt( 0 , -132.961f , -188.133f , -21.538f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.800f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 8.975f , 0 )	// 基本仰角
+	RotateCamera( 0 , 76.486f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 25.000 ,0.000 ,0.150 ,0.500)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	SetSkipScript("mp7303:EV_M01S141_ED")
+
+//開始処理ここまで----------------------------------------------------
+
+	Wait(10)
+
+	ExecuteCmd( 1000, ChangeCameraDistance, INTERPOLATE_SPHERE, 4.400f, 45 )
+
+	ExecuteCmd( 2, MoveTo, "LAXIA", -134.22f,-188.69f,-23.00f, 0.1f, 0.32f )
+	Wait(5)
+	ExecuteCmd( 1, MoveTo, "ADOL", -133.77f,-186.83f,-22.99f, 0.1f, 0.32f )
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(1000)
+
+	//　　出口方向のエントリーまたは遺体に近づくとイベント開始。
+	//　　ラクシャが何かに気づく。
+
+	//ラクシャ
+	TalkPopup("LAXIA",0,2)
+	{
+		"#000e#000mあら……\p"
+		"#000e#000m……あれは何かしら？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt( 0 , -144.252f , -187.079f , -21.057f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.370f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 10.547f , 0 )	// 基本仰角
+	RotateCamera( 0 , 276.112f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 60.000 ,0.000 ,0.150 ,0.500)
+	
+	SetChrPos("ADOL",-141.77f,-186.56f,-23.06f)
+	Turn("ADOL",88.89f,360.0f)
+	
+	SetChrPos("LAXIA",-142.75f,-188.42f,-23.06f)
+	Turn("LAXIA",119.32f,360.0f)
+	Look( "ADOL" , 0, -20 )
+	Look( "LAXIA" , 0, -20 )
+
+	ExecuteCmd( 1000, MoveCameraAt, INTERPOLATE_SPHERE, -144.252f , -187.079f , -22.257f, 70 )
+	ExecuteCmd( 1, MoveTo, "ADOL", -143.41f,-186.30f,-23.06f, 0.1f, 0.20f )
+	ExecuteCmd( 2, MoveTo, "LAXIA",-144.00f,-187.64f,-23.06f, 0.1f, 0.20f )
+
+	WaitThread(2)
+
+	ChangeAnimation( "LAXIA" , "ANI_EV_NOZOKI_S", -1 , 1 )
+	WaitAnimation( "LAXIA" , -1, 1 )
+	Wait(10)
+
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_SUP_S,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_SUP_S,1)
+	EmotionEx("LAXIA", 0.00f,EMO_EX,0,5,1,1,1.2f )
+	Wait(15)
+
+	//　　アドルとラクシャが遺体前に歩いてくる。
+	//　　それと知らずに海賊の遺体を覗き込むラクシャ。
+	//　　ラクシャに「！」エモーション
+
+	ChangeAnimation( "LAXIA" , "ANI_EV_ATOZUSA", -1 , 1 )
+	Look( "LAXIA" , 0, -10 )
+	
+	Wait(5)
+	//ラクシャ
+	TalkPopup("LAXIA",0,2)
+	{
+		"#070e#000mひっ……"
+	}
+	Look( "LAXIA" , 0, -12 )
+	
+	WaitPrompt()
+	WaitCloseWindow()
+
+	WaitThread(1)
+	WaitThread(1000)
+
+	//　　ラクシャ、咄嗟に後ずさる。
+
+	//ラクシャ
+	TalkPopup("LAXIA",0,2)
+	{
+		"#061e#000mこ、こちらの方は！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_FAST)
+	//　　海賊の骸骨にカメラを寄せる。
+	MoveCameraAt( 0 , -145.333f , -186.787f , -22.604f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.100f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 10.706f , 0 )	// 基本仰角
+	RotateCamera( 0 , 36.075f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	ExecuteCmd( 1000, ChangeCameraDistance, INTERPOLATE_SPHERE, 1.800f, 70 )
+
+	Wait(FADE_FAST)
+//	WaitThread(1000)
+
+	Wait(15)
+
+	//	テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C朽ち果てた遺体が岩によりかかっている。\p"
+		"#7C身に着けた衣類を見る限り、"
+		"#7C海賊のような格好をしている……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//ラクシャ
+	TalkPopup("LAXIA",0,3,160,230)
+	{
+		"#062e#000mず、ずいぶん前に"
+		"お亡くなりになっているようですね。\p"
+		"#000mなぜ、このような場所に……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+	StopThread(1000)
+	
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp7303:EV_M01S141_ED")
+}
+
+function "EV_M01S141_ED"
+{
+	SetSkipScript("")
+	RestoreEventState()
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	SetFlag(GF_01MP7303_CHECK_SKELETON,		1)		// 骸骨を調べた
+
+	CallFunc("mp7303:init" )
+	SetChrPos( "TBOX01",-145.68f	-186.58f	-23.07f)
+	ChangeAnimation( "Skeleton" , "ANI_WAIT", -1 , 1 )		//キラキラ
+
+	SetChrPos("PLAYER1",-140.59f,-188.92f,-23.05f)
+	Turn("PLAYER1",100.79f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	//RotateCamera( 0 , 120.000f , 0 )				// 角度
+	RotateCamera( 0 , 78.367f , 0 )				// 角度
+	FixCamera()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// チュートリアル
+////////////////////////////////////////////////////////////////////////////////
+

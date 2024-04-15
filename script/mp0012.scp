@@ -1,0 +1,556 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/music.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+#include "inc/temp/mp0012.h"
+
+//-------------------------------------------
+// 0012：巡回を開始する
+//-------------------------------------------
+//////////////////////////////////////////////////////////////////////
+// ■initスクリプト
+//////////////////////////////////////////////////////////////////////
+function "init"
+{
+	// 船揺れ
+	CallFunc("system:default_Shake_set")
+
+	ChrNodeHide( "ADOL" , "Null_wp", 1, 1 )	//剣を消す
+
+	SetFlag(SF_CAMP_CANT_EQUIP,0)		// 装備メニュー許可			//★Patch1.01対応
+	SetFlag(SF_CAMP_CANT_ITEM,0)		// アイテムメニュー許可		//★Patch1.01対応
+
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_M00S030" , 0 )
+	
+	if( FLAG[SF_EVENT_ON] ){
+	//一般配置ファンクション呼び出し
+		CallFunc("mp0012:NpcPosition")
+
+	// イベントエリア設定制御
+		if(FLAG[GF_00MP0012_START_PATROL] && !FLAG[GF_00MP0012_GO_CAPTAINROOM2]
+		&& FLAG[GF_00MP1102_TALK_LAXIA] && FLAG[GF_00MP1102_TALK_SAHAD]
+		&& FLAG[GF_00MP1102_TALK_HUMMEL] && FLAG[GF_00MP1102_TALK_DOGI]){
+			EventAreaEnable( "evb2_M00S030" , 1 )
+		}
+
+	// イベント制御
+		if(FLAG[GF_00MP0012_START_PATROL] && !FLAG[GF_00MP0012_GO_CAPTAINROOM2]
+		&& FLAG[GF_00MP1102_TALK_LAXIA] && FLAG[GF_00MP1102_TALK_SAHAD]
+		&& FLAG[GF_00MP1102_TALK_HUMMEL] && FLAG[GF_00MP1102_TALK_DOGI]
+		&& (FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 3
+		|| FLAG[SF_LASTENTRY_NO] == 5 || FLAG[SF_LASTENTRY_NO] == 7)){
+			EventCue("mp0012:EV_M00S030")
+		}
+
+	//エントリー制御
+		if( FLAG[GF_00MP0012_START_PATROL] ){	//巡回を開始する
+			//昼マップOFF
+			EntryOn(00,0)
+			EntryOn(02,0)
+			EntryOn(04,0)
+			EntryOn(06,0)
+
+			//夜マップON
+			EntryOn(14,1)
+			EntryOn(15,1)
+			EntryOn(16,1)
+			EntryOn(17,1)
+		}
+
+	//ＮＰＣマーカーセット
+		CallFunc("system:SetMarkerNPC")
+	}
+}
+//////////////////////////////////////////////////////////////////////
+//■一般配置
+//////////////////////////////////////////////////////////////////////
+//一般配置
+function "NpcPosition"
+{
+	if( FLAG[GF_NPC_1_01_IN_BASE] )					//▼第一部①漂流村予定地に到着
+	{
+	}
+	else if( FLAG[GF_NPC_0_03_ATTACK_SHIP] )		//▼序③船が襲われる（夜）
+	{
+	}
+	else if( FLAG[GF_NPC_0_02_START_PATROL] )		//▼序②船内を巡回する（夜）
+	{
+		LoadChr("Laxia"	)
+		LoadChr("Hummel"	)
+		LoadChr("Nia"	)
+		LoadChr("Dogi"	)
+		LoadChr("SailorG"	)
+		LoadChr("SailorJ"	)
+
+	// ------- 一等客室・左(mp0012) -----------------------------
+		// ラクシャ			//	場所		：船内・一等客室
+		SetChrPos("Laxia",9.95f	13.90f	0.00f)
+		Turn("Laxia",92.67f,360.0f)
+		Look("Laxia" , 0 , -17 )
+//		ChangeAnimation("Laxia","ANI_EV_SIT_C", -1 , 1 )	
+		//ChangeChrPos("Laxia",		"currentmap", "D_Laxia"			)		// 「現在のマップ」にいなければ、マーカー用ダミーキャラと座標を入れ替える
+		
+		// モブ船員Ｇ		//	場所		：ロンバルディア号船内・一等客室・左
+		SetChrPos("SailorG",9.76f, -13.25f, 0.00f)
+		Turn("SailorG",87.78f,360.0f)
+	
+	// ------- 二等客室・右①（船頭側）(mp0012) -----------------
+		// シスター・ニア	//	場所		：ロンバルディア号・二等客室・右①（船頭側）
+		SetChrPos("Nia",-5.06f, -12.70f, 0.00f)
+		Turn("Nia",-30.80f,360.0f)
+		ChangeAnimation( "Nia", "ANI_EV_TEMUNE", -1, 1 )	//	モーション	：手胸モーション
+		//ChangeChrPos("Nia",			"currentmap", "D_Nia"			)		// 「現在のマップ」にいなければ、マーカー用ダミーキャラと座標を入れ替える
+	
+	// ------- 二等客室・左③（船尾側）(mp0012) -----------------
+		// ヒュンメル		//	場所		：二等客室・左③（船尾側）
+		SetChrPos("Hummel",-22.76f, -11.84f, 0.00f)
+		Turn("Hummel",-88.62f,360.0f)
+		//ChangeChrPos("Hummel",		"currentmap", "D_Hummel"		)		// 「現在のマップ」にいなければ、マーカー用ダミーキャラと座標を入れ替える
+		
+		// モブ船員Ｊ		//	場所		：ロンバルディア号・客室フロア通路・船尾側
+		SetChrPos("SailorJ",20.12f, -2.80f, 0.00f)
+		Turn("SailorJ",177.50f,360.0f)
+	
+	// ------- 調理場(mp0017) -----------------------------------
+		// ドギ				//	場所		：厨房
+		SetChrPos("Dogi",-55.98f,6.33f,0.00f)
+		Turn("Dogi",179.42f,360.0f)
+
+	// ------- その他 -------------------------------------------
+		//※カシューとすれ違うイベント前
+		if( !FLAG[GF_00MP0012_GO_CAPTAINROOM2] )	//※カシューとすれ違うイベント
+		{
+			//※必須聞き込みフラグを集めた後
+			if( FLAG[GF_00MP1102_TALK_LAXIA] && FLAG[GF_00MP1102_TALK_SAHAD] &&
+				FLAG[GF_00MP1102_TALK_HUMMEL] && FLAG[GF_00MP1102_TALK_DOGI] ){
+				// カシュー			//　　※配置ナシ
+			}
+			//※必須聞き込みフラグを集める前
+			else
+			{
+			// ------- 船倉(mp0014) -------------------------------------		mp0014.scpで配置処理を行っています
+				// カシュー			//	場所		：船倉			※必須聞き込みフラグを集めると、配置を消す。
+			}
+		}
+		//※カシューとすれ違うイベント後
+		else
+		{
+			LoadChr("Kashu"	)
+
+		// ------- 客室フロア(mp0012) -------------------------------		mp0012.scpで配置処理を行っています
+			// カシュー			//	場所		：客室フロア	※カシューとすれ違うイベント後
+			SetChrPos("Kashu",-3.50f,-1.00f,0.00f)
+			Turn("Kashu",90.00f,360.0f)
+			//ChangeChrPos("Kashu",			"currentmap", "D_Kashu"				)	// 「現在のマップ」にいなければ、マーカー用ダミーキャラと座標を入れ替える
+		}
+	
+	}
+	else if( FLAG[GF_NPC_0_01_GO_CAPTAINROOM] )		//▼序①バルバロス船長の所へ向かう
+	{
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// ＮＰＣムーブ
+////////////////////////////////////////////////////////////////////////////////
+function "npc_mv_kashu"
+{
+	while(1)
+	{
+		if (this.CHRWORK[CWK_NPCMODE] == NPC_MODE_WALK)
+		{
+			// 廊下を見て回るルートムーブ
+			MoveTo("Kashu",-14.50f,-1.00f,0.00f,0.1f,0.25f)
+			Wait(30)
+			MoveTo("Kashu",-3.50f,-1.00f,0.00f,0.1f,0.25f)
+			Wait(30)
+		}
+		else
+		{
+			// とりあえず待機させたい
+			ChangeAnimation(this,"ANI_WAIT",-1,0)
+			Wait(10)
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+//■メインイベント
+
+//////////////////////////////////////////////////////////////////////
+
+function "EV_M00S030_join"
+{
+	CallFunc("system:event_begin")	//EB開始処理
+	CallFunc("mp0012:EV_M00S030")
+}
+function "EV_M00S030"				//巡回を開始する
+{
+//開始処理ここから----------------------------------------------------
+	
+//	CallFunc("system:event_begin")	//EB開始処理
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	LoadChr("Kashu")
+
+	SaveEventState()
+	SaveCamera()
+
+	//環境初期化＆不要なものを隠す
+	ResetMotion( "ALL" , 1 )  
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//イベント用船揺れ
+	CallFunc("system:event_Shake_set")
+
+	//キャラクター初期化
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL",16.71f, 0.76f, 0.00f)
+	Turn("ADOL",18.47f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", 0 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	//EquipCostume(ADOL, ICON3D_COS_ADOL_00, EQC_MAIN, EQC_MODE_EVFORCE)//水夫服
+	ChrNodeHide( "ADOL" , "Null_wp", 1, 1 )	//剣を消す
+
+	SetChrWork("Kashu", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag( "Kashu" , INFOFLAG_NOCHRATARI )
+	SetChrPos("Kashu",15.90f, -1.79f, 0.00f)
+	Turn("Kashu",-172.48f,360.0f)
+	ChangeAnimation( "Kashu" , "ANI_WAIT", 0 , 1 )
+	ChangeSubAnimation("Kashu",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Kashu",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Kashu",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Kashu")
+	
+	//カメラ設定
+	MoveCameraAt( 0 , 16.103f , -0.703f , 1.277f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.388f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.900f , 0 )	// 基本仰角
+	RotateCamera( 0 , 187.743f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 20.000 ,0.000 ,0.150 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 1.000, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp0012:EV_M00S030_ED")
+	
+	//開始処理ここまで-----------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 16.162f , -1.583f , 1.597f, 60 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.388f , 60 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE ,-3.900f , 60 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 187.743f , 60 )
+
+	// 位置調整・表情・モーション
+	LookChr("ADOL", "Kashu")
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "ADOL", 16.40f, -0.74f, 0.00f, 0.1f, 0.17f)
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	EmotionEx("Kashu", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f )	// 「PA」
+	LookChr("Kashu", "ADOL")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	// 移動待ち
+	WaitThread(1)
+
+	ChangeAnimation( "Kashu", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+
+	// カシュー
+	TalkPopup("Kashu",0, 2, 0, 0, 0) {
+		"#000e#080mやあ、アドル。"
+		"見回りのほうはどうだい？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(5)
+	
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"特に問題はないな")
+	MenuAdd(2,"みんな怪しく見えるな")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	// 手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI", -1, 1 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(20)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(20)
+	
+	ChangeAnimation( "Kashu", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1) {
+
+		//	⇒特に問題はないな
+		
+		// カシュー
+		TalkPopup("Kashu",0, 2, 0, 0, 0) {
+			"#020e#080mそうか、それはよかった。\p"
+			"#000e#080mまあ、なかなか個性的な"
+			"客が多いとは思ったけどな。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+	} else if (FLAG[TF_MENU_SELECT] == 2) {
+
+		//	⇒みんな怪しく見えるな
+		
+		// カシュー
+		TalkPopup("Kashu", 0, 2, 0, 0, 0) {
+			"#050e#000mそ、そうか？\p"
+			"#061e#000m個性的な客が多いとは思うが、"
+			"疑心暗鬼になりすぎじゃないか？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	ChangeSubAnimation("Kashu",SUBMOT_EYE,ANI_E_WAIT_S,1)
+
+	}
+	
+	//─────────────────────────
+	
+	// カット2 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ
+	MoveCameraAt( 0 , 16.083f , -1.493f , 1.537f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.388f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -7.051f , 0 )	// 基本仰角
+	RotateCamera( 0 , 112.972f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//ChangeSubAnimation("Kashu",SUBMOT_EYE,ANI_E_WAIT,1)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 16.083f , -1.493f , 1.537f , 450 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.388f , 450 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 0.111f , 450 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 132.739f , 450 )
+	
+	// フェード待ち
+	Wait(FADE_CROSS)
+	
+	ChangeAnimation( "Kashu", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+	
+	// カシュー
+	TalkPopup("Kashu", 0, 2, 0, 0, 0) {
+		"#000e#080m今日は海も穏やかだし、"
+		"なかなか順調な航海だよ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	WaitAnimation2( "Kashu" , -1, 1, "ANI_EV_RYOTEKOSI_E",  0)
+	ChangeAnimation( "Kashu", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	
+	// カシュー
+	TalkPopup("Kashu", 0, 2, 0, 0, 0) {
+		"#000m……そういや、さっき船長が"
+		"アドルを探してたみたいだぜ。\p"
+		"#011e#000mもうすぐ通過するとか何とか"
+		"言ってたみたいだけど……\p"
+		"#012e#000m船長なら、ちょうど今頃"
+		"《船長室》へ戻っているはずだ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	WaitAnimation2( "Kashu" , -1, 1, "ANI_EV_UDEGUMI_S",  0)
+	ChangeAnimation( "Kashu", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+	
+	// カシュー
+	TalkPopup("Kashu", 0, 2, 0, 0, 0) {
+		"#000m行ってみたらどうだい？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(5)
+	
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"すぐに行ってみるよ")
+	MenuAdd(2,"もう少し見回ってから行くよ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	HeadYes("ADOL" , 1 , 25 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(15)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(20)
+
+	HeadYes("Kashu" , 1 , 25 )
+	ChangeSubAnimation("Kashu", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Wait(15)
+	ChangeSubAnimation("Kashu", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+	//─────────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1) {
+		
+		//	⇒すぐに行ってみるよ
+
+		// カシュー
+		TalkPopup("Kashu", 0, 2, 0, 0, 0) {
+			"#000mああ、オレは"
+			"もう少し見回ってくるとするか。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+	} else if (FLAG[TF_MENU_SELECT] == 2) {
+		
+		//	⇒もう少し見回ってから行くよ
+		
+		TalkPopup("Kashu", 0, 2, 0, 0, 0) {
+			"#000mまあ、そう急ぎの用って"
+			"わけでもなさそうだったしな。\p"
+			"その後でも構わないから、"
+			"顔を出してみてくれ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	
+	//─────────────────────────
+
+	//　　操作許可。
+	
+//	// カメラ停止
+//	StopThread(1000)
+//	StopThread(1001)
+//	StopThread(1002)
+//	StopThread(1003)
+//	
+//	// カメラ移動
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 16.520f , -0.962f , 1.977f , 100 )
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.388f , 100 )
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE ,  -2.754f , 100 )
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 132.452f , 100 )
+//
+//	Wait(25)
+
+	Wait(10)
+	
+	// フェードアウト
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp0012:EV_M00S030_ED")
+}
+
+function "EV_M00S030_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+	RestoreEventState()
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_Kashu")
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	//フラグ処理
+	SetFlag( GF_00MP0012_GO_CAPTAINROOM2, 1 )			// 船長室へ向かう（２回目）
+	//SetFlag( SF_MISSIONNO, MS_00_03 )	//★冒険メモ：船長室に顔を出そう。
+
+	//マップマーカー
+	SetMapMarker(SMI_EVENTPT_MAIN, PAGE_MP0011, MARKER_EV_M00S040, -0.02f, -47.35f, 8.00f, -0.02f, -47.35f, 0, MN_F_MP0011,0)	//バルバロスの部屋	ミニマップのみ
+
+	CallFunc("mp0012:init" )
+	
+	//イベント後の再配置位置
+	SetChrPos("LEADER",10.59f,0.01f,0.00f)
+	Turn("LEADER",90.08f,360.0f)
+	ResetFollowPoint()
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ位置復帰or初期位置設定
+	MoveCameraAt( 0 , 10.592f , 0.006f , 1.347f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.295f , 0 )	// 基本仰角
+	RotateCamera( 0 , 89.923f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+//終了処理ここまで----------------------------------------------------
+}
+
+//////////////////////////////////////////////////////////////////////
+//■一般会話セクション
+//////////////////////////////////////////////////////////////////////
+

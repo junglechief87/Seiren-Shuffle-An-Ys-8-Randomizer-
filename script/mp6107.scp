@@ -1,0 +1,710 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+// 6107：
+//----------------------------------------------------------------------------//
+// initスクリプト
+function "init"
+{
+	//◆マップエフェクト
+	//古代胞子
+	Set3DParticle(PARTICLE_TYPE_SPORE, 0.0f,0.0f,-0.02f, 0.05f,0.05f,0.02f, 0.0f,0.0f,0.0f, 0.0f,0.0f,0.0f, 180.0f, 0.0f)
+	Change3DParticleParam( 0.0f,1.5f ,0.2f,1.0f ,0.0f,0.0f)
+
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp6105" , 0 )
+	MapHide( "@BG2_mp6106_2" , 0 )
+	MapHide( "@BG2_mp6107" , 0 )
+	MapHide( "@BG2_etania_houses_2" , 0 )
+
+	// イベントエリア制御
+	EventAreaEnable( "evc_QS_530_Mons1", 0 )
+	EventAreaEnable( "evc_QS_530_Mons2", 0 )
+	EventAreaEnable( "evc_QS_530_Mons3", 0 )
+	EventAreaEnable( "evc_QS_530_Mons4", 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+
+		// クエスト制御
+		if( FLAG[GF_NPC_5_07_GOTO_VALLAY] )	//▼第五部⑦王家の谷へ向かう
+		{
+			// 【QS530】ヴァルクイラの討伐
+			//▼モンスター処理
+			//　　「▼第五部⑦王家の谷へ向かう」以降、
+			//　　mp6107・ロディニア湖沼地帯に、m1202ヴァルクイラを４体配置。
+			//　　※具体的な場所、内容は戦闘方面で検討。
+			//　　近付くとカメラ演出が入り、アドルたちと対峙する。
+			//　　４体全てをカメラに入れなくてもいいです。
+			if( FLAG[GF_QUEST_530] < QUEST_START )	// 【QS530】ヴァルクイラの討伐 モンスターと遭遇してない
+			{
+				EventAreaEnable( "evc_QS_530_Mons1", 1 )
+				EventAreaEnable( "evc_QS_530_Mons2", 1 )
+				EventAreaEnable( "evc_QS_530_Mons3", 1 )
+				EventAreaEnable( "evc_QS_530_Mons4", 1 )
+				
+				// モンスター配置（イベント用）
+				SetChrPos("ev_mons40",-828.88f,723.88f,45.58f)
+				Turn("ev_mons40",141.14f,360.0f)
+				SetChrPos("ev_mons41",-796.23f,760.22f,43.44f)
+				Turn("ev_mons41",106.91f,360.0f)
+				SetChrPos("ev_mons42",-825.56f,785.95f,37.71f)
+				Turn("ev_mons42",-163.51f,360.0f)
+				SetChrPos("ev_mons43",-819.79f,829.73f,38.05f)
+				Turn("ev_mons43",-28.88f,360.0f)
+			}
+			else if( FLAG[GF_QUEST_530] == QUEST_START &&	// 【QS530】ヴァルクイラの討伐
+					 !FLAG[GF_QS530_KILL_MONS] )			// 【QS530】ヴァルクイラの討伐 モンスターを討伐した
+			{
+				// モンスター配置（本物：倒したモンスターは表示しない）
+				if( !( FLAG[GF_QS530_KILL_CT] & 0x01 ) ){
+					SetChrPos("mons40",-828.88f,723.88f,45.58f)
+					Turn("mons40",141.14f,360.0f)
+				}
+				if( !( FLAG[GF_QS530_KILL_CT] & 0x02 ) ){
+					SetChrPos("mons41",-796.23f,760.22f,43.44f)
+					Turn("mons41",106.91f,360.0f)
+				}
+				if( !( FLAG[GF_QS530_KILL_CT] & 0x04 ) ){
+					SetChrPos("mons42",-825.56f,785.95f,37.71f)
+					Turn("mons42",-163.51f,360.0f)
+				}
+				if( !( FLAG[GF_QS530_KILL_CT] & 0x08 ) ){
+					SetChrPos("mons43",-819.79f,829.73f,38.05f)
+					Turn("mons43",-28.88f,360.0f)
+				}
+			}
+		}
+
+		// マップノード・アニメ
+		MapAnime("mistSphere", "off")	// 霧のマユ
+		if( FLAG[GF_TBOX_DUMMY087]				// ▼[M06S020][調査のためジャンダルムへ向かう]
+			&& !FLAG[GF_06MP4109_CLEAR_MIST] )		// ▽[M06S111][山門の霧を突破する２]
+		{
+			MapAnime("mistSphere", "on")	// 霧のマユ
+		}
+
+		//異形の古代種・６部以降は出現
+		if( FLAG[GF_TBOX_DUMMY087] ) {				//調査のためジャンダルムへ向かう
+			SetChrPos( "v_mons00", -835.95f, 760.92f, 40.12f )
+			Turn( "v_mons00", -33.27f, 360.0f )
+		}
+
+		//障害物制御（支援イベント）
+		SetChrWork( "LP_STOP_6107_ROCK" , CWK_CHECKRADIUS , 12.5f )		// 範囲
+		SetChrWork( "CP_STOP_6107_ROCK" , CWK_CHECKRADIUS , 12.5f )		// 範囲
+		if( FLAG[GF_SUBEV_6107_REMOVE_SAND] )
+		{
+			MapAnime( "mp6107_stop01" , "open" )
+			// 処理を軽くする為吹っ飛ばす
+			SetChrPos("LP_STOP_6107_ROCK",  -100000.00f,0.00f,0.00f)
+			SetChrPos("CP_STOP_6107_ROCK",  -100000.00f,0.00f,0.00f)
+		}
+		else if (FLAG[GF_SUBEV_6107_CHECKED_SAND])
+		{
+			// 初回チェック済み
+			SetChrWork("LP_STOP_6107_ROCK", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_6107_ROCK", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		}
+		else
+		{
+			SetChrWork("LP_STOP_6107_ROCK", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+			SetChrWork("CP_STOP_6107_ROCK", CWK_CHECKOFF, 1)		// 協力イベントルックポイントをオフに
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0526] && FLAG[GF_05MP6105_GOTO_VALLAY] && !FLAG[GF_05MP6108_MALK_CAMP]){
+			ActiveVoiceStart(EACT_EVID_0526, 1, 0)	//次のマップを少し進んだ所で
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 3 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_6106.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//ロディニア湖沼地帯
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//===============================================================
+//
+// 【QS530】ヴァルクイラの討伐
+//▼モンスター処理
+//
+function "QS_530_Mons1"
+{
+	SetFlag( TF_MENU_SELECT, 0 )
+	CallFunc("mp6107:QS_530_Mons_Main")
+}
+function "QS_530_Mons2"
+{
+	SetFlag( TF_MENU_SELECT, 1 )
+	CallFunc("mp6107:QS_530_Mons_Main")
+}
+function "QS_530_Mons3"
+{
+	SetFlag( TF_MENU_SELECT, 2 )
+	CallFunc("mp6107:QS_530_Mons_Main")
+}
+function "QS_530_Mons4"
+{
+	SetFlag( TF_MENU_SELECT, 3 )
+	CallFunc("mp6107:QS_530_Mons_Main")
+}
+function "QS_530_Mons_Main"
+{
+	//※ヴァルクイラの距離が遠いので個別処理しています
+
+	//　　「▼第五部⑦王家の谷へ向かう」以降、
+	//　　mp6107・ロディニア湖沼地帯に、m1202ヴァルクイラを４体配置。
+	//　　※具体的な場所、内容は戦闘方面で検討。
+
+	//　　近付くとカメラ演出が入り、アドルたちと対峙する。	//◆仮入力：ストッパーの処理をベースに仮作成してあります
+	//　　４体全てをカメラに入れなくてもいいです。
+
+//開始処理ここから----------------------------------------------------
+
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする準備
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SaveCamera()
+
+	CrossFade(FADE_CROSS)
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+//開始処理ここまで-----------------------------------------------
+
+	// 範囲外に居るキャラを透明にして操作キャラの後ろにワープさせる
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+
+	// パーティをモンスターに注目させる
+	if( FLAG[TF_MENU_SELECT] == 0 ){
+		ExecuteCmd(1, TurnToChr, "PLAYER1" , "ev_mons40" , 10.0f )
+		ExecuteCmd(2, TurnToChr, "PLAYER2" , "ev_mons40" , 10.0f )
+		ExecuteCmd(3, TurnToChr, "PLAYER3" , "ev_mons40" , 10.0f )
+	} else if( FLAG[TF_MENU_SELECT] == 1 ){
+		ExecuteCmd(1, TurnToChr, "PLAYER1" , "ev_mons41" , 10.0f )
+		ExecuteCmd(2, TurnToChr, "PLAYER2" , "ev_mons41" , 10.0f )
+		ExecuteCmd(3, TurnToChr, "PLAYER3" , "ev_mons41" , 10.0f )
+	} else if( FLAG[TF_MENU_SELECT] == 2 ){
+		ExecuteCmd(1, TurnToChr, "PLAYER1" , "ev_mons42" , 10.0f )
+		ExecuteCmd(2, TurnToChr, "PLAYER2" , "ev_mons42" , 10.0f )
+		ExecuteCmd(3, TurnToChr, "PLAYER3" , "ev_mons42" , 10.0f )
+	} else {
+		ExecuteCmd(1, TurnToChr, "PLAYER1" , "ev_mons43" , 10.0f )
+		ExecuteCmd(2, TurnToChr, "PLAYER2" , "ev_mons43" , 10.0f )
+		ExecuteCmd(3, TurnToChr, "PLAYER3" , "ev_mons43" , 10.0f )
+	}
+
+	// 範囲外に居たキャラをジワ出しする
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(4, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(5, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(4)
+		WaitThread(5)
+	}
+
+	// 完了待ち
+	WaitFade()
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+
+	// モンスターをパーティに注目させる
+	ExecuteCmd(1, TurnToChr, "ev_mons40" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "ev_mons41" , "PLAYER1" , 10.0f )
+	ExecuteCmd(3, TurnToChr, "ev_mons42" , "PLAYER1" , 10.0f )
+	ExecuteCmd(4, TurnToChr, "ev_mons43" , "PLAYER1" , 10.0f )
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+	WaitThread(4)
+
+	// ！エモーション
+	EmotionEx("PLAYER1", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		EmotionEx("PLAYER2", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		EmotionEx("PLAYER3", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	}
+	Wait(20)
+
+	// 武器構え
+	ChangeAnimation("PLAYER1", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("PLAYER2", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("PLAYER3", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	Wait(25)
+
+	// カメラ演出
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	if( FLAG[TF_MENU_SELECT] == 0 ){
+		MoveCameraAt(0, -827.430f, 721.239f, 48.839f, 0)	// 注視点
+		ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+		ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+		RotateCamera(0, -51.271f, 0)				// 角度
+		ChangeCameraPers(0, 60.000f, 0)			// 視野角
+		SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+		RollCamera(0, 0.0f, 0)				// ロール回転
+
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -827.430f, 721.239f, 49.839f, 160)		// 注視点
+		ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 30.000f, 160)		// 角度
+
+	} else if( FLAG[TF_MENU_SELECT] == 1 ){
+		MoveCameraAt(0, -796.235f, 760.001f, 45.195f, 0)	// 注視点
+		ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+		ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+		RotateCamera(0, -51.271f, 0)				// 角度
+		ChangeCameraPers(0, 60.000f, 0)			// 視野角
+		SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+		RollCamera(0, 0.0f, 0)				// ロール回転
+
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -793.846f, 761.541f, 47.176f, 160)		// 注視点
+		ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 45.000f, 160)		// 角度
+
+	} else if( FLAG[TF_MENU_SELECT] == 2 ){
+		MoveCameraAt(0, -823.799f, 784.180f, 40.735f, 0)	// 注視点
+		ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+		ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+		RotateCamera(0, -51.271f, 0)				// 角度
+		ChangeCameraPers(0, 60.000f, 0)			// 視野角
+		SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+		RollCamera(0, 0.0f, 0)				// ロール回転
+
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -823.799f, 784.180f, 41.735f, 160)		// 注視点
+		ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 30.000f, 160)		// 角度
+
+	} else {
+		MoveCameraAt(0, -823.799f, 784.180f, 40.735f, 0)	// 注視点
+		ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+		ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+		RotateCamera(0, -51.271f, 0)				// 角度
+		ChangeCameraPers(0, 60.000f, 0)			// 視野角
+		SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+		RollCamera(0, 0.0f, 0)				// ロール回転
+
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -820.010f, 832.733f, 41.988f, 160)		// 注視点
+		ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 175.000f, 160)		// 角度
+	}
+	
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	// モンスター攻撃モーション
+//	ChangeAnimation("ev_mons40","ANI_ATK1",-1,1)
+//	ChangeAnimation("ev_mons41","ANI_ATK1",-1,1)
+//	ChangeAnimation("ev_mons42","ANI_ATK1",-1,1)
+//	ChangeAnimation("ev_mons43","ANI_ATK1",-1,1)
+	
+	WaitThread(1000)
+	WaitThread(1001)
+
+//終了処理ここから----------------------------------------------------
+
+	CrossFade(FADE_CROSS)
+
+	//フラグ処理
+	SetFlag( GF_QUEST_530, QUEST_START )	//【QS530】ヴァルクイラの討伐　クエスト開始
+	SetFlag( GF_QS530_KILL_CT, 0 )			//【QS530】ヴァルクイラの討伐 倒したモンスターのカウンタ（フラグ）
+
+	// イベントエリアを無効化
+	EventAreaEnable( "evc_QS_530_Mons1", 0 )
+	EventAreaEnable( "evc_QS_530_Mons2", 0 )
+	EventAreaEnable( "evc_QS_530_Mons3", 0 )
+	EventAreaEnable( "evc_QS_530_Mons4", 0 )
+
+	// モンスター配置
+	SetChrPos("ev_mons40" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_mons41" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_mons42" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_mons43" , -100000.00f  , 0.00f ,0.00f )
+	
+	SetChrPos("mons40",-828.88f,723.88f,45.58f)
+	Turn("mons40",141.14f,360.0f)
+	SetChrPos("mons41",-796.23f,760.22f,43.44f)
+	Turn("mons41",106.91f,360.0f)
+	SetChrPos("mons42",-825.56f,785.95f,37.71f)
+	Turn("mons42",-163.51f,360.0f)
+	SetChrPos("mons43",-819.79f,829.73f,38.05f)
+	Turn("mons43",-28.88f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+//終了処理ここまで----------------------------------------------------
+}
+function "QS_530_Kill1"
+{
+	//モンスターを倒した時に呼ばれる
+	SetFlag( GF_QS530_KILL_CT, (FLAG[GF_QS530_KILL_CT] | 0x01)  )	//【QS530】ヴァルクイラの討伐 倒したモンスターのカウンタ
+	CallFunc("mp6107:QS_530_Kill_Check")
+}
+function "QS_530_Kill2"
+{
+	//モンスターを倒した時に呼ばれる
+	SetFlag( GF_QS530_KILL_CT, (FLAG[GF_QS530_KILL_CT] | 0x02)  )	//【QS530】ヴァルクイラの討伐 倒したモンスターのカウンタ
+	CallFunc("mp6107:QS_530_Kill_Check")
+}
+function "QS_530_Kill3"
+{
+	//モンスターを倒した時に呼ばれる
+	SetFlag( GF_QS530_KILL_CT, (FLAG[GF_QS530_KILL_CT] | 0x04)  )	//【QS530】ヴァルクイラの討伐 倒したモンスターのカウンタ
+	CallFunc("mp6107:QS_530_Kill_Check")
+}
+function "QS_530_Kill4"
+{
+	//モンスターを倒した時に呼ばれる
+	SetFlag( GF_QS530_KILL_CT, (FLAG[GF_QS530_KILL_CT] | 0x08)  )	//【QS530】ヴァルクイラの討伐 倒したモンスターのカウンタ
+	CallFunc("mp6107:QS_530_Kill_Check")
+}
+function "QS_530_Kill_Check"
+{
+	//　　全て倒した時点で、以下ナレーション。
+
+	if( !FLAG[GF_QS530_KILL_MONS] && FLAG[GF_QS530_KILL_CT] == 0x0f )
+	{
+		SetStopFlag(STOPFLAG_SIMPLEEVENT)
+		SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	
+		// 残っているモンスターを消す
+		SetChrPos("mons40" , -100000.00f  , 0.00f ,0.00f )
+		SetChrPos("mons41" , -100000.00f  , 0.00f ,0.00f )
+		SetChrPos("mons42" , -100000.00f  , 0.00f ,0.00f )
+		SetChrPos("mons43" , -100000.00f  , 0.00f ,0.00f )
+
+		ClearDebris()	//落ちているアイテムを拾う
+	
+		Wait(60)
+		ResetMoveVec("PARTYALL")
+	
+		Message("#4Cヴァルクイラを討伐した！")
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)	//チュートリアル
+		WaitPrompt()
+		Wait(10)
+	
+		// フラグセット
+		SetFlag( GF_QS530_KILL_MONS, 1 )		//【QS530】ヴァルクイラの討伐 モンスターを討伐した
+		SetDiaryFlag( DF_QS530_001, 1 )			//【QS530】★ヴァルクイラを討伐した！　漂流村に戻って報告しよう。
+		DelMapMarker( SMI_QUEST, PAGE_F001, MARKER_QS_530_LP, 0, 0)		// 【QS530】ヴァルクイラの討伐　モンスターの居場所用
+	
+		SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT)
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function "SubEV_Sien14_open"
+{
+	if( !FLAG[GF_SUBEV_6107_CHECKED_SAND] )
+	{
+		// フラグセット
+		SetFlag(GF_SUBEV_6107_CHECKED_SAND, 1)
+		
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_6107_ROCK", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_6107_ROCK", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F037,REMOVE_OBJ_6107, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F037, REMOVE_OBJ_6107CE, -791.34f,800.31f,41.7f, -791.34f,800.31f, COOPEVID_MP6107, MN_F_MP6107,-1)
+	}
+}
+//──────────────────────────────
+//▼支援イベントNo.14		必要人数２２人		mp6107：湿原地帯
+//	土砂崩れを撤去③		mp7481：水没寺院に行けるようになる
+//──────────────────────────────
+function "SubEV_Sien14"		//LP_STOP_6107_ROCK
+{
+	//	土砂崩れを撤去③		mp7481：水没寺院に行けるようになる
+	//　　※最速で「▼第五部②バハの塔に向かう」以降。
+	//　　　ＮＰＣを８／８人以上助けた後に撤去可能。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnTo( "LEADER", -791.34f,800.31f,41.7f , 15.0f )
+
+	//	ナレーション
+	TalkPopup("UNDEF",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C高く積み重なった土砂が"
+		"#7C入口を塞いでしまっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	GetCoopEvPeopleNum(COOPEVID_MP6107, TF_MENU_SELECT2)	//支援要請で必要な人数を取得
+	
+	//──────────────────────
+	//	⇒人数が足りていない
+	if( FLAG[TF_MENU_SELECT2] > WORK[WK_NPCNUM] )	//必要な人数 ＞ 漂流村の人数
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cこの土砂を撤去するには、"
+			"#7C漂流村の人数が足りないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_6107_CHECKED_SAND, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_6107_ROCK", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_6107_ROCK", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F037,REMOVE_OBJ_6107, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F037, REMOVE_OBJ_6107CE, -791.34f,800.31f,41.7f, -791.34f,800.31f, COOPEVID_MP6107, MN_F_MP6107,-1)
+/*
+		// 地図登録ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#4C障害のある場所として地図に登録した。"
+			"#8S"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+*/
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//	⇒人数が足りている場合
+	else
+	{
+
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C支援要請を出しますか？",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+
+			//	  　以下の流れに接続
+			//──────────────────────
+			
+			//　　＞「▼支援イベント共通処理①」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common1")
+			
+			//　　障害物撤去ＳＥ
+			PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+			MapAnime( "mp6107_stop01" , "open" )
+
+			Wait(80)
+
+			CallFunc("system:party_remove")
+			MoveCameraAt( 0 , -790.381f , 800.913f , 43.219f , 0 )	// 注視点
+			ChangeCameraDistance( 0 , 15.901f , 0 )		// 基本距離
+			ChangeCameraElevation( 0 , 23.427f , 0 )	// 基本仰角
+			RotateCamera( 0 , 252.590f , 0 )				// 角度
+			ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+			ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE ,  -790.381f , 800.913f , 40.763f , 180 )		// 注視点
+			ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE ,  17.409f, 180 )		// 基本距離
+			ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 3.469f, 180 )		// 基本仰角
+			ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 333.638f, 180 )		// 角度
+			//ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,2.5f , 180 )		// ロール回転
+			//ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 50 )		// 視野角
+
+			//MoveCameraAt( 0 , -790.381f , 800.913f , 40.763f , 0 )	// 注視点
+			//ChangeCameraDistance( 0 , 17.409f , 0 )		// 基本距離
+			//ChangeCameraElevation( 0 , 3.469f , 0 )	// 基本仰角
+			//RotateCamera( 0 , 333.638f , 0 )				// 角度
+			//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+			
+			FadeIn(FADE_BLACK,FADE_FAST)
+			PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+			
+			//	ナレーション
+			TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+			{
+				"#7C全員の力を合わせて、土砂を撤去した！"
+				"撤去2行目"
+			}
+			Wait(30)
+			//　　＞「▼支援イベント共通処理②」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common2")
+			WaitPrompt()
+			WaitCloseWindow()
+			
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+
+			StopThread(1001)
+			StopThread(1002)
+			StopThread(1003)
+			StopThread(1004)			
+			//　　イベント終了、操作許可。
+			
+			//障害物撤去処理
+			SetChrPos("LP_STOP_6107_ROCK",  -100000.00f	0.00f	0.00f)
+			SetChrPos("CP_STOP_6107_ROCK",  -100000.00f	0.00f	0.00f)
+			SetFlag(GF_SUBEV_6107_REMOVE_SAND, 1)			//【ＬＰ：6107⇒7481の土砂を撤去した】
+			SetFlag(GF_SUBEV_6107_CHECKED_SAND, 1)			//【ＬＰ：6107⇒7481の土砂を調べた】
+			SetDiaryFlag( DF_SUBEV_6107_REMOVE_SAND,1 )		// ★ロディニア湖沼地帯にあった土砂を撤去した。
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F037,REMOVE_OBJ_6107, 0, 0)
+			// 協力イベントのマーカーも削除
+			DelMapMarker( SMI_COOPEVENT, PAGE_F037, REMOVE_OBJ_6107CE, 0, 0)
+			
+			SetFlag( TF_MENU_SELECT, 1 )	//支援イベントとして終了
+		}
+	}
+	//	⇒やめる
+	else
+	{
+		//	  　そのまま操作許可。
+		
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_6107_CHECKED_SAND, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_6107_ROCK", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_6107_ROCK", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F037,REMOVE_OBJ_6107, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F037, REMOVE_OBJ_6107CE, -791.34f,800.31f,41.7f, -791.34f,800.31f, COOPEVID_MP6107, MN_F_MP6107,-1)
+
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//──────────────────────
+
+//終了処理ここから----------------------------------------------------
+
+	//ストッパーとして終了
+	if( FLAG[TF_MENU_SELECT] == 0 )
+	{
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	//支援イベントとして終了
+	else
+	{
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+		MoveCameraAt( 0 , -793.635f , 799.440f , 39.971f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 5.818f , 0 )	// 基本仰角
+		RotateCamera( 0 , -72.272f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		
+		ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		//イベント後の再配置位置
+		SetChrPos("LEADER", -793.64f,799.44f,38.13f)
+		Turn("LEADER",-107.73f,360.0f)
+		
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+		
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+
+//終了処理ここまで----------------------------------------------------
+}

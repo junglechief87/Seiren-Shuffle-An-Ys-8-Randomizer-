@@ -1,0 +1,1310 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/fish.h"
+
+//-------------------------------------------
+// 1113：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1102" , 0 )
+	MapHide( "@BG2_mp1201_3" , 0 )
+	MapHide( "@BG2_mp1110" , 0 )
+	MapHide( "@BG2_mp1113" , 0 )
+	MapHide( "@BG2_mp1132" , 0 )
+
+	//ノート設定
+	MapAnime("que01", "open")		//【QS601】クエスト戦闘用ストッパー	＆　古代種の足跡
+	MapHide("que01", 0)
+	MapHide( "BG2_groundfog_SW2" , 0 )	//遠景の板フォグを消す
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 100  ){	
+			VisualName("visual/mapname/mn_1132.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//白浜岬
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+	MapHide( "skyfog1" , 0 )		//濃霧（薄）非表示
+
+	// イベント発生制御
+	if (FLAG[SF_BOSS_BATTLE])
+	{
+		//リトライやデバッグボスジャンプからのボス戦
+		SetWork(WK_BGM, BGM_Nothing)
+		EventCue("mp1113:Retry_QS_601")
+
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog1" , 1 )		//濃霧（薄）表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			//SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.1f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			//SetFogBack(FOG_BOTH, 0x00939aa0, 200.0f, 1000.0f , 1.0f , 0.3f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.2f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f , 0.2f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.9f )
+		}
+	}
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//===============================================================
+//
+// 【QS601】冒険家への依頼（フランツ）
+// ▼フランツと浜辺に来る
+//
+function "QS_601_Beach"
+{
+	//　　暗転を挟んでmp1113に移動。
+	//　　（標準のモンスタは消しておく）
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 189.01f, -1543.78f, 2.69f)
+	Turn("ADOL", 92.54f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "ADOL" )
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("Franz", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Franz", 187.99f, -1545.62f, 2.69f)
+	Turn("Franz", 92.54f, 360.0f)
+	ChangeAnimation( "Franz" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Franz",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Franz",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Franz",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "Franz" )
+	SetChrInfoFlag("Franz", INFOFLAG_NOCHRATARI)
+
+	// アドル側古代獣の配置３体
+	SetChrWork("ev_QS601_Wyvern2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern2",117.60f,-1539.38f,1.40f)
+	Turn("ev_QS601_Wyvern2",-43.18f,360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern2" , "ANI_WAIT", -1 , 1 )
+	SetChrInfoFlag( "ev_QS601_Wyvern2" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern3", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern3",113.46f,-1542.02f,0.94f)
+	Turn("ev_QS601_Wyvern3",-68.57f,360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern3" , "ANI_WAIT", -1 , 1 )
+	SetChrInfoFlag( "ev_QS601_Wyvern3" , INFOFLAG_NOCHRATARI)
+
+	SetChrInfoFlag( "ev_QS601_Wyvern4" , INFOFLAG_NOCHRATARI)
+	SetChrPos("ev_QS601_Wyvern4",112.26f,-1546.70f,0.49f)
+	Turn("ev_QS601_Wyvern4",-82.39f,360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern4" , "ANI_WAIT", -1 , 1 )
+	SetChrInfoFlag( "ev_QS601_Wyvern4" , INFOFLAG_NOCHRATARI)
+
+	// フランツ側古代獣の配置２体
+	SetChrWork("ev_QS601_Wyvern5", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern5", 137.00f, -1554.60f, 1.08f)
+	Turn("ev_QS601_Wyvern5", 107.81f, 360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern5" , "ANI_WAIT", -1 , 1 )
+	SetChrInfoFlag( "ev_QS601_Wyvern5" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern6", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern6", 136.77f, -1559.12f, 0.61f)
+	Turn("ev_QS601_Wyvern6", 132.95f, 360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern6" , "ANI_WAIT", -1 , 1 )
+	SetChrInfoFlag( "ev_QS601_Wyvern6" , INFOFLAG_NOCHRATARI)
+
+	SetChrInfoFlag( "ev_QS601_Wyvern1" , INFOFLAG_INVISIBLE)
+	SetChrInfoFlag( "ev_QS601_Wyvern2" , INFOFLAG_INVISIBLE)
+	SetChrInfoFlag( "ev_QS601_Wyvern3" , INFOFLAG_INVISIBLE)
+	SetChrInfoFlag( "ev_QS601_Wyvern4" , INFOFLAG_INVISIBLE)
+	SetChrInfoFlag( "ev_QS601_Wyvern5" , INFOFLAG_INVISIBLE)
+	SetChrInfoFlag( "ev_QS601_Wyvern6" , INFOFLAG_INVISIBLE)
+
+	//ノード設定
+	MapAnime("que01", "close")		//クエスト戦闘用ストッパー	＆　古代種の足跡
+	MapHide("que01", 1)
+
+	//カメラ設定
+	MoveCameraAt(0, 159.575f, -1534.909f, 9.208f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.999f, 0)		// 基本距離
+	ChangeCameraElevation(0, 2.761f, 0)	// 基本仰角
+	RotateCamera(0, 190.977f, 0)				// 角度
+	ChangeCameraPers(0, 52.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 120.000 ,1.000 ,0.700 ,0.600)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1113:QS_601_Beach_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 157.844f, -1532.426f, 9.208f, 145)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 237.114f, 145)		// 角度
+
+	ExecuteCmd(1, MoveTo, "Franz", 173.16f, -1542.46f, 3.36f,  0.1f, 0.20f)
+	ExecuteCmd(2, MoveTo, "ADOL", 174.00f, -1539.60f, 3.57f, 0.1f, 0.20f)
+
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+	WaitThread(1000)
+	WaitThread(1001)
+
+	Wait(15)
+
+	CrossFade(FADE_NORMAL)
+	StopThread(1)
+	StopThread(2)
+
+	SetChrPos("ADOL", 127.13f, -1549.31f, 1.30f)
+	Turn("ADOL", 8.55f, 360.0f)
+
+	SetChrPos("Franz", 127.92f, -1549.85f, 1.27f)
+	Turn("Franz", 38.67f, 360.0f)
+
+	MoveCameraAt(0, 131.504f, -1547.869f, 3.156f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.998f, 0)		// 基本距離
+	ChangeCameraElevation(0, 9.546f, 0)	// 基本仰角
+	RotateCamera(0, 115.289f, 0)				// 角度
+	ChangeCameraPers(0, 39.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 129.834f, -1548.618f, 3.156f, 60)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 122.557f, 60)		// 角度
+
+	Wait(FADE_NORMAL)
+
+	WaitThread(1000)
+	WaitThread(1001)
+
+	TalkPopup("Franz", 0, 0, 0, 0, 0)
+	{
+		"#000e#000mこの辺りです。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Look("ADOL", -30.0f, 0f)
+	Wait(20)
+	Look("Franz", 40.0f, 0f)
+	Wait(20)
+	Look("ADOL", 0f, 0f)
+	Look("Franz", 0f, 0f)
+	Look("ADOL", 40.0f, 0f)
+	Look("Franz", -30.0f, 0f)
+	Wait(20)
+	//　　アドルとフランツにＰＡエモーション
+	EmotionEx("ADOL", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	EmotionEx("Franz", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	Wait(45)
+
+	//　　浜辺の足跡の方に向く。
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt(0, 128.797f, -1550.279f, 2.610f, 0)	// 注視点
+	MoveCameraAt(0, 106.781f, -1532.176f, 6.504f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.998f, 0)		// 基本距離
+	ChangeCameraElevation(0, 8.511f, 0)	// 基本仰角
+	RotateCamera(0, 99.084f, 0)				// 角度
+	ChangeCameraPers(0, 40.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 118.229f, -1529.872f, 6.008f, 90)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 8.512f, 90)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 116.140f, 90)		// 角度
+
+	ChangeAnimation( "ev_QS601_Wyvern2" , "ANI_WAIT", -1 , 1 )
+	Wait(30)
+	ChangeAnimation( "ev_QS601_Wyvern3" , "ANI_WAIT", -1 , 1 )
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	//　　足跡は、２～３体が歩いたような形で付けられている。
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt(0, 126.033f, -1559.379f, 3.453f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.998f, 0)		// 基本距離
+	ChangeCameraElevation(0, 11.607f, 0)	// 基本仰角
+	RotateCamera(0, 255.924f, 0)				// 角度
+	ChangeCameraPers(0, 40.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 137.504f, -1558.321f, 3.305f, 110)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 13.728f, 110)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 275.800f, 110)		// 角度
+
+	ChangeAnimation( "ev_QS601_Wyvern5" , "ANI_WAIT", -1 , 1 )
+	Wait(30)
+	ChangeAnimation( "ev_QS601_Wyvern6" , "ANI_WAIT", -1 , 1 )
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	
+	Wait(10)
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt(0, 126.994f, -1550.665f, 2.858f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.999f, 0)		// 基本距離
+	ChangeCameraElevation(0, 8.538f, 0)	// 基本仰角
+	RotateCamera(0, 327.773f, 0)				// 角度
+	ChangeCameraPers(0, 39.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	Wait(FADE_CROSS)
+
+	ChangeSubAnimation("Franz", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	EmotionEx("Franz", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+	Wait(52)
+	ChangeSubAnimation("Franz", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+	TalkPopup("Franz",0,0,0,0,0)
+	{
+		"#000mこの数は……\p"
+		"私が見かけたのは"
+		"１頭分だったのですが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	StopBGM(120)
+
+	//　　ここで古代種の鳴き声がする。	◆仮入力
+	//PlaySE("SE_M1010_GROW", 100, 0, 0, 0, 1.0f, 0)		//◆仮入力：ＳＥは仮です
+	PlaySE(SE_QS_601_01, 80, 0, 0, 0, 1.0f, 0)
+	Wait(40)
+
+	//　　アドルとフランツに！エモーション。
+	EmotionEx("ADOL", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	EmotionEx("Franz", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_ANGER_S,1)
+	ChangeSubAnimation("Franz",SUBMOT_EYE,ANI_E_ANGER_S,1)
+	Wait(40)
+
+	PlayBGM(BGM_BOSS_002, 0)
+
+	//　　見ると浜辺の南北から、それぞれ２～３体の異形の古代獣（m1020疾竜竜）が現れる。
+	CrossFade(FADE_CROSS)
+	SetChrPos("ADOL",127.13f,-1549.31f,1.29f)
+	Turn("ADOL",102.14f,360.0f)
+	LookReset("ADOL")
+
+	SetChrPos("Franz",127.87f,-1549.92f,1.26f)
+	Turn("Franz",-81.80f,360.0f)
+	LookReset("Franz")
+
+	ResetChrInfoFlag( "ev_QS601_Wyvern1" , INFOFLAG_INVISIBLE)
+	ResetChrInfoFlag( "ev_QS601_Wyvern2" , INFOFLAG_INVISIBLE)
+	ResetChrInfoFlag( "ev_QS601_Wyvern3" , INFOFLAG_INVISIBLE)
+	ResetChrInfoFlag( "ev_QS601_Wyvern4" , INFOFLAG_INVISIBLE)
+	ResetChrInfoFlag( "ev_QS601_Wyvern5" , INFOFLAG_INVISIBLE)
+	ResetChrInfoFlag( "ev_QS601_Wyvern6" , INFOFLAG_INVISIBLE)
+
+	MoveCameraAt(0, 125.449f, -1545.411f, 2.759f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.996f, 0)		// 基本距離
+	ChangeCameraElevation(0, -4.365f, 0)	// 基本仰角
+	RotateCamera(0, 77.768f, 0)				// 角度
+	ChangeCameraPers(0, 46.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 127.454f, -1548.755f, 2.635f, 80)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -1.143f, 80)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 73.508f, 80)		// 角度
+
+	Wait(50)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_ANGER, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKR, 1)
+	ChangeAnimation("ADOL", "ANI_EV_SETARM", -1, 1)
+	WaitAnimation2("ADOL", -1, 1, "ANI_EV_SETARM", 0)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	CrossFade(FADE_CROSS)
+	ChangeAnimation("Franz", "ANI_EV_BTL_WAIT", -1, 1)
+	ChangeAnimation("ADOL", "ANI_EV_EQWAIT", -1, 1)
+	SetChrPos("ADOL", 127.47f, -1549.47f, 1.29f)
+	Turn("ADOL", 122.34f, 360.0f)
+
+	MoveCameraAt(0, 130.084f, -1550.047f, 3.181f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.995f, 0)		// 基本距離
+	ChangeCameraElevation(0, 2.508f, 0)	// 基本仰角
+	RotateCamera(0, 211.815f, 0)				// 角度
+	ChangeCameraPers(0, 44.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 128.583f, -1549.842f, 2.883f, 55)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, -1.143f, 55)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 215.256f, 55)		// 角度
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	TalkPopup("Franz",0,0,0,0,0)
+	{
+		"#000e#000mクッ……早速お客様がお越しとは。\p"
+		"しかもこの数となると、"
+		"少々骨が折れそうですね……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	LookChr("ADOL", "ev_QS601_Wyvern3")
+
+	MoveCameraAt(0, 127.472f, -1548.203f, 2.611f, 0)	// 注視点
+	ChangeCameraDistance(0, 1.995f, 0)		// 基本距離
+	ChangeCameraElevation(0, -2.717f, 0)	// 基本仰角
+	RotateCamera(0, 188.495f, 0)				// 角度
+	ChangeCameraPers(0, 31.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	Wait(15)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"２人なら切り抜けられるさ")
+	MenuAdd(2,"一匹も逃がすわけには行かないな")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	HeadYes("ADOL", 1, 25)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_ANGER_CLOSE_S,1)
+	Wait(20)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_ANGER_CLOSE_E,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(15)
+
+	//────────────────────
+	//	⇒２人なら切り抜けられるさ
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+
+		TalkPopup("Franz",0,0,0,0,0)
+		{
+			"#041e#000mハハ……仰いますね。\p"
+			"#042eアドルさん、ここは二手に"
+			"分かれた方が良さそうです。\p"
+			"こちらは任せましたよ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒一匹も逃がすわけには行かないな
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+
+		TalkPopup("Franz",0,0,0,0,0)
+		{
+			"#041e#000mフフ、同感です。\p"
+			"#042eアドルさん、ここは"
+			"二手に分かれるとしましょう。\p"
+			"こちらは任せましたよ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	//　　アドルが頷くと同時にフランツはその場を離れ、暗転。	//◆未入力
+	HeadYes("ADOL", 1, 25)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_ANGER_CLOSE_S,1)
+	Wait(15)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_ANGER_CLOSE_E,1)
+	Wait(20)
+
+	LookReset("ADOL")
+	TurnTo("ADOL",125.72f, -1549.60f, 1.16f,6.0f)
+	ChangeAnimation("ADOL", "ANI_EV_EQWALK", -1, 1)
+	ExecuteCmd(1, MoveTo, "ADOL", 125.72f, -1549.60f, 1.16f, 0.1f, 0.22f)
+	Wait(30)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 127.472f, -1548.203f, 2.611f, 90)		// 注視点
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 218.554f, 90)		// 角度
+
+	Wait(60)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	StopThread(1)
+	StopThread(1000)
+	StopThread(1002)
+
+
+	//──────────────────────────────
+	//　　異形の古代獣（m1020疾竜竜）とのイベント戦闘。
+	//　　浜辺を空気アタリで区切り、一定範囲だけで戦うようにする。
+
+	//　　難易度次第だが、異形の古代獣は一定時間ごとに湧いてきて
+	//　　計５～６体と戦うことを想定。
+	//──────────────────────────────
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1113:QS_601_Beach_ED")
+}
+function "QS_601_Beach_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	//CallFunc("system:reset_chrmot_ALL")
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_Franz")
+
+	// イベントで使用したフランツと古代種を画面外に移動
+	SetChrPos("Franz" , -100000.00f , 0.00f ,0.00f )
+	SetChrPos("ev_QS601_Wyvern2" , -100000.00f , 0.00f ,0.00f )
+	SetChrPos("ev_QS601_Wyvern3" , -100000.00f , 0.00f ,0.00f )
+	SetChrPos("ev_QS601_Wyvern4" , -100000.00f , 0.00f ,0.00f )
+	SetChrPos("ev_QS601_Wyvern5" , -100000.00f , 0.00f ,0.00f )
+	SetChrPos("ev_QS601_Wyvern6" , -100000.00f , 0.00f ,0.00f )
+	SetChrPos("ev_QS601_Wyvern7" , -100000.00f , 0.00f ,0.00f )
+
+	//アドルひとり -----------------------------------
+	SavePartyMember()							// 現在のパーティ編成を覚える
+	// パーティ編成可能状況バックアップ
+	SetFlag(SF_ADOL_JOINOKBK, FLAG[SF_ADOL_JOINOK])
+	SetFlag(SF_LAXIA_JOINOKBK, FLAG[SF_LAXIA_JOINOK])
+	SetFlag(SF_SAHAD_JOINOKBK, FLAG[SF_SAHAD_JOINOK])
+	SetFlag(SF_HUMMEL_JOINOKBK, FLAG[SF_HUMMEL_JOINOK])
+	SetFlag(SF_RICOTTA_JOINOKBK, FLAG[SF_RICOTTA_JOINOK])
+	SetFlag(SF_DANA_JOINOKBK, FLAG[SF_DANA_JOINOK])
+
+	// ひとりだけにする
+	//SetFlag(SF_ADOL_JOINOK, 1)
+	//SetFlag(SF_LAXIA_JOINOK, 0)
+	//SetFlag(SF_SAHAD_JOINOK, 0)
+	//SetFlag(SF_HUMMEL_JOINOK, 0)
+	//SetFlag(SF_RICOTTA_JOINOK, 0)
+	//SetFlag(SF_DANA_JOINOK, 0)
+	SetPartyMember(PARTY_ADOL, -1, -1)
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	EventCue("mp1113:Retry_QS_601")	//イベント戦闘
+//終了処理ここまで----------------------------------------------------
+}
+function "Retry_QS_601"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+
+	//ノード設定
+	MapAnime("que01", "close")		//クエスト戦闘用ストッパー	＆　古代種の足跡
+	MapHide("que01", 1)
+
+	//ボス配置・アニメ--------------------------------
+	//SetChrPos("QS601_mons1",117.60f,-1539.38f,1.40f)
+	//Turn("QS601_mons1",-43.18f,360.0f)
+	//ChangeAnimation("QS601_mons1", "ANI_WAIT", -1, 1)
+
+	SetChrPos("QS601_mons2", 109.12f, -1538.23f, 1.30f)
+	Turn("QS601_mons2", -67.79f, 360.0f)
+	ChangeAnimation("QS601_mons2", "ANI_WAIT", -1, 1)
+
+	//SetChrPos("QS601_mons3",112.26f,-1546.70f,0.49f)
+	//Turn("QS601_mons3",-82.39f,360.0f)
+	//ChangeAnimation("QS601_mons3", "ANI_WAIT", -1, 1)
+
+	//SetChrPos("QS601_mons4",136.97f,-1554.75f,1.06f)
+	//Turn("QS601_mons4",119.45f,360.0f)
+	//ChangeAnimation("QS601_mons4", "ANI_WAIT", -1, 1)
+
+	SetChrPos("QS601_mons5", 140.93f, -1558.99f, 0.84f)
+	Turn("QS601_mons5", 125.12f, 360.0f)
+	ChangeAnimation("QS601_mons5", "ANI_WAIT", -1, 1)
+
+	//SetChrPos("QS601_mons6",138.98f,-1551.96f,1.38f)
+	//Turn("QS601_mons6",99.65f,360.0f)
+	//ChangeAnimation("QS601_mons6", "ANI_WAIT", -1, 1)
+
+	// ひとりだけにする
+	//SetFlag(SF_ADOL_JOINOK, 1)
+	//SetFlag(SF_LAXIA_JOINOK, 0)
+	//SetFlag(SF_SAHAD_JOINOK, 0)
+	//SetFlag(SF_HUMMEL_JOINOK, 0)
+	//SetFlag(SF_RICOTTA_JOINOK, 0)
+	//SetFlag(SF_DANA_JOINOK, 0)
+	CallFunc("rng:soloEvent")
+	CallFunc("rng:earlyGameParty")
+	//SetPartyMember(PARTY_ADOL, -1, -1)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos("LEADER",127.13f,-1549.31f,1.29f)
+	Turn("LEADER",118.14f,360.0f)
+	//TurnToChr("PLAYER1" , "QS601_mons1" , 360.0f )
+	//TurnToChr("QS601_mons1" , "PLAYER1" , 360.0f )
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+//	SetYs8Camera(7.0f, 60.0f, 10.0f, 0.0f, 0.0f)		//……ボスルーチン作成者の指定があれば入力
+	MoveCameraAt( 0 , 127.130f , -1549.310f , 3.161f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 62.418f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start")						//……イベントバトル用の色々な処理を行うfunction
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_002, 15)	//◆検証版用仮
+//	MapAnime("syswall","close")						//……逃げられないストッパー起動	◆仮入力
+	SetFlag( TF_KILLENEMY_CNT, 0 )					//クエストイベント戦闘用準備
+
+	FadeIn(FADE_WHITE, FADE_FAST)
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//──────────────────────
+	//	⇒戦闘に勝利
+	//		QS_601_Complete
+	//──────────────────────
+}
+function "battleend_check"
+{
+	//敵を全部倒したかチェックする
+	SetFlag( TF_KILLENEMY_CNT, (FLAG[TF_KILLENEMY_CNT]+1) )
+
+	//６体までモンスターを補充する
+	if (FLAG[TF_KILLENEMY_CNT] == 1)
+	{
+		Wait(60)
+		SetChrPos("QS601_mons1", 103.27f, -1540.91f, 0.84f)
+		Turn("QS601_mons1", -93.16f, 360.0f)
+		ChangeAnimation("QS601_mons1", "ANI_WAIT", -1, 1)
+	}
+	else if (FLAG[TF_KILLENEMY_CNT] == 2)
+	{
+		Wait(60)
+		SetChrPos("QS601_mons4", 146.44f, -1565.03f, 0.48f)
+		Turn("QS601_mons4", 144.80f, 360.0f)
+		ChangeAnimation("QS601_mons4", "ANI_WAIT", -1, 1)
+	}
+	else if (FLAG[TF_KILLENEMY_CNT] == 3)
+	{
+		Wait(60)
+		SetChrPos("QS601_mons3", 103.53f, -1534.39f, 1.67f)
+		Turn("QS601_mons3", -67.79f, 360.0f)
+		ChangeAnimation("QS601_mons3", "ANI_WAIT", -1, 1)
+	}
+	else if (FLAG[TF_KILLENEMY_CNT] == 4)
+	{
+		Wait(60)
+		SetChrPos("QS601_mons6", 151.80f, -1558.38f, 1.06f)
+		Turn("QS601_mons6", 128.07f, 360.0f)
+		ChangeAnimation("QS601_mons6", "ANI_WAIT", -1, 1)
+	}
+	else if( FLAG[TF_KILLENEMY_CNT] == 6 )	// ◆仮入力：古代種の数を入れて下さい
+	{
+	//戦闘終了処理ここから-----------------------------------------------
+		SetFlag( TF_KILLENEMY_CNT, 0 )
+	
+		//無敵ON・色々終了させる---------------------------
+		SetFlag(SF_ALLMUTEKI,1)								//……無敵ＯＮ
+	
+		Wait(90)											//……ボス死亡モーション見せる＆ドロップアイテムを拾う時間
+		StopBGM(90)
+		Wait(60)
+	
+		//イベントバトル用CallFunc-------------------------
+		CallFunc("system:boss_end")							//……イベントバトル用の色々な処理を行うfunction
+	
+		//封鎖解除・ボス消去-------------------------------
+		MapAnime("que01", "open")		//【QS601】クエスト戦闘用ストッパー	＆　古代種の足跡
+		MapHide("que01", 0)
+		SetChrPos(QS601_mons1,-100000.00f,0.00f,0.00f)		//……ボスを見えない位置に飛ばす
+		SetChrPos(QS601_mons2,-100000.00f,0.00f,0.00f)		//……ボスを見えない位置に飛ばす
+		SetChrPos(QS601_mons3,-100000.00f,0.00f,0.00f)		//……ボスを見えない位置に飛ばす
+		SetChrPos(QS601_mons4,-100000.00f,0.00f,0.00f)		//……ボスを見えない位置に飛ばす
+		SetChrPos(QS601_mons5,-100000.00f,0.00f,0.00f)		//……ボスを見えない位置に飛ばす
+		SetChrPos(QS601_mons6,-100000.00f,0.00f,0.00f)		//……ボスを見えない位置に飛ばす
+		ResetChrPos((CHRTYPE_MONS | REMOVE_POS))			//……ザコならこちら
+	
+		//事後処理-----------------------------------------
+			////-----------------------------------
+			//// タイムアタック中
+			//if (FLAG[SF_TIMEATK])
+			//{
+			//	EndTimeAtk()		// タイムアタック終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+			//}
+			////-----------------------------------
+
+		// パーティ編成可能状況を戻す
+		SetFlag(SF_ADOL_JOINOK, FLAG[SF_ADOL_JOINOKBK])
+		SetFlag(SF_LAXIA_JOINOK, FLAG[SF_LAXIA_JOINOKBK])
+		SetFlag(SF_SAHAD_JOINOK, FLAG[SF_SAHAD_JOINOKBK])
+		SetFlag(SF_HUMMEL_JOINOK, FLAG[SF_HUMMEL_JOINOKBK])
+		SetFlag(SF_RICOTTA_JOINOK, FLAG[SF_RICOTTA_JOINOKBK])
+		SetFlag(SF_DANA_JOINOK, FLAG[SF_DANA_JOINOKBK])
+
+		RestorePartyMember()						// パーティメンバーを戻す
+
+		//パーティ状態のリセット
+		CallFunc("system:party_reset")
+
+		EventCue("mp1113:QS_601_Complete")	//【QS601】冒険家への依頼（フランツ）	▼戦闘～クエスト達成イベント
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+}
+
+//===============================================================
+//
+// 【QS601】冒険家への依頼（フランツ）
+// ▼戦闘～クエスト達成イベント
+//
+function "QS_601_Complete"
+{
+	//　　戦闘勝利後、フェードイン。
+	//　　浜辺で武器を構えているアドル。
+
+//開始処理ここから----------------------------------------------------
+
+	//CallFunc("system:event_begin")
+	
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_WHITE,0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_remove")
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL",120.17f,-1545.43f,1.05f)
+	Turn("ADOL",119.77f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "ADOL" )
+	SetChrWork( "ADOL" , CWK_BATTLEMODE , 1 )
+
+	SetChrWork("Franz", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Franz",150.36f,-1564.03f,0.64f)
+	Turn("Franz",-61.25f,360.0f)
+	ChangeAnimation( "Franz" , "ANI_EV_BTL_WAIT", -1 , 1 )
+	ChangeSubAnimation("Franz",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Franz",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Franz",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "Franz" )
+
+	SetChrWork("ev_QS601_Wyvern2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern2",153.90f,-1566.22f,0.63f)
+	Turn("ev_QS601_Wyvern2",121.87f,360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern2" , "ANI_WAIT", -1 , 1 )
+//	ChangeSubAnimation("ev_QS601_Wyvern2",SUBMOT_EYE,ANI_E_WAIT,1)
+//	ChangeSubAnimation("ev_QS601_Wyvern2",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS601_Wyvern2",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS601_Wyvern2" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern3", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern3",147.47f,-1567.82f,0.31f)
+	Turn("ev_QS601_Wyvern3",88.50f,360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern3" , "ANI_DEAD2", -1 , 1 )
+//	ChangeSubAnimation("ev_QS601_Wyvern3",SUBMOT_EYE,ANI_E_WAIT,1)
+//	ChangeSubAnimation("ev_QS601_Wyvern3",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS601_Wyvern3",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS601_Wyvern3" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern4", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern4",147.81f,-1557.77f,1.05f)
+	Turn("ev_QS601_Wyvern4",-33.30f,360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern4" , "ANI_DEAD2", -1 , 1 )
+//	ChangeSubAnimation("ev_QS601_Wyvern4",SUBMOT_EYE,ANI_E_WAIT,1)
+//	ChangeSubAnimation("ev_QS601_Wyvern4",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS601_Wyvern4",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS601_Wyvern4" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern5", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern5",151.97f,-1556.46f,1.23f)
+	Turn("ev_QS601_Wyvern5",-63.35f,360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern5" , "ANI_DEAD2", -1 , 1 )
+//	ChangeSubAnimation("ev_QS601_Wyvern5",SUBMOT_EYE,ANI_E_WAIT,1)
+//	ChangeSubAnimation("ev_QS601_Wyvern5",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS601_Wyvern5",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS601_Wyvern5" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern6", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern6", 118.49f, -1546.84f, 0.73f)
+	Turn("ev_QS601_Wyvern6", -18.42f, 360.0f)
+	ChangeAnimation("ev_QS601_Wyvern6", "ANI_DEAD2", -1, 1)
+	//	ChangeSubAnimation("ev_QS601_Wyvern4",SUBMOT_EYE,ANI_E_WAIT,1)
+	//	ChangeSubAnimation("ev_QS601_Wyvern4",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	//	ChangeSubAnimation("ev_QS601_Wyvern4",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag("ev_QS601_Wyvern4", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern7", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern7", 112.41f, -1542.13f, 0.89f)
+	Turn("ev_QS601_Wyvern7", -168.54f, 360.0f)
+	ChangeAnimation("ev_QS601_Wyvern7", "ANI_DEAD2", -1, 1)
+	//	ChangeSubAnimation("ev_QS601_Wyvern5",SUBMOT_EYE,ANI_E_WAIT,1)
+	//	ChangeSubAnimation("ev_QS601_Wyvern5",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	//	ChangeSubAnimation("ev_QS601_Wyvern5",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag("ev_QS601_Wyvern7", INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt( 0 , 117.042f , -1545.069f , 2.493f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.032f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -6.049f , 0 )	// 基本仰角
+	RotateCamera( 0 , 92.971f , 0 )				// 角度
+	ChangeCameraPers( 0 , 48.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 12.8f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 120.000 ,0.000 ,0.450 ,0.600)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1113:QS_601_Complete_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 120.009f, -1544.937f, 2.261f, 120)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 6.002f, 90)		// 角度
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 1.650f, 120)		// 基本仰角
+
+//	MoveCameraAt( 0 , 117.042f , -1545.069f , 2.493f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 6.002f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -6.049f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 92.946f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 48.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 12.8f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	FadeIn(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cようやく襲撃が止んだようだ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//	WaitThread(1000)
+	WaitThread(1001)
+
+	//　　アドル、武器をしまってフランツのいる方角に向く。
+	ChangeAnimation( "ADOL" , "ANI_DISARM", -1 , 1 )
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_DISARM",  0)
+
+	Turn("ADOL", -96.27f, 8.0f)
+	Wait(20)
+
+	//　　カメラを切り替えて浜辺の反対方向。
+	CrossFade(FADE_FAST)
+	MoveCameraAt( 0 , 150.291f , -1563.535f , 2.443f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.401f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -10.518f , 0 )	// 基本仰角
+	RotateCamera( 0 , 267.178f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , -8.2f , 0 )				// ロール回転
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , 150.201f , -1563.906f , 2.195f , 130 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 6.721f, 130 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 5.406f, 130 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 230.084f  ,  130 )		// 角度
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 7.8f, 130 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 130 )		// 視野角
+
+	//MoveCameraAt( 0 , 150.201f , -1563.906f , 2.195f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 6.721f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 5.406f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 230.084f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 7.8f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//　　フランツが立っており、その周りに古代種が４体ほど倒れている。	◆仮入力
+	//　　（できれば最後の１体はドォンと倒れるモーションを見せる）
+
+	ChangeAnimation( "ev_QS601_Wyvern2", "ANI_DEAD", -1, 1 )
+	Wait(20)
+	PlaySE(SE_QS_601_02, 100, 0, 100, 0, 1.0f, 0)
+	WaitAnimation2( "ev_QS601_Wyvern2" , -1, 1, "ANI_DEAD",  0)
+	Wait(20)
+	StopSE(SE_QS_601_02, 500)
+	Wait(50)
+
+
+
+	HeadNo("Franz", 1, 35)
+	PlayVoice(Y8V_5096, "Franz", 100)	//やれやれ…（溜息）
+	TalkPopup("Franz", 0, 0, 0, 0, 0)
+	{
+		"#000e#000mやれやれ、これほどの"
+		"数が入り込んでいたとは……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	PlayBGM(BGM_EVENT_004, 0)
+
+	TalkPopup("Franz",0,0,0,0,0)
+	{
+		"#000e#000m申し訳ありません。\p"
+		"今回は私の見込みが甘かったようです。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　フランツ、アドルの元に歩いてくる。
+	CrossFade(FADE_CROSS)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+
+	SetChrPos("ADOL", 128.41f, -1549.44f, 1.33f)
+	Turn("ADOL", -57.33f, 360.0f)
+
+	ChangeAnimation("Franz", "ANI_WAIT", -1, 1)
+	SetChrPos("Franz", 131.71f, -1551.50f, 1.23f)
+	Turn("Franz", 110.41f, 360.0f)
+
+	LookChr("ADOL", "Franz")
+	LookChr("Franz", "ADOL")
+
+
+	SetChrWork("ev_QS601_Wyvern1", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern1", 138.47f, -1511.71f, 6.22f)
+	TurnToChr("ev_QS601_Wyvern1", "ADOL", 360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern1" , "ANI_WAIT", -1 , 1 )
+	SetChrInfoFlag( "ev_QS601_Wyvern1" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern6", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern6", 141.24f, -1528.05f, 3.94f)
+	TurnToChr("ev_QS601_Wyvern6", "ADOL", 360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern6" , "ANI_WAIT", -1 , 1 )
+	SetChrInfoFlag( "ev_QS601_Wyvern6" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern7", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern7", 125.83f, -1522.05f, 3.91f)
+	TurnToChr("ev_QS601_Wyvern7", "ADOL", 360.0f)
+	ChangeAnimation( "ev_QS601_Wyvern7" , "ANI_WAIT", -1 , 1 )
+	SetChrInfoFlag( "ev_QS601_Wyvern7" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern3", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern3", 147.69f, -1525.89f, 4.42f)
+	TurnToChr("ev_QS601_Wyvern3", "ADOL", 360.0f)
+	ChangeAnimation("ev_QS601_Wyvern3", "ANI_WAIT", -1, 1)
+	SetChrInfoFlag("ev_QS601_Wyvern3", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_QS601_Wyvern2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS601_Wyvern2", 129.08f, -1527.74f, 3.46f)
+	TurnToChr("ev_QS601_Wyvern2", "ADOL", 360.0f)
+	ChangeAnimation("ev_QS601_Wyvern2", "ANI_WAIT", -1, 1)
+	SetChrInfoFlag("ev_QS601_Wyvern2", INFOFLAG_NOCHRATARI)
+
+	SetChrInfoFlag( "ev_QS601_Wyvern1" , INFOFLAG_INVISIBLE)
+	SetChrInfoFlag( "ev_QS601_Wyvern2" , INFOFLAG_INVISIBLE)
+	SetChrInfoFlag( "ev_QS601_Wyvern3" , INFOFLAG_INVISIBLE)
+	SetChrInfoFlag( "ev_QS601_Wyvern7" , INFOFLAG_INVISIBLE)
+	SetChrInfoFlag( "ev_QS601_Wyvern6" , INFOFLAG_INVISIBLE)
+	
+	MoveCameraAt( 0 , 128.990f , -1549.976f , 2.923f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.401f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -4.032f , 0 )	// 基本仰角
+	RotateCamera( 0 , 203.118f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ExecuteCmd(1, MoveTo, "Franz", 129.39f, -1549.83f, 1.33f,  0.1f, 0.24f)
+
+	WaitThread(1)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"謝ることはない")
+	MenuAdd(2,"フランツでも失敗するんだな")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	//Wait(20)
+	
+	//────────────────────
+	//	⇒謝ることはない
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		HeadNo("ADOL", 1, 30)
+		Wait(40)
+
+		ChangeSubAnimation("Franz", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+		//HeadNo("Franz", 1, 35)
+		TalkPopup("Franz",0,2,0,0,0)
+		{
+			"#011e#000mいえ……この事態を"
+			"想定できなかったのは私のミスです。\p"
+			"#012e#000mいけませんね、旦那様との"
+			"約束もあるというのに……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		}
+	//	⇒フランツでも失敗するんだな
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		ChangeAnimation("ADOL", "ANI_EV_BORI", -1, 1)
+		WaitAnimation2("ADOL", -1, 1, "ANI_EV_BORI", 0)
+
+		ChangeSubAnimation("Franz", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+		//HeadNo("Franz", 1, 35)
+		TalkPopup("Franz",0,2,0,0,0)
+		{
+			"#011e#000mお恥ずかしい限りです。\p"
+			"#012e#000mいけませんね、旦那様との2"
+			"約束もあるというのに……2"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+	}
+	//────────────────────
+
+	EmotionEx("ADOL", 0.00f, EMO_Q, 0, 5, 1, 1, 0.85f)	// 「？」
+	Wait(50)
+
+
+
+	TalkPopup("Franz", 0, 2, 0, 0, 0)
+	{
+		"#011e#000m……これはお嬢様には"
+		"内密にお願いしたいのですが……\p"
+		"#012e#000m実は旦那様が屋敷を去られる前に、"
+		"一言ご指示を頂きまして。\p"
+		"もう自分に仕える必要はない。"
+		"これからは家族のことを頼む、と。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "ev_QS601_Wyvern2" , "ANI_WAIT", -1 , 1 )
+
+		//　　フランツ、モーションを変える
+	ChangeAnimation("Franz", "ANI_EV_RYOTEKOSI_S", -1, 1)
+	TalkPopup("Franz", 0, 2, 0, 0, 0)
+	{
+		"#000e#000mそれに応えるためにもお嬢様を守り、"
+		"成長を見守ることこそ我が使命……\p"
+		"そのためには私は一つでも"
+		"ミスを犯すわけには参りません。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "ev_QS601_Wyvern3" , "ANI_WAIT", -1 , 1 )
+
+	HeadNo("Franz", 1, 35)
+	ChangeAnimation("Franz", "ANI_EV_RYOTEKOSI_E", -1, 1)
+	TalkPopup("Franz", 0, 0, 0, 0, 0)
+	{
+		"#011e……私もまだまだですね……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "ev_QS601_Wyvern7" , "ANI_WAIT", -1 , 1 )
+
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"失敗は次に生かせばいい")
+	MenuAdd(2,"その時は僕が駆けつけるよ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	//Wait(20)
+
+	ChangeAnimation("ADOL", "ANI_EV_WAIT2_S", -1, 1)
+	HeadYes("ADOL", 1, 25)
+
+	Wait(35)
+
+	ChangeAnimation( "ev_QS601_Wyvern6" , "ANI_WAIT", -1 , 1 )
+	
+	//────────────────────
+	//	⇒失敗は次に生かせばいい
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+
+	//	ChangeSubAnimation("Franz", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+		ChangeAnimation("Franz", "ANI_EV_MEGANEKUI", -1, 1)
+		WaitAnimation2("Franz", -1, 1, "ANI_EV_MEGANEKUI", 0)
+		ChangeSubAnimation("Franz", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+		PlayVoice(Y8V_5095, "Franz", 100)	//フフ（笑い）
+		TalkPopup("Franz", 0, 0, 0, 0, 0)
+		{
+			"#080mハハハ……ごもっともです。\p"
+			"確かに、この程度で立ち止まる"
+			"わけには参りませんね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+	//	⇒その時は僕が駆けつけるよ
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+
+	//	ChangeSubAnimation("Franz", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+		ChangeAnimation("Franz", "ANI_EV_MEGANEKUI", -1, 1)
+		WaitAnimation2("Franz", -1, 1, "ANI_EV_MEGANEKUI", 0)
+		ChangeSubAnimation("Franz", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+		PlayVoice(Y8V_5095, "Franz", 100)	//フフ（笑い）
+		TalkPopup("Franz", 0, 0, 0, 0, 0)
+		{
+			"#080mほう……\p"
+			"フフ、それは"
+			"頼もしいお言葉ですね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	TalkPopup("Franz", 0, 0, 0, 0, 0)
+	{
+		"#000e#000mそれではアドルさん、"
+		"あなたの腕を見込んでもう１つお願いが。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	StopBGM(90)
+
+	CrossFade(FADE_FAST)
+	Turn("Franz", 110.41f, 360.0f)
+
+	MoveCameraAt( 0 , 129.051f , -1549.764f , 2.973f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.441f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -11.316f , 0 )	// 基本仰角
+	RotateCamera( 0 , 290.137f , 0 )				// 角度
+	ChangeCameraPers( 0 , 36.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	Look("Franz", 12.00f, 1.00f)
+
+	Wait(FADE_FAST)
+
+	//　　フランツ、横目表情になる。
+
+	ChangeSubAnimation("Franz", SUBMOT_EXT1, ANI_E_LOOKR_S, 1)
+
+	TalkPopup("Franz", 0, 1, 0, 0, 0)
+	{
+		"#000e#000mよろしければ──"
+		"残#2R・#Rり#2R・#Rも手を貸していただけますか？"	//（残りを・で強調）
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　２人の背後に、異形の古代種（m1021翼竜）＋戦闘した古代種数体が出現する。	◆仮入力
+
+	PlayBGM(BGM_BOSS_002, 0)
+
+	ResetChrInfoFlag( "ev_QS601_Wyvern1" , INFOFLAG_INVISIBLE)
+	ResetChrInfoFlag( "ev_QS601_Wyvern2" , INFOFLAG_INVISIBLE)
+	ResetChrInfoFlag( "ev_QS601_Wyvern3" , INFOFLAG_INVISIBLE)
+	ResetChrInfoFlag( "ev_QS601_Wyvern7" , INFOFLAG_INVISIBLE)
+	ResetChrInfoFlag( "ev_QS601_Wyvern6" , INFOFLAG_INVISIBLE)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 128.870f, -1549.638f, 3.024f, 70)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 2.101f, 70)		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 0.269f, 70)		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 341.615f, 70)		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE, 47.000f, 70)		// 視野角
+
+	ChangeAnimation("ADOL", "ANI_EV_WAIT2_E", -1, 1)
+	Look("ADOL", -20.00f, 1.00f)
+
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKL_S, 1)
+	Wait(30)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	Wait(15)
+
+	//　　アドル、頷いて武器を取り出す。
+	HeadYes("ADOL" , 1 , 25)
+	Wait(35)
+
+	LookReset("Franz")
+	TurnTo("Franz", 133.26f, -1537.80f, 2.95f, 8.0f)
+
+	LookReset("ADOL")
+	TurnTo("ADOL", 130.30f, -1536.81f, 2.73f, 8.0f)
+
+	TalkPopup("Franz", 0, 0, 0, 0, 0)
+	{
+		"#000e#000mそれではいざ──"
+			"参るとしましょうか！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドルとフランツが立ち向かう雰囲気を出しつつ暗転。
+	ExecuteCmd(1, MoveTo, "Franz", 133.26f, -1537.80f, 2.95f,  0.1f, 0.65f)
+	ExecuteCmd(2, MoveTo, "ADOL", 130.30f, -1536.81f, 2.73f, 0.1f, 0.65f)
+
+	Wait(20)
+
+	StopBGM(120)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	StopThread(1000)
+	StopThread(1001)
+
+	Wait(60)
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1113:QS_601_Complete_ED")
+}
+function "QS_601_Complete_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+//	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	//CallFunc("system:reset_chrmot_ALL")
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_Franz")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	SetFlag(SF_BOSS_BATTLE, 0)		//ボス戦終了
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+	LoadArg("map/mp1201/mp1201.arg")
+	EventCue("mp1201:QS_601_Complete2")		// 続き
+
+//終了処理ここまで----------------------------------------------------
+}

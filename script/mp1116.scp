@@ -1,0 +1,1188 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 1116：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1115" , 0 )
+	MapHide( "@BG2_mp1116" , 0 )
+	MapHide( "@BG2_mp2106" , 0 )
+	MapHide( "BG2_groundfog_SE1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SE2" , 0 )	//遠景の板フォグを消す
+
+//	MapHide( "BG2_groundfog_main" , 0 )	//遠景の板フォグを消す
+//	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+//	MapHide( "BG2_groundfog_SW1" , 0 )	//遠景の板フォグを消す
+
+	MapHide( "skyfog2" , 0 )		//濃霧非表示
+	MapHide("@camp_fire" , 0 )
+	MapHide("camp_smoke" , 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog2" , 1 )		//濃霧表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 120.0f , 2.0f, 0.3f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00939aa0, 200.0f, 1000.0f , 1.0f , 0.7f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.8f )
+		}
+	}
+
+
+	//障害突破イベント（協力イベント）
+	//がれきLP設定
+	SetChrWork( "LP_STOP_1116_1116" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+	SetChrWork( "CP_STOP_1116_1116" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+	if( FLAG[SF_EVENT_ON] )
+	{
+		//障害物制御
+		if( FLAG[GF_SUBEV_1116_REMOVE_ROCK] )
+		{
+			MapAnime( "mp1116_stop01" , "open" )
+			// 処理を軽くする為吹っ飛ばす
+			SetChrPos("LP_STOP_1116_1116",  -100000.00f,0.00f,0.00f)
+			SetChrPos("CP_STOP_1116_1116",  -100000.00f,0.00f,0.00f)
+		}
+		else if (FLAG[GF_SUBEV_1116_CHECKED_ROCK])
+		{
+			// 初回チェック済み
+			SetChrWork("LP_STOP_1116_1116", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1116_1116", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		}
+		else
+		{
+			SetChrWork("LP_STOP_1116_1116", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+			SetChrWork("CP_STOP_1116_1116", CWK_CHECKOFF, 1)		// 協力イベントルックポイントをオフに
+		}
+	}
+
+//-----------------------------------------------------------------------------------------------------------
+// イベントエリア・イベントＬＰ制御
+
+	// イベント制御
+	EventAreaEnable( "evb2_QS_510_Look_Ed" , 0 )
+	EventAreaEnable( "ev2_EV_LOCATION021" , 0 )
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		// 【QS510】故郷の花
+		if( !FLAG[GF_TBOX_DUMMY069])
+		{
+			//▼エド発見イベント
+			MapHide("@camp_fire" , 1 )
+			MapHide("camp_smoke" , 1 )
+
+			EventAreaEnable( "evb2_QS_510_Look_Ed" , 1 )
+		}
+
+		if ( !FLAG[GF_LOCATION21] ) {		// ロケーション021
+			EventAreaEnable( "ev2_EV_LOCATION021" , 1 )
+		}
+	}
+
+	if(!FLAG[GF_TBOX_DUMMY069]){		// 【QS510】故郷の花	クエスト開始イベントを見た
+		SetChrPos("LP_cook",  -100000.00f,0.00f,0.00f)	//料理LPどかす
+	}
+	else {
+		SetChrPos("LP_Ed_Sign",  -100000.00f,0.00f,0.00f)
+	}
+
+	//キラキラ：落とし物
+	if( FLAG[GF_MP1116_KIRAKIRA01] ){
+		ChangeAnimation( "KiraKira01" , "ANI_STOP2", -1 , 1 )		//取った後
+		SetChrWork("KiraKira01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrPos("KiraKira01", -100000.00f, 0.0f, 0.0f )
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 2 || FLAG[SF_LASTENTRY_NO] == 100  ){	
+			//ワープ
+			VisualName("visual/mapname/mn_1116.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//望郷岬
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+//キラキラ
+function "LP_KiraKira01"
+{
+
+//	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_TALK)
+
+	//　　箱が開くアニメーションとSE。
+	ChangeAnimation( "this" , "ANI_OPEN", 0 , 1 )
+	Wait(30)
+
+	ChangeAnimation( "LEADER" , "ANI_GET_ITEM", -1 , 1 )	//アイテム入手モーション
+	Wait(15)
+
+	//	テキスト
+	GetItemMessageExPlus( ICON3D_PRESENT_AARON, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+	WaitPrompt()
+	WaitCloseWindow()
+	GetItem(ICON3D_PRESENT_AARON,1)		//プレゼントアイテム（ロムン憲兵徽章：エアラン）
+
+	//フラグ
+	SetFlag( GF_MP1116_KIRAKIRA01, 1 )
+	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+
+//	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+function "LP_Ed_Sign"
+{
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C焚き火の跡がある……"
+		"#7C誰かがここにいたのだろうか。\p"
+		"#7C周囲を見渡しても"
+		"#7C人影はなさそうだが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+//終了処理ここから----------------------------------------------------
+
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+	//イベント後の再配置
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	SetChrPos("LP_Ed_Sign", -100000.00f,0.00f,0.00f)
+	SetChrPos("LP_cook", 1043.81f,-993.87f,60.41f)
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+	
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで-----------------------------------------------
+
+}
+
+
+
+//////////////////////////////////////////////
+// ロケーションポイント021:船の墓場
+//////////////////////////////////////////////
+function "EV_LOCATION021"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+
+	Portrait_Load(4, "visual/mapname/lnmp1116.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , 871.781f , -1376.964f , 3.693f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 30.601f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.934f , 0 )	// 基本仰角
+	RotateCamera( 0 , 89.980f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp1116:EV_LOCATION021_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt , INTERPOLATE_SPHERE , 876.455f , -1373.569f , 3.693f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance , INTERPOLATE_SPHERE , 30.601f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation , INTERPOLATE_SPHERE , 29.749f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera , INTERPOLATE_SPHERE , 137.568f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1116:EV_LOCATION021_ED")
+}
+function "EV_LOCATION021_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION21, 1)	//船の墓場
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_F004, MARKER_EV_LC_MP1116, 0, 0)	//ロケ　：船の墓場
+	SetMapMarker( SMI_LOCATION ,PAGE_F004, MARKER_EV_LC_MP1116, 881.70f, -1372.22f, -0.92f, 881.70f, -1372.22f,LOCATION_MP1116,MN_F_MP1116,0)		//ロケ　：船の墓場
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_F004,0 ,896.49f, -1370.42f ,100 )
+
+	CallFunc("mp1116:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , 899.424f , -1353.205f , 1.378f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 7.913f , 0 )	// 基本仰角
+	RotateCamera( 0 , 142.878f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", 899.42f, -1353.21f, -0.47f )
+	Turn("LEADER" ,37.14f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}
+
+//	================================================
+//	【ＬＰ：1116⇒1116の倒木を調べる】
+//	================================================
+function "LP_STOP_1116_1116"
+{
+	//無条件で支援イベントへ分岐
+	
+	//▼支援イベントNo.10
+	EventCue("mp1116:SubEV_Sien10")
+}
+
+function "SubEV_Sien10_open"
+{
+	if( !FLAG[GF_SUBEV_1116_CHECKED_ROCK] )
+	{
+		// フラグセット
+		SetFlag(GF_SUBEV_1116_CHECKED_ROCK, 1)
+		
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1116_1116", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1116_1116", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F004,REMOVE_OBJ_1116, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F004, REMOVE_OBJ_1116CE, 1022.83f,-1209.00f,5.21f, 1022.83f,-1209.00f, COOPEVID_MP1116, MN_F_MP1116,0)
+	}
+}
+//──────────────────────────────
+//▼支援イベントNo.10		必要人数１６人		mp1116：希望峰
+//	土砂崩れを撤去②		マップの奥に行けるようになり、エドを回収できる
+//──────────────────────────────
+function "SubEV_Sien10"
+{
+	//　　※手前に２段ジャンプストッパーがあるため、
+	//　　　最速は「▼第五部②バハの塔に向かう」、専用の理法具入手後。
+	//　　　ＮＰＣを２／６人以上助けた後に撤去可能。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnTo( "LEADER", 1022.83f,-1209.00f,5.21f , 15.0f )
+
+	//	ナレーション
+	TalkPopup("UNDEF",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C高く重なった土砂が"
+		"#7C道を塞いでしまっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	GetCoopEvPeopleNum(COOPEVID_MP1116, TF_MENU_SELECT2)	//支援要請で必要な人数を取得
+	
+	//──────────────────────
+	//	⇒人数が足りていない
+	if( FLAG[TF_MENU_SELECT2] > WORK[WK_NPCNUM] )	//必要な人数 ＞ 漂流村の人数
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cこの土砂を撤去するには、"
+			"#7C漂流村の人数が足りないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_1116_CHECKED_ROCK, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1116_1116", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1116_1116", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F004,REMOVE_OBJ_1116, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F004, REMOVE_OBJ_1116CE, 1022.83f,-1209.00f,5.21f, 1022.83f,-1209.00f, COOPEVID_MP1116, MN_F_MP1116,0)
+
+
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//	⇒人数が足りている場合
+	else
+	{
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C支援要請を出しますか？",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+			//	  　以下の流れに接続
+			//──────────────────────
+			
+			//　　＞「▼支援イベント共通処理①」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common1")
+			
+			//　　障害物撤去ＳＥ
+			MapAnime( "mp1116_stop01" , "open" )
+			PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+			Wait(80)
+
+			CallFunc("system:party_remove")
+			MoveCameraAt( 0 , 1024.703f , -1206.972f , 6.631f , 0 )	// 注視点
+			ChangeCameraDistance( 0 , 11.098f , 0 )		// 基本距離
+			ChangeCameraElevation( 0 , -2.216f , 0 )	// 基本仰角
+			RotateCamera( 0 , 1.741f , 0 )				// 角度
+			ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+			ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE ,  1023.141f , -1206.407f , 8.119f  , 180 )		// 注視点
+			ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 11.098f, 180 )		// 基本距離
+			ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 13.283f, 180 )		// 基本仰角
+			ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE ,316.560f , 180 )		// 角度
+			//ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,2.5f , 180 )		// ロール回転
+			//ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 50 )		// 視野角
+
+			//MoveCameraAt( 0 , 1023.141f , -1206.407f , 8.119f , 0 )	// 注視点
+			//ChangeCameraDistance( 0 , 11.098f , 0 )		// 基本距離
+			//ChangeCameraElevation( 0 , 13.283f , 0 )	// 基本仰角
+			//RotateCamera( 0 , 316.560f , 0 )				// 角度
+			//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+			
+			FadeIn(FADE_BLACK,FADE_FAST)
+			//WaitFade()
+
+			PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+			
+			//	ナレーション
+			TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+			{
+				"#7C全員の力を合わせて、土砂を撤去した！"
+				"撤去2行目"
+			}
+			Wait(30)
+			//　　＞「▼支援イベント共通処理②」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common2")
+
+			WaitPrompt()
+			WaitCloseWindow()
+
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+
+			StopThread(1001)
+			StopThread(1002)
+			StopThread(1003)
+			StopThread(1004)
+			
+			//　　イベント終了、操作許可。
+			
+			//障害物撤去処理
+			SetChrPos("LP_STOP_1116_1116",  -100000.00f	0.00f	0.00f)
+			SetChrPos("CP_STOP_1116_1116",  -100000.00f	0.00f	0.00f)
+			SetFlag(GF_SUBEV_1116_REMOVE_ROCK, 1)	// 【ＬＰ：1116⇒1116の岩を撤去した】
+			SetFlag(GF_SUBEV_1116_CHECKED_ROCK, 1)
+			SetDiaryFlag(DF_SUBEV_1116_REMOVE_ROCK, 1)		// ★望郷岬にあった土砂を撤去した。
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F004,REMOVE_OBJ_1116, 0, 0)
+			// 協力イベントのマーカーも削除
+			DelMapMarker( SMI_COOPEVENT, PAGE_F004, REMOVE_OBJ_1116CE, 0, 0)
+			
+			SetFlag( TF_MENU_SELECT, 1 )	//支援イベントとして終了
+		}
+		//	⇒やめる
+		else
+		{
+			//	  　そのまま操作許可。
+			// マーカーの切り替え処理
+			
+			// 見たフラグセット
+			SetFlag(GF_SUBEV_1116_CHECKED_ROCK, 1)
+			// ルックポイント切り替え
+			SetChrWork("LP_STOP_1116_1116", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1116_1116", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F004,REMOVE_OBJ_1116, 0, 0)
+			
+			// 協力イベントのマーカーもセット
+			SetMapMarker(SMI_COOPEVENT, PAGE_F004, REMOVE_OBJ_1116CE, 1022.83f,-1209.00f,5.21f, 1022.83f,-1209.00f, COOPEVID_MP1116, MN_F_MP1116,0)
+		
+			SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+		}
+		//──────────────────────
+	}
+
+//終了処理ここから----------------------------------------------------
+
+	//ストッパーとして終了
+	if( FLAG[TF_MENU_SELECT] == 0 )
+	{
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	//支援イベントとして終了
+	else
+	{
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+		MoveCameraAt( 0 , 1022.500f , -1210.067f , 6.832f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 11.047f , 0 )	// 基本仰角
+		RotateCamera( 0 , -17.179f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		
+		ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		//イベント後の再配置位置
+		SetChrPos("LEADER", 1022.50f, -1210.07f, 4.96f)
+		Turn("LEADER"  ,-162.82f , 360.0f)
+		
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+		
+	}
+
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//===============================================================
+//
+// 【QS510】故郷の花
+// ▼エド発見イベント
+//
+function "QS_510_Look_Ed"
+{
+	//　　mp1116
+	//　　1064.49f, -992.43f, 60.96f ,172.96f　付近に近づくとイベント開始。
+	//　　アドル、ラクシャ、ダーナ、リコッタ、
+	//　　その後ろにサハド、ヒュンメルを配置。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 1059.29f, -990.94f, 60.82f)
+	Turn("ADOL", 158.24f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 1059.64f, -989.95f, 60.84f)
+	Turn("LAXIA", 152.56f, 360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA", 1058.23f, -990.35f, 60.79f)
+	Turn("DANA", 175.51f, 360.0f)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", 1060.01f, -988.99f, 60.86f)
+	Turn("RICOTTA", 131.05f, 360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 1061.40f, -990.51f, 60.90f)
+	Turn("SAHAD", 138.47f, 360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", 1060.35f, -991.11f, 60.87f)
+	Turn("HUMMEL", 151.96f, 360.0f)
+	ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+
+	//　　画面端から声が聞こえてくる。
+	SetChrWork("Ed", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Ed",1030.64f, -984.53f, 61.06f)
+	Turn("Ed",-62.29f,360.0f)
+	ChangeAnimation( "Ed" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Ed",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Ed",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Ed",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "Ed" , INFOFLAG_NOCHRATARI)
+
+	//カメラ設定
+	MoveCameraAt(0, 1053.961f, -985.789f, 62.254f, 0)	// 注視点
+	ChangeCameraDistance(0, 2.100f, 0)		// 基本距離
+	ChangeCameraElevation(0, 4.560f, 0)	// 基本仰角
+	RotateCamera(0, 282.141f, 0)				// 角度
+	ChangeCameraPers(0, 40.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 1.000, 64.000 ,1.000 ,0.700 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1116:QS_510_Look_Ed_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 1057.986f, -988.157f, 62.402f, 135)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 5.725f, 135)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 224.430f, 135)		// 角度
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	Look("ADOL", 0.00f, -8.00f)
+	Look("LAXIA", 0.00f, -8.00f)
+	Look("SAHAD", 0.00f, -8.00f)
+	Look("RICOTTA", 0.00f, -8.00f)
+	Look("HUMMEL", 0.00f, -8.00f)
+	Look("DANA", 0.00f, -8.00f)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000m綺麗な花……"
+		"リコッタ、初めて見る！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("LAXIA", "ANI_EV_TEBURI", -1, 1)
+	TalkPopup("LAXIA",0,0,0,0,0)
+	{
+		"#000e#000m紫の鈴型……もしや……"
+		"鈴2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("DANA",0,0,0,0,0)
+	{
+		"#000e#000mうん、これが紫鈴草だよ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1)
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#080e#080mガハハ、無事に"
+		"見つかってよかったぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	SetChrPos("Ed",1030.64f,-984.53f,61.06f)
+	Turn("Ed",-88.50f,360.0f)
+
+	//	男性の声（フォント小）
+	SetName("男性の声")
+	TalkPopup("Ed",0,3,400,30,0)
+	{
+		"#10S……よいしょっ、と。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	//　　ヒュンメルに「パッ」エモーション。
+	EmotionEx("HUMMEL", 0.01f, EMO_PA, 0, 5, 1, 1, 1.25f)	//パッ
+	Wait(35)
+
+	LookChr("HUMMEL", "Ed")
+	TalkPopup("HUMMEL",0,0,0,0,0)
+	{
+		"#000e#000mふむ、誰かいるな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("ADOL", "Ed")
+	LookChr("LAXIA", "Ed")
+	LookChr("DANA", "Ed")
+	Wait(5)
+	LookChr("RICOTTA", "Ed")
+	LookChr("SAHAD", "Ed")
+	Wait(20)
+
+	//　　カメラが動かすと、
+	//　　1030.64f, -984.53f, 61.06f ,-62.29f　付近にエドが立っている。	◆未入力
+	//MoveCameraAt(0, 1054.016f, -988.709f, 62.402f, 0)	// 注視点
+	//ChangeCameraDistance(0, 2.100f, 0)		// 基本距離
+	//ChangeCameraElevation(0, 7.406f, 0)	// 基本仰角
+	//RotateCamera(0, 96.347f, 0)				// 角度
+	//ChangeCameraPers(0, 40.000f, 0)			// 視野角
+	//SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	//RollCamera(0, 0.0f, 0)				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt(0, 1059.994f, -990.836f, 62.402f, 0)	// 注視点
+	ChangeCameraDistance(0, 2.100f, 0)		// 基本距離
+	ChangeCameraElevation(0, 7.563f, 0)	// 基本仰角
+	RotateCamera(0, 39.797f, 0)				// 角度
+	ChangeCameraPers(0, 40.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ChangeAnimation("SAHAD", "ANI_EV_RYOTEKOSI_E", -1, 1)
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 75.000 ,1.000 ,0.700 ,0.500)
+
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 1060.036f, -991.388f, 62.427f, 60)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 3.134f, 60)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 64.425f, 60)		// 角度
+	Wait(5)
+	TurnToChr("HUMMEL", "Ed", 8.0f)
+
+	TurnToChr("ADOL", "Ed", 8.0f)
+	TurnToChr("DANA", "Ed", 8.0f)
+	//LookChr("DANA", "Ed")
+
+	//TurnToChr("LAXIA", "Ed", 8.0f)
+	LookChr("LAXIA", "Ed")
+	LookChr("RICOTTA", "Ed")	
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	//TalkPopup(UNDEF,0,0,0,0,0)
+	//{
+	//	"#7C◆カメラが動かすと、エドが立っている"
+	//}
+	//WaitPrompt()
+	//WaitCloseWindow()
+
+	StopBGM(120)
+
+	SetName("穏やかそうな男性")
+	TalkPopup("Ed",0,0,0,0,0)
+	{
+		"#000e#000mき、君たちは……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	EmotionEx("ADOL", 0.00f, EMO_EX, 0, 5, 1, 1, 0.9f)	// 「！」
+	EmotionEx("LAXIA", 0.00f, EMO_EX, 0, 5, 1, 1, 0.9f)	// 「！」
+	EmotionEx("DANA", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	// 「！」
+	EmotionEx("HUMMEL", 0.00f, EMO_EX, 0, 5, 1, 1, 0.9f)	// 「！」
+	Wait(40)
+	ExecuteCmd(1, MoveTo, "DANA", 1050.58f, -987.45f, 60.50f,  0.1f, 0.25f)
+	Wait(5)
+	ExecuteCmd(2, MoveTo, "ADOL", 1053.05f, -989.40f, 60.59f, 0.1f, 0.25f)
+	Wait(15)
+	ExecuteCmd(3, MoveTo, "LAXIA", 1053.89f, -987.43f, 60.62f, 0.1f, 0.25f)
+	ExecuteCmd(4, MoveTo, "HUMMEL", 1054.32f, -989.15f, 60.64f, 0.1f, 0.25f)
+	ExecuteCmd(5, MoveTo, "RICOTTA", 1054.90f, -986.56f, 60.67f, 0.1f, 0.25f)
+	ExecuteCmd(6, MoveTo, "SAHAD", 1055.20f, -987.33f, 60.68f, 0.1f, 0.25f)
+	Wait(40)
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//　　クロスフェードしつつ、アドルたちがエドの前に移動する
+
+	StopThread(1)
+	StopThread(2)
+	StopThread(3)
+	StopThread(4)
+	StopThread(5)
+	StopThread(6)
+
+	MoveCameraAt(0, 1030.596f, -985.053f, 62.537f, 0)	// 注視点
+	ChangeCameraDistance(0, 2.702f, 0)		// 基本距離
+	ChangeCameraElevation(0, 7.277f, 0)	// 基本仰角
+	RotateCamera(0, 267.395f, 0)				// 角度
+	ChangeCameraPers(0, 34.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	SetChrPos("ADOL", 1033.03f, -985.98f, 60.94f)
+	Turn("ADOL", 122.66f, 360.0f)
+
+	SetChrPos("LAXIA", 1033.58f, -985.41f, 60.97f)
+	Turn("LAXIA", 119.83f, 360.0f)
+
+	SetChrPos("RICOTTA", 1034.15f, -984.42f, 61.02f)
+	Turn("RICOTTA", 90.48f, 360.0f)
+
+	SetChrPos("DANA", 1033.09f, -986.83f, 60.89f)
+	Turn("DANA", 136.04f, 360.0f)
+
+	SetChrPos("SAHAD", 1034.93f, -985.19f, 60.97f)
+	Turn("SAHAD", 94.81f, 360.0f)
+
+	SetChrPos("HUMMEL", 1035.34f, -986.78f, 60.88f)
+	Turn("HUMMEL", 120.78f, 360.0f)
+
+	SetChrPos("Ed",1030.64f, -984.53f, 61.06f)
+	Turn("Ed",-62.29f,360.0f)
+	Wait(20)
+
+	PlayBGM(BGM_EVENT_004, 0)
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//クロスフェードしつつ、アドルたちがエドの前に移動する。
+
+	SetName("穏やかそうな男性")
+	TalkPopup("Ed",0,0,0,0,0)
+	{
+		"#000e#000mああ……"
+		"ようやく人に会えた。\p"
+		"君たちもやはり"
+		"ロンバルディア号の……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	ChangeAnimation("ADOL", "ANI_EV_TEBURI", -1, 1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+	Wait(30)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cアドルたちはこれまでの状況と"
+		"#7C漂流村について軽く話した。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	HeadYes("Ed", 1, 25)
+	SetName("穏やかそうな男性")
+	TalkPopup("Ed",0,0,0,0,0)
+	{
+		"#000e#000mなるほど、みんなで身を寄せ合って……\p"
+		"も、もしかしてアリスンもそこに……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	ChangeAnimation("SAHAD", "ANI_EV_UDEGUMI_S", -1, 1)
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#000e#000mお、その名前が出るっつうことは……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　エドに「！！」エモーション。
+	EmotionEx("Ed", -0.025f, EMO_EX2, 0, 5, 1, 1, 1.0f)	//！！
+	Wait(30)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 1031.644f, -984.950f, 62.537f, 40)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 249.706f, 40)		// 角度
+	ExecuteCmd(1, TurnToChr, "Ed", "SAHAD", 8.0f)
+	WaitThread(1)
+
+	LookChr("Ed", "SAHAD")
+
+	WaitThread(1000)
+	WaitThread(1001)
+
+	SetName("穏やかそうな男性")
+	TalkPopup("Ed",0,1,200,200,0)
+	{
+		"#000e#000mア、アリスンのことを"
+		"知っているんですね！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	EarthQuake(0.02f, 0.02f, 5)
+	SetName("穏やかそうな男性")
+	TalkPopup("Ed", 0, 1, 200, 200, 0)
+	{
+		"#16S彼女は無事なんですね！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	EarthQuake(0.02f, 0.02f, 5)
+	SetName("穏やかそうな男性")
+	TalkPopup("Ed", 0, 1, 200, 200, 0)
+	{
+		"#16S彼女は元気なんですね！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	ChangeAnimation("RICOTTA", "ANI_EV_RYOTEKOSI_S", -1, 1)
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000mふむ、少し落ち着く。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "DANA" , "ANI_EV_WAIT2_S", -1 , 1 )
+	TalkPopup("DANA",0,0,0,0,0)
+	{
+		"#000e#000mええ、まだちゃんと"
+		"名前も伺っていませんし。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	FadeBGM(70,10)
+
+	ChangeAnimation("Ed", "ANI_EV_BORI", -1, 1)
+	Wait(20)
+	SetName("穏やかそうな男性")
+	TalkPopup("Ed", 0, 1, 240, 200, 0)
+	{
+		"#5858V#000e#000mす、すまない……"
+		"自己紹介が遅れたね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	//　　ここでエドを注目するカメラ
+	CrossFade(FADE_NORMAL)
+
+	LookReset("Ed")
+	Turn("Ed", -62.29f, 360.0f)
+
+//	MoveCameraAt(0, 1029.340f, -984.871f, 61.048f, 0)	// 注視点
+//	ChangeCameraDistance(0, 2.702f, 0)		// 基本距離
+//	ChangeCameraElevation(0, 8.775f, 0)	// 基本仰角
+//	RotateCamera(0, 104.060f, 0)				// 角度
+//	ChangeCameraPers(0, 35.000f, 0)			// 視野角
+//	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+//	RollCamera(0, 0.0f, 0)				// ロール回転
+	MoveCameraAt( 0 , 1029.485f , -984.483f , 61.508f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.702f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 8.775f , 0 )	// 基本仰角
+	RotateCamera( 0 , 85.874f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 1029.787f, -983.679f, 62.462f, 200)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 8.774f, 200)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 48.160f, 200)		// 角度
+
+	Wait(50)
+	VisualName("visual/chrname/cn_c114.itp", VN_NAMEVOICE, VN_CHRNAME_RB_X, VN_CHRNAME_RB_Y,VN_NPCNAME_TIME)
+	Wait(60)
+
+	//時限式選択肢
+	//◆SE無効化コマンド置換用
+	SetFlag(TF_MENU_SELECT2,0)
+	MenuReset()
+	MenuAdd( 1 , "" )
+	MenuOpen( TF_MENU_SELECT2 , 0 ,0 , 0 , 0 , 0 , 0 )
+	WaitMenu(VN_NPCNAME_SKIP) //ウェイトしたい数値
+	MenuClose(0,0)
+
+	if(FLAG[TF_MENU_SELECT2] == 1 )
+	{
+		CrossFade(FADE_FAST)
+		VisualNameEnd()
+		StopThread(1000)
+		StopThread(1001)
+		StopThread(1002)
+		StopThread(1003)
+
+		MoveCameraAt( 0 , 1029.787f , -983.679f , 62.462f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 2.702f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 8.774f , 0 )	// 基本仰角
+		RotateCamera( 0 , 48.160f , 0 )				// 角度
+		ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		Wait(FADE_FAST)
+	}
+	else
+	{
+		Wait(30)
+	}
+
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	Wait(80)
+
+	SetName("穏やかそうな男性")
+	TalkPopup("Ed", 0, 1, 240, 200, 0)
+	{
+		"#5859V#000e#000m改めて、僕はアリスンの夫で、"
+		"仕立て屋のエドという。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	//	優しそうな男性
+	TalkPopup("Ed",0,1,240,200,0)
+	{
+		"#5860V#061e#000mとにかくすぐに"
+		"妻の元に案内してくれるかい？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(20)
+
+	StopBGM(120)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+	//　　画面フェードアウト。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cこうしてアドルたちはエドと合流し……\p"
+		"#7Cアリスンの容態について説明しつつ、"
+		"#7C一緒に紫鈴草を摘んでから"
+		"#7C漂流村へと戻るのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　＞「▼クエスト達成イベント」に接続。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1116:QS_510_Look_Ed_ED")
+}
+function "QS_510_Look_Ed_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+	CallFunc("system:reset_chrmot_Ed")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	StopBGM(60)
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+	SetFlag(GF_MP1202_NOW,1)		//屋内に直接飛ぶ場合
+	LoadArg("map/mp1201/mp1201.arg")
+	EventCue("mp1201:QS_510_Complete")		//（続き）
+
+//終了処理ここまで----------------------------------------------------
+}

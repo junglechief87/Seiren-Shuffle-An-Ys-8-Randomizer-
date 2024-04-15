@@ -1,0 +1,3121 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+#include "inc/temp/mp6401m.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// はじまりの大樹山門_過去				                                          //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp4105m" , 0 )
+
+	// イベントエリア設定制御
+	EventAreaEnable( "Stopper_Past_01_02" , 0 )	// 過去編Ⅰ：【ストッパー：山門屋上→西街道方面へ行けない】
+	EventAreaEnable( "Stopper_Past_04_06" , 0 )	// 過去編Ⅳ：【ストッパー：山門屋上→東海道へ行けない】
+	EventAreaEnable( "Stopper_Past_04_07" , 0 )	// 過去編Ⅳ：【ストッパー：山門屋上→西街道へ行けない】
+
+	MapHide( "skycloud" , 0 )		//曇り空非表示
+	if( FLAG[SF_EVENT_ON] )
+	{
+		//一般配置ファンクション呼び出し
+		CallFunc("mp4105m:NpcPosition")
+
+		// イベント制御
+		if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰアドルがいたポイントへ向かう
+		{
+			if( !FLAG[GF_SUBEV_PAST_01_VIEW] )	// 過去編Ⅰ：【サブイベント：過去世界を眺める】を見た
+			{
+				EventCue("mp4105m:SubEV_Past_01_View")		// 過去編Ⅰ：【サブイベント：過去世界を眺める】
+			}
+		}
+		
+		// ストッパー制御
+		if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰアドルがいたポイントへ向かう
+		{
+			EventAreaEnable( "Stopper_Past_01_02" , 1 )	// 過去編Ⅰ：【ストッパー：山門屋上→西街道方面へ行けない】
+		}
+		if( FLAG[GF_PAST_EPISODE_4_GO_CASTLE] )			//▼過去編Ⅳ王宮前へ向かう
+		{
+			MapHide(BG2_cloud,0)		//雲減らす
+
+			EventAreaEnable( "Stopper_Past_04_06" , 1 )	// 過去編Ⅳ：【ストッパー：山門屋上→東海道へ行けない】
+			EventAreaEnable( "Stopper_Past_04_07" , 1 )	// 過去編Ⅳ：【ストッパー：山門屋上→西街道へ行けない】
+		}
+
+		if( FLAG[GF_PAST_EPISODE_6_GO_GARDEN] )			//▼過去編Ⅵセレンの園へ向かう
+		{
+			// 雪
+			Set3DParticle(PARTICLE_TYPE_SNOW, 0.0f,0.0f,-0.1f, 0.1f,0.0f,0.2f, 0.0f,0.0f,0.0f, 0.0f,0.0f,0.0f, 180.0f, 0.0f)
+
+			//曇天にする
+			MapHide( "BG2_sky1" , 0 )		//曇り空表示
+			MapHide( "BG2_sky2" , 0 )		//曇り空表示
+			MapHide( "BG2_cloud", 0 )		//曇り空表示
+			MapHide( "BG2_land" , 0 )		//曇り空表示
+			MapHide( "skycloud" , 1 )		//曇り空表示
+			MapHide(BG2_cloud,0)		//雲減らす
+
+			SetFog(FOG_BOTH, 0x00697380, 20.0f, 600.0f , 1.0f, 0.0f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x005f646c, 400.0f, 1400.0f , 2.0f , 0.6f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+			SetMapLightColor( 1.0f	1.0f	1.0f	1.0f	0.7f )
+		}
+
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 2 ){
+			VisualName("visual/mapname/mn_6212m.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//大樹の寺院・山門
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■配置制御セクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function "NpcPosition"
+{
+	if( FLAG[GF_PAST_EPISODE_6_GO_GARDEN] )				//▼過去編Ⅵセレンの園へ向かう
+	{
+	}
+	else if( FLAG[GF_PAST_EPISODE_5_GO_VALLAY] )		//▼過去編Ⅴ王家の谷へ向かう
+	{
+	}
+	else if( FLAG[GF_PAST_EPISODE_4_2_GO_OUT] )			//▼過去編Ⅳ-２王宮の外へ向かう
+	{
+	}
+	else if( FLAG[GF_PAST_EPISODE_4_GO_CASTLE] )		//▼過去編Ⅳ王宮前へ向かう
+	{
+
+		SetChrPos("Citizen_4_A01",-275.19f	645.19f	115.76f)
+		Turn("Citizen_4_A01",-99.38f,360.0f)
+
+		SetChrPos("Citizen_4_A02",-273.69f	646.18f	115.76f)
+		Turn("Citizen_4_A02",17.45f,360.0f)
+		LookChr("Citizen_4_A02","Citizen_4_A01")
+		LookChr("Citizen_4_A01","Citizen_4_A02")
+
+		SetChrPos("Citizen_4_A03",-261.75f,636.66f,116.66f)
+		Turn("Citizen_4_A03",-12.39f,360.0f)
+		ChangeAnimation( "Citizen_4_A03", "ANI_EV_PRAY", -1, 1 )
+
+		SetChrPos("Citizen_4_A04",-312.76f,613.76f,116.65f)
+		Turn("Citizen_4_A04",-25.01f,360.0f)
+		ChangeAnimation( "Citizen_4_A04", "ANI_EV_PRAY", -1, 1 )
+
+		SetChrPos("Citizen_4_A05",-318.81f	618.13f	116.65f)
+		Turn("Citizen_4_A05",-19.36f,360.0f)
+		ChangeAnimation( "Citizen_4_A05", "ANI_EV_PRAY", -1, 1 )
+
+		SetChrPos("Citizen_4_A06",-319.75f	617.20f	116.65f)
+		Turn("Citizen_4_A06",-54.40f,360.0f)
+		ChangeAnimation( "Citizen_4_A06", "ANI_EV_PRAY", -1, 1 )
+
+//		SetChrPos("Citizen_4_A07",-327.45f	627.73f	115.76f)
+//		Turn("Citizen_4_A07",-113.84f,360.0f)
+//		//npc_mv_t1
+
+	}
+	else if( FLAG[GF_PAST_EPISODE_3_GO_BAHA] )			//▼過去編Ⅲバハの塔へ向かう
+	{
+	}
+	else if( FLAG[GF_PAST_EPISODE_2_GO_SOUTHGATE] )		//▼過去編Ⅱ南門へ向かう
+	{
+	}
+	else if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰアドルがいたポイントへ向かう
+	{
+		SetChrPos("Citizen_1_A01",-261.76f,637.91f,116.65f)
+		Turn("Citizen_1_A01",-15.58f,360.0f)
+		ChangeAnimation("Citizen_1_A01","ANI_EV_PRAY", -1 , 1 )
+
+		SetChrPos("Citizen_1_A03",-315.61f	617.14f	116.65f)
+		Turn("Citizen_1_A03",-44.75f,360.0f)
+		ChangeAnimation("Citizen_1_A03","ANI_EV_PRAY", -1 , 1 )
+
+		SetChrPos("Citizen_1_A04",-313.61f	617.55f	116.65f)
+		Turn("Citizen_1_A04",-35.80f,360.0f)
+		ChangeAnimation("Citizen_1_A04","ANI_EV_PRAY", -1 , 1 )
+
+		//SetChrPos("C390_01",-288.37f	651.43f	115.76f)
+		//Turn("C390_01",-97.77f,360.0f)
+		//SetChrPos("Citizen_1_A02",-285.84f	649.95f	115.76f)
+		//Turn("Citizen_1_A02",141.56f,360.0f)
+		SetChrPos("C390_01",-261.08f	660.91f	115.67f)
+		Turn("C390_01",-113.92f,360.0f)
+
+		SetChrPos("Citizen_1_A02",-266.77f	655.09f	115.74f)
+		Turn("Citizen_1_A02",179.86f,360.0f)
+		ChangeAnimation( "Citizen_1_A02", "ANI_EV_TEKOSI", -1, 1 )
+
+		SetChrPos("Doran",-310.11f	650.90f	116.65f)
+		Turn("Doran",165.67f,360.0f)
+
+		SetChrPos("Rastell",-312.39f	649.99f	116.65f)
+		Turn("Rastell",172.02f,360.0f)
+
+	}
+	else if( FLAG[GF_PAST_EPISODE_D3_WALK_CAPITAL] )	//▼ダーナ編③王都を歩く
+	{
+	}
+	else if( FLAG[GF_PAST_EPISODE_D1A_TEM] )			//▼ダーナ編①Ａ寺院内を歩く
+	{
+	}
+}
+
+function "npc_mv_t1"
+{
+	while(1)
+	{
+		MoveTo("this",-282.42f,648.46f,115.76f,0.5f,0.25f)
+		Wait(60)
+		MoveTo("this",-327.45f,627.73f,115.76f,0.5f,0.25f)
+		Wait(60)
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■一般会話
+//////////////////////////////////////////////////////////////////////
+
+//──────────────────────────────
+//	【ドラン衛士長】
+//──────────────────────────────
+function "Talk_Doran"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰアドルがいたポイントへ向かう
+	{
+		//▼過去編Ⅰアドルがいたポイントへ向かう
+		//───────────────
+		//	場所		：寺院山門屋上（過去）
+		//───────────────
+		//	配置・カメラ：山門入り口脇で歩哨
+		//	モーション	：歩哨
+		//───────────────
+		if( !FLAG[TF_DORAN_TALK] )
+		{
+			PlayVoice(Y8V_5845,"Doran",100)	//巫女様…
+
+			//	ドラン衛士長
+			TalkPopup("this",0,0,0,0,0)
+			{
+				"本来であれば"
+				"供をさせていただく所ですが……\p"
+				"巫女様の腕前であれば"
+				"心配は無用でございましょうな。\p"
+				"しかし、街道を外れると"
+				"野生の竜種も出没いたします。\p"
+				"どうかご油断なさいませんように。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+			SetFlag( TF_DORAN_TALK, 1 )
+		}
+		else
+		{
+			PlayVoice(Y8V_5847,"Doran",100)	//やれやれ…
+
+			//　　★繰り返し
+			//	ドラン衛士長
+			TalkPopup("this",0,0,0,0,0)
+			{
+				"愚息めの事は、どうかご容赦を。\p"
+				"愚息2行目"
+				"職務の邪魔にならぬよう"
+				"固く言いつけておりますのでな。\p"
+				"巫女様、どうかお気をつけて。"
+				"ご油断はなさいませんように。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+
+//──────────────────────────────
+//	【ラステル】
+//──────────────────────────────
+function "Talk_Rastell"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰアドルがいたポイントへ向かう
+	{
+		//▼過去編Ⅰアドルがいたポイントへ向かう
+		//───────────────
+		//	場所		：寺院山門屋上（過去）
+		//───────────────
+		//	配置・カメラ：山門入り口脇で歩哨
+		//	モーション	：歩哨
+		//───────────────
+
+		//PlayVoice(Y8V_5783,"Rastell",100)	//ふふ
+		PlayVoice(Y8V_6016,"Rastell",100)	//えへへ
+
+		//	ラステル
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"街道を行き来する人たちを"
+			"見るのって、楽しいです。\p"
+			"この人たちが暮らしている世界を"
+			"守ってるんだなって感じがして……\p"
+			"えへへ、早く本物の衛士になって"
+			"見回りをしたいなぁ……！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+
+//──────────────────────────────
+//	【参拝者】
+//──────────────────────────────
+function "Talk_Citizen_1_A01"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰアドルがいたポイントへ向かう
+	{
+		//▼過去編Ⅰアドルがいたポイントへ向かう
+		//───────────────
+		//	場所		：寺院山門屋上（過去）
+		//───────────────
+		//	配置・カメラ：大樹に向かって祈る
+		//	モーション	：
+		//───────────────
+		//	参拝者
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"ここからは《はじまりの大樹》が"
+			"間近に見れるんですよ。\p"
+			"ありがたいことです……"
+			"どうか私たちをお導きください……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	ExecuteCmd( 1000, Turn,"Citizen_1_A01",-15.58f,8.0f)
+
+	WaitThread(1000)
+	ChangeAnimation( "this", "ANI_EV_PRAY_S", -1, 1 )
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+
+//──────────────────────────────
+//	【行商人】
+//──────────────────────────────
+function "Talk_Citizen_1_A02"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰアドルがいたポイントへ向かう
+	{
+		//▼過去編Ⅰアドルがいたポイントへ向かう
+		//───────────────
+		//	場所		：寺院山門屋上（過去）
+		//───────────────
+		//	配置・カメラ：東の方で大樹に向かって祈る
+		//	モーション	：
+		//───────────────
+
+		PlayVoice(Y8V_5744,"this",100)	//おっと
+
+		//	参拝者
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"おや、東のティティス参道へ"
+			"向かわれるのですか？\p"
+			"それならばこの先でございますよ。"
+			"大樹の恵みがあらん事を。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+
+//──────────────────────────────
+//	【旅人】
+//──────────────────────────────
+function "Talk_Citizen_1_A04"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰアドルがいたポイントへ向かう
+	{
+		//▼過去編Ⅰアドルがいたポイントへ向かう
+		//───────────────
+		//	場所		：寺院山門屋上（過去）
+		//───────────────
+		//	配置・カメラ：大樹に向かって祈る
+		//	モーション	：祈りのポーズ
+		//───────────────
+		//　　振り向かない
+		//	行商人
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"……大樹よ、わたくしどもの旅路に"
+			"恵みをお与えくださらんことを……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+//──────────────────────────────
+//	【旅人】
+//──────────────────────────────
+function "Talk_Citizen_1_A03"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰアドルがいたポイントへ向かう
+	{
+		//▼過去編Ⅰアドルがいたポイントへ向かう
+		//───────────────
+		//	場所		：寺院山門屋上（過去）
+		//───────────────
+		//	配置・カメラ：大樹に向かって祈る
+		//	モーション	：祈りのポーズ
+		//───────────────
+		//	旅人
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"これから遠方の親戚に"
+			"会いに行くんです。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		PlayVoice(Y8V_5773,"this",100)	//ふふ
+		Wait(10)
+		
+		//	旅人
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"ふふっ、あちらの一家と"
+			"会うのは何年ぶりかしら。"
+			"とっても楽しみです。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+	}
+
+	ExecuteCmd( 1000, Turn,"Citizen_1_A03",-44.75f,8.0f)
+
+	WaitThread(1000)
+	ChangeAnimation( "this", "ANI_EV_PRAY_S", -1, 1 )
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//■過去編Ⅳ　モブ
+
+//──────────────────────────────
+//	【参拝者】Citizen_4_A01
+//──────────────────────────────
+function "Talk_Citizen_4_A01"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_4_GO_CASTLE] )			//▼過去編Ⅳ王宮前へ向かう
+	{
+		//▼過去編Ⅳ王宮前へ向かう
+		//───────────────
+		//	場所		：寺院山門（過去）
+		//───────────────
+		//	配置・カメラ：
+		//	モーション	：
+		//───────────────
+		//　　振り向かない
+		//	参拝者
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"今年の収穫祭は"
+			"素晴らしいものでしたなぁ！\p"
+			"さすがはダーナ様、"
+			"この“最も幸福な時代”を"
+			"築かれたお方でございます！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+	
+	LookChr("Citizen_4_A01","Citizen_4_A02")
+}
+
+//──────────────────────────────
+//	【参拝者】Citizen_4_A02
+//──────────────────────────────
+function "Talk_Citizen_4_A02"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_4_GO_CASTLE] )			//▼過去編Ⅳ王宮前へ向かう
+	{
+		//▼過去編Ⅳ王宮前へ向かう
+		//───────────────
+		//	場所		：寺院山門（過去）
+		//───────────────
+		//	配置・カメラ：
+		//	モーション	：
+		//───────────────
+		//　　振り向かない
+
+		ChangeAnimation("this","ANI_EV_TEBURI", -1 , 1 )
+
+		//	参拝者
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"この歳まで生きてきたが、"
+			"あれほどの収穫祭は初めてだったよ。\p"
+			"サライ様もダーナ様も立派になられた……"
+			"思わず感涙してしまったほどさ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+	
+	LookChr("Citizen_4_A02","Citizen_4_A01")
+}
+
+//──────────────────────────────
+//	【参拝者】Citizen_4_A03
+//──────────────────────────────
+function "Talk_Citizen_4_A03"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_4_GO_CASTLE] )			//▼過去編Ⅳ王宮前へ向かう
+	{
+		//▼過去編Ⅳ王宮前へ向かう
+		//───────────────
+		//	場所		：寺院山門（過去）
+		//───────────────
+		//	配置・カメラ：
+		//	モーション	：
+		//───────────────
+		if( !FLAG[TF_TALK_MOB01] )
+		{
+			LookChr("this","LEADER")
+
+			//	参拝者
+			TalkPopup("this",0,0,0,0,0)
+			{
+				"祖母の病がよくなるよう"
+				"毎日お祈りをしているんです。\p"
+				"大いなる大樹ですもの……"
+				"きっと願いを叶えてくださいます。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+			SetFlag( TF_TALK_MOB01, 1 )
+		}
+		else
+		{
+			//　　★繰り返し
+			//　　※カメラ切り替えなし
+			//　　振り返らない
+			//	参拝者
+			TalkPopup("this",0,0,0,0,0)
+			{
+				"ああ、大樹よ……"
+				"どうかわたくしの願いを"
+				"聞き入れてくださいませ……"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+//──────────────────────────────
+//	【参拝者】Citizen_4_A04
+//──────────────────────────────
+function "Talk_Citizen_4_A04"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_4_GO_CASTLE] )			//▼過去編Ⅳ王宮前へ向かう
+	{
+		//▼過去編Ⅳ王宮前へ向かう
+		//───────────────
+		//	場所		：寺院山門（過去）
+		//───────────────
+		//	配置・カメラ：
+		//	モーション	：
+		//───────────────
+		//　　振り返らない
+		//	参拝者
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"はるか神代よりこの世を照らし、"
+			"我らを導く大いなる大樹よ……\p"
+			"来年もどうか、よき恵みを"
+			"お与えくださいますよう……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+//──────────────────────────────
+//	【参拝者】Citizen_4_A05
+//──────────────────────────────
+function "Talk_Citizen_4_A05"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_4_GO_CASTLE] )			//▼過去編Ⅳ王宮前へ向かう
+	{
+		//▼過去編Ⅳ王宮前へ向かう
+		//───────────────
+		//	場所		：寺院山門（過去）
+		//───────────────
+		//	配置・カメラ：
+		//	モーション	：
+		//───────────────
+		//　　振り返らない
+		//	参拝者
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"お姉ちゃん、"
+			"しっかりお祈りしておこう。\p"
+			"家内安全、商売繁盛、"
+			"一攫千金、恋愛成就……！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+//──────────────────────────────
+//	【参拝者】Citizen_4_A06
+//──────────────────────────────
+function "Talk_Citizen_4_A06"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if( FLAG[GF_PAST_EPISODE_4_GO_CASTLE] )			//▼過去編Ⅳ王宮前へ向かう
+	{
+		//▼過去編Ⅳ王宮前へ向かう
+		//───────────────
+		//	場所		：寺院山門（過去）
+		//───────────────
+		//	配置・カメラ：
+		//	モーション	：
+		//───────────────
+		//　　振り返らない
+
+		Look("this" , -150 , 10 )
+		PlayVoice(Y8V_5765,"this",100)	//ふう
+
+		//	参拝者
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"あなたって子は……"
+			"もっと真面目にお参りしなさい。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//　　首向きを戻す
+		LookReset("this")
+		//	参拝者
+		TalkPopup("this",0,0,0,0,0)
+		{
+			"どうか来年も多くの実りを"
+			"お与えくださいますように。\p"
+			"大禍大病を退け、"
+			"家族が元気で暮らせますように。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+////──────────────────────────────
+////	【参拝者】Citizen_4_A07
+////──────────────────────────────
+//function "Talk_Citizen_4_A07"
+//{
+//	SetStopFlag(STOPFLAG_TALK)
+//	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+//
+//	if( FLAG[GF_PAST_EPISODE_4_GO_CASTLE] )			//▼過去編Ⅳ王宮前へ向かう
+//	{
+//		//▼過去編Ⅳ王宮前へ向かう
+//		//───────────────
+//		//	場所		：寺院山門（過去）
+//		//───────────────
+//		//	配置・カメラ：ルートムーブ
+//		//	モーション	：
+//		//───────────────
+//		//	参拝者
+//		TalkPopup("this",0,0,0,0,0)
+//		{
+//			"◆これはダーナ様……！"
+//		}
+//		WaitPrompt()
+//		WaitCloseWindow()
+//	}
+//
+//	ResetStopFlag(STOPFLAG_TALK)
+//}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+function "EV_M05S210"			//過去Ⅳ　兵士の一団に遭遇する
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//過去Ⅳ　開始処理呼び出し
+	CallFunc("system:BackTo_EPISODE_4")
+	SetFlag(GF_PAST_EPISODE_4B_REARRIVE, 0)	//▽過去編ⅣＢ再訪時	※メインイベント内でOFFにします
+	SetFlag(SF_PAST_AGAIN, 0)		//初回はメニューから帰還を禁止
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA",-291.66f, 636.25f, 115.78f)
+	Turn("DANA",-134.45f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+	LookChr("DANA", "Zijo")
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("Olga", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Olga",-290.39f, 637.13f, 115.78f)
+	Turn("Olga",65.67f,360.0f)
+	ChangeAnimation("Olga", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("Olga", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("Olga", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("Olga", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("Olga")
+	SetChrInfoFlag("Olga", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("Doran", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Doran",-304.45f, 637.91f, 115.76f)
+	Turn("Doran",-113.13f,360.0f)
+	ChangeAnimation("Doran", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("Doran", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("Doran", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+//	ChangeSubAnimation("Doran", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("Doran")
+	SetChrInfoFlag("Doran", INFOFLAG_NOCHRATARI)
+
+	SetChrPos("soldierA",-305.39f, 635.26f, 115.76f)
+	Turn("soldierA",-113.13f,360.0f)
+	
+	SetChrPos("soldierB",-308.48f, 637.94f, 115.76f)
+	Turn("soldierB",-113.13f,360.0f)
+
+	SetChrPos("C390_01",-310.91f, 634.84f, 115.76f)
+	Turn("C390_01",-113.13f,360.0f)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -296.614f , 638.127f , 118.632f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.302f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.543f , 0 )	// 基本仰角
+	RotateCamera( 0 , 239.012f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// ポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 170.000 ,0.000 ,0.450 ,0.600)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp4105m:EV_M05S210_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　　画面フェードインして過去の山門屋上──
+
+	Wait(30)
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+	//　　会話しているダーナとオルガを映した直後に
+	//　　画面が一瞬暗くなって元に戻るような表現。
+
+	PlayBGM(BGM_TOWN_401, 0)
+
+	LookChr("DANA", "Olga")
+	LookChr("Olga", "DANA")
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -296.614f , 638.127f , 117.312f , 160 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+
+	Wait(30)
+	ChangeAnimation( "DANA", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	EmotionEx("DANA", 0.00f, EMO_WAI, 0, 5, 1, 0, 1.0f )	// 「ワイワイ」
+	Wait(30)
+	
+	ChangeAnimation( "Olga", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	Wait(20)
+	HeadYes("Olga", 1, 25)	// キャラ, うなずき回数, 速さ
+
+//	// カメラ待ち
+//	WaitThread(1000)
+
+	Wait(35)
+
+	PlaySE(SE_M05S210_01, 40, 0, 0, 0, 1.0f, 0)
+	// 擬似フェードアウト表示
+	Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+	Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.6f, 15)
+	Wait(15)
+	Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, 30)
+	Wait(20)
+
+	Wait(30)
+
+	// カット2 ----------------------------------------------------------------------------------------
+
+	//　　ダーナが空を見上げて「？」エモーション表示。
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	StopThread(1000)
+
+	// カメラ
+	MoveCameraAt( 0 , -291.021f , 636.922f , 117.352f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.702f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.199f , 0 )	// 基本仰角
+	RotateCamera( 0 , 167.446f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	LookReset("DANA")
+	Look("DANA", 0.0f, 15.0f)	// 見上げる
+	Wait(10)
+	EmotionEx("DANA", 0.00f, EMO_Q, 0, 5, 1, 1, 1.0f )	// 「？」
+	Wait(45)
+
+	FadeBGM(70,10)
+
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#3230V#000e#000m#0L……………………………………"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Olga", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+
+	// オルガ
+	TalkPopup("Olga",0,1,0,0,0) {
+		"#5361V#000e#000mダーナ、どうしたのだ？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット3 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ
+	MoveCameraAt( 0 , -291.417f , 636.526f , 117.312f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 0.742f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.826f , 0 )	// 基本仰角
+	RotateCamera( 0 , 162.012f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	LookChr("DANA", "Olga")
+	ChangeAnimation( "DANA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_SAD_S,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_SAD_S,1)
+
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#3231V#000m今、太陽の光が一瞬"
+		"翳った気がしたんだけど……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット4 ----------------------------------------------------------------------------------------
+
+	//　　オルガも空を見上げる。
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// カメラ
+	MoveCameraAt( 0 , -291.206f , 636.354f , 117.312f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.222f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -11.849f , 0 )	// 基本仰角
+	RotateCamera( 0 , 343.828f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Look("Olga", 0.0f, 20.0f)	// 見上げる
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	// オルガ
+	TalkPopup("Olga",0,2,0,0,0) {
+		"#5362V#031l#000m気のせいではないのか？"
+		"雲は出ていないようだが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Look("DANA", 0.0f, -5.0f)	// うつむく
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_SAD_CLOSE_S, 1)
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#3232V#061e#000mう、うん…………"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　胸騒ぎで表情が曇るダーナ。
+
+	LookReset("Olga")
+	LookChr("Olga", "DANA")
+
+	// オルガ
+	TalkPopup("Olga",0,2,0,0,0) {
+		"#032l#000mそれよりもあの王宮が"
+		"消滅してしまうというのは本当か？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("DANA", "Olga")
+
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_SAD_CLOSE_S, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_SAD_CLOSE_S,1)
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#062e#000mうん……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット3 ----------------------------------------------------------------------------------------
+
+	//　　オルガが王都方面を眺めやる。
+
+	FadeBGM(100,30)
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	
+	// カメラ
+	MoveCameraAt( 0 , -291.368f , 637.305f , 117.552f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.982f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.041f , 0 )	// 基本仰角
+	RotateCamera( 0 , 7.881f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 3000.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SetDoF(0, LERP_LINEAR, 5.000, 250.000 ,0.000 ,0.450 ,0.600)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -291.560f , 637.548f , 117.552f , 600 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.982f , 600 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 0.182f , 600 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 24.211f , 600 )
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	LookTo("Olga", -299.904f , 659.393f , 117.632f)	// 座標：王都のほう
+	Turn("Olga", 136.73f, 6.0f)
+	Wait(10)
+
+	// オルガ
+	TalkPopup("Olga",0,1,0,0,0) {
+		"#000e#000m#0L……………………………………"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Olga", "ANI_EV_KATATEKOSI_S", -1, 1 )	// 片手腰
+	
+	// オルガ
+	TalkPopup("Olga",0,1,0,0,0) {
+		"#011e#000m……私とサライは"
+		"生まれも育ちもあの王都だからな。\p"
+		"情けないことに平然と"
+		"受け止められる話ではないようだ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "DANA", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,-30,1) {
+		"#000l#000e#000mオルガちゃん……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Olga", "ANI_EV_KATATEKOSI_E", -1, 1 )	// 片手腰
+
+	// オルガ
+	TalkPopup("Olga",0,1,0,0,0) {
+		"#000e#000mそれと気にかかるのが"
+		"やはり“大穴”の存在だ……\p"
+		"一体いつからそんなものが王都に──"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	野太い声
+	SetName("野太い声")
+	TalkPopup(UNDEF,0,3,80,60,0) {
+		"#16Sよし、全員急げよ！"
+		"#16S今日中に片づけてしまうぞ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+	
+	Wait(10)
+
+	// カット4 ----------------------------------------------------------------------------------------
+
+	//　　列をなした兵士たちが不意に
+	//　　ダーナたちの前を通り過ぎようとする。
+	//　　先頭の兵士に「！」エモーション。
+	//　　全員立ち止まってダーナのほうへ向きなおる。
+	
+	// クロスフェード
+	CrossFade(FADE_FAST)
+	
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	
+	// カメラ
+	MoveCameraAt( 0 , -290.248f , 636.816f , 116.644f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.182f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.251f , 0 )	// 基本仰角
+	RotateCamera( 0 , 74.617f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	// 位置調整・表情・モーション
+	SetChrPos("DANA", -291.41f, 636.18f, 115.78f)
+	Turn("DANA", 140.28f, 360.0f)
+	SetChrPos("Olga", -290.39f, 637.13f, 115.78f)
+	Turn("Olga", 108.31f, 360.0f)
+	LookChr("DANA", "Doran")
+	LookChr("Olga", "Doran")
+	
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -290.504f , 637.582f , 117.524f , 120 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.182f , 120 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.328f , 120 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 91.810f , 120 )
+	
+	// 移動
+	ExecuteCmd(1, MoveTo, "Doran", -297.94f, 640.51f, 115.76f, 0.1f, 0.22f)
+	Wait(3)
+	ExecuteCmd(2, MoveTo, "soldierA", -299.24f, 637.94f, 115.76f, 0.1f, 0.22f)
+	Wait(3)
+	ExecuteCmd(3, MoveTo, "soldierB", -301.47f, 640.61f, 115.76f, 0.1f, 0.22f)
+	ExecuteCmd(4, MoveTo, "C390_01", -304.71f, 637.54f, 115.76f, 0.1f, 0.22f)
+	PlaySE(SE_M05S210_02, 60, 1, 1000, 0, 1.0f, 0)
+
+	Wait(80)
+	
+	EmotionEx("Doran", 0.00f, EMO_EX, 0, 5, 1, 1, 2.0f )	// 「！」
+	LookChr("Doran", "DANA")
+
+	// 移動待ち
+	WaitThread(1)
+	TurnToChr("Doran", "DANA", 7.0f)
+
+	WaitThread(2)
+	TurnToChr("soldierA", "DANA", 7.0f)
+	WaitThread(3)
+	TurnToChr("soldierB", "DANA", 7.0f)
+	WaitThread(4)
+	StopSE(SE_M05S210_02, 300)
+	
+	// ドラン衛士長
+	TalkPopup("Doran",0,0,0,0,0) {
+		"これはこれは……"
+		"ダーナ様ではないですか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	// カット5 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	
+	// カメラ
+	MoveCameraAt( 0 , -291.330f , 636.969f , 117.544f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.222f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.094f , 0 )	// 基本仰角
+	RotateCamera( 0 , 46.143f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	// 位置調整・表情・モーション
+	SetChrPos("Doran", -294.79f, 638.96f, 115.77f)
+	Turn("Doran", -56.99f, 360.0f)
+	LookChr("Doran", "Olga")
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -291.330f , 636.969f , 117.544f , 600 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.222f , 600 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -4.532f , 600 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 56.747f , 600 )
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "Doran", -292.85f, 637.82f, 115.77f, 0.1f, 0.22f)
+
+	// 移動待ち
+	WaitThread(1)
+
+	// ドラン衛士長
+	TalkPopup("Doran",0,2,0,0,0) {
+		"今日は祭司長までご一緒とは……"
+		"城下に向かわれるのですかな？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Doran", "DANA")
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#000e#000mうん、ちょっと"
+		"王都で調べたい事があって。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// うなずきセット
+	HeadYes("Doran" , 1 , 25 )
+	ChangeSubAnimation("Doran", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Wait(15)
+	ChangeSubAnimation("Doran", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+	// ドラン衛士長
+	TalkPopup("Doran",0,2,0,0,0) {
+		"おお、そうでしたか……\p"
+		"我々にお手伝いできることがあれば、"
+		"何なりとお申し出ください。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "DANA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#000e#000mうん、ありがとう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Olga", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	// オルガ
+	TalkPopup("Olga",0,1,0,0,0) {
+		"#000e#000mそなたたちはどこへ向かうのだ？"
+		"ずいぶんと大所帯のようだが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//PlayVoice(Y8V_5846,"Doran",100)	//ええ
+
+	LookChr("Doran", "Olga")
+
+	// ドラン衛士長
+	TalkPopup("Doran",0,2,0,0,0) {
+		"サライ女王陛下の命で"
+		"食料の貯蔵を行うのです。\p"
+		"何でも今年は凶作の可能性が高いと"
+		"ダーナ様が予言されたとか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Olga", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+
+	// オルガ
+	TalkPopup("Olga",0,1,0,0,0) {
+		"#000e#000m昨日出した予言ではないか……\p"
+		"もう対応して動いているとは"
+		"さすがはサライ女王だな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット6 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	// カメラ
+	MoveCameraAt( 0 , -292.226f , 637.196f , 117.744f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.222f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 7.500f , 0 )	// 基本仰角
+	RotateCamera( 0 , 270.926f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 4.6f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ChangeAnimation( "DANA", "ANI_WAIT", -1, 1 )	// 待機
+
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -292.226f , 637.196f , 117.744f , 600 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.222f , 600 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 3.776f , 600 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 282.956f , 600 )
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	HeadYes("Doran", 1, 25)	// キャラ, うなずき回数, 速さ
+	PlayVoice(Y8V_5846,"Doran",100)	//ええ
+
+	// ドラン衛士長
+	TalkPopup("Doran",0,1,0,0,0) {
+		"ええ、例え凶作が来たとしても"
+		"我々には何の不安もありませんよ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Doran", "DANA")
+
+	// ドラン衛士長
+	TalkPopup("Doran",0,1,0,0,0) {
+		"何せ我がエタニア王国には"
+		"サライ女王とダーナ様……\p"
+		"“最も幸福な時代”を築いた"
+		"お二人が揃っておいでなのですから。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "DANA", "ANI_EV_HOHOKAKI", -1, 1 )	// 頬かき
+	PlayVoice(Y8V_3004,"DANA",100)	//あはは…（苦笑）
+
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#101e#080mあ、あはは……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット7 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	
+	// カメラ
+	MoveCameraAt( 0 , -291.158f , 636.698f , 117.584f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.222f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 0.052f , 0 )	// 基本仰角
+	RotateCamera( 0 , 66.769f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , -0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	// ドラン衛士長
+	TalkPopup("Doran",0,2,0,0,0) {
+		"さて、それではそろそろ"
+		"我々は任地へ向かいます。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	HeadYes("Olga", 1, 25)	// キャラ, うなずき回数, 速さ
+
+	// オルガ
+	TalkPopup("Olga",0,1,0,0,0) {
+		"#000e#000mうむ、引き留めてしまってすまない。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Doran", "Olga")
+
+	// ドラン衛士長
+	TalkPopup("Doran",0,2,0,0,0) {
+		"とんでもありません。"
+		"それでは失礼いたします！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット8 ----------------------------------------------------------------------------------------
+
+	//　　規律正しく去っていく兵士たちの一団。
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// カメラ
+	MoveCameraAt( 0 , -291.974f , 636.799f , 116.688f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.161f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -0.474f , 0 )	// 基本仰角
+	RotateCamera( 0 , 307.717f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , -0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	LookSpd("DANA", 1.0f, 1.0f, 1.0f)
+	LookSpd("Olga", 1.0f, 1.0f, 1.0f)
+	SetChrPos("DANA",-291.66f, 636.27f, 115.78f)
+	Turn("DANA",-177.08f,360.0f)
+	SetChrPos("Olga",-290.39f, 636.99f, 115.78f)
+	Turn("Olga",150.95f,360.0f)
+
+	SetChrPos("Doran",-284.40f, 646.57f, 115.76f)
+	TurnTo("Doran",-241.80f, 667.49f, 116.61f,360.0f)
+
+	SetChrPos("soldierA",-285.67f, 644.30f, 115.76f)
+	TurnTo("soldierA",-242.86f, 665.49f, 116.62f,360.0f)
+	SetChrPos("soldierB",-287.53f, 646.75f, 115.76f)
+	TurnTo("soldierB",-245.49f, 667.28f, 116.54f,360.0f)
+
+	SetChrPos("C390_01",-291.81f, 643.17f, 115.76f)
+	TurnTo("C390_01",-250.12f, 664.03f, 116.30f,360.0f)
+
+	LookReset("Doran")
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)	// 目
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -292.067f , 636.953f , 117.148f , 130 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.161f , 130 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -2.479f , 130 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 292.820f , 130 )
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "Doran", -241.80f, 667.49f, 116.61f, 0.1f, 0.18f)
+	Wait(3)
+	ExecuteCmd(2, MoveTo, "soldierA", -242.86f, 665.49f, 116.62f, 0.1f, 0.18f)
+	Wait(3)
+	ExecuteCmd(3, MoveTo, "soldierB", -245.49f, 667.28f, 116.54f, 0.1f, 0.18f)
+	ExecuteCmd(4, MoveTo, "C390_01", -250.12f, 664.03f, 116.30f, 0.1f, 0.18f)
+	PlaySE(SE_M05S210_02, 60, 1, 300, 0, 1.0f, 0)
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+	
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	Wait(10)
+
+	StopSE(SE_M05S210_02, 4000)
+	
+	// カット9 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_FAST)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	
+	// カメラ
+	MoveCameraAt( 0 , -290.907f , 636.970f , 117.328f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.161f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.245f , 0 )	// 基本仰角
+	RotateCamera( 0 , 161.615f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , -0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// フェード待ち
+	Wait(FADE_FAST)
+	
+	LookSpd("DANA", LOOKSPD_DEFAULT, LOOKSPD_DEFAULT, LOOKSPD_DEFAULT)
+	LookSpd("Olga", LOOKSPD_DEFAULT, LOOKSPD_DEFAULT, LOOKSPD_DEFAULT)
+
+	ChangeAnimation( "DANA", "ANI_EV_RYOTEMAE_S", -1, 1 )	// 両手 前組み
+	
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#051e#000m……言えなかったね。\p"
+		"王宮が消えてしまうから、"
+		"その原因を調べたいなんて……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Olga", "DANA")
+	Turn("Olga", 97.65f, 7.0f)
+	LookChr("DANA", "Olga")
+
+	// オルガ
+	TalkPopup("Olga",0,1,0,0,0) {
+		"#000e#000mそれでいい、これ以上"
+		"無用な混乱を招くべきではない。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Olga", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	// オルガ
+	TalkPopup("Olga",0,1,0,0,0) {
+		"さてと、ダーナ。"
+		"我々もそろそろ行くとしよう。\p"
+		"アドルとやらが目指しているのは"
+		"王宮前の空中回廊だったか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// うなずきセット
+	HeadYes("DANA" , 1 , 25 )
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_SAD_CLOSE_S, 1)
+	Wait(15)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#000mうん、アドルさんが“大穴”へ"
+		"到着できるよう急がなきゃ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ここで操作許可。
+
+	StopBGM(60)
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp4105m:EV_M05S210_ED")
+}
+
+function "EV_M05S210_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// 移動停止
+	StopThread(1)
+	StopThread(2)
+	StopThread(3)
+	StopThread(4)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	SetChrPos("Olga", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+	SetChrPos("Doran", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+	SetChrPos("soldierA", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+	SetChrPos("soldierB", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+	SetChrPos("C390_01", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+	CallFunc("system:reset_chrmot_Olga")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ
+	SetFlag(GF_05MP6202_GOTO_SKYWAY,1)	//過去Ⅳ　兵士の一団に遭遇する
+	SetFlag(SF_SETRAMSAVE,1)		//リトライセーブ
+	SetFlag(SF_WARP_DISABLED,1)			//ワープ禁止	
+
+	CallFunc("mp4105m:init")
+
+	//マップマーカー
+	CallFunc("system:SetMarkerDANA")	//クエスト系マーカー処理
+	SetMapMarker( SMI_DANA_SYMBOL ,PAGE_MF002, MARKER_EV_M05S220, -557.77f, 1263.56f, 23.00f, -557.77f, 1263.56f,MARKER_EV_M05S220,MN_F_MP6204M,0)		//メイン：過去Ⅳ　空中回廊に苗木を植える
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-293.91f, 640.60f, 115.76f)
+	Turn("LEADER",-28.51f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -293.910f , 640.602f , 117.630f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 13.232f , 0 )	// 基本仰角
+	RotateCamera( 0 , -151.491f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	CallFunc("system:camera_reset")
+
+	VisualName("visual/portrait/ep_0140.itp",VN_NAMEMAP,-1,-1,VN_MAPNAME_TIME)//過去Ⅳ
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	PlayBGM(BGM_4105_M, 0)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+//──────────────────────────────
+//	【サブイベント：過去世界を眺める】
+//──────────────────────────────
+function "SubEV_Past_01_View"
+{
+
+//　　山門の屋上に出るとイベント起動。
+
+//開始処理ここから----------------------------------------------------
+
+//	CallFunc("system:event_begin")
+
+	SetStopFlag(STOPFLAG_EVENTIMPOSE)
+
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+//	SetChrPos("DANA",-294.28f,643.16f,115.76f)
+	SetChrPos("DANA",-289.44f, 631.29f, 115.80f)
+	Turn("DANA",154.00f,360.0f)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("DANA")
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	SetChrWork("Doran", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetChrPos("Doran",-297.06f, 636.88f, 115.77f)
+	Turn("Doran",-78.09f,360.0f)
+	ChangeAnimation( "Doran" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Doran",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Doran",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("Doran",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr( "Doran", "DANA" )
+	SetChrInfoFlag( "Doran" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("Rastell", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Rastell",-298.11f, 635.89f, 115.77f)
+	Turn("Rastell",-88.75f,360.0f)
+	ChangeAnimation( "Rastell" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Rastell",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Rastell",SUBMOT_MOUTH,ANI_M_SMILE,1)
+//	ChangeSubAnimation("Rastell",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("Rastell", "DANA" )
+	SetChrInfoFlag( "Rastell" , INFOFLAG_NOCHRATARI)
+
+	SetFlag(SF_CHARANORECVSHADOW,1)	//キャラ影受けない
+
+
+	//カメラ設定
+	MoveCameraAt( 0 , -279.469f , 633.808f , 126.464f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 12.280f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -0.752f , 0 )	// 基本仰角
+	RotateCamera( 0 , 68.638f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 5000.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 6.000, 230.000 ,1.000 ,0.700 ,0.630)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp4105m:SubEV_Past_01_View_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+	//　　カメラを動かして、遠景に広がる世界を見せ
+	//　　ダーナが歩いてきてそれを眺める。
+
+	// 非表示・再表示
+	SetChrInfoFlag("Doran", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("Rastell", INFOFLAG_INVISIBLE)	// 非表示
+
+//	// カメラ移動
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -277.674f , 635.266f , 126.464f , 180 )
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 12.280f , 180 )
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -0.752f , 180 )
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 15.066f , 180 )
+//
+//	// フェードイン
+//	FadeIn(FADE_BLACK,FADE_NORMAL)
+//	WaitFade()
+//
+//	// カメラ待ち
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+//
+//	Wait(20)
+
+	// カット2 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// カメラ
+//	MoveCameraAt( 0 , -290.102f , 633.027f , 117.648f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.100f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 1.518f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 44.399f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 5000.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	MoveCameraAt( 0 , -290.102f , 633.027f , 118.020f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.600f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -13.986f , 0 )	// 基本仰角
+	RotateCamera( 0 , 62.540f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 5000.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -291.816f , 634.953f , 117.188f , 115 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.380f , 115 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 0.086f , 115 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 9.162f , 115 )
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "DANA", -291.27f, 634.52f, 115.79f, 0.1f, 0.185f)
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeBGM(70,30)
+	SoundEfx( SEFX_EV_HILL, 15 )
+
+	// 移動待ち
+	WaitThread(1)
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+	
+	ChangeAnimation( "DANA", "ANI_EV_RYOTESIRI_S", -1, 1 )	// 両手 尻組み
+
+	TalkMes("DANA","#6161V#000e#000mふふっ、今朝もいい風……","","")
+	WaitPrompt()
+	TalkMes("DANA","#6162Vそれに遠くまでよく見える。",
+		"空気が澄んでるみたいだね。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+//	PlayVoice(Y8V_5845,"Doran",100)	//巫女様…
+
+	//	重々しい声
+	SetName("重々しい声")
+	TalkMes("Doran","#6163V#000e#000mおや、巫女様ではござらんか。","","")
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	//　　ダーナがＰＡエモーションで振り向くと
+	EmotionEx("DANA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	Wait(40)
+
+
+	// カット2 ----------------------------------------------------------------------------------------
+
+	//　　歩哨をしているドランとラステルがいる	
+	//　　（ドランは正式な槍持ち、ラステルは手を後ろで組んで軍人立ちなど）
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ
+	MoveCameraAt( 0 , -292.522f , 635.229f , 117.064f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.901f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.351f , 0 )	// 基本仰角
+	RotateCamera( 0 , 52.085f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 5000.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 非表示・再表示
+	ResetChrInfoFlag("Doran", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("Rastell", INFOFLAG_INVISIBLE)	// 再表示
+
+	SetChrPos("DANA", -292.09f, 634.92f, 115.79f)
+	Turn("DANA", 100.72f, 360.0f)
+	LookChr("DANA", "Doran")
+	ChangeAnimation( "DANA", "ANI_WAIT", -1, 1 )	// 待機
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -293.037f , 635.188f , 117.324f , 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.901f , 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -5.075f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 38.910f , 100 )
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "Doran", -293.97f, 636.33f, 115.78f, 0.1f, 0.215f)
+	ExecuteCmd(2, MoveTo, "Rastell", -294.14f, 634.85f, 115.78f, 0.1f, 0.215f)
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	// 移動待ち
+	WaitThread(1)
+	WaitThread(2)
+
+	// カメラ待ち
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+
+//	PlayVoice(Y8V_5781,"Rastell",100)	//えへへ
+
+	// ラステル
+	TalkMes("Rastell","#6164V#021e#080m巫女様っ、おはようございます！")
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	CrossFade(FADE_FAST)
+
+	MoveCameraAt( 0 , -292.246f , 634.935f , 117.235f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.461f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.478f , 0 )	// 基本仰角
+	RotateCamera( 0 , 299.997f , 0 )				// 角度
+	ChangeCameraPers( 0 , 41.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 5000.000f )			// ZPlane
+	RollCamera( 0 , -0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_FAST)
+
+	LookChr("DANA", "Rastell")
+	
+	// ダーナ
+	TalkMes("DANA","#6165V#000e#080mドラン、それにラステルも。")
+	WaitPrompt()
+
+	TalkMes("DANA","#6166V#021e#080mふふ、今日は街道筋の巡回のようですね。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , -294.273f , 635.655f , 117.671f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.132f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -8.121f , 0 )	// 基本仰角
+	RotateCamera( 0 , 33.424f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 5000.000f )			// ZPlane
+	RollCamera( 0 , 4.6f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	LookChr("DANA", "Doran")
+
+	// ドラン
+	TalkMes("Doran","#6167V#011e#000mあくまでわしは、ですがな。")
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Rastell", "ANI_EV_BACKTEKUMI_S", -1, 1 )	// 手後ろ組み
+
+	// ラステル
+	TalkMes("Rastell",
+		"#6168V#080mえっへん、僕も父について",
+		"衛士の任務を学んでおります。"
+	)
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Turn("Doran",-34.02f,7.0f)
+	LookChr("Doran", "Rastell")
+
+	// ドラン
+	TalkMes("Doran",
+		"#6169V#012e#000mよく言いおるわ。",
+		"毎日わしを追い回しおって……")
+	WaitPrompt()
+
+	TalkMes("Doran",
+		"#6170V#011e#000mお前がその調子だから",
+		"わしは部下たちの笑い者ぞ。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Rastell", "Doran")
+	
+	// ラステル
+	TalkMes("Rastell",
+		"#6171V#012e#000m別にいいでしょう、父上。",
+		"入隊前の訓練みたいな物なんですから。")			//（すまし顔）
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+
+	MoveCameraAt( 0 , -293.389f , 635.388f , 117.473f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.301f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.905f , 0 )	// 基本仰角
+	RotateCamera( 0 , 102.074f , 0 )				// 角度
+	ChangeCameraPers( 0 , 44.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 5000.000f )			// ZPlane
+	RollCamera( 0 , -0.0f , 0 )				// ロール回転
+
+	Wait(FADE_CROSS)
+
+	LookReset("DANA")
+	ChangeAnimation( "DANA", "ANI_EV_SEKI", -1, 1 )	// 咳払い
+	LookChr("Doran", "DANA")
+	ChangeSubAnimation("Doran",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+
+
+	// ダーナ
+	TalkMes("DANA",
+		"#6172V#021e#080mクスクス……",
+		"二人とも変わりませんね。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ダーナにＰＡエモーション
+	EmotionEx("DANA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	ChangeSubAnimation("",SUBMOT_EYE,ANI_E_LAUGH_E,1)
+	LookChr("DANA", "Rastell")
+	Wait(35)
+	
+	LookChr("Rastell", "DANA")
+	//ChangeSubAnimation("Rastell", SUBMOT_EYE, ANI_E_CLOSE_E, 1)	// 目
+	
+	// ダーナ
+	TalkMes("DANA",
+		"#6173V#000e#000mあら……？　ラステル、",
+		"また背が伸びましたか？")
+	WaitPrompt()
+
+	TalkMes("DANA",
+		"#6174V私を抜いてから、",
+		"どんどん頼もしくなってきて。")
+	WaitPrompt()
+	
+	ChangeAnimation( "DANA", "ANI_EV_RYOTESIRI_S", -1, 1 )	// 両手 尻組み
+	
+//	PlayVoice(Y8V_2997,"DANA",100)	//ふふ（微笑）
+
+	// ダーナ
+	TalkMes("DANA",
+		"#6175Vふふ、衛士になったら",
+		"本当に見違えてしまいそうですね。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Rastell", "ANI_EV_BACKTEKUMI_E", -1, 1 )	// 手後ろ組み
+
+	// ラステル
+	TalkMes("Rastell",
+		"#6176V#021e#080mえへへ……だったら嬉しいです。")
+	WaitPrompt()
+
+	TalkMes("Rastell",
+		"#6177V#022e#080m巫女様、どうか見ていてください！",
+		"僕は必ず立派な衛士になってみせます！")
+	WaitPrompt()
+
+	TalkMes("Rastell",
+		"#6178Vそしていつか、巫女様のことも",
+		"お守りしてさしあげますよ！")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "DANA", "ANI_EV_RYOTESIRI_E", -1, 1 )	// 両手 尻組み
+
+	// ダーナ
+	TalkMes("DANA",
+		"#6179V#000e#000mまあ……！　それは楽しみですね。")
+	WaitPrompt()
+
+	TalkMes("DANA",
+		"#6180V優秀な衛士は王国の誉れです。",
+		"私も期待していますよ。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Rastell", "ANI_EV_BACKTEKUMI_S", -1, 1 )	// 手後ろ組み
+
+	// ラステル
+	TalkMes("Rastell",
+		"#6181V#021e#080mえへへへ……はいっ！")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("DANA", "Doran")
+	HeadNo("Doran", 1, 30)	// キャラ, 回数, 速さ
+
+	// ドラン
+	TalkMes("Doran",
+		"#6182V#011e#000mやれやれ……畏れ多い事です。")
+	WaitPrompt()
+
+	TalkMes("Doran",
+		"#6183V愚息の無礼、どうかお許しを。",
+		"無礼2行目")
+	WaitPrompt()
+
+	TalkMes("Doran",
+		"#6184V#012e#000mして巫女様は、これより",
+		"街道に出られるようですな。")
+	WaitPrompt()
+
+	TalkMes("Doran",
+		"#6185V近年は野生の竜種も",
+		"多く出没いたします。")
+	WaitPrompt()
+
+	TalkMes("Doran",
+		"#6186V巫女様であれば無用な心配でしょうが、",
+		"どうかご油断なさいませんように。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	HeadYes("DANA", 1, 25)	// キャラ, うなずき回数, 速さ
+
+	// ダーナ
+	TalkMes("DANA",
+		"#6187V#000e#000mありがとう、ドラン。")
+	WaitPrompt()
+
+	LookReset("DANA")
+
+	// ダーナ
+	TalkMes("DANA",
+		"#6188V２人に大樹の恵みがあらん事を。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+//	HeadYes("Rastell", 1, 25)	// キャラ, うなずき回数, 速さ
+
+	// ラステウ
+	TalkMes("Rastell",
+		"#6189V#000e#080mはい、巫女様に",
+		"大樹の恵みがあらん事を！")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　暗転明けで操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp4105m:SubEV_Past_01_View_ED")
+}
+function "SubEV_Past_01_View_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+//	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	SetFlag(SF_CHARANORECVSHADOW,0)	//キャラ影受けない
+
+	//フラグ立て
+	SetFlag( GF_SUBEV_PAST_01_VIEW, 1 )		// 過去編Ⅰ：【サブイベント：過去世界を眺める】を見た
+
+	CallFunc("mp4105m:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-291.30f,635.85f,115.78f)
+	Turn("LEADER",165.50f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	//MoveCameraAt( 0 , 0.0f , 0.0f , 0.0f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 0.0f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 0.0f , 0 )		// 基本仰角
+	//RotateCamera( 0 , 0.0f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 0.0f , 0 )			// 視野角
+	//SetCameraZPlane( 0 , 0.0f )					// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )					// ロール回転
+
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	SoundEfx( SEFX_HILL, 15 )
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+//──────────────────────────────
+//	【サブイベント：山門で修道女たちに見送られる】（続き）
+//──────────────────────────────
+function "SubEV_Past_06_Gate2"
+{
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA",-311.88f,612.62f,116.66f)
+	Turn("DANA",-27.05f,360.0f)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "DANA" )
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("Atra", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Atra",-311.16f, 614.44f, 116.65f)
+	Turn("Atra",18.84f,360.0f)
+	ChangeAnimation( "Atra" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Atra",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Atra",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("Atra",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "Atra" )
+	SetChrInfoFlag( "Atra" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("Ulugnata", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Ulugnata",-313.50f, 614.16f, 116.65f)
+	Turn("Ulugnata",-48.67f,360.0f)
+	ChangeAnimation( "Ulugnata" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Ulugnata",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Ulugnata",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("Ulugnata",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "Ulugnata" )
+	SetChrInfoFlag( "Ulugnata" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("sister1", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("sister1",-312.00f, 614.86f, 116.65f)
+	Turn("sister1",0.46f,360.0f)
+	ChangeAnimation( "sister1" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("sister1",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("sister1",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("sister1",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "sister1" )
+	SetChrInfoFlag( "sister1" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("sister2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("sister2",-313.15f, 615.08f, 116.65f)
+	Turn("sister2",-29.40f,360.0f)
+	ChangeAnimation( "sister2" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("sister2",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("sister2",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("sister2",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "sister2" )
+	SetChrInfoFlag( "sister2" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("sister3", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("sister3",-314.26f, 615.20f, 116.65f)
+	Turn("sister3",-40.06f,360.0f)
+	ChangeSubAnimation("sister3",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeAnimation( "sister3" , "ANI_WAIT", -1 , 1 )
+
+	SetChrWork("sister4", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("sister4",-311.56f, 616.11f, 116.65f)
+	Turn("sister4",13.23f,360.0f)
+	ChangeSubAnimation("sister4",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeAnimation( "sister4" , "ANI_WAIT", -1 , 1 )
+
+	SetChrWork("sister5", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("sister5",-309.92f, 615.26f, 116.65f)
+	Turn("sister5",45.22f,360.0f)
+	ChangeSubAnimation("sister5",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeAnimation( "sister5" , "ANI_WAIT", -1 , 1 )
+
+	SetChrWork("sister6", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("sister6",-313.68f, 616.98f, 116.65f)
+	Turn("sister6",-18.75f,360.0f)
+	ChangeSubAnimation("sister6",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeAnimation( "sister6" , "ANI_WAIT", -1 , 1 )
+
+	SetChrWork("sister7", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("sister7",-310.40f, 616.43f, 116.65f)
+	Turn("sister7",38.11f,360.0f)
+	ChangeSubAnimation("sister7",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeAnimation( "sister7" , "ANI_WAIT", -1 , 1 )
+
+//	MapAnime("gim_taiju", "gold")	// 大樹の変化
+
+	//BGM設定
+	PlayBGM(BGM_DUNGEON_902, 0)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -307.221f , 614.504f , 126.203f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -32.136f , 0 )	// 基本仰角
+	RotateCamera( 0 , 193.171f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 5000.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 200.000 ,1.000 ,0.700 ,0.600)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp4105m:SubEV_Past_06_Gate2_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//　　山門屋上マップにフェードイン。
+	//　　大樹を見せつつ、カメラを下して
+	//　　ダーナ、アトラ、教導師と
+	//　　修道女数人がいるのを見せる。
+	
+	// カット1 ----------------------------------------------------------------------------------------
+	
+	Look("DANA", 0.0f, 15.0f)	// 見上げる
+	LookChr("Atra", "DANA")
+	LookChr("Ulugnata", "DANA")
+	LookChr("sister1", "DANA")
+	LookChr("sister2", "DANA")
+	LookChr("sister3", "DANA")
+	LookChr("sister4", "DANA")
+	LookChr("sister5", "DANA")
+	LookChr("sister6", "DANA")
+	LookChr("sister7", "DANA")
+	
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -310.710f , 613.501f , 119.583f , 135 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.000f , 135 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -12.083f , 135 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 203.198f , 135 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	Wait(10)
+	
+	// カット2 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	MoveCameraAt( 0 , -311.767f , 613.485f , 118.229f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.080f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.678f , 0 )	// 基本仰角
+	RotateCamera( 0 , 50.199f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	ChangeAnimation( "Atra", "ANI_EV_RYOTEMAE_S", -1, 1 )	// 両手 前組み
+
+	// アトラ
+	TalkPopup("Atra",0,2,0,0,0) {
+		"#000e#000m流星雨の時に大樹が"
+		"金色に輝いたのは報告した通りです。\p"
+		"#011e#000m当初は星が大樹に良からぬ"
+		"影響を与えたと考えたのですが……\p"
+		"#012e#000m実は星が落ちる直前、地中の理力が"
+		"異常に高まっていたそうです。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Atra", "ANI_EV_RYOTEMAE_E", -1, 1 )	// 両手 前組み
+	Look("Atra", -20.0f, 15.0f)	// 見上げる
+	
+	// アトラ
+	TalkPopup("Atra",0,2,0,0,0) {
+		"その中心にあったのが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット3 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	MoveCameraAt( 0 , -311.553f , 613.399f , 118.229f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.120f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.630f , 0 )	// 基本仰角
+	RotateCamera( 0 , 356.341f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -311.693f , 613.392f , 118.229f , 600 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.120f , 600 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -3.344f , 600 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 4.650f , 600 )
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	ChangeAnimation( "DANA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+	Look("DANA", 0.0f, -10.0f)	// うつむく
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#011e#000mはじまりの大樹というわけですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Atra", "DANA")
+
+	// アトラ
+	TalkPopup("Atra",0,2,0,0,0) {
+		"#000e#000mは、はい、これではまるで"
+		"大樹が星を呼び寄せたとしか……\p"
+		"事前に巫女様がお話くださった"
+		"王家の谷にあるという壁画……\p"
+		"#051e#000mあれはやはり……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Look("DANA", 0.0f, 0.0f)	// うつむく
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#010e#000mはじまりの大樹こそが"
+		"大いなる災厄をもたらす……\p"
+		"#012e#000m壁画の内容と彼女の話は"
+		"真実だったということですか。\p"
+		"#011e#000m私が星を呼び寄せたという話も"
+		"流言とは言い切れませんね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット4 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	// カメラ
+	MoveCameraAt( 0 , -311.276f , 613.071f , 118.209f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.360f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -0.192f , 0 )	// 基本仰角
+	RotateCamera( 0 , 51.623f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , -0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	ChangeAnimation( "sister1", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+	//	修道女
+	TalkPopup("sister1",0,2,0,0,0) {
+		"#051e#000mみ、巫女様……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Look("sister2", 0.0f, -15.0f)	// うつむく
+
+	//	修道女
+	TalkPopup("sister2",0,2,0,0,0) {
+		"#061e#000mいまだに信じられません……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "sister3", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+
+	//	修道女
+	TalkPopup("sister3",0,2,0,0,0) {
+		"#000e#000mこのような事があるはずが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// 教導士ウルグナータ
+	TalkPopup("Ulugnata",0,2,0,0,0) {
+		"#000e#000mもはや寺院の存在意義すら"
+		"失われたということ……\p"
+		"巫女様、私どもはこれより"
+		"いかがいたしましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeSubAnimation("sister2", SUBMOT_EYE, ANI_E_CLOSE_E, 1)	// 目
+	Look("DANA", 0.0f, -10.0f)	// うつむく
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#010e#000m………それは…………"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//　　ダーナ、一度目を瞑ってから
+	//　　決意の表情になって顔を上げる。
+
+	Look("DANA", 0.0f, 0.0f)	// うつむく戻す
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_CLOSE_E, 1)	// 目
+	ChangeAnimation( "DANA", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+	WaitAnimation2("DANA", -1, 1, "ANI_EV_TEMUNE_E", 0)
+
+	// カット5 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	// カメラ
+	MoveCameraAt( 0 , -312.462f , 615.348f , 118.509f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.800f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.680f , 0 )	// 基本仰角
+	RotateCamera( 0 , 187.893f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ChangeSubAnimation("sister1", SUBMOT_EYE, ANI_E_WAIT, 1)	// 目
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -312.690f , 615.267f , 118.389f , 600 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.640f, 600 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 5.825f , 600 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 196.203f , 600 )
+
+	LookReset("DANA")
+	Turn("DANA",151.75f,8.0f)
+
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"皆さん、この事実は"
+		"いずれ人々も知る所となるでしょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Look("DANA", 0.0f, -10.0f)	// うつむく
+	
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#011e#000m大樹への信仰は失われ、"
+		"一層の混乱が生じる事になります。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Look("DANA", 0.0f, 8.0f)	// うつむく戻す
+	
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#012e#000mだからこそ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "DANA", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#000e#000mだからこそ私たちは今まで通り、"
+		"災いに苦しむ人々に寄り添いましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Look("DANA", 0.0f, -10.0f)	// うつむく
+	
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#011e#000mその……一時は人々に"
+		"蔑まれることになると思いますが。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "sister1", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+	LookChr("sister1", "DANA")
+
+	//	修道女
+	TalkPopup("sister1",0,1,0,0,0) {
+		"#000e#000m巫女様……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット6 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_FAST)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	
+	// カメラ
+	MoveCameraAt( 0 , -312.464f , 613.009f , 118.249f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.880f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.060f , 0 )	// 基本仰角
+	RotateCamera( 0 , 20.406f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -312.464f , 613.009f , 118.249f , 450 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.880f , 450 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -5.633f , 450)
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 3.788f , 450 )
+	
+	LookChr("DANA", "Ulugnata")
+	
+	// フェード待ち
+	Wait(FADE_FAST)
+
+	Look("Ulugnata", 0.0f, -10.0f)	// うつむく
+
+	// 教導士ウルグナータ
+	TalkPopup("Ulugnata",0,2,0,0,0) {
+		"#011e#080m……ふふ、どうやら"
+		"厳しい道になりそうですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Look("Ulugnata", 0.0f, 0.0f)	// うつむく
+	
+	// 教導士ウルグナータ
+	TalkPopup("Ulugnata",0,2,0,0,0) {
+		"#012e#080mですが私は今ほど巫女様を"
+		"誇らしく思えたことはありません。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#000e#000mえ……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// 教導士ウルグナータ
+	TalkPopup("Ulugnata",0,2,0,0,0) {
+		"#011e#080m貴女様のお転婆には"
+		"幾度となく手を焼かされましたが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Ulugnata", "DANA")
+
+	// 教導士ウルグナータ
+	TalkPopup("Ulugnata",0,2,0,0,0) {
+		"#012e#080mこの時のためだったと考えれば、"
+		"報われた思いです。\p"
+		"フフ、貴女様を巫女に推挙したのは"
+		"やはり正しかったようでございますね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット7 ----------------------------------------------------------------------------------------
+
+	//　　ウルグナータ、改まる。
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	// カメラ
+	MoveCameraAt( 0 , -312.814f , 614.541f , 118.437f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.860f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.604f , 0 )	// 基本仰角
+	RotateCamera( 0 , 153.569f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -313.244f , 614.008f , 118.437f , 450 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 5.500f , 450 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 6.896f , 450 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 148.126f , 450 )
+	
+	// 位置調整・表情・モーション
+	SetChrPos("Ulugnata", -313.21f, 613.63f, 116.65f)
+	Turn("sister2", 4.53f, 360.0f)
+
+	Turn("Ulugnata", -139.22f, 8.0f)
+	LookReset("Ulugnata")
+
+//	// フェード待ち
+//	Wait(FADE_CROSS)
+
+	// 教導士ウルグナータ
+	TalkPopup("Ulugnata",0,2,0,0,0) {
+		"#011e#000m私どもも覚悟を決めましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("sister2", "Ulugnata")
+	LookChr("sister1", "Ulugnata")
+	Turn("sister1", 39.54f, 8.0f)
+	LookChr("sister3", "Ulugnata")
+	LookChr("sister4", "Ulugnata")
+	LookChr("sister5", "Ulugnata")
+	LookChr("sister6", "Ulugnata")
+	LookChr("sister7", "Ulugnata")
+	LookChr("Atra", "Ulugnata")
+
+	// 教導士ウルグナータ
+	TalkPopup("Ulugnata",0,2,0,0,0) {
+		"#012e#000m巫女様の仰る通り、私たちの"
+		"使命は人々を救い導くことです。\p"
+		"たとえ信仰を失おうとも"
+		"大義まで捨てるわけには参りません。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	修道女
+	TalkPopup("sister1",0,1,0,0,0) {
+		"#000e#000mは、はい……！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "sister2", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	//	修道女
+	TalkPopup("sister2",0,1,0,0,0) {
+		"#000e#000m人々を守ろうというのです。"
+		"なにを躊躇う事がありましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	HeadYes("sister3", 1, 25)	// キャラ, うなずき回数, 速さ
+	
+	//	修道女
+	TalkPopup("sister3",0,1,0,0,0) {
+		"#070e#000m無論、力を尽くさせていただきます。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("DANA")
+
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#000e#000m教導師様……皆さん……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット8 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_FAST)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	// カメラ
+	MoveCameraAt( 0 , -311.963f , 613.734f , 118.289f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.079f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.135f , 0 )	// 基本仰角
+	RotateCamera( 0 , 356.352f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	SetChrPos("sister6",-312.95f, 617.10f, 116.65f)
+	Turn("sister6",-11.64f,360.0f)
+	
+	Turn("sister1", -3.10f, 360.0f)
+	Turn("sister2", -27.45f, 360.0f)
+	Turn("Ulugnata", -64.61f, 360.0f)
+	LookChr("Atra", "DANA")
+	LookChr("Ulugnata", "DANA")
+	LookChr("sister1", "DANA")
+	LookChr("sister2", "DANA")
+	LookChr("sister3", "DANA")
+	LookChr("sister4", "DANA")
+	LookChr("sister5", "DANA")
+	LookChr("sister6", "DANA")
+	LookChr("sister7", "DANA")
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -311.963f , 613.734f , 118.289f , 450 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.079f , 450 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 0.849f , 450 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 22.708f , 450 )
+
+	// フェード待ち
+	Wait(FADE_FAST)
+
+	// 教導士ウルグナータ
+	TalkPopup("Ulugnata",0,2,0,0,0) {
+		"#000e#000mさあ、《セレンの園》とやらに"
+		"向かわれるのでしたね。\p"
+		"巫女様もお気をつけて。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// アトラ
+	TalkPopup("Atra",0,2,0,0,0) {
+		"#052e#000m型破りな巫女様のことです……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "Atra", "ANI_EV_RYOTEMAE_S", -1, 1 )	// 手前組み
+	
+	LookChr("DANA", "Atra")
+	
+	// アトラ
+	TalkPopup("Atra",0,2,0,0,0) {
+		"#080e#080m必ずここへお戻りくださると"
+		"信じていますから。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	HeadYes("DANA", 1, 25)	// キャラ, うなずき回数, 速さ
+	ChangeAnimation( "DANA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#000e#000m……ええ、必ず。"
+		"どうか皆さんもご無事で。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("DANA")
+
+	EarthQuake( 0.03f , 0.03f , 10 )	// 縦揺れ幅, 横揺れ幅, 時間
+
+	//	修道女たち
+	SetName("修道女たち")
+	TalkPopup(UNDEF,0,3,230,50,0) {
+		"#18Sはいっ！！"
+	}
+//		ChangeSubAnimation("Atra", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+//		ChangeSubAnimation("Ulugnata", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+//		ChangeSubAnimation("sister1", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+//		ChangeSubAnimation("sister2", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+//		ChangeSubAnimation("sister3", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+//		ChangeSubAnimation("sister4", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+//		ChangeSubAnimation("sister5", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+//		ChangeSubAnimation("sister6", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+//		ChangeSubAnimation("sister7", SUBMOT_EYE, ANI_E_WAIT_S, 1)	// 目
+		SetChrWork("Atra", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		SetChrWork("Ulugnata", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		SetChrWork("sister1", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		SetChrWork("sister2", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		SetChrWork("sister3", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		SetChrWork("sister4", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		SetChrWork("sister5", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		SetChrWork("sister6", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		SetChrWork("sister7", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		Wait(20)
+		SetChrWork("Atra", CWK_FORCELIPSYNC, 0)	// 強制クチパク
+		SetChrWork("Ulugnata", CWK_FORCELIPSYNC, 0)	// 強制クチパク
+		SetChrWork("sister1", CWK_FORCELIPSYNC, 0)	// 強制クチパク
+		SetChrWork("sister2", CWK_FORCELIPSYNC, 0)	// 強制クチパク
+		SetChrWork("sister3", CWK_FORCELIPSYNC, 0)	// 強制クチパク
+		SetChrWork("sister4", CWK_FORCELIPSYNC, 0)	// 強制クチパク
+		SetChrWork("sister5", CWK_FORCELIPSYNC, 0)	// 強制クチパク
+		SetChrWork("sister6", CWK_FORCELIPSYNC, 0)	// 強制クチパク
+		SetChrWork("sister7", CWK_FORCELIPSYNC, 0)	// 強制クチパク
+		ChangeSubAnimation("Atra",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("Ulugnata",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("sister1",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("sister2",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("sister3",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("sister4",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("sister5",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("sister6",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("sister7",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	StopBGM(120)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	//　　暗転し、mp5104m西参道に出た所から操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp4105m:SubEV_Past_06_Gate2_ED")
+}
+function "SubEV_Past_06_Gate2_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+//	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て
+	SetFlag( SF_WARP_DISABLED, 0 )		//ワープ許可
+	SetFlag( GF_SUBEV_PAST_06_GATE, 1 )		// 過去編Ⅵ：【サブイベント：山門で修道女たちに見送られる】を見た
+	//SetFlag( SF_MISSIONNO, MS_08_06D )		//★冒険メモ：セレンの園を目指そう
+
+	CallFunc("system:SetMarkerDANA")	//クエスト系マーカー処理
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+	LoadArg("map/mp5104m/mp5104m.arg")
+	EventCue("mp5104m:SubEV_Past_06_Gate_Relocate")		// 過去編Ⅵ：【サブイベント：山門で修道女たちに見送られる】後の再配置
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー・ＬＰセクション
+
+////////////////////////////////////////////////////////////////////////////////
+//──────────────────────────────
+//	【ストッパー：山門屋上→西街道方面へ行けない】
+//──────────────────────────────
+function "Stopper_Past_01_02"
+{
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	//▼過去編Ⅰアドルがいたポイントへ向かう
+	TalkPopup("LEADER",0,0,0,0,0)
+	{
+		"#000e#000mえっと、この先は西の街道だね。\p"
+		"目的地は反対方向かな。"
+		"東の街道を目指そう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-347.02f,620.96f,116.35f)
+	Turn("LEADER",-115.09f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+//──────────────────────────────
+//	【ストッパー：山門屋上→東海道へ行けない】
+//──────────────────────────────
+function "Stopper_Past_04_06"
+{
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	//▼過去編Ⅳ王宮前へ向かう
+	TalkPopup("LEADER",0,0,0,0,0)
+	{
+		"#000e#000m街道に出る必要はなさそうだね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-241.06f,668.73f,116.69f)
+	Turn("LEADER",65.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+//──────────────────────────────
+//	【ストッパー：山門屋上→西街道へ行けない】
+//──────────────────────────────
+function "Stopper_Past_04_07"
+{
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	//▼過去編Ⅳ王宮前へ向かう
+	TalkPopup("LEADER",0,0,0,0,0)
+	{
+		"#000e#000m街道に出る必要はなさそうだね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-347.02f,620.96f,116.35f)
+	Turn("LEADER",-115.09f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}

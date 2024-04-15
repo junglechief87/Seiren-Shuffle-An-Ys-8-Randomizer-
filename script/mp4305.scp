@@ -1,0 +1,238 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/music.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 4305：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_intercept2" , 0 )
+	EventAreaEnable( "evb2_act_0219_1" , 0 )	//アクティブボイス
+	EventAreaEnable( "evb2_act_0219_2" , 0 )	//アクティブボイス
+	EventAreaEnable( "evb2_act_0219_3" , 0 )	//アクティブボイス
+
+	if( FLAG[SF_EVENT_ON] ){
+	// イベント発生制御
+		if( !FLAG[GF_02MP43xx_OCCUR_INTERCEPT2] && WORK[WK_ISINTERCEPT] == 0 ){			// 迎撃戦２が発生した
+			EventAreaEnable( "evb2_intercept2" , 1 )
+		}
+
+		// アクティブボイス
+		if((!FLAG[GF_AVOICE_0219] &&!FLAG[GF_AVOICE_0219B]) && FLAG[GF_02MP4102_MAKE_CAMP] && !FLAG[GF_02MP1119_LOOK_DINA]){
+			EventAreaEnable( "evb2_act_0219_1" , 1 )
+			EventAreaEnable( "evb2_act_0219_2" , 1 )
+			EventAreaEnable( "evb2_act_0219_3" , 1 )
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_4301.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//浸食谷
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+	//骸骨：宝箱
+	if( FLAG[GF_MP4305_SKELETON01] ){
+		ChangeAnimation( "Skeleton01" , "ANI_STOP2", -1 , 1 )		//取った後
+		SetChrWork("Skeleton01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	}
+}
+//-------------------------------------------
+//骸骨
+//function "Skeleton01"	//下の【海賊のメモ②】に統合致しました
+//{
+//
+////	SetStopFlag(STOPFLAG_PC)
+//	SetStopFlag(STOPFLAG_TALK)
+//
+//	ChangeAnimation( "PLAYER1" , "ANI_GET_ITEM", -1 , 1 )
+//	Wait(10)
+//	ChangeAnimation( "this" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+//
+//	GetItemMessageExPlus( ICON3D_MEMO_P_002, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+//	WaitPrompt()
+//	WaitCloseWindow()
+//	GetItem(ICON3D_MEMO_P_002,1)		//海賊のメモ②
+//
+//	PlaySE(SE_BREAK_MAT_0061,100,0,  0, 0, 1.0f, 0)		//◆仮ＳＥ
+//	ChangeAnimation( "this" , "ANI_OPEN", -1 , 1 )		//崩れる
+//
+//	//開けた
+//	SetFlag( GF_MP4305_SKELETON01, 1 )
+//	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+//
+////	ResetStopFlag(STOPFLAG_PC)
+//	ResetStopFlag(STOPFLAG_TALK)
+//
+//}
+
+//-------------------------------------------
+//迎撃戦呼び出し
+function "Intercept2"
+{
+	if (!FLAG[GF_02MP43xx_OCCUR_INTERCEPT2])
+	{
+		//迎撃戦発生処理
+		EventAreaEnable( "evb2_intercept2" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_INTBTL002, 0, 0)
+
+	//	Wait(30)
+		//Intercept(INTERCEPT_STAGE02, 2)	// まだ余裕
+
+		SetFlag(GF_02MP43xx_OCCUR_INTERCEPT2, 1)
+		//SetFlag(GF_INTERCEPT_NO, INTERCEPT_STAGE02)
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0219"
+{
+	if (!FLAG[GF_AVOICE_0219] && !FLAG[GF_AVOICE_0219B])
+	{
+		//ウシガエルに誰が攻撃したかを判定する
+		if (FLAG[TF_0001_4EV] ==2 )	// 2=ラクシャ
+		{
+			EventAreaEnable( "evb2_act_0219_1" , 0 )
+			EventAreaEnable( "evb2_act_0219_2" , 0 )
+			EventAreaEnable( "evb2_act_0219_3" , 0 )
+			ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+			ActiveVoiceStart(EACT_EVID_0219B, 1, 0)	//カエルを怒らせて退却した（※第二部中のみ）	ラクシャ版
+		}
+		else if (FLAG[TF_0001_4EV] ==1 )		// 1=それ以外の人
+		{
+			EventAreaEnable( "evb2_act_0219_1" , 0 )
+			EventAreaEnable( "evb2_act_0219_2" , 0 )
+			EventAreaEnable( "evb2_act_0219_3" , 0 )
+			ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+			ActiveVoiceStart(EACT_EVID_0219, 1, 0)	//カエルを怒らせて退却した（※第二部中のみ）	ラクシャ以外
+		}
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//================================================
+//【海賊のメモ②】（侵食谷・中盤）	※中盤の暗闇エリアに配置			GF_MP4305_SKELETON01
+//================================================
+function "SubEV_Memo_P_02"
+{
+	//	※海賊の死骸を調べて入手するようにする。
+	//	※入手時に、海賊のメモのポートレートと
+	//	　メモの内容を表示する。
+	//	　メモの内容はその後冒険日誌の「ストーリー」「メモ」タブにに登録される。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	// ポートレート読み込み
+	Portrait_Load(1, "visual/portrait/p_30013.itp")	// 海賊のメモ
+	Portrait_Create(1, SUBP_POS_X, SUBP_POS_Y,
+	0, 0, SUBP_SCALE_X, SUBP_SCALE_Y,
+	0.0f, 0x00ffffff, 0x00000000)
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	ChangeAnimation( "PLAYER1" , "ANI_GET_ITEM", -1 , 1 )
+	Wait(10)
+	ChangeAnimation( "this" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+
+	//GetItemMessageExPlus( ICON3D_MEMO_P_002, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+	//WaitPrompt()
+	//WaitCloseWindow()
+	//GetItem(ICON3D_MEMO_P_002,1)		//海賊のメモ②
+	CallFunc("rng:0495")
+	//ポートレート表示
+	Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+	Wait(20)
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cヒャハハ、ウスノロどもが！"
+		"#7C今頃お仲間の死骸を見て"
+		"#7C大騒ぎだろうぜ！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cオレは誰の指図も受けねェ！"
+		"#7Cたとえあのキャプテンだろうがな！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C逆らうヤツは皆殺しだ、ヒャハハハ！"
+		"ヤツ2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	Wait(20)
+
+	//ポートレートを消去
+	Portrait_Anime(1, PR_ANIME_COLOR, 0.0f, 0.0f, 0.0f, 0.0f, FADE_FAST)
+	Wait(FADE_FAST)
+
+	Portrait_Close(1)
+	Portrait_Unload(1)
+
+	//SE埋め込み済み
+	ChangeAnimation( "this" , "ANI_OPEN", -1 , 1 )		//崩れる
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+	//フラグ処理
+	SetFlag( GF_SUBEV_GET_MEMO, 1 )		//Ｔ・海賊のメモを手に入れた（１つでも手に入れたら立つ）
+	SetFlag( GF_SUBEV_GET_MEMO_P_02, 1 )		//海賊のメモ②を手に入れた
+
+	//開けた
+	SetFlag( GF_MP4305_SKELETON01, 1 )
+	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	
+	//イベント後の再配置
+	//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+	//Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+	
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}

@@ -1,0 +1,480 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+#include "inc/temp/mp6401m.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 王都塔堂（過去）  			                                              //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	if (FLAG[SF_EVENT_ON]){
+
+		EntryOn(02,0)		//地下聖堂のエントリーは初期状態OFF
+
+		//一般配置ファンクション呼び出し
+		CallFunc("mp6211m:NpcPosition")
+
+		// イベント発生制御
+		if( FLAG[GF_PAST_EPISODE_7_ENDEPISODE] )		//▼過去編Ⅶエンドエピソード
+		{
+			if(FLAG[GF_SUBEV_PAST_07_TALK_IO] && !FLAG[GF_SUBEV_PAST_07_INTO_6211])		// 過去編Ⅶ：▼イオと再会する　を見た
+			{
+				EventCue("mp6211m2:SubEV_Past_07_Main040")
+			}
+			if(FLAG[GF_SUBEV_PAST_07_INTO_6211])
+			{
+				MapAnime("gim_step","open")
+				EntryOn(02,1)
+			}
+		}
+		//エントリー制御
+		if( FLAG[GF_PAST_EPISODE_6_GO_GARDEN] )			//▼過去編Ⅵセレンの園へ向かう
+		{
+				//※エタニア崩壊後は、以下のエントリーの有効、無効を切り替えてください
+				//00⇒無効
+				//01⇒無効
+				//02⇒有効
+				//03⇒有効
+
+			EntryOn(00,0)
+			EntryOn(01,0)
+			EntryOn(02,1)
+			EntryOn(03,1)
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■配置制御セクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function "NpcPosition"
+{
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■一般会話セクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//──────────────────────────────
+//	【過去 追加サブイベント 塔堂の水晶柱を見る】
+//──────────────────────────────
+function "SubEV_Past_07_Main040"			//塔堂の水晶柱を見る
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA", -414.79f, 914.40f, 13.57f)
+	Turn("DANA", 154.82f, 360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -415.187f , 916.374f , 15.242f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.602f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -8.013f , 0 )	// 基本仰角
+	RotateCamera( 0 , 37.481f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	SetDoFFocus(0,0,0)
+	
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6211m2:SubEV_Past_07_Main040_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//　　ここで操作許可。
+	//──────────────────────────────
+	//▼地下聖堂入口が開いているのを見る(mp6211m)
+	//──────────────────────────────
+	//　　※マップが完成しだい、演出とセリフは調整予定。
+	//　　　ひとまず暫定的なシナリオです。
+	//　　塔堂に入ると誰もいない様子を見せていく。
+	//　　ダーナが歩いてフレームしてくるのと同時に
+	//　　「？」エモーションを表示。
+
+	ChangeAnimation( "DANA" , "ANI_EV_UDEGUMI_S", -1 , 1 )
+
+	TalkPopup("DANA",0,0,0,0,0)
+	{
+		"#000e#000mあれ……\p"
+		"何だろう、いつもと"
+		"空気の流れが違うような……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	MapAnime("gim_step","open")
+
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+
+	SetChrPos("DANA",-438.06f,940.02f,13.57f)
+	Turn("DANA",177.95f,360.0f)
+	LookTo("DANA",-423.750f , 949.131f , 12.279f)
+	
+//	MoveCameraAt( 0 , -437.917f , 940.694f , 14.883f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 13.099f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -2.176f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 146.142f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 49.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	MoveCameraAt( 0 , -437.917f , 940.694f , 14.337f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 16.570f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 2.197f , 0 )	// 基本仰角
+	RotateCamera( 0 , 145.641f , 0 )				// 角度
+	ChangeCameraPers( 0 , 49.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(20)
+
+	ExecuteCmd( 1, MoveTo, "DANA",-437.16f,947.60f,13.57f, 0.1f, 0.225f )
+	//SetChrPos("DANA",-437.16f,947.60f,13.57f)
+	//Turn("DANA",-109.41f,360.0f)
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -438.607f , 944.483f , 14.784f, 140 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.298f , 140 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -2.176f , 140 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 146.137f , 140 )
+
+	//MoveCameraAt( 0 , -438.607f , 944.483f , 14.784f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 7.298f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -2.176f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 146.137f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 49.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1)
+
+	Turn("DANA",-109.41f,9.0f)
+
+	TalkPopup("DANA",0,0,0,0,0)
+	{
+		"#000e#000m地下聖堂の入口が開いてる……\p"
+		"もしかしてイオちゃんが"
+		"中へ入ったのかな？\p"
+		"#0L#011e……………………………………"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	//　　ここで操作許可。
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+	
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6211m2:SubEV_Past_07_Main040_ED")
+}
+
+function "SubEV_Past_07_Main040_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag(GF_SUBEV_PAST_07_INTO_6211, 1)		// 過去編Ⅶ：▼地下聖堂入口が開いているのを見る　を見た
+	SetFlag(GF_SUBEV_PAST_07_LOOK_STEP, 1)		// 過去編Ⅶ：▼地下聖堂入口が開いているのを見る２　を見た	※暫定で２つ立てている
+	//SetFlag( SF_MISSIONNO, MS_08_07C )	//★冒険メモ：地下聖堂に入ったと思われるイオを追いかけよう
+
+	SetFlag(SF_PAST_AGAIN,1)		//イオに話すまでは現代編戻れない
+	SetFlag( SF_WARP_DISABLED, 0 )		//ワープ使用可能
+
+	CallFunc("system:SetMarkerDANA")	//クエスト系マーカー処理
+
+	CallFunc("mp6211m2:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-437.16f,947.60f,13.57f)
+	Turn("LEADER",-109.41f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -437.160f , 947.600f , 15.443f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 15.323f , 0 )	// 基本仰角
+	RotateCamera( 0 , -105.451f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+//──────────────────────────────
+//	【過去 追加サブイベント 塔堂の水晶柱を見る】
+//──────────────────────────────
+function "SubEV_Past_07_Main041"			//塔堂の水晶柱を見る
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA",-431.40f,952.19f,13.57f)
+	Turn("DANA",-22.74f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt( 0 , -431.401f , 952.187f , 15.451f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 18.151f , 0 )	// 基本仰角
+	RotateCamera( 0 , -152.850f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	SetDoFFocus(0,0,0)
+	
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6211m2:SubEV_Past_07_Main041_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//　　開きかけている地下聖堂の入口(ＬＰセット)を
+	//　　調べるとイベント開始。
+	TalkPopup("DANA",0,0,0,0,0)
+	{
+		"#000e#000m地下聖堂の入口が開いてる……\p"
+		"もしかしてイオちゃんが"
+		"中へ入ったのかな？\p"
+		"……………………………………"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ここで操作許可。
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+	
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6211m2:SubEV_Past_07_Main041_ED")
+}
+
+function "SubEV_Past_07_Main041_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag(GF_SUBEV_PAST_07_LOOK_STEP, 1)		// 過去編Ⅶ：▼地下聖堂入口が開いているのを見る２　を見た
+	//SetFlag( SF_MISSIONNO, MS_08_07C )	//★冒険メモ：地下聖堂に入ったと思われるイオを追いかけよう
+
+	CallFunc("mp6211m2:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-431.40f,952.19f,13.57f)
+	Turn("LEADER",-22.74f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -431.401f , 952.187f , 15.451f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 18.154f , 0 )	// 基本仰角
+	RotateCamera( 0 , -152.851f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+function "Relocate_6211m2"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-431.48f,952.15f,13.57f)
+	Turn("LEADER",151.27f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -431.480f , 952.153f , 15.433f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 11.603f , 0 )	// 基本仰角
+	RotateCamera( 0 , -155.686f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+}

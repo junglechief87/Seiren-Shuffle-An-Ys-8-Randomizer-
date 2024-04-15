@@ -1,0 +1,743 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 3101：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp3101" , 0 )
+	MapHide( "@BG2_mp3102" , 0 )
+	MapHide( "@BG2_mp1103_alpha" , 0 )
+	MapHide( "@BG2_mp1104_2" , 0 )
+	MapHide( "@BG2_mp1104_alpha" , 0 )
+	MapHide( "@BG2_mp1106_alpha" , 0 )
+	MapHide( "@BG2_mp1112_3" , 0 )
+	MapHide( "@BG2_mp1131_1_alpha" , 0 )
+	MapHide( "@BG2_mp2101" , 0 )
+
+	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW2" , 0 )	//遠景の板フォグを消す
+
+	EventAreaEnable( "evb2_QS_311_Stop", 0 )	// 【QS311】神に祈りを（シスター・ニア）	▼キャンセルイベント
+	EventAreaEnable( "evb2_QS_311_CBNia", 0 )	// 【QS311】神に祈りを（シスター・ニア）	▼ニアがついて来ているかチェック
+	
+	// クエスト、シスターニア用のあたり解除
+	MapDelProp( "@CM_quest", MNP_GROUND)
+	
+	if (FLAG[GF_QS311_LOOK_EVENT]){		// 【QS311】▼衣装を破れたイベント を見た
+
+		SetChrID("Nia2", "Nia_ev")		// 破れ衣装
+	}else {
+		SetChrID("Nia", "Nia_ev")		// 初期衣装
+	}
+
+	// イベント発生制御
+	if( FLAG[SF_EVENT_ON] )
+	{
+		// イベントエリア初期設定
+
+		// クエスト
+		// 【QS311】神に祈りを（シスター・ニア）	▼キャンセルイベント
+		if( FLAG[GF_QUEST_311] == QUEST_START &&
+			FLAG[GF_QS311_ESCORT_START] &&		//【QS311】神に祈りを（シスター・ニア）　護衛中
+			!FLAG[GF_QS311_QUEST_CANCEL])
+
+		{
+			EventAreaEnable( "evb2_QS_311_Stop", 1 )	// 【QS311】神に祈りを（シスター・ニア）	▼キャンセルイベント
+			EventAreaEnable( "evb2_QS_311_CBNia", 1 )	// 【QS311】神に祈りを（シスター・ニア）	▼ニアがついて来ているかチェック
+			
+			// Niaの再配置
+			if (FLAG[101] == 0 && FLAG[102] == 0 && FLAG[103] == 0)
+			{
+				// まだ一度も保存されていない　＝　クエスト開始直後
+				//SetChrPos("Nia", -81.77f, -1343.53f, 42.57f);
+				SetChrPos("Nia_ev", -85.66f, -1280.87f, 53.21f)
+			}
+			else
+			{
+				SetChrPos("Nia_ev", (FLAG[101] / 10.0f), (FLAG[102] / 10.0f), (FLAG[103] / 10.0f));
+			}
+			SetChrAtariFlag("Nia_ev", (CA_ON | CA_ATARI | CA_CHARA | CA_PUSH))
+			SetFlag(SF_SAVENPCMODE, 1)
+			SetFlag(105, 0)	// Niaの移動速度モード１
+
+			// クエスト、シスターニア用のあたりオン
+			MapSetProp( "@CM_quest", MNP_GROUND)
+			MapAnime("@CM_quest", "on")
+		}
+
+		if(!FLAG[GF_AVOICE_0230] && FLAG[GF_02MP1101_GUIDE_PARO] && !FLAG[GF_02MP1103_KILL_KIERGAARD]){
+			if( FLAG[SF_LASTENTRY_NO] == 1 ){
+				ActiveVoiceStart(EACT_EVID_0230, 1, 0)	//キルゴールの追跡、3101に入った
+			}
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 1 ){
+			VisualName("visual/mapname/mn_3101.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//風見丘陵
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//================================================
+//【Ｔのメモ③】（風見の高原）			GF_MP3101_TBOX02,		//風見の高原
+//================================================
+function "SubEV_Memo_T_03"
+{
+	//	※宝箱から入手するようにする。
+	//	※入手時に、Ｔのメモのポートレートと
+	//	　メモの内容を表示する。
+	//	　メモの内容はその後冒険日誌の「ストーリー」「メモ」タブにに登録される。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	// ポートレート読み込み
+	Portrait_Load(1, "visual/portrait/p_30012.itp")	// タナトスのメモ
+	Portrait_Create(1, SUBP_POS_X, SUBP_POS_Y,
+	0, 0, SUBP_SCALE_X, SUBP_SCALE_Y,
+	0.0f, 0x00ffffff, 0x00000000)
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+//	TurnToChr( LEADER , this , 7.5f )
+//	Wait(10)
+
+	//ポートレート表示
+	Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+	Wait(20)
+
+//	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+//	{
+//		"#7Cこの島には海賊の白骨が多い"
+//		"#7Cどうやら相当数の連中が"
+//		"#7C上陸していたようだ"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+//
+//	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+//	{
+//		"#7C興味を惹かれた私は"
+//		"#7C連中の痕跡を調べてみる事にした"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+//
+//	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+//	{
+//		"#7Cどうやら百年ほど前に大きな"
+//		"#7C海賊団が上陸したのは確かなようだ"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+//
+//	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+//	{
+//		"#7C脱出に繋がる手がかりの１つも"
+//		"#7C見つかれば良いのだが……　“Ｔ”"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cこの島には海賊の白骨が多い"
+		"#7Cどうやら相当数の連中が"
+		"#7C上陸していたようだ\p"
+		"#7C興味を惹かれた私は"
+		"#7C連中の痕跡を調べてみる事にした\p"
+		"#7Cどうやら百年ほど前に大きな"
+		"#7C海賊団が上陸したのは確かなようだ\p"
+		"#7C脱出に繋がる手がかりの１つも"
+		"#7C見つかれば良いのだが……　“Ｔ”"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+	CallFunc("system:SubEV_FirstTalk_T_Memo")
+
+	//ポートレートを消去
+	Portrait_Anime(1, PR_ANIME_COLOR, 0.0f, 0.0f, 0.0f, 0.0f, FADE_FAST)
+	Wait(FADE_FAST)
+
+	Portrait_Close(1)
+	Portrait_Unload(1)
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+	//フラグ処理
+	SetFlag( GF_SUBEV_GET_MEMO, 1 )		//Ｔ・海賊のメモを手に入れた（１つでも手に入れたら立つ）
+	SetFlag( GF_SUBEV_GET_MEMO_T_03, 1 )		//Ｔのメモ③を手に入れた
+	
+	//イベント後の再配置
+	//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+	//Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+	
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//===============================================================
+//
+// 【QS311】神に祈りを（シスター・ニア）
+// ▼護衛開始イベント
+//
+function "QS_311_Escort"
+{
+	//　　mp3101の（-83.61f,-1342.24f,42.72f）付近に
+	//　　アドルとシスターがいる。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_remove")
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	//SetChrPos("ADOL",-84.80f,-1342.46f,42.84f)
+	//Turn("ADOL",141.83f,360.0f)
+	SetChrPos("ADOL", -85.32f, -1285.60f, 53.29f)
+	Turn("ADOL", 176.51f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("Nia_ev", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Nia_ev", -84.09f, -1285.10f, 53.29f)
+	Turn("Nia_ev", 173.19f, 360.0f)
+	ChangeAnimation( "Nia_ev" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Nia_ev",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Nia_ev",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Nia_ev",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Nia_ev")
+	SetChrInfoFlag("Nia_ev", INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -84.628f, -1286.536f, 57.097f, 0)	// 注視点
+	ChangeCameraDistance(0, 4.601f, 0)		// 基本距離
+	ChangeCameraElevation(0, -17.234f, 0)	// 基本仰角
+	RotateCamera(0, 8.462f, 0)				// 角度
+	ChangeCameraPers(0, 54.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -84.673f, -1286.102f, 55.088f, 90)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 0.408f, 90)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 356.902f, 90)		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE, 52.000f, 90)		// 視野角
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 150.000 ,1.000 ,0.700 ,0.550)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp3101:QS_311_Escort_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	LookChr("Nia_ev", "ADOL")
+	PlayVoice(Y8V_4681, "Nia", 100)	//アドルさん（平常のテンション）
+	Wait(20)
+	TalkPopup("Nia_ev",0,0,0,0,0)
+	{
+		"#000e#000m何とかここまでやって来ましたね。\p"
+		"ですが本番はここから……"
+		"目指すは風見丘陵の頂上です。\p"
+		"アドルさん、"
+		"改めてよろしくお願い致します。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("ADOL", "Nia_ev")
+	Wait(15)
+	//　　アドルが頷く。
+	HeadYes("ADOL" , 1 , 25)
+	Wait(35)
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cシスターを護衛しつつ、"
+		"#7C頂上へ向かってください。\p"
+		"#7Cアドル、もしくはシスターが"
+		"#7C戦闘不能になると"
+		"#7Cゲームオーバーとなります。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　イベント終了、操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3101:QS_311_Escort_ED")
+}
+function "QS_311_Escort_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//アドルひとり -----------------------------------
+	SavePartyMember()							// 現在のパーティ編成を覚える
+	// パーティ編成可能状況バックアップ
+	SetFlag(SF_ADOL_JOINOKBK, FLAG[SF_ADOL_JOINOK])
+	SetFlag(SF_LAXIA_JOINOKBK, FLAG[SF_LAXIA_JOINOK])
+	SetFlag(SF_SAHAD_JOINOKBK, FLAG[SF_SAHAD_JOINOK])
+	SetFlag(SF_HUMMEL_JOINOKBK, FLAG[SF_HUMMEL_JOINOK])
+	SetFlag(SF_RICOTTA_JOINOKBK, FLAG[SF_RICOTTA_JOINOK])
+	SetFlag(SF_DANA_JOINOKBK, FLAG[SF_DANA_JOINOK])
+	// ひとりだけにする
+	//SetFlag(SF_ADOL_JOINOK, 1)
+	//SetFlag(SF_LAXIA_JOINOK, 0)
+	//SetFlag(SF_SAHAD_JOINOK, 0)
+	//SetFlag(SF_HUMMEL_JOINOK, 0)
+	//SetFlag(SF_RICOTTA_JOINOK, 0)
+	//SetFlag(SF_DANA_JOINOK, 0)
+	CallFunc("rng:soloEvent")
+	CallFunc("rng:earlyGameParty") //SetPartyMember(PARTY_ADOL, -1, -1)
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+//	// シスター・ニア護衛開始
+
+	//マーカー設置（次のエントリーにマーカーを設置しています）
+	// 2018.05.01 m.arai クエストイベントを見ていたらマーカーを変更
+	if(!FLAG[GF_QS311_LOOK_EVENT]){
+		SetMapMarker( SMI_QUEST, PAGE_F006, MARKER_QS_311_LP1, -370.76f,-1055.7f,118.59f, 	-370.76f,-1055.7f,	MARKER_QS_311_LP1, MN_F_MP3101,	0)
+	}
+	else{
+		SetMapMarker( SMI_QUEST, PAGE_F006, MARKER_QS_311_LP2, -238.23f,-1198.56f,170.55f, 	-238.23f,-1198.56f,	MARKER_QS_311_LP2, MN_F_MP3102,	0)
+	}
+	
+	//SetMapMarker( SMI_QUEST, PAGE_F006, MARKER_QS_311_LP1, -370.76f,-1055.7f,118.59f, 	-370.76f,-1055.7f,	MARKER_QS_311_LP1, MN_F_MP3101,	0)	// 【QS311】神に祈りを（シスター・ニア）「▼クエストイベント」が発生するポイント用
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て
+	SetFlag( GF_QS311_ESCORT_START, 1 )		// 【QS311】▼護衛開始イベント を見た
+	SetFlag( SF_WARP_DISABLED, 1 )			//　護衛中ワープ禁止
+	SetFlag( SF_SETRAMSAVE, 1 )				//　ラムセーブ取る
+	SetFlag(GF_QS311_QUEST_CANCEL, 0)		//【QS311】クエスト途中でキャンセル
+
+	CallFunc("mp3101:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER", -86.44f, -1279.05f, 53.18f)
+	Turn("LEADER", 170.19f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	// ニアをアドルの後ろに配置
+
+	SetChrPos("Nia_ev", -85.66f, -1280.87f, 53.21f)
+	TurnToChr("Nia_ev", LEADER, 360.0f)
+	SetChrAtariFlag("Nia_ev", (CA_ON | CA_ATARI | CA_CHARA | CA_PUSH))
+
+	//SetChrPos("Nia", -85.66f, -1280.87f, 53.21f)
+	//TurnToChr("Nia", LEADER, 360.0f)
+	//SetChrAtariFlag("Nia", (CA_ON | CA_ATARI | CA_CHARA | CA_PUSH))
+	SetFlag(SF_SAVENPCMODE, 1)
+	SetFlag(105, 0)	// Niaの移動速度モード１
+
+	// クエスト、シスターニア用のあたりオン
+	MapSetProp( "@CM_quest", MNP_GROUND)
+	MapAnime("@CM_quest", "on")
+
+	Wait(1)
+
+	//カメラ位置復帰
+	//MoveCameraAt( 0 , 0.0f , 0.0f , 0.0f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 0.0f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 0.0f , 0 )		// 基本仰角
+	//RotateCamera( 0 , 0.0f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 0.0f , 0 )			// 視野角
+	//SetCameraZPlane( 0 , 0.0f )					// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )					// ロール回転
+
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+//===============================================================
+//
+// 【QS311】神に祈りを（シスター・ニア）
+// ▼キャンセルイベント
+//	◆ニアはツタが登れないので、現在のエントリー付近でひっかけるのではなく、ツタの崖前に移す必要あり。
+//
+function "QS_311_Cancel"
+{
+	//　　スタート地点より前に引き返そうとするとイベント。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -85.04f, -1286.17f, 53.27f)
+	Turn("ADOL", -29.42f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("ADOL", "Nia_ev")
+
+	SetChrWork("Nia_ev", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Nia_ev", -83.98f, -1287.15f, 53.23f)
+	Turn("Nia_ev", 158.87f, 360.0f)
+	ChangeAnimation( "Nia_ev" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Nia_ev",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Nia_ev",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Nia_ev",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("Nia_ev", "ADOL")
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt(0, -84.367f, -1287.817f, 54.269f, 0)	// 注視点
+	ChangeCameraDistance(0, 4.600f, 0)		// 基本距離
+	ChangeCameraElevation(0, 10.522f, 0)	// 基本仰角
+	RotateCamera(0, 186.317f, 0)				// 角度
+	ChangeCameraPers(0, 52.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000 ,1.000 ,0.700 ,0.500)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+//	SetSkipScript("mp3101:QS_311_Escort_ED")
+
+//開始処理ここまで-----------------------------------------------
+	Wait(10)
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	TalkPopup("Nia_ev",0,0,0,0,0)
+	{
+		"#000e#000mえっと……"
+		"漂流村に戻られるのですか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//TurnToChr( "ADOL", "Nia", 8.0f )
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"準備し直させて欲しい")
+	MenuAdd(2,"いや、やはり先を目指そう")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	//Wait(20)
+	
+	//──────────────────────
+	//	⇒準備し直させて欲しい
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		HeadYes("ADOL", 1, 25)
+		Wait(30)
+
+		TalkPopup("Nia_ev",0,0,0,0,0)
+		{
+			"#000e#000m分かりました、"
+			"そういうことであれば。\p"
+			"また改めて案内をお願い致します。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		StopBGM(90)
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+		//	  　集落の入口で操作許可。
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+		
+//終了処理ここから----------------------------------------------------
+		
+		//イベント前の状態を復帰
+		RestoreEventState()	
+
+		// パーティ編成可能状況を戻す
+		SetFlag(SF_ADOL_JOINOK, FLAG[SF_ADOL_JOINOKBK])
+		SetFlag(SF_LAXIA_JOINOK, FLAG[SF_LAXIA_JOINOKBK])
+		SetFlag(SF_SAHAD_JOINOK, FLAG[SF_SAHAD_JOINOKBK])
+		SetFlag(SF_HUMMEL_JOINOK, FLAG[SF_HUMMEL_JOINOKBK])
+		SetFlag(SF_RICOTTA_JOINOK, FLAG[SF_RICOTTA_JOINOKBK])
+		SetFlag(SF_DANA_JOINOK, FLAG[SF_DANA_JOINOKBK])
+
+		//キャラ初期状態の設定
+		RestorePartyMember()						// パーティメンバーを戻す
+
+		//パーティ状態のリセット
+		CallFunc("system:party_reset")
+
+		//フラグ立て
+		SetFlag( GF_QS311_ESCORT_START, 0 )		// 【QS311】▼護衛開始イベント を見た　を取り消す
+		SetFlag(SF_WARP_DISABLED, 0)			//　護衛中ワープ禁止解除
+		SetFlag(SF_SAVENPCMODE, 0)
+		SetFlag(GF_QS311_QUEST_CANCEL, 1)		//【QS311】クエスト途中でキャンセル
+
+		// クエスト、シスターニア用のあたりオフ
+		MapAnime("@CM_quest", "off")
+
+		//キャラモーション初期化
+		//CallFunc("system:reset_chrmot_ALL")
+		CallFunc("system:reset_chrmot_ADOL")
+		CallFunc("system:reset_chrmot_Nia")
+
+		// シスター・ニアを外す
+		SetChrPos("Nia_ev", -100000.00f, 0.00f, 0.00f)
+
+		//マップパラメーターリセット
+		ResetMapParam(-1)
+
+		//マーカー消去
+		DelMapMarker( SMI_QUEST, PAGE_F006, MARKER_QS_311_LP1, 0, 0)	// 【QS311】神に祈りを（シスター・ニア）「▼クエストイベント」が発生するポイント用
+		DelMapMarker( SMI_QUEST, PAGE_F006, MARKER_QS_311_LP2, 0, 0)	// 【QS311】神に祈りを（シスター・ニア）「▼クエスト達成イベント」が発生するポイント用
+		
+		SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+		LoadArg("map/mp1201/mp1201.arg")
+		EventCue("mp1201:QS_311_Relocate")	//	  　集落の入口で操作許可。
+
+//終了処理ここまで----------------------------------------------------
+	}
+	//	⇒いや、やはり先を目指そう
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		HeadNo("ADOL", 1, 35)
+		Wait(40)
+
+		TalkPopup("Nia_ev",0,0,0,0,0)
+		{
+			"#000e#000m助かります……"
+			"では改めて頂上を目指しましょう。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	//──────────────────────
+
+		//　　イベント終了、操作許可。
+		FadeOut(FADE_BLACK,FADE_FAST)
+		WaitFade()
+
+//終了処理ここから----------------------------------------------------
+
+		//イベント前のキャラ情報を復帰
+		RestoreEventState()
+
+		//隠したものを復帰。
+		ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+		//キャラモーション初期化
+		//CallFunc("system:reset_chrmot_ALL")
+		CallFunc("system:reset_chrmot_ADOL")
+		CallFunc("system:reset_chrmot_Nia")
+
+		//パーティキャラを解放
+		ReleaseEventPartyChr()
+
+		//マップパラメーターリセット
+		ResetMapParam(-1)
+
+		CallFunc("mp3101:init")
+
+		//イベント後の再配置
+		SetChrPos("LEADER", -86.44f, -1279.05f, 53.18f)
+		Turn("LEADER", 166.19f, 360.0f)
+		ResetPartyPos()
+		ResetFollowPoint()
+
+		// ニアをアドルの後ろに配置
+		SetChrPos("Nia_ev", -85.70f, -1280.76f, 53.21f)
+		TurnToChr("Nia_ev", LEADER, 360.0f)
+		SetChrAtariFlag("Nia_ev", (CA_ON | CA_ATARI | CA_CHARA | CA_PUSH))
+		SetFlag(SF_SAVENPCMODE, 1)
+		SetFlag(105, 0)	// Niaの移動速度モード１
+
+		Wait(1)
+
+		//カメラ位置復帰
+		//MoveCameraAt(0, -86.440f, -1279.050f, 55.046f, 0)	// 注視点
+		//ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+		//ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+		//RotateCamera(0, 8.466f, 0)				// 角度
+		//ChangeCameraPers(0, 60.000f, 0)			// 視野角
+		//SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+		//RollCamera(0, 0.0f, 0)				// ロール回転
+
+		RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+		CallFunc("system:camera_reset")
+
+		ResetStopFlag(STOPFLAG_EVENT)
+
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+//終了処理ここまで----------------------------------------------------
+	}
+}
+
+// ▼ニアがついて来ているかチェック
+function "QS_311_CheckNia"
+{
+
+	CheckChrDistance(TF_MENU_SELECT, LEADER, "Nia_ev", 0, 8.0f)
+
+	if (!FLAG[TF_MENU_SELECT])
+	{
+		//開始処理ここから----------------------------------------------------
+		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		ResetStopFlag(STOPFLAG_NOCHARACLIP)
+		SaveCamera()
+
+		ResetMotion("PARTYALL", 0)
+		StopEffect(-1, PARTYALL, 1)
+		StopEmotion("PARTYALL")
+		ResetMoveVec("PARTYALL")
+		//開始処理ここまで-----------------------------------------------
+
+		//	ナレーション
+		TalkPopup("UNDEF", 0, 3, STOPPER_PPOSX, STOPPER_PPOSY, 0)
+		{
+			"#7Cシスター・ニアがついてきていないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		SetChrPos(LEADER, -368.58f, -1050.13f, 118.55f)
+		Turn(LEADER, -163.73f, 360.0f)
+
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	else if (FLAG[GF_QS311_LOOK_EVENT])
+
+	{
+		//SetFlag(TF_LOADING_TIPS_OFF, 1)	//NowLoading 時の Tips 表示をカット
+		LoadArg("map/mp3102/mp3102.arg")
+		EventCue("mp3102:QS_311_mp3102_Relocate")	//	  　集落の入口で操作許可。
+	}
+}
+
+

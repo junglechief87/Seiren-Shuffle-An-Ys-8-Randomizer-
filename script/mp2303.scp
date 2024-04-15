@@ -1,0 +1,223 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/music.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 2303：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//◆マップエフェクト
+	//胞子
+	Set3DParticle(PARTICLE_TYPE_SPORE, 0.0f,0.0f,0.0f, 0.05f,0.05f,0.02f, 0.0f,0.0f,0.0f, 0.0f,0.0f,0.0f, 180.0f, 0.0f)
+
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_intercept3" , 0 )
+	EventAreaEnable( "evb2_intercept3_2" , 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+	// イベント発生制御
+		if( !FLAG[GF_02MP23xx_OCCUR_INTERCEPT3] && WORK[WK_ISINTERCEPT] == 0){			// 迎撃戦３が発生した
+			EventAreaEnable( "evb2_intercept3" , 1 )
+			EventAreaEnable( "evb2_intercept3_2" , 1 )
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_2301.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//シュラム密林地帯
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+	// ボス倒した事があるならば、撤去する必要あり
+	if ( FLAG[GF_02MP2304_KILL_MIDBOSS])
+	{
+		SetChrPos("b102",-100000.0f, 0.0f, 0.0f)
+	}
+
+	//骸骨：宝箱
+	if( FLAG[GF_MP2303_SKELETON01] ){
+		ChangeAnimation( "Skeleton01" , "ANI_STOP2", -1 , 1 )		//取った後
+		SetChrWork("Skeleton01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	}
+}
+
+//-------------------------------------------
+//骸骨
+//function "Skeleton01"	//下の【海賊のメモ④】に統合致しました
+//{
+//
+////	SetStopFlag(STOPFLAG_PC)
+//	SetStopFlag(STOPFLAG_TALK)
+//
+//	ChangeAnimation( "PLAYER1" , "ANI_GET_ITEM", -1 , 1 )
+//	Wait(10)
+//	ChangeAnimation( "this" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+//
+//	GetItemMessageExPlus( ICON3D_MEMO_P_004, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+//	WaitPrompt()
+//	WaitCloseWindow()
+//	GetItem(ICON3D_MEMO_P_004,1)		//海賊のメモ④
+//
+//	PlaySE(SE_BREAK_MAT_0061,100,0,  0, 0, 1.0f, 0)		//◆仮ＳＥ
+//	ChangeAnimation( "this" , "ANI_OPEN", -1 , 1 )		//崩れる
+//
+//	//開けた
+//	SetFlag( GF_MP2303_SKELETON01, 1 )
+//	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+//
+////	ResetStopFlag(STOPFLAG_PC)
+//	ResetStopFlag(STOPFLAG_TALK)
+//
+//}
+
+//-------------------------------------------
+//迎撃戦呼び出し
+function "Intercept3"
+{
+	if (!FLAG[GF_02MP23xx_OCCUR_INTERCEPT3])
+	{
+		//迎撃戦発生処理
+		EventAreaEnable( "evb2_intercept3" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_INTBTL003, 0, 0)
+
+	//	Wait(30)
+		//Intercept(INTERCEPT_STAGE03, 2)	// まだ余裕
+
+		SetFlag(GF_02MP23xx_OCCUR_INTERCEPT3, 1)
+		//SetFlag(GF_INTERCEPT_NO, INTERCEPT_STAGE03)
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//================================================
+//【海賊のメモ④】（密林・中盤）											GF_MP2303_SKELETON01
+//================================================
+function "SubEV_Memo_P_04"
+{
+	//	※海賊の死骸を調べて入手するようにする。
+	//	※入手時に、海賊のメモのポートレートと
+	//	　メモの内容を表示する。
+	//	　メモの内容はその後冒険日誌の「ストーリー」「メモ」タブにに登録される。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	// ポートレート読み込み
+	Portrait_Load(1, "visual/portrait/p_30013.itp")	// 海賊のメモ
+	Portrait_Create(1, SUBP_POS_X, SUBP_POS_Y,
+	0, 0, SUBP_SCALE_X, SUBP_SCALE_Y,
+	0.0f, 0x00ffffff, 0x00000000)
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	ChangeAnimation( "PLAYER1" , "ANI_GET_ITEM", -1 , 1 )
+	Wait(10)
+	ChangeAnimation( "this" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+
+	//GetItemMessageExPlus( ICON3D_MEMO_P_004, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+	//WaitPrompt()
+	//WaitCloseWindow()
+	//GetItem(ICON3D_MEMO_P_004,1)		//海賊のメモ④
+	CallFunc("rng:0497")
+	Wait(20)
+
+	//ポートレート表示
+	Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cこの島に来てから"
+		"#7Cもう半分以上が死んだ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C裏切りや反乱に忙しかった連中も"
+		"#7C今じゃ大人しいもんだ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C馬鹿でもわかる……"
+		"#7Cこの島で必要なのは力でも財宝でもねえ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cオレも……もう少し"
+		"#7C気づくのが早けりゃな……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(20)
+
+	//ポートレートを消去
+	Portrait_Anime(1, PR_ANIME_COLOR, 0.0f, 0.0f, 0.0f, 0.0f, FADE_FAST)
+	Wait(FADE_FAST)
+
+	Portrait_Close(1)
+	Portrait_Unload(1)
+
+	//SE埋め込み済み
+	ChangeAnimation( "this" , "ANI_OPEN", -1 , 1 )		//崩れる
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+	//フラグ処理
+	SetFlag( GF_SUBEV_GET_MEMO, 1 )		//Ｔ・海賊のメモを手に入れた（１つでも手に入れたら立つ）
+	SetFlag( GF_SUBEV_GET_MEMO_P_04, 1 )		//海賊のメモ④を手に入れた
+
+	//開けた
+	SetFlag( GF_MP2303_SKELETON01, 1 )
+	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	
+	//イベント後の再配置
+	//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+	//Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+		
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+	
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}

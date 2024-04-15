@@ -1,0 +1,1288 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+
+//-------------------------------------------
+// 1131：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1101" , 0 )
+	MapHide( "@BG2_mp1102" , 0 )
+	MapHide( "@BG2_mp1103" , 0 )
+	MapHide( "@BG2_mp1104_alpha" , 0 )
+	MapHide( "@BG2_mp1111" , 0 )
+	MapHide( "@BG2_mp1112_3" , 0 )
+	MapHide( "@BG2_mp1113" , 0 )
+	MapHide( "@BG2_mp1131" , 0 )
+	MapHide( "@BG2_mp1201" , 0 )
+	MapHide( "@BG2_mp3101_3" , 0 )
+
+	//CallFunc("mp1101:init_camp_lv")	//◆拠点表示テスト
+
+	MapHide( "skyfog2" , 0 )		//濃霧非表示
+	MapHide( "norosi" , 0 )			//狼煙OFF
+
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_S100" , 0 )
+	EventAreaEnable( "evb2_act_0102" , 0 )	//アクティブボイス
+	EventAreaEnable( "evb2_act_0227" , 0 )	//アクティブボイス
+	EventAreaEnable( "evb2_act_0228" , 0 )	//アクティブボイス
+
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog2" , 1 )		//濃霧表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 120.0f , 2.0f, 0.3f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00939aa0, 200.0f, 1000.0f , 1.0f , 0.7f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.8f )
+		}
+		if( FLAG[GF_02MP1101_GUIDE_PARO] && !FLAG[GF_02MP1103_KILL_KIERGAARD] ){
+			EventAreaEnable( "evb2_S100" , 1 )
+		}
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0102] && FLAG[GF_01MP1101_DRAW_MAP] && !FLAG[GF_01MP1111_DASH_HELP]){
+			EventAreaEnable( "evb2_act_0102" , 1 )
+		}
+		if(!FLAG[GF_AVOICE_0227] && FLAG[GF_02MP1101_GUIDE_PARO] && !FLAG[GF_02MP1103_KILL_KIERGAARD]){
+			EventAreaEnable( "evb2_act_0227" , 1 )
+		}
+		if(!FLAG[GF_AVOICE_0228] && FLAG[GF_02MP1101_GUIDE_PARO] && !FLAG[GF_02MP1111_WOUND_BARBAROSS]){
+			EventAreaEnable( "evb2_act_0228" , 1 )
+		}
+	}
+
+
+	//障害突破イベント（協力イベント）
+	//がれきLP設定
+	SetChrWork( "LP_STOP_1131_3101" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+	SetChrWork( "CP_STOP_1131_3101" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+	if( FLAG[SF_EVENT_ON] )
+	{
+		//障害物制御
+		if( FLAG[GF_SUBEV_1131_REMOVE_ROCK] )
+		{
+			MapAnime( "mp1131_stop01" , "open" )
+			// 処理を軽くする為吹っ飛ばす
+			SetChrPos("LP_STOP_1131_3101",  -100000.00f,0.00f,0.00f)
+			SetChrPos("CP_STOP_1131_3101",  -100000.00f,0.00f,0.00f)
+		}
+		else if (FLAG[GF_SUBEV_1131_CHECKED_ROCK])
+		{
+			// 初回チェック済み
+			SetChrWork("LP_STOP_1131_3101", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1131_3101", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		}
+		else
+		{
+			SetChrWork("LP_STOP_1131_3101", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+			SetChrWork("CP_STOP_1131_3101", CWK_CHECKOFF, 1)		// 協力イベントルックポイントをオフに
+		}
+
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 3 ){
+			VisualName("visual/mapname/mn_1110.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//名知らず海岸
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0102"
+{
+	if (!FLAG[GF_AVOICE_0102])
+	{
+		EventAreaEnable( "evb2_act_0102" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0102, 1, 0)	//丘を進んだところで
+	}
+}
+
+function "act_0227"
+{
+	if (!FLAG[GF_AVOICE_0227])
+	{
+		EventAreaEnable( "evb2_act_0227" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0227, 1, 0)	//キルゴールの追跡、道を間違った
+	}
+}
+
+function "act_0228"
+{
+	if (!FLAG[GF_AVOICE_0228])
+	{
+		EventAreaEnable( "evb2_act_0228" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0228, 1, 0)	//キルゴールの追跡、1131下り坂
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//===============================================================
+// クイナ：▼親愛イベント
+function "Sinai_Kuina"
+{
+
+//開始処理ここから----------------------------------------------------
+
+	//CallFunc("system:event_begin")
+	SetStopFlag(STOPFLAG_EVENTIMPOSE)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	LoadChr("Kuina")
+
+	SaveEventState()
+	CallFunc("system:event_chrinfoflag_set")
+	SaveCamera()
+
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//インフォフラグ、キャラワーク
+//	SetChrInfoFlag( "ADOL" , INFOFLAG_NOGRAVITY )	// 移動の時、マップに埋まってしまうのでマスクしています
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOMAPATARICHECK )
+//	SetChrInfoFlag( "Kuina" , INFOFLAG_NOGRAVITY )	// 移動の時、マップに埋まってしまうのでマスクしています
+	SetChrInfoFlag( "Kuina" , INFOFLAG_NOCHRATARI)
+	SetChrInfoFlag( "Kuina" , INFOFLAG_NOMAPATARICHECK )
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrWork("Kuina", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetChrPos("ADOL",89.83f, -1330.17f, 23.98f)
+	Turn("ADOL",-5.09f,360.0f)
+	LookReset("ADOL")
+	SetChrPos("Kuina",89.05f, -1331.80f, 24.06f)
+	Turn("Kuina",-5.09f,360.0f)
+	LookReset("Kuina")
+
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Kuina",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Kuina",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Kuina",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	ChangeAnimation( "Kuina" , "ANI_WAIT", -1 , 1 )
+
+	MoveCameraAt( 0 , 92.737f , -1332.967f , 30.461f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.680f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 12.363f , 0 )	// 基本仰角
+	RotateCamera( 0 , 163.309f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	RollCamera( 0 , 2.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 100.000 ,1.000 ,0.700 ,0.600)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1131:Sinai_Kuina_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//　　暗転を挟んで字幕イベント。
+	//　　風見の高台の花畑。（一部に用意してもらう予定）
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+
+
+	LookChr("ADOL", "Kuina")
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	Wait(15)
+	//　　クイナが先頭切って駆けてきて、アドルが付いてくる形。
+	ExecuteCmd( 1, MoveTo, "Kuina", 89.79f, -1339.36f, 24.63f, 0.1f, 0.55f )
+	Wait(3)
+	ExecuteCmd( 2, MoveTo, "ADOL", 90.45f, -1336.77f, 24.60f,0.1f, 0.22f )
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,  89.904f , -1338.096f , 25.910f  , 150 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 5.259f , 150 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 20.165f , 150 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE ,  208.344f  , 150 )
+	ExecuteCmd(1003, RollCamera, INTERPOLATE_SPHERE ,  -2.5f  , 150 )
+
+	//MoveCameraAt( 0 , 89.904f , -1338.096f , 25.910f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 5.259f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 20.165f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 208.344f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	//RollCamera( 0 , -0.1f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//　　花畑を駆け回るクイナ。
+	WaitThread(1)
+
+	PlayBGM(BGM_EVENT_001, 0)
+
+	ExecuteFunc( 100 , "mp1131:Sinai_Kuina_Kuina_move1" )
+	WaitThread(2)
+	Wait(30)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeBGM(70,10)
+
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+
+	// クイナ
+	TalkMes("Kuina","#4626V#020e#080mあはははは！","","")
+	WaitPrompt()
+
+	ChangeAnimation( "ADOL", "ANI_EV_WAIT2_S", -1, 1 )	// 待機（腰に手）
+
+	// クイナ
+	TalkMes("Kuina","#4627V#020e#080mどうアドルーっ！",
+		"すっごい場所でしょー！","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"驚いたよ")
+	MenuAdd(2,"ここなら知ってたよ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	PlayVoice(Y8V_0161,"ADOL",100)	//はは（微笑）
+
+
+	// 片手腰手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_WAIT2_TEBURI", -1, 1 )	// 手振り
+	//SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(10)
+
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+	Wait(10)
+	
+	//────────────────────
+	//	⇒驚いたよ
+	if (FLAG[TF_MENU_SELECT] == 1) {
+		
+		// クイナ
+		TalkMes("Kuina","#4628V#000e#000mでしょでしょ？",
+			"ふふ～ん、とっておきの場所なんだー。","")
+		WaitPrompt()
+		
+		// クイナ
+		TalkMes("Kuina","#4629V#000e#000mあ、ドギにはぜったいナイショだよ～？",
+			"外で遊ぶとぜったい怒るんだもん。","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒ここなら知ってたよ
+	else if (FLAG[TF_MENU_SELECT] == 2) {
+
+		// クイナ
+		TalkMes("Kuina","#4630V#000e#000mななっ、なんだってぇー！？","","")
+		WaitPrompt()
+		
+		// クイナ
+		TalkMes("Kuina","#4631V#000e#000m……ぷーん、見つけたのは",
+			"ぜったいわたしの方が先だもーん！","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(TF_MENU_SELECT2,-1)	// 花畑を駆け回るクイナの移動を止めるためのフラグに使用しています
+	StopThread(100)
+
+	// カット2 ----------------------------------------------------------------------------------------
+
+	//　　クイナ、立ち止まって深呼吸するようなモーション
+	
+	
+	// カメラ
+	MoveCameraAt( 0 , 92.879f , -1340.918f , 25.200f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.258f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.299f , 0 )	// 基本仰角
+	RotateCamera( 0 , 81.859f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 2.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 90.98f, -1338.83f, 24.64f)
+	Turn("ADOL", -33.79f, 360.0f)
+	SetChrPos("Kuina", 92.50f, -1340.83f, 24.65f)
+	Turn("Kuina", -51.60f, 360.0f)
+	ChangeAnimation( "Kuina", "ANI_WAIT", -1, 1 )	// 待機
+
+	Wait(15)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 92.604f , -1340.745f , 25.780f , 120 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.258f , 120 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -5.441f , 120 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 69.260f , 120 )
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+	Wait(10)
+
+	ChangeAnimation( "Kuina", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+	// クイナ
+	TalkMes("Kuina","#4632V#011e#080mえへへ、気持ちがよくって",
+		"元気出るでしょ？","")
+	WaitPrompt()
+	
+	Look("Kuina", 0.0f, -10.0f)	// うつむく
+	ChangeAnimation( "Kuina", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+	
+	// クイナ
+	TalkMes("Kuina","#4633V#010e#080mせんちょーさんの高台も風が気持ちイイけど、",
+		"ここはお花のにおいがするもんね。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	ChangeAnimation( "ADOL", "ANI_EV_WAIT2_E", -1, 1 )	// 待機（腰に手）
+
+	//　　クイナ、立ち止まって首だけで少し振り返る
+	LookChr("Kuina" , "ADOL")
+	Turn("Kuina", -77.98, 8.0f)
+
+	// クイナ
+	TalkMes("Kuina","#4634V#000e#021l#000mだからアドルも……",
+		"あんまりしょぼくれてちゃだめだよー？","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	//　　アドル、ＰＡエモーションで少し驚く表情
+	EmotionEx("ADOL", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SUP_S,1)	
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_SUP_S,1)	
+	Wait(35)
+
+	//　　少し・・・エモーションを出す
+	EmotionEx("ADOL", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_S, 1)	// 目
+	Wait(50)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_E, 1)	// 目
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"別にしょぼくれてないよ")
+	MenuAdd(2,"ダーナの事が気掛かりなだけさ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	PlayVoice(Y8V_0163,"ADOL",100)	//フフ…（微笑）
+
+	// 手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI", -1, 1 )
+	//SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SMILE_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_SMILE_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	Wait(30)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(20)
+
+	// カット2 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	
+	// カメラ
+	MoveCameraAt( 0 , 91.547f , -1339.297f , 25.984f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.738f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 12.319f , 0 )	// 基本仰角
+	RotateCamera( 0 , 188.147f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 2.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+	//────────────────────
+	//	⇒別にしょぼくれてないよ
+	if (FLAG[TF_MENU_SELECT] == 1) {
+		
+		// クイナ
+		TalkMes("Kuina","#4635V#081e#022l#080mそっかー。","","")
+		WaitPrompt()
+		
+		StopBGM(120)
+
+		// うなずきセット
+		HeadYes("Kuina" , 1 , 25 )
+		
+		// クイナ
+		TalkMes("Kuina","#4636V#020e#080m……うん、ならいいや！",
+			"アドルが元気なら！","")
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		ChangeSubAnimation("Kuina", SUBMOT_EYE, ANI_E_LAUGH_E, 1)	// 目
+		
+	}
+	//	⇒ダーナの事が気掛かりなだけさ
+	else if (FLAG[TF_MENU_SELECT] == 2) {
+		
+		// クイナ
+		TalkMes("Kuina","#4637V#051e#022l#000m……そっかー。","","")
+		WaitPrompt()
+		
+		StopBGM(120)
+
+		LookReset("Kuina")
+		Look("Kuina", 0.0f, -10.0f)	// うつむく
+
+		// クイナ
+		TalkMes("Kuina","#4638V#061e#000mよくわかんないケド……",
+			"ダーナお姉ちゃんも大変そうだもんね。","")
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		Look("Kuina", 0.0f, 0.0f)	// うつむく
+		ChangeSubAnimation("Kuina", SUBMOT_EYE, ANI_E_CLOSE, 1)	// 目
+
+	}
+	//────────────────────
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	//　　クイナ、アドルの近くまでやってくる。
+	
+	LookReset("Kuina")
+	Turn("Kuina", 139.90f, 8.0f)
+	Wait(15)
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 91.570f , -1339.379f , 25.817f , 600 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 0.777f , 600 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 19.241f , 600 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 182.976f , 600 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 40.00f , 600 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -12.9f , 600 )		// ロール回転
+	
+	// 移動
+	ExecuteCmd( 1, MoveTo, "Kuina", 91.46f, -1339.44f, 24.65f, 0.1f, 0.16f )
+
+	// 移動待ち
+	WaitThread(1)
+
+	PlayBGM(BGM_TOWN_501, 0)
+
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+
+	LookChr("Kuina" , "ADOL")
+
+	// クイナ
+	TalkMes("Kuina","#4639V#020e#080mそーだ、いつも元気でいる",
+		"ヒケツを教えてあげるっ！","")
+	WaitPrompt()
+
+	ChangeAnimation( "Kuina", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+	LookReset("Kuina")
+
+	// クイナ
+	TalkMes("Kuina","#4640V#010e#080mそれはねー……","","")
+	WaitPrompt()
+	
+	WaitAnimation2("Kuina", -1, 1, "ANI_EV_RYOTEKOSI_S", 0)
+	ChangeAnimation( "Kuina", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+	LookChr("Kuina", "ADOL")
+
+	// クイナ
+	TalkMes("Kuina","#4641V#012e#080mどんな時でも、いーこととか",
+		"楽しいことをさがすこと！","")
+	WaitPrompt()
+
+	ChangeAnimation( "Kuina", "ANI_EV_GUTSPOSE_S", -1, 1 )	// ガッツポーズ
+
+	// クイナ
+	TalkMes("Kuina","#4642V#020e#080mぜったい、ぜーったいに、",
+		"どんな時でもだよ！","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	// カット3 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	// カメラ（右ver.）
+	MoveCameraAt( 0 , 91.350f , -1339.329f , 25.897f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.497f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -7.395f , 0 )	// 基本仰角
+	RotateCamera( 0 , 82.112f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -7.1f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ChangeAnimation( "Kuina", "ANI_EV_GUTSPOSE_E", -1, 1 )	// ガッツポーズ
+
+	// カメラ移動（右ver.）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 91.350f , -1339.329f , 25.777f , 80 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.257f , 80 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -11.693f , 80 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 83.835f , 80 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 40.000f , 80 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,-11.7f , 80 )		// ロール回転
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	LookReset("ADOL")
+	ChangeAnimation( "ADOL", "ANI_EV_KAGAMI_S", -1, 1 )	// かがみ
+	Wait(30)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"ありがとう")
+	MenuAdd(2,"僕にできるかな")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+
+	//────────────────────
+	//	⇒ありがとう
+	if (FLAG[TF_MENU_SELECT] == 1) {
+		PlayVoice(Y8V_0156,"ADOL",100)	//ああ（肯定）
+		
+		//SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SMILE_S,1)
+		ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_SMILE_S,1)
+		Wait(30)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		Wait(10)
+		
+		SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+		Wait(10)
+		
+		ChangeAnimation( "Kuina", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+		
+		// クイナ
+		TalkMes("Kuina","#4643V#011e#080mえっへん、どういたしましてだよー！","","")
+		WaitPrompt()
+		
+		ChangeAnimation( "Kuina", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+		
+		// クイナ
+		TalkMes("Kuina","#4644V#012e#080mアドルもがんばってねー！","","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒僕にできるかな
+	else if (FLAG[TF_MENU_SELECT] == 2) {
+		
+		PlayVoice(Y8V_0161,"ADOL",100)	//はは（微笑）
+
+		//SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+		ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SMILE_S,1)
+		ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_SMILE_S,1)
+		Wait(30)
+		SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+		LookRoll("ADOL", 0.0f)	// かしげる
+		Wait(10)
+		SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+		Wait(10)
+		
+		// クイナ
+		TalkMes("Kuina","#4645V#000e#080mあははっ、だいじょーぶ！",
+			"アドルならきっとできるよー！","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	// カメラ移動（右ver.）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 91.409f , -1339.300f , 25.837f , 70 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.257f , 70 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 16.951f , 70 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 174.656f , 70 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 40.000f , 70 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -5.4f , 70 )		// ロール回転
+
+	Blur( BLUR_TYPE_AFTERIMAGE ,0.3f , 50 )	// 残像
+	
+	Wait(20)
+
+	//　　クイナ、素早くアドルの頬にキスをする
+	ChangeAnimation( "Kuina", "ANI_EV_KISS", -1, 1 )	// キス
+	ChangeSubAnimation("Kuina", SUBMOT_EYE, ANI_E_CLOSE_S, 1)	// 目
+	Wait(5)
+	LookRoll("ADOL", 2.0f)	// かしげる
+
+	WaitAnimation2("Kuina", -1, 1, "ANI_EV_KISS", 0)
+	ChangeSubAnimation("Kuina", SUBMOT_EYE, ANI_E_CLOSE_E, 1)	// 目
+	LookRoll("ADOL", 0.0f)	// かしげる
+
+
+	// カメラ待ち（Aイベント用）
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+
+	//　　クイナにＰＡエモーション
+	//　　続いてワイワイエモーションではしゃぐ
+	EmotionEx("Kuina", 0.00f, EMO_PA, 0, 5, 1, 1, 0.8f)	//パッ
+	Wait(35)
+	ChangeSubAnimation("Kuina", SUBMOT_EYE, ANI_E_LAUGH_S, 1)	// 目
+	EmotionEx("Kuina", 0.00f, EMO_WAI, 0, 5, 1, 0, 0.8f)	//ワイワイ
+	Wait(50)
+	ChangeSubAnimation("Kuina", SUBMOT_EYE, ANI_E_LAUGH_E, 1)	// 目
+
+	SetStopFlag(STOPFLAG_CINEMA)	//字幕背景表示
+	Wait(10)
+
+	// クイナ
+	TalkMes("Kuina","#4646V#080e#080mあー！　アドルが赤くなったー！","","")
+	WaitPrompt()
+
+	// クイナ
+	TalkMes("Kuina","#4647V#020e#080mあはははは！　赤くなったー！",
+		"にげろーっ！！","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	// カット4 ----------------------------------------------------------------------------------------
+
+	//　　クイナは花畑を走って逃げていく。
+	//　　それを見送って苦笑するアドル。
+	
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// カメラ
+//	MoveCameraAt( 0 , 90.554f , -1338.119f , 25.297f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.017f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 5.492f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 347.128f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+//	RollCamera( 0 , 3.2f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	MoveCameraAt( 0 , 91.394f , -1338.360f , 25.496f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.328f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 11.746f , 0 )	// 基本仰角
+	RotateCamera( 0 , 18.465f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	RollCamera( 0 , -3.6f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("Kuina", 91.74f, -1338.87f, 24.63f)
+	Turn("Kuina", 171.56f, 360.0f)
+	LookReset("Kuina")
+	LookReset("ADOL")
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 90.969f , -1338.547f , 26.156f , 180 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.118f , 180 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 14.545f , 180 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 221.600f , 180 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 40.000f , 180 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,  -2.8f , 180 )		// ロール回転
+//	MoveCameraAt( 0 , 90.686f , -1338.208f , 26.057f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 1.337f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -4.248f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 224.247f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+//	RollCamera( 0 , 8.9f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+//	MoveCameraAt( 0 , 90.969f , -1338.547f , 26.156f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 1.118f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 14.545f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 221.600f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+//	RollCamera( 0 , -2.8f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "Kuina", 87.25f, -1299.21f, 24.05f, 0.1f, 0.60f)
+
+	ChangeAnimation( "ADOL", "ANI_EV_KAGAMI_E", -1, 1 )	// かがみ
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	WaitAnimation2("ADOL", -1, 1, "ANI_EV_KAGAMI_E", 0)
+	Turn("ADOL",-179.46f, 8.0f)
+
+	Wait(60)
+	ChangeAnimation( "ADOL", "ANI_EV_WAIT2_S", -1, 1 )	// 待機（腰に手）
+//	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_NIGA_S,1)
+//	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_NIGA_S,1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_SMILE_S, 1)	// 目
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_SMILE_S, 1)	// 口
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+
+	Wait(15)
+
+//	// カメラ待ち（Aイベント用）
+	StopBGM(90)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	FadeOut(FADE_BLACK,45)
+	WaitFade()
+
+	StopThread( 1 )
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1131:Sinai_Kuina_ED")
+}
+function "Sinai_Kuina_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前の状態を復帰
+	RestoreEventState()
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_NPCALL")
+
+	//一般配置の復帰
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	// 通常
+	if ( !FLAG[SF_GALLERY_EVENT] )
+	{
+		//フラグ立て・アイテム回収
+		SetFlag( GF_SUBEV_SINAI_KUINA, 1 )			// 親愛イベントを見た（クイナ）
+		SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )			//親愛イベント（クイナ）	名声値+2
+		//SetDiaryCharaFlag( DRCHA_KUINA, DRCHA_FLAG_INFO3, 1 )	//★人物メモ：追加情報の開放３（クイナ）
+
+		SetFlag(GF_GALL_EV_LIKE_21,1)			// Sinai_Kuina
+
+
+	//	SetChrPos("LEADER",-35.85f, -1440.52f, 27.89f)
+	//	Turn("LEADER",-95.28f,360.0f)
+	//	ResetPartyPos()
+	//	ResetFollowPoint()
+	//	Wait(1)
+
+	//	RestoreCamera(0,0)
+	//	CallFunc("system:camera_reset")
+
+	//	Wait(30)
+
+	//	FadeIn(FADE_BLACK,FADE_FAST)
+	//	WaitFade()
+
+		SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+		LoadArg("map/mp1201/mp1201.arg")
+		EventCue("mp1201:Sinai_Kuina2")
+		
+		ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	}
+	// イベントギャラリー中
+	else
+	{
+		FadeBGM(100,15)
+		SoundEfx( SEFX_DEFAULT, 15 )
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+		GalleryEvEnd(0)		// イベントギャラリー終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	}
+
+//終了処理ここまで----------------------------------------------------
+}
+function "Sinai_Kuina_Kuina_move1"
+{
+	SetFlag(TF_MENU_SELECT2,0)
+	while( FLAG[TF_MENU_SELECT2] >= 0 )
+	{
+		MoveRotate( "Kuina" , 90.950f , -1343.078f , 24.916f, -180 , 0.0f , 1 ,1.0f ,1 , 0 )
+		MoveRotate( "Kuina" , 90.950f , -1343.078f , 24.916f,  180 , 0.0f , 1 ,1.0f ,1 , 0 )
+	}
+
+	MoveRotate( "Kuina" , -52.80f, -1446.09f,	29.05f,  45 , 0.0f , 1 ,1.00f ,1 , 0 )
+}
+function "Sinai_Kuina_Kuina_move2"
+{
+	MoveTo( "Kuina", -43.96f,-1444.59f,28.99f, 0.1f, 1.00f )
+	MoveTo( "Kuina", -24.92f,-1435.10f,25.30f,0.1f, 1.00f )
+}
+
+
+//	================================================
+//	【ＬＰ：1131⇒3101の岩を調べる】
+//	================================================
+function "LP_STOP_1131_3101"
+{
+	//無条件で支援イベントへ分岐
+	
+	//▼支援イベントNo.05
+	EventCue("mp1131:SubEV_Sien05")
+}
+
+function "SubEV_Sien05_open"
+{
+	if( !FLAG[GF_SUBEV_1131_CHECKED_ROCK] )
+	{
+		// フラグセット
+		SetFlag(GF_SUBEV_1131_CHECKED_ROCK, 1)
+		
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1131_3101", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1131_3101", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_1131, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_1131CE, -26.99f,-1292.62f,24.43f, -26.99f,-1292.62f, COOPEVID_MP1131, MN_F_SOUTHWEST_PLANE_MP1131,0)
+	}
+}
+//──────────────────────────────
+//▼支援イベントNo.05		必要人数１２人		mp1131：名も無き海岸
+//	岩石群を撤去②			mp3101：風見の高原に行けるようになる
+//──────────────────────────────
+function "SubEV_Sien05"
+{
+	//	※三部シスター・ニアのクエスト発生する条件も兼ねる
+	//　　※最速で「▼第二部⑪ディナを助けた」以降に撤去可能。
+	//　　　ＮＰＣを３／３人以上助けた後に撤去可能。
+	//　　ＬＰを調べると以下の処理。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnTo( "LEADER", -26.99f,-1292.62f,24.43f , 15.0f )
+
+	//	ナレーション
+	TalkPopup("UNDEF",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C大きな岩が積み重なって"
+		"#7C道を塞いでしまっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	GetCoopEvPeopleNum(COOPEVID_MP1131, TF_MENU_SELECT2)	//支援要請で必要な人数を取得
+	
+	//──────────────────────
+	//	⇒人数が足りていない
+	if( FLAG[TF_MENU_SELECT2] > WORK[WK_NPCNUM] )	//必要な人数 ＞ 漂流村の人数
+	{
+			//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cこの岩を撤去するには、"
+			"#7C漂流村の人数が足りないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_1131_CHECKED_ROCK, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1131_3101", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1131_3101", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_1131, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_1131CE, -26.99f,-1292.62f,24.43f, -26.99f,-1292.62f, COOPEVID_MP1131, MN_F_SOUTHWEST_PLANE_MP1131,0)
+/*
+		// 地図登録ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4C障害のある場所として地図に登録した。"
+			"#8S"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+*/
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//	⇒人数が足りている場合
+	else
+	{
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C支援要請を出しますか？",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+			//	  　以下の流れに接続
+			//──────────────────────
+			
+			//　　＞「▼支援イベント共通処理①」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common1")
+			
+			//　　障害物撤去ＳＥ
+			PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+			Wait(80)
+			MapAnime( "mp1131_stop01" , "open" )
+
+			CallFunc("system:party_remove")
+
+			MoveCameraAt( 0 , -27.166f , -1287.991f , 24.537f , 0 )	// 注視点
+			ChangeCameraDistance( 0 , 9.301f , 0 )		// 基本距離
+			ChangeCameraElevation( 0 , -4.576f , 0 )	// 基本仰角
+			RotateCamera( 0 , 158.729f , 0 )				// 角度
+			ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+			RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+			ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , -25.869f , -1290.178f , 29.498f , 180 )		// 注視点
+			ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 10.201f, 180 )		// 基本距離
+			ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 25.051f, 180 )		// 基本仰角
+			ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 120.684f  , 180 )		// 角度
+			//ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,2.5f , 180 )		// ロール回転
+			//ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 50 )		// 視野角
+
+			//MoveCameraAt( 0 , -25.869f , -1290.178f , 29.498f , 0 )	// 注視点
+			//ChangeCameraDistance( 0 , 10.201f , 0 )		// 基本距離
+			//ChangeCameraElevation( 0 , 25.051f , 0 )	// 基本仰角
+			//RotateCamera( 0 , 120.684f , 0 )				// 角度
+			//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			//SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+			//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+			FadeIn(FADE_BLACK,FADE_FAST)
+
+			PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+			
+			//	ナレーション
+			TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+			{
+				"#7C全員の力を合わせて、大きな岩を撤去した！"
+				"撤去2行目"
+			}
+			Wait(30)
+			//　　＞「▼支援イベント共通処理②」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common2")
+			WaitPrompt()
+			WaitCloseWindow()
+
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+
+			StopThread(1001)
+			StopThread(1002)
+			StopThread(1003)
+			StopThread(1004)			
+			//　　イベント終了、操作許可。
+			
+			//障害物撤去処理
+			SetChrPos("LP_STOP_1131_3101",  -100000.00f	0.00f	0.00f)
+			SetChrPos("CP_STOP_1131_3101",  -100000.00f	0.00f	0.00f)
+			SetFlag(GF_SUBEV_1131_REMOVE_ROCK, 1)	// 【ＬＰ：1131⇒3101の岩を撤去した】
+			SetFlag(GF_SUBEV_1131_CHECKED_ROCK, 1)
+			SetDiaryFlag(DF_SUBEV_1131_REMOVE_ROCK, 1)		// ★名知らず海岸の西にあった大岩を撤去した。
+			//クエスト関連
+			if (FLAG[GF_SUBEV_JOIN_NIA]){// シスター・ニアと合流した
+
+				SetFlag(GF_QS311_START_READY, 1)	//【QS311】開始条件を満たす
+			}
+
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_1131, 0, 0)
+			// 協力イベントのマーカーも削除
+			DelMapMarker( SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_1131CE, 0, 0)
+			
+			SetFlag( TF_MENU_SELECT, 1 )	//支援イベントとして終了
+		}
+		//	⇒やめる
+		else
+		{
+			//	  　そのまま操作許可。
+			
+			// マーカーの切り替え処理
+			
+			// 見たフラグセット
+			SetFlag(GF_SUBEV_1131_CHECKED_ROCK, 1)
+			// ルックポイント切り替え
+			SetChrWork("LP_STOP_1131_3101", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1131_3101", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F001,REMOVE_OBJ_1131, 0, 0)
+			
+			// 協力イベントのマーカーもセット
+			SetMapMarker(SMI_COOPEVENT, PAGE_F001, REMOVE_OBJ_1131CE, -26.99f,-1292.62f,24.43f, -26.99f,-1292.62f, COOPEVID_MP1131, MN_F_SOUTHWEST_PLANE_MP1131,0)
+			
+			SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+		}
+		//──────────────────────
+	}
+
+//終了処理ここから----------------------------------------------------
+
+	//ストッパーとして終了
+	if( FLAG[TF_MENU_SELECT] == 0 )
+	{
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	//支援イベントとして終了
+	else
+	{
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+		MoveCameraAt( 0 , -23.631f , -1289.714f , 26.278f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 3.236f , 0 )	// 基本仰角
+		RotateCamera( 0 , 130.271f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		
+		ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		//イベント後の再配置位置
+		SetChrPos("LEADER", -23.63f, -1289.71f, 24.44f )
+		Turn("LEADER",49.73f, 360.0f)
+		
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+		
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+function "Stopper_S100"
+{
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+
+	//	================================================
+	//	【ストッパー：1131⇒1104】
+	//	================================================
+
+	ExecuteFunc(98 , "mp1131:se_flap")
+	Wait(20)
+
+	//　　パロの羽音がする	//◆未入力
+	//TalkPopup(UNDEF,0,0,0,0,0)
+	//{
+	//	"◆パロの羽音がする"
+	//}
+	//WaitPrompt()
+	//WaitCloseWindow()
+	
+	TalkPopup("Paro",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#5Cあどる！　コッチジャナイ！\p"
+		"#5Cきるごーる、ヒガシ、ヒガシ！！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+
+	SetChrPos("PLAYER1",-35.18f, -1225.51f, 16.06f )
+	Turn("PLAYER1",-38.32f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}
+
+function "se_flap"
+{
+	PlaySE(SE_PARO_STOPPER, 70, 0, 0, 0, 1.0f, 0)
+	Wait(13)
+	PlaySE(SE_PARO_STOPPER, 60 0, 0, 0, 1.0f, 0)
+	Wait(13)
+	PlaySE(SE_PARO_STOPPER, 50, 0, 0, 0, 1.0f, 0)
+	Wait(13)
+	PlaySE(SE_PARO_STOPPER, 40, 0, 0, 0, 1.0f, 0)
+	Wait(13)
+	PlaySE(SE_PARO_STOPPER, 30, 0, 0, 0, 1.0f, 0)
+}

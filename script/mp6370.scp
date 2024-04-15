@@ -1,0 +1,3671 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/temp/mp1201.h"
+#include "inc/vo.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 大穴・ボスマップ	    			                                          //
+//                                                                            //
+//----------------------------------------------------------------------------//
+function init
+{
+	// オケアノスダウン時あたりオフ
+	CallFunc("mp6370:HideKizetsuAtari")
+//	// オケアノスダウン時あたりオン
+//	CallFunc("mp6370:AppearKizetsuAtari")
+
+	// ◆仮ボス戦用閉じ込めあたり
+//	MapAnime("syswall", "open");	// ◆仮あたり
+	MapAnime("CT_ev00","off")		//当たり無効（通常）
+
+	EventAreaEnable( "B007_HELP_OFF_1" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_2" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_3" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_4" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_5" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_6" , 0 )	// オケアノス戦ヘルプ用
+
+	// イベント発生制御
+	if( FLAG[SF_BOSS_BATTLE] )
+	{
+		
+		// オケアノス戦ヘルプ
+		SetEventDriven(EED_TYPE_STUNBOSS, 0, "mp6370:B007_STAN")	// ボスがスタンしたらリアルタイムヘルプを起動
+
+		//リトライやデバッグボスジャンプからのボス戦
+		SetWork( WK_BGM , BGM_Nothing )		//BGM消す
+		if (WORK[WK_ISINTERCEPTBTL])
+		{
+			// 迎撃戦開始済みなので戦闘開始スクリプトを実行する
+			EventCue("mp6370:EV_RetryBoss")
+		}
+		else
+		{
+			// 迎撃戦開始させる
+			EventCue("mp6370:EV_Boss_Start")		// 迎撃戦開始を呼び出したいが、ここでInterceptStartすると、マップ読み込み処理内でマップ解放が発生して都合が悪いので、一度イベントに投げる
+//			InterceptStart(INTERCEPT_STAGE10, 0)
+		}
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+		if(!FLAG[GF_05MP1201_OCEANUS_STANDBY] ){
+			SetEnvSEPlayState(6370101, 0)	//水流音オフ
+			SetEnvSEPlayState(6370111, 0)
+			SetEnvSEPlayState(6370102, 0)
+			SetEnvSEPlayState(6370112, 0)
+			SetEnvSEPlayState(6370103, 0)
+			SetEnvSEPlayState(6370113, 0)
+			EventCue("mp6370:EV_M05S260")
+		}
+	}
+
+	//船名プレート
+	if( FLAG[GF_MP6370_KIRAKIRA01] ){
+		SetChrWork("LP_PLATE", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		MapAnime("locator_plate", "off")
+	} else {
+		MapAnime("locator_plate", "on")
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0904"
+{
+	if (!FLAG[GF_AVOICE_0904])
+	{
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0904, 1, 0)	//オケアノス、第一段階終了後の咆哮後
+	}
+}
+
+
+//-------------------------------------------
+//キラキラ
+function "LP_PLATE"
+{
+	//	================================================
+	//	【ＬＰ：ロンバルディアの船名プレート】
+	//	================================================
+	if( FLAG[GF_05MP1202_CHECK_MAP] &&	//大空洞へ向かうことになる２
+		!FLAG[GF_05MP1201_HOLD_PARTY] )	//漂流村で決起会が催される
+	{
+		//▼GF_05MP1202_CHECK_MAP,			//大空洞へ向かうことになる２
+		//	～！GF_05MP1201_HOLD_PARTY,		//漂流村で決起会が催される
+		//	※ただしボス戦中は出現しない
+
+	//開始処理ここから----------------------------------------------------
+		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		ResetStopFlag(STOPFLAG_NOCHARACLIP)
+		SaveCamera()
+	
+		ResetMotion( "PARTYALL" , 0 )
+		StopEffect(-1,PARTYALL,1)
+		StopEmotion( "PARTYALL" )
+		ResetMoveVec("PARTYALL")
+	//開始処理ここまで-----------------------------------------------
+		TurnToChr( LEADER , this , 7.5f )
+		Wait(10)
+	
+		//	テキスト
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cロンバルディア号の船名プレートが沈んでいる。\p"
+			"ロンバルディア2行目"
+			"#7Cいずれ漂流村に持ち帰りたい所だが……"
+			"持ち帰り2行目"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+		//　　※オケアノス討伐後にこのＬＰを調べると、プレゼントアイテムとして入手できる。
+		//　　　（カシューのプレゼントイベント参照）
+	
+	//終了処理ここから----------------------------------------------------
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+		//イベント後の再配置
+		//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+		//Turn("LEADER",0.00f,360.0f)
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+	
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+	
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	//終了処理ここまで----------------------------------------------------
+	}
+	else
+	{
+//		SetStopFlag(STOPFLAG_PC)
+		SetStopFlag(STOPFLAG_TALK)
+
+		ChangeAnimation( "LEADER" , "ANI_GET_ITEM", -1 , 1 )	//アイテム入手モーション
+		Wait(15)
+
+		MapAnime("locator_plate", "off")
+
+		//	テキスト
+		GetItemMessageExPlus( ICON3D_PRESENT_KASHU, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+		WaitPrompt()
+		WaitCloseWindow()
+		GetItem(ICON3D_PRESENT_KASHU,1)		//プレゼントアイテム（船名プレート：カシュー）
+
+		//フラグ
+		SetFlag( GF_MP6370_KIRAKIRA01, 1 )
+		SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+
+//		ResetStopFlag(STOPFLAG_PC)
+		ResetStopFlag(STOPFLAG_TALK)
+	}
+}
+
+//-------------------------------------------
+// オケアノスダウン時あたりオフ
+function HideKizetsuAtari
+{
+	MapDelProp("CA_b007_Kizetsu",MNP_GROUND)
+	MapAnime("Null_b007_Kizetsu", "hide")
+}
+
+// オケアノスダウン時あたりオン
+function AppearKizetsuAtari
+{
+	MapSetProp("CA_b007_Kizetsu",MNP_GROUND)
+	MapAnime("Null_b007_Kizetsu", "appear")
+}
+
+
+///////////////////////////////////////////////////////////////////
+// ボス戦用迎撃戦の呼び出し
+function "EV_Boss_Start"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	Wait(1)
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+	SetFlag(GF_05MP6370_BOSS_HELP, 0)	// ヘルプ用フラグをリトライ用にリセット
+
+	InterceptStart(INTERCEPT_STAGE10, 0)
+}
+
+///////////////////////////////////////////////////////////////////
+// ボス戦リトライ
+function "EV_RetryBoss"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("B007",0.0f,0.0f,34.0f)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos("PLAYER1", 49.0f	-34.0f,	70.00f)
+	TurnToChr("PLAYER1","b007",360.0f)
+	TurnToChr("PLAYER2","b007",360.0f)
+	TurnToChr("PLAYER3","b007",360.0f)
+	TurnToChr("B007","PLAYER1",360.0f)
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+	SetYs8Camera(14.0f, 48.0f, 8.0f, 1.0f, 1.0f);
+
+	MoveCameraAt( 0 , 49.000f , -34.000f , 72.834f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 14.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 8.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 55.244f , 0 )				// 角度
+	ChangeCameraPers( 0 , 44.000f , 0 )			// 視野角
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_005, 0)	// ◆BGM_BOSS_001は仮
+	MapAnime("CT_ev00","on")		//当たり有効
+//	MapAnime("CT_EVENT", "close");
+//	MapSetProp("CT_EVENT", MNP_GROUND);
+	SetChrPos("LP_PLATE", -100000.00f  , 0.00f ,0.00f)	//	【ＬＰ：ロンバルディアの船名プレート】	ボス戦中は出現しない
+	MapAnime("locator_kaisou","off" )	//海草オブジェクト	ボス戦中は消去
+	MapHide( "roll_obj00","0" )			//三角の帆			ボス戦後は表示
+	MapHide( "roll_obj01","0" )			//マスト			ボス戦後は表示
+	MapHide( "roll_obj02","0" )			//ロープの束		ボス戦後は表示
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+
+	if (FLAG[SF_TIMEATK])
+	{
+		// タイムアタックの場合はボス名出してあげる
+		VisualName("visual/bossname/bn_b007.itp", VN_NAMEBOSS2, VN_BOSSNAME_LT_X, VN_BOSSNAME_LT_Y,VN_BOSSNAME_TIME)
+	}
+
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+	//------------------------------------------------
+}
+
+// ボス死亡：オケアノス
+function "EV_Boss_Dead"
+{
+	//無敵ON・色々終了させる---------------------------
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+
+	SetRealTimeHelp(-1, 0)		// リアルタイムヘルプ終了
+
+	Wait(20)
+	StopBGM(120)
+	Wait(20)
+
+	//イベントバトル用CallFunc-------------------------
+	// SF_BOSS_BATTLEのみイベント内で対処して下さい
+	CallFunc("system:boss_end")
+
+	//封鎖解除・ボス消去-------------------------------
+	MapAnime("CT_ev00","off")		//当たり無効（通常）
+//	MapAnime("CT_EVENT","open")	//逃げられないストッパー開ける
+//	MapDelProp("CT_EVENT", MNP_GROUND);
+	SetChrPos("LP_PLATE",43.80f,-38.70f,70.00f)	//	【ＬＰ：ロンバルディアの船名プレート】	ボス戦後にＬＰを復帰
+	MapAnime( "locator_kaisou","on" )	//海草オブジェクト	ボス戦後は表示
+	MapHide( "roll_obj00","1" )			//三角の帆			ボス戦後は表示
+	MapHide( "roll_obj01","1" )			//マスト			ボス戦後は表示
+	MapHide( "roll_obj02","1" )			//ロープの束		ボス戦後は表示
+
+	SetChrPos("B007",-100000.00f,0.00f,0.00f)
+
+	//事後処理-----------------------------------------
+	// タイムアタック中
+	if (FLAG[SF_TIMEATK])
+	{
+		EndTimeAtk()		// タイムアタック終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else
+	{
+		//フラグ
+		SetFlag( SF_BOSS_BATTLE, 0 )		//ボス戦終了
+		if( FLAG[SF_EVENT_ON] )
+		{
+			
+			SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+			
+			SetFlag(SF_NOCHANGEBGM, 1)
+			LoadArg("map/mp6370/mp6370.arg")		// マップ切り替えて迎撃戦を終わらせる
+			EventCue("mp6370:EV_M05S293")
+			SetEnvSEPlayState(-1, 0)	//環境SE全停止
+			ResetStopFlag(STOPFLAG_EVENT)
+		}
+		else
+		{
+			// ボスラッシュ？
+			LoadArg("map/mp6370/mp6370.arg")		// マップ切り替えて迎撃戦を終わらせる
+			EventCue("mp6370:EV_Boss_Dead2")
+		}
+	}
+	//------------------------------------------------
+}
+
+// ボスラッシュ用後始末
+function "EV_Boss_Dead2"
+{
+	SetFlag(SF_BOSS_BATTLE, 1)
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//──────────────────────────────
+//▼オケアノスの住処に到達する(mp6370)
+//──────────────────────────────
+function "EV_M05S260"			//オケアノスの住処に到達する
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 61.81f, -40.16f, 69.77f)
+	Turn("ADOL", 110.54f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", 61.89f, -38.93f, 69.80f)
+	Turn("RICOTTA", 101.32f, 360.0f)
+	ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag("RICOTTA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 62.94f, -39.59f, 69.74f)
+	Turn("SAHAD", 113.29f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("SAHAD")
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 60.73f, -42.03f, 69.76f)
+	Turn("LAXIA", 103.78f, 360.0f)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("LAXIA")
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", 62.27f, -42.04f, 69.69f)
+	Turn("HUMMEL", 106.18f, 360.0f)
+	ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("HUMMEL")
+	SetChrInfoFlag("HUMMEL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA", 61.61f, -41.08f, 69.75f)
+	Turn("DANA", 109.74f, 360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("DANA")
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//水中カメラ効果の設定
+	SetWork(WK_WATERFLICKER , 20)
+
+	//カメラ設定
+	MoveCameraAt( 0 , 41.500f , -30.513f , 77.669f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 23.400f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 13.423f , 0 )	// 基本仰角
+	RotateCamera( 0 , 263.072f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 80.000, 2.000, 0.850, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6370:EV_M05S260_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　　ボス戦マップに着いたところでイベント開始。
+	//　　カメラ引いて空洞の様子を見せた後に、
+	//　　部屋に入ってきて周囲を見回すアドルたち。
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+	// 非表示・再表示
+	SetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("DANA", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("LAXIA", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("RICOTTA", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("HUMMEL", INFOFLAG_INVISIBLE)	// 非表示
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,   -5.008f , 8.803f , 119.341f, 180 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE ,  23.400f , 180 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 42.155f , 180 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 196.376f , 180 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	Wait(20)
+
+	// カット2 ----------------------------------------------------------------------------------------
+	
+	StopBGM(240)
+	
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ
+	MoveCameraAt( 0 , 51.723f , -28.627f , 71.716f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.200f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.517f , 0 )	// 基本仰角
+	RotateCamera( 0 , 112.867f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 非表示・再表示
+	ResetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("DANA", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("LAXIA", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("RICOTTA", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("HUMMEL", INFOFLAG_INVISIBLE)	// 再表示
+	
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,55.320f , -36.841f , 71.468f, 150 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.500f , 150 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -6.776f , 150 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 223.710f , 150 )
+	
+	// 移動
+	ExecuteCmd(1, MoveTo, "ADOL", 56.34f, -37.70f, 70.00f, 0.1f, 0.19f)
+	ExecuteCmd(2, MoveTo, "DANA", 56.01f, -38.40f, 70.00f, 0.1f, 0.21f)
+	Wait(3)
+	ExecuteCmd(3, MoveTo, "RICOTTA", 56.32f, -36.85f, 70.00f, 0.1f, 0.18f)
+	Wait(3)
+	ExecuteCmd(4, MoveTo, "LAXIA", 55.91f, -39.46f, 70.00f, 0.1f, 0.19f)
+	Wait(3)
+	ExecuteCmd(5, MoveTo, "SAHAD", 57.31f, -36.78f, 70.00f, 0.1f, 0.21f)
+	ExecuteCmd(6, MoveTo, "HUMMEL", 57.02f, -39.16f, 70.00f, 0.1f, 0.18f)
+
+	// 移動待ち
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+	WaitThread(4)
+	WaitThread(5)
+	WaitThread(6)
+	
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	// サハド
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#1884V#070e#000mここは一体……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "RICOTTA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+	// リコッタ
+	TalkPopup("RICOTTA", 0, 2, 0, 0, 0) {
+		"#2754V#000e#000mスゴく広い場所だな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// ダーナ
+	TalkPopup("DANA", 0, 2, 0, 0, 0) {
+		"#3244V#000e#000mかなり深く潜ってきたし、"
+		"ここが大穴の底部なんじゃないかな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "DANA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	
+	// ダーナ
+	TalkPopup("DANA", 0, 2, 0, 0, 0) {
+		"#3245Vでも、途中にオケアノスの"
+		"住処らしい場所なんて────"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ラクシャに「！」エモーション。
+	EmotionEx("LAXIA", 0.01f, EMO_EX, 0, 5, 1, 1, 1.2f )	// 「！」
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_SUP_S,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_OPEN_S,1)
+	Wait(40)
+	
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+		"#1075V#000mあれは……！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　何かに気づいてラクシャが走り出す。
+	ExecuteCmd(1, MoveTo, "LAXIA", 48.72f, -39.57f, 70.00f, 0.1f, 0.40f)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	Wait(10)
+	LookChr("ADOL", "LAXIA")
+	LookChr("HUMMEL", "LAXIA")
+	Wait(3)
+	LookChr("DANA", "LAXIA")
+	Wait(7)
+	LookChr("RICOTTA", "LAXIA")
+	LookChr("SAHAD", "LAXIA")
+	Wait(10)
+
+	
+	// カット3 ------------------------------------------------------------------------------------------
+	
+	//　　積み重なった瓦礫を映し、ラクシャがフレームイン。
+	//　　続けてアドルたちも追い付いてくる。
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// （ラクシャ）停止
+	StopThread(1)
+
+	// カメラ
+	MoveCameraAt( 0 , 45.434f , -39.983f , 71.220f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.900f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -6.622f , 0 )	// 基本仰角
+	RotateCamera( 0 , 328.529f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("LAXIA", 46.28f, -39.94f, 70.00f)
+	Turn("LAXIA", 82.33f, 360.0f)
+	ChangeAnimation( "DANA", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeAnimation( "RICOTTA", "ANI_WAIT", -1, 1 )	// 待機
+
+	SetChrPos("ADOL", 50.69f, -38.08f, 70.00f)
+	Turn("ADOL", 78.68f, 360.0f)
+	SetChrPos("DANA", 51.31f, -38.82f, 70.00f)
+	Turn("DANA", 76.49f, 360.0f)
+	SetChrPos("HUMMEL", 50.68f, -40.41f, 70.00f)
+	Turn("HUMMEL", 76.11f, 360.0f)
+	SetChrPos("RICOTTA", 50.65f, -37.01f, 70.00f)
+	Turn("RICOTTA", 85.61f, 360.0f)
+	SetChrPos("SAHAD", 51.55f, -37.40f, 70.00f)
+	Turn("SAHAD", 84.55f, 360.0f)
+
+	LookReset("ADOL")
+	LookReset("DANA")
+	LookReset("HUMMEL")
+	LookReset("SAHAD")
+	LookReset("RICOTTA")
+
+	LookTo("LAXIA", 43.904f , -40.892f , 70.476f)	// （視線）ガレキ 1st
+	//ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE", -1, 1 )	// 手胸当て
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 46.142f , -39.634f , 71.468f , 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.600f , 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -7.769f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 314.317f , 100 )
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "ADOL", 46.83f, -38.84f, 70.00f, 0.1f, 0.21f)
+	ExecuteCmd(2, MoveTo, "RICOTTA", 46.05f, -38.05f, 70.00f, 0.1f, 0.20f)
+	Wait(2)
+	ExecuteCmd(3, MoveTo, "SAHAD", 47.08f, -37.61f, 70.00f, 0.1f, 0.22f)
+	Wait(2)
+	ExecuteCmd(4, MoveTo, "DANA", 47.63f, -39.37f, 70.00f, 0.1f, 0.20f)
+	ExecuteCmd(5, MoveTo, "HUMMEL", 47.23f, -40.29f, 70.00f , 0.1f, 0.18f)
+
+	// 移動待ち
+	WaitThread(1)
+	LookChr("ADOL", "LAXIA")
+	TurnToChr("ADOL", "LAXIA", 8.0f)
+
+	WaitThread(2)
+	LookChr("RICOTTA", "LAXIA")
+	TurnToChr("RICOTTA", "LAXIA", 7.0f)
+	WaitThread(3)
+	LookChr("SAHAD", "LAXIA")
+	TurnToChr("SAHAD", "LAXIA", 7.0f)
+	WaitThread(4)
+	LookChr("DANA", "LAXIA")
+	WaitThread(5)
+	LookChr("HUMMEL", "LAXIA")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	// サハド
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#1885V#000e#000m何だ何だ、嬢ちゃん。"
+		"このガレキがどうかしたか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ラクシャ、瓦礫の一部を指差す。
+
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+		"#1076V#050e#000mアドル、あれをご覧なさい。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookTo("ADOL", 43.904f , -40.892f , 70.476f)	// （視線）ガレキ 1st
+	Wait(30)
+	
+	// カット4 ------------------------------------------------------------------------------------------
+
+	//　　瓦礫の一部に船名を刻んだプレートが
+	//　　落ちているのをズームで見せる。
+
+	PlayBGM(BGM_EVENT_008, 0)
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ
+	MoveCameraAt( 0 , 44.349f , -41.536f , 70.724f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.600f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 41.386f , 0 )	// 基本仰角
+	RotateCamera( 0 , 73.944f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	// 非表示・再表示
+	SetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("DANA", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("LAXIA", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("RICOTTA", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("HUMMEL", INFOFLAG_INVISIBLE)	// 非表示
+	
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 46.66f, -38.58f, 70.00f)
+	Turn("ADOL", 85.96f, 360.0f)
+	SetChrPos("DANA", 46.72f, -39.34f, 70.00f)
+	Turn("DANA", 88.61f, 360.0f)
+	SetChrPos("LAXIA", 46.26f, -40.19f, 70.00f)
+	Turn("LAXIA", 117.86f, 360.0f)
+	SetChrPos("SAHAD", 45.95f, -36.86f, 70.00f)
+	Turn("SAHAD", 74.29f, 360.0f)
+	SetChrPos("RICOTTA", 46.11f, -37.79f, 70.00f)
+	Turn("RICOTTA", 69.57f, 360.0f)
+	SetChrPos("HUMMEL", 46.31f, -41.24f, 70.00f)
+	Turn("HUMMEL", 127.52f, 360.0f)
+
+	LookTo("ADOL", 43.147f , -39.006f , 70.476f)	// （視線）ガレキ 2nd
+	LookTo("DANA", 43.147f , -39.006f , 70.476f)	// （視線）ガレキ 2nd
+	LookTo("LAXIA", 43.147f , -39.006f , 70.476f)	// （視線）ガレキ 2nd
+	LookTo("SAHAD", 43.147f , -39.006f , 70.476f)	// （視線）ガレキ 2nd
+	LookTo("RICOTTA", 43.147f , -39.006f , 70.476f)	// （視線）ガレキ 2nd
+	LookTo("HUMMEL", 43.147f , -39.006f , 70.476f)	// （視線）ガレキ 2nd
+
+	// カメラ移動（左から右へLOMBARDIA）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 44.253f , -35.905f , 70.724f, 135 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 5.500f , 135 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 29.916f , 135 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 116.776f  , 135 )
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	// カメラ移動（カメラ引いてLOMBARDIA）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 43.715f , -38.441f , 70.724f, 80 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 10.200f , 80 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 72.506f , 80 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 78.922f  , 80 )
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	Wait(50)
+
+	// カット5 ------------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	
+	// カメラ
+	MoveCameraAt( 0 , 45.666f , -37.655f , 71.340f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.692f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -7.445f , 0 )	// 基本仰角
+	RotateCamera( 0 , 226.677f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 9.5f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 非表示・再表示
+	ResetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("DANA", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("LAXIA", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("RICOTTA", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("HUMMEL", INFOFLAG_INVISIBLE)	// 再表示
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 45.666f , -37.655f , 71.520f, 35 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.692f , 35 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE ,-4.294f, 35 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 226.391f , 5 )
+	
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	FadeBGM(70,10)
+
+	// リコッタ
+	TalkPopup("RICOTTA", 0, 2, 0, 0, 0) {
+		"#2755V#000e#000m文字？　何て書いてある？\p"
+		"#2756Vロ……ロンバル……ディア……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドル、サハドに「！」エモーション表示。
+	EmotionEx("ADOL", 0.00f, EMO_EX, 0, 5, 1, 1, 1.2f )	// 「！」
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SUP_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_OPEN_S,1)
+	EmotionEx("SAHAD", -0.05f, EMO_EX, 0, 5, 1, 1, 1.0f )	// 「！」
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_SUP_S,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_OPEN_S,1)
+	Wait(40)
+	
+	// サハド
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#1886V#070e#000mお？　ま、まさか"
+		"コイツはロンバルディア号の……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "HUMMEL", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	// ヒュンメル
+	TalkPopup("HUMMEL", 0, 2, 0, 0, 0) {
+		"#000e#000mフム、船体の一部に間違いないようだ。\p"
+		"ヤツの体に引っかかって、"
+		"ここまで運ばれて来たのだろう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("DANA")
+
+	// ダーナ
+	TalkPopup("DANA", 0, 2, 0, 0, 0) {
+		"#000e#000mということは、ここが"
+		"住処で間違いないみたいだね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookTo("SAHAD", 22.506f , -39.063f , 79.001f)
+
+	// サハド
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#000e#000mひょっとしてこの辺りに"
+		"漂っているガレキは全部そうか？\p"
+		"#030e#000m何てこった……船長殿が愛した"
+		"船をこんなにしちまいやがって……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+		"#050e#000mええ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("SAHAD")
+	ChangeAnimation( "SAHAD", "ANI_EV_YARUKI_S", -1, 1 )	// こぶしたたきつける
+
+	// サハド
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#031e#000mロンバルディア号の仇は"
+		"ワシらが必ず取ってみせるぜ。\p"
+		"#041e#000mそんでもって、このセイレン島から"
+		"全員そろって脱出してやる。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT, 0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1, "ああ、その意気だ")
+	MenuAdd(2, "必ずやり遂げてみせる")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10, 0)
+
+	LookChr("ADOL", "SAHAD")
+	
+	ChangeAnimation( "ADOL", "ANI_EV_GUTSPOSE_S", -1, 1 )	// ガッツポーズ
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(10)
+	ChangeAnimation( "ADOL", "ANI_EV_GUTSPOSE_E", -1, 1 )	// ガッツポーズ
+
+	ChangeAnimation( "SAHAD", "ANI_EV_YARUKI_E", -1, 1 )	// こぶしたたきつける
+	LookChr("SAHAD", "ADOL")
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_CLOSE_E, 1)	// 目
+
+	WaitAnimation2( "SAHAD" , -1, 1, "ANI_EV_YARUKI_E",  0)
+	TurnToChr("SAHAD", "ADOL", 7.0f)
+	
+	//─────────────────────────
+	//	⇒ああ、その意気だ
+	if (FLAG[TF_MENU_SELECT] == 1 ) {
+
+		ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+		// サハド
+		TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+			"#000e#000mガハハ！　アドル、頑張ろうぜ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		WaitAnimation2( "SAHAD" , -1, 1, "ANI_EV_RYOTEKOSI_S",  0)
+
+		ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+
+	}
+
+	//	⇒必ずやり遂げてみせる
+	if (FLAG[TF_MENU_SELECT] == 2 ) {
+
+		ChangeAnimation( "SAHAD", "ANI_EV_GUTSPOSE_S", -1, 1 )	// ガッツポーズ
+
+		// サハド
+		TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+			"#000e#000mおーよ！　船長殿……"
+			"ワシらを見守ってくれよな。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		WaitAnimation2( "SAHAD" , -1, 1, "ANI_EV_GUTSPOSE_S",  0)
+
+		ChangeAnimation( "SAHAD", "ANI_EV_GUTSPOSE_E", -1, 1 )	// ガッツポーズ
+	
+	}
+
+	//─────────────────────────
+
+	// カット6 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	
+	// カメラ
+	MoveCameraAt( 0 , 45.538f , -39.633f , 71.386f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.002f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.029f , 0 )	// 基本仰角
+	RotateCamera( 0 , 305.576f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+	// 位置調整・表情・モーション
+	SetChrPos("HUMMEL", 45.58f, -41.08f, 70.00f)
+	Turn("HUMMEL", 166.60f, 360.0f)
+	SetChrPos("ADOL",46.66f,-38.58f,70.00f)
+	Turn("ADOL",43.67f,360.0f)
+	SetChrPos("DANA", 47.07f, -39.40f, 70.00f)
+	Turn("DANA", 104.43f, 360.0f)
+	SetChrPos("LAXIA", 46.57f, -40.35f, 70.00f)
+	Turn("LAXIA", 117.86f, 360.0f)
+	SetChrPos("SAHAD", 45.79f, -37.05f, 70.00f)
+	Turn("SAHAD", 24.55f, 360.0f)
+	SetChrPos("RICOTTA", 46.11f, -37.79f, 70.00f)
+	Turn("RICOTTA", 44.70f, 360.0f)
+	ChangeAnimation( "HUMMEL", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeAnimation( "LAXIA", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)	// 目
+	LookReset("ADOL")
+	LookReset("DANA")
+	LookReset("LAXIA")
+	LookReset("SAHAD")
+	LookReset("RICOTTA")
+	LookChr("HUMMEL", "SAHAD")
+	LookChr("RICOTTA", "HUMMEL")
+	LookChr("SAHAD", "HUMMEL")
+	
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	LookChr("ADOL", "HUMMEL")
+
+	ChangeAnimation( "HUMMEL", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+
+	// ヒュンメル
+	TalkPopup("HUMMEL", 0, 1, 0, 0, 0) {
+		"#000e#000mそれはいいが……"
+		"オケアノスはいつ戻ってくるのだ？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("DANA", "HUMMEL")
+	ChangeAnimation( "DANA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	// ダーナ
+	TalkPopup("DANA", 0, 2, 0, 0, 0) {
+		"#000e#000m住処にいないってことは"
+		"まだ外を回遊しているのかな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_CLOSE_S, 1)	// 目
+	ChangeAnimation( "LAXIA", "ANI_EV_SIAN_S", -1, 1 )	// 思案
+
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+		"#010e#000mその可能性が高そうですね。"
+		"ここで待っていてもいつ戻るか……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("DANA", "LAXIA")
+	ChangeAnimation( "DANA", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+
+	// ダーナ
+	TalkPopup("DANA", 0, 2, 0, 0, 0) {
+		"#000e#000m理法具があるといっても、"
+		"ずっと水の中じゃ体力も消耗するね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("DANA", "ADOL")
+	
+	// ダーナ
+	TalkPopup("DANA", 0, 2, 0, 0, 0) {
+		"アドルさん、どうしようか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("ADOL", "DANA")
+	Wait(10)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT, 0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1, "もう少し待ってみよう")
+	MenuAdd(2, "一旦、上へ戻ってみよう")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10, 0)
+
+	// （アドル）手振り
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI", -1, 1 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(20)
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_SIAN_E", -1, 1 )	// 思案
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_CLOSE_E, 1)	// 目
+	LookChr("LAXIA", "ADOL")
+
+	//─────────────────────────
+	//	⇒もう少し待ってみよう
+	if (FLAG[TF_MENU_SELECT] == 1 ) {
+
+		LookChr("ADOL", "LAXIA")
+
+		// ラクシャ
+		TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+			"#000m……アドル、住処の様子は"
+			"だいたい分かりました。\p"
+			"ここは待つより一度、"
+			"様子を見に上へ戻ってみませんか？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		// ダーナ
+		TalkPopup("DANA", 0, 2, 0, 0, 0) {
+			"#000e#000mそうだね、漂流村に何か新しい"
+			"情報が入ってるかもしれないよ。\p"
+			"もしもの時は転位で、"
+			"すぐにここへ戻ってこられるしね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+//		//　　アドル頷いて下記のイベントへ接続。
+//		HeadYes("ADOL" , 1 , 25 )
+//		ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+//		Wait(15)
+//		ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+//		Wait(20)
+	
+	}
+	
+	//	⇒一旦、上へ戻ってみよう
+	if (FLAG[TF_MENU_SELECT] == 2 ) {
+
+		LookChr("ADOL", "LAXIA")
+
+		// ラクシャ
+		TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+			"#000mそうですね、住処の様子も"
+			"だいたい分かりましたし。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// ダーナ
+		TalkPopup("DANA", 0, 2, 0, 0, 0) {
+			"#000e#000mもしかしたら漂流村に"
+			"新しい情報が入ってるかもしれない。\p"
+			"もしもの時は転位で、"
+			"すぐにここへ戻ってこられるしね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+//		//　　アドル頷いて下記のイベントへ接続。
+//		HeadYes("ADOL" , 1 , 25 )
+//		ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+//		Wait(15)
+//		ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+//		Wait(20)
+		
+	}
+	
+	Wait(20)
+
+	StopBGM(120)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6370:EV_M05S260_ED")
+}
+
+function "EV_M05S260_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//マップマーカー
+	DelMapMarker( SMI_SYMBOL ,PAGE_MP636x, MARKER_EV_M05S260, 0,0)		//メイン：オケアノスの住処に到達する
+		
+	//NowLoading 時の Tips 表示をカット
+	SetFlag(TF_LOADING_TIPS_OFF, 1)
+
+	CallFunc("system:camera_reset")
+
+	StopBGM(60)
+
+	LoadArg("map/mp6204/mp6204.arg")
+	EventCue("mp6204:EV_M05S270")	// NEXT：[M05S270][ドギとタナトスが王宮に来る]
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+//──────────────────────────────
+//▼オケアノスを待ち伏せる
+//──────────────────────────────
+function "EV_M05S290"			//オケアノスを待ち伏せる
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 62.62f, -41.18f, 69.70f)
+	Turn("ADOL", 120.40f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", 63.50f, -39.91f, 69.70f)
+	Turn("RICOTTA", 129.74f, 360.0f)
+	ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag("RICOTTA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 64.12f, -41.39f, 69.63f)
+	Turn("SAHAD", 127.50f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("SAHAD")
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 62.87f, -40.13f, 69.72f)
+	Turn("LAXIA", 121.20f, 360.0f)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("LAXIA")
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", 62.72f, -43.10f, 69.64f)
+	Turn("HUMMEL", 120.40f, 360.0f)
+	ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("HUMMEL")
+	SetChrInfoFlag("HUMMEL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA", 64.30f, -39.59f, 69.67f)
+	Turn("DANA", 120.40f, 360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("DANA")
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+
+	//水中カメラ効果の設定
+	SetWork(WK_WATERFLICKER , 20)
+
+	//カメラ設定
+	MoveCameraAt( 0 , 58.633f , -42.577f , 75.144f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 8.288f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -21.673f , 0 )	// 基本仰角
+	RotateCamera( 0 , 48.563f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 170.000, 0.000, 0.450, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6370:EV_M05S290_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　　オケアノスの住処に入ったところでイベント開始。
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "LAXIA", 58.09f, -36.57f, 70.00f, 0.1f, 0.19f)
+	ExecuteCmd(2, MoveTo, "ADOL", 57.76f, -37.85f, 70.00f, 0.1f, 0.19f)
+	Wait(3)
+	ExecuteCmd(3, MoveTo, "RICOTTA", 58.77f, -36.28f, 69.99f, 0.1f, 0.19f)
+	Wait(3)
+	ExecuteCmd(4, MoveTo, "DANA", 59.71f, -36.13f, 69.96f, 0.1f, 0.19f)
+	Wait(3)
+	ExecuteCmd(5, MoveTo, "HUMMEL", 57.33f, -39.03f, 70.00f, 0.1f, 0.19f)
+	ExecuteCmd(6, MoveTo, "SAHAD", 59.29f, -37.83f, 69.94f, 0.1f, 0.19f)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 58.633f , -42.577f , 72.844f, 110 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 8.288f , 110 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -12.506f , 110 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 51.428f , 110 )
+
+	PlaySE(SE_ENV_RUMBLE_1, 50, 1, 500, 0, 1.0f, 0)
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+	
+	
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	// カット2 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ
+	MoveCameraAt( 0 , 57.599f , -36.813f , 71.464f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.681f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.347f , 0 )	// 基本仰角
+	RotateCamera( 0 , 204.975f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動（水平）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 58.195f , -36.535f , 71.464f , 50 )
+
+	//MoveCameraAt( 0 , 58.195f , -36.535f , 71.464f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.681f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -2.347f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 204.975f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	// カメラ待ち（水平）
+	WaitThread(1000)
+
+	// 移動待ち
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+	WaitThread(4)
+	WaitThread(5)
+	WaitThread(6)
+	
+	Wait(15)
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+	
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+		"#000e#000mオケアノスの住処に着きましたね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("RICOTTA", "DANA")
+	TurnToChr("RICOTTA", "DANA", 8.0f)
+
+	// リコッタ
+	TalkPopup("RICOTTA", 0, 2, 0, 0, 0) {
+		"#000e#000mココで待てばいいのか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("DANA", "RICOTTA")
+	Wait(10)
+	HeadYes("DANA" , 1 , 25 )
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Wait(15)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+	// ダーナ
+	TalkPopup("DANA", 0, 2, 0, 0, 0) {
+		"#000mうん、あとはドギさんたちが"
+		"きっと上手くやってくれるはずだよ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット3 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ
+//	MoveCameraAt( 0 , 58.453f , -38.040f , 71.584f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.837f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -1.221f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 266.226f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	MoveCameraAt( 0 , 58.445f , -38.160f , 71.584f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.837f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.221f , 0 )	// 基本仰角
+	RotateCamera( 0 , 267.372f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 57.45f, -37.56f, 70.00f)
+	Turn("ADOL", 131.52f, 360.0f)
+	SetChrPos("SAHAD", 58.78f, -38.35f, 69.95f)
+	Turn("SAHAD", 126.39f, 360.0f)
+	
+//	// カメラ移動
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 58.445f , -38.160f , 71.584f , 25 )
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.837f , 25 )
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE ,  -1.221f , 25 )
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 267.372f , 25 )
+	
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+//	// カメラ待ち
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+
+	// サハド
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#050e#000mゴクリ、ヤツが逃げ込んできたら、"
+		"戦闘開始ってワケだな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "HUMMEL", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	// ヒュンメル
+	TalkPopup("HUMMEL", 0, 2, 0, 0, 0) {
+		"#000e#000m一度請け負った仕事は"
+		"きっちり務めさせてもらうぞ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	//　　画面フェードアウト。
+
+	StopSE(SE_ENV_RUMBLE_1, 1000)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6370:EV_M05S290_ED")
+}
+
+function "EV_M05S290_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	//ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	//ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//NowLoading 時の Tips 表示をカット
+	SetFlag(TF_LOADING_TIPS_OFF, 1)
+
+	//CallFunc("system:camera_reset")
+
+	//イベント・ギャラリー中
+	if(FLAG[TF_EVSKIP] && FLAG[SF_GALLERY_EVENT])
+	{
+		FadeBGM(100,15)
+		SoundEfx( SEFX_DEFAULT, 15 )
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+		GalleryEvEnd(0)		// イベントギャラリー終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	}
+	// 通常時
+	else
+	{
+		SetFlag(SF_NOCHANGEBGM, 1)
+
+		LoadArg("map/mp6115v1/mp6115v1.arg")
+		EventCue("mp6115v1:EV_M05S291")
+
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+
+function "EV_M05S292"			//オケアノスとの決戦
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENTIMPOSE)
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 49.15f, -32.20f, 70.00f)
+	Turn("ADOL", 124.75f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", 50.22f, -31.26f, 70.00f)
+	Turn("RICOTTA", 136.85f, 360.0f)
+	ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_CLOSE, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag("RICOTTA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 48.39f, -34.58f, 70.00f)
+	Turn("SAHAD", 116.84f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("SAHAD")
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 51.65f, -30.69f, 70.00f)
+	Turn("LAXIA", 120.40f, 360.0f)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("LAXIA")
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", 51.36f, -31.96f, 70.00f)
+	Turn("HUMMEL", 134.61f, 360.0f)
+	ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("HUMMEL")
+	SetChrInfoFlag("HUMMEL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA", 48.77f, -33.23f, 70.00f)
+	Turn("DANA", 120.40f, 360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("DANA")
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+
+	SetChrPos("ev_b007", -26.25f, 0.95f, 70.48f)
+	Turn("ev_b007", -46.19f, 360.0f)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+	PlayBGM(BGM_BOSS_005, 0)
+
+	//水中カメラ効果の設定
+	SetWork(WK_WATERFLICKER , 20)
+
+	//カメラ設定
+	MoveCameraAt( 0 , 49.654f , -30.818f , 71.312f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 0.961f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -7.436f , 0 )	// 基本仰角
+	RotateCamera( 0 , 182.550f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 50.000, 0.000, 0.450, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6370:EV_M05S292_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　　フェードインしてオケアノスの住処──
+	//　　待機しているアドルたち。
+	//　　リコッタに「！」エモーション表示。
+
+	ResetStopFlag(STOPFLAG_CINEMA)	// 字幕終了
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 50.096f , -30.838f , 71.312f , 85 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 0.961f , 85 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -7.436f , 85 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 182.550f, 85 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	EmotionEx("RICOTTA", 0.00f, EMO_EX, 0, 5, 1, 1, 0.8f )	// 「！」
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+	Wait(30)
+	
+	FadeBGM(70,10)
+
+	SetStopFlag(STOPFLAG_CINEMA)	// 字幕開始
+	Wait(10)	// 字幕待ち
+	
+	// リコッタ
+	TalkMes("RICOTTA","#2758V#030e#000mこの気配……",
+		"アドル兄、来るぞっ！！","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_CINEMA)	// 字幕終了
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 46.697f , -32.133f , 70.972f , 70 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.401f , 70 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -10.873f , 70 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 259.899f , 70 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 50.000f , 70 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -12.9f , 70 )		// ロール回転
+
+	Blur( BLUR_TYPE_AFTERIMAGE ,0.3f , 90 )	// 残像
+
+	//　　アドルが頷き、それぞれ武器を構えるメンバーたち。
+	
+	
+	ChangeAnimation("ADOL", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("DANA", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	Wait(10)
+	ChangeAnimation("LAXIA", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("SAHAD", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	Wait(10)
+	ChangeAnimation("RICOTTA", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("HUMMEL", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	Wait(10)
+	
+	// カメラ待ち（Aイベント用）
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	
+	Wait(25)
+	
+	// カット2 ----------------------------------------------------------------------------------------
+/*
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	
+	// カメラ
+	MoveCameraAt( 0 , -21.665f , -13.134f , 116.789f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 10.120f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -10.345f , 0 )	// 基本仰角
+	RotateCamera( 0 , 354.191f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -26.4f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	
+	SetDoF(0, LERP_LINEAR, 0.000, 10.000, 0.000, 3.0, 0.500)	// 被写界震度
+
+	// 移動
+	ExecuteCmd(1, Move, "ev_b007", -0.160f , -25.043f , 79.334f, 1.0f, 120)
+	ExecuteCmd(2, MoveZ , "ev_b007" , 35.25f , 0 , INTERPOLATE_SPHERE  , 120 )
+
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -1.240f , -7.085f , 71.720f , 150 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 19.361f , 150 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -24.434f , 150 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 88.831f , 150 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 50.000f , 150 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -29.8f , 150 )		// ロール回転
+
+	Blur( BLUR_TYPE_AFTERIMAGE ,0.3f , 120 )	// 残像
+
+	// カメラ待ち（Aイベント用）
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+
+	// 未入力コメント
+	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0) {
+		"#4C入力用ストッパー"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+*/
+	// カット3 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	
+	// カメラ
+	MoveCameraAt( 0 , 45.171f , -29.865f , 72.195f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 8.411f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -10.933f , 0 )	// 基本仰角
+	RotateCamera( 0 , 61.458f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 1.2f , 0 )				// ロール回転
+	
+	// 位置調整・表情・モーション
+	SetChrPos("ev_b007", -0.98f, -5.80f, 15.01f)
+	Turn("ev_b007", -63.95f, 360.0f)
+	
+	Look("ADOL", 0.0f, 15.0f)		// 見上げる
+	Look("DANA", 0.0f, 15.0f)		// 見上げる
+	Look("LAXIA", 0.0f, 15.0f)		// 見上げる
+	Look("SAHAD", 0.0f, 15.0f)		// 見上げる
+	Look("RICOTTA", 0.0f, 15.0f)	// 見上げる
+	Look("HUMMEL", 0.0f, 15.0f)		// 見上げる
+	
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,  45.171f , -29.865f , 72.865f  , 160 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , , 12.781f , 160 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -9.620f , 160 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 61.192f , 160 )		// 角度
+	//ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 50.000f , 160 )		// 視野角
+	//ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -4.0f , 160 )		// ロール回転
+
+	//MoveCameraAt( 0 , 45.171f , -29.865f , 72.865f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 12.781f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -9.620f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 61.192f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 1.2f , 0 )				// ロール回転
+	
+	Blur(BLUR_TYPE_EXPAND, 0.2f, 210)	//ブラー
+	PlaySE(SE_M05S292_01, 80, 0, 0, 0, 1.0f, 0)
+	
+	// 移動
+	ExecuteCmd(1, MoveZ , "ev_b007" , 37.45f , 0 , INTERPOLATE_COS  , 45 )
+
+	// 移動待ち
+	WaitThread(1)
+
+	// 移動
+	ExecuteCmd(1, MoveZ , "ev_b007" , 35.01f , 0 , INTERPOLATE_COS  , 20 )
+
+	Wait(15)
+
+	VisualName("visual/bossname/bn_b007.itp", VN_NAMEBOSS, VN_BOSSNAME_LT_X, VN_BOSSNAME_LT_Y,VN_BOSSNAME_TIME)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	Wait(15)
+
+	CrossFade(FADE_NORMAL)
+
+	MoveCameraAt( 0 , 7.356f , -14.597f , 81.258f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 50.181f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -21.740f , 0 )	// 基本仰角
+	RotateCamera( 0 , 56.466f , 0 )				// 角度
+	ChangeCameraPers( 0 , 39.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 8.3f , 0 )				// ロール回転
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,  6.239f , -10.881f , 82.175f , 150 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 45.171f , 150 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -21.645f , 150 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 106.424f , 150 )		// 角度
+	//ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 50.000f , 150 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -21.9f , 150 )		// ロール回転
+
+	//MoveCameraAt( 0 , 6.239f , -10.881f , 82.175f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 53.171f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -21.645f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 106.424f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 39.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , -21.9f , 0 )				// ロール回転
+	
+	ChangeAnimation( "ev_b007", "ANI_EV_APPEAL", -1, 1 )	// 登場モーション
+	
+	Wait(30)
+
+	VibrationPad(2011, 0 )		//隕石衝突
+
+	EarthQuake( 0.05f , 0.05f , 90 )	// 縦揺れ幅, 横揺れ幅, 時間
+	Blur(BLUR_TYPE_EXPAND, 0.6f, 120)	//ブラー
+	PlaySE(SE_M05S292_01, 100, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_M05S292_02, 100, 0, 0, 0, 1.0f, 0)
+	Wait(115)
+	
+	// カメラ待ち（Aイベント用）
+
+		
+	// カット4 ----------------------------------------------------------------------------------------
+	
+	//　　オケアノスの登場演出後、カメラをアドル班に戻す。
+	
+	// クロスフェード
+	CrossFade(FADE_FAST)
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+
+	Blur(BLUR_TYPE_EXPAND, 0.6f, 0)	//ブラー
+	
+	// カメラ
+	MoveCameraAt( 0 , 51.309f , -30.878f , 71.472f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.201f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -6.290f , 0 )	// 基本仰角
+	RotateCamera( 0 , 185.988f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -5.2f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SetDoF(0, LERP_LINEAR, 2.000, 50.000, 0.000, 3.0, 0.500)	// 被写界震度
+	
+	// 位置調整・表情・モーション
+	SetChrPos("ev_b007", -0.98f, -5.80f, 35.01f)
+	Turn("ev_b007", -63.95f, 360.0f)
+	ChangeAnimation( "ev_b007", "ANI_WAIT", -1, 1 )	// 待機
+		
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 51.309f , -30.878f , 71.472f , 450 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.201f , 450 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 0.586f , 450 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 206.328f , 450 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 50.000f , 450 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -7.7f , 450 )		// ロール回転
+	
+	// フェード待ち
+	Wait(FADE_FAST)
+	
+	SetStopFlag(STOPFLAG_CINEMA)	// 字幕開始
+	Wait(10)	// 字幕待ち
+	
+	// ヒュンメル
+	TalkMes("HUMMEL","#2328V#000e#000mようやくのお出ましか……",
+		"あまり客を待たせるのは感心しないな。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_MAJI, 1)	// 目
+
+	// ラクシャ
+	TalkMes("LAXIA","#1082Vこれが長年に渡って",
+		"多くの船を沈めてきた犯人……","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット5 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	// カメラ
+	MoveCameraAt( 0 , 50.425f , -31.801f , 71.612f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.801f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -10.586f , 0 )	// 基本仰角
+	RotateCamera( 0 , 77.699f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -0.6f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 50.494f , -31.608f , 71.752f , 450 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 5.041f , 450 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -12.305f , 450 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 86.007f , 450 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 50.000f , 450 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -9.2f , 450 )		// ロール回転
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	// ラクシャ
+	TalkMes("LAXIA","#1083V#000e#000mこうして全身を見るのは初めてですが",
+		"思っていた以上に巨大ですね……","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// サハド
+	TalkMes("SAHAD","#1888V#030e#000mだが、今回ばかりは",
+		"怖気づいてもいられねえ……","")
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	// カット6 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	// カメラ
+	MoveCameraAt( 0 , 48.249f , -34.566f , 71.769f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.162f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 8.314f , 0 )	// 基本仰角
+	RotateCamera( 0 , 234.780f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -11.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 48.95f, -32.45f, 70.00f)
+	Turn("ADOL", 146.07f, 360.0f)
+	SetChrPos("DANA", 48.65f, -33.00f, 70.00f)
+	Turn("DANA", 100.22f, 360.0f)
+	SetChrPos("RICOTTA", 49.85f, -31.56f, 70.00f)
+	Turn("RICOTTA", 140.40f, 360.0f)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_ANGER, 1)
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 48.249f , -34.566f , 71.769f , 450 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.162f , 450 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -7.729f , 450 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 263.428f , 450 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 50.000f , 450 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -11.0f , 450 )		// ロール回転
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	// サハド
+	TalkMes("SAHAD","#1889V#041e#000m島から脱出するには",
+		"コイツを何とかするしかないしな。","")
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	// サハド
+	TalkMes("SAHAD","#1890V#030e#000m海の男としてロンバルディアの仇……",
+		"ここで取らせてもらうぜ！！","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット7 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+
+	// カメラ
+	MoveCameraAt( 0 , 48.499f , -32.732f , 71.409f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.882f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 7.654f , 0 )	// 基本仰角
+	RotateCamera( 0 , 276.085f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -18.2f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動（Aイベント用）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 48.621f , -32.639f , 71.329f , 450 )		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.882f , 450 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -6.670f , 450 )		// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 210.194f , 450 )		// 角度
+	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE , 50.000f , 450 )		// 視野角
+	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , 2.8f , 450 )		// ロール回転
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKL_S,1)
+
+	// ダーナ
+	TalkMes("DANA","#3248V#000e#011l#000mアドルさん、追い詰めたけど、",
+		"水中ではまだまだ向こうが有利のはず。","")
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	// ダーナ
+	TalkMes("DANA","#3249V#000e#012l#000m周囲の水流を上手く使って戦おう！","水流2行目","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ResetStopFlag(STOPFLAG_CINEMA)	// 字幕終了
+
+	//　　アドル、頷く。
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKL_E,1)
+	HeadYes("ADOL" , 1 , 25 )
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_ANGER_CLOSE_S, 1)
+	Wait(15)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_ANGER_CLOSE_E, 1)
+	Wait(25)
+	
+	// カット8 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// カメラ停止（Aイベント用）
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	
+	// カメラ
+	MoveCameraAt( 0 , 53.649f , -34.120f , 70.954f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.882f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -7.856f , 0 )	// 基本仰角
+	RotateCamera( 0 , 63.268f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -2.6f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 28.703f , -20.294f , 84.597f , 180 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.882f , 180 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -2.820f , 180 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 63.267f , 180 )
+
+	ChangeAnimation( "ev_b007", "ANI_EV_APPEAL", -1, 1 )	// 登場モーション
+	PlaySE(SE_M05S292_01, 100, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_M05S292_02, 100, 0, 0, 0, 1.0f, 0)
+	
+	Wait(20)
+	EarthQuake( 0.05f , 0.05f , 90 )	// 縦揺れ幅, 横揺れ幅, 時間
+	Blur(BLUR_TYPE_EXPAND, 0.3f, 90)	//ブラー
+	Wait(70)
+	
+	//　　⇒ボス戦開始(オケアノス戦)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6370:EV_M05S292_ED")
+}
+
+function "EV_M05S292_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	// 通常
+	if ( !FLAG[SF_GALLERY_EVENT] )
+	{
+		//NowLoading 時の Tips 表示をカット
+		SetFlag(TF_LOADING_TIPS_OFF, 1)
+
+		SetFlag(GF_05MP6370_BOSS_HELP, 0)	// ヘルプ用フラグをリトライ用にリセット
+
+		//SetFlag( SF_MISSIONNO, MS_05_09 )	//★冒険メモ：オケアノスを討伐しよう。
+
+		SetFlag( GF_GALL_EV_05_06, 1 )		// M05S280:オケアノス討伐戦を開始する
+
+		// イベント用キャラ始末
+		SetChrPos("ev_b007", -100000.0f, 0.0f, 0.0f)
+
+		SetFlag(SF_NOCHANGEBGM, 1)
+		FadeBGM(100,30)
+
+	/////////////////////////////////////////
+	//	// ボス戦開始スクリプト
+	//	EventCue("mp6370:EV_RetryBoss")
+	//	ResetStopFlag(STOPFLAG_EVENT)
+		// ↓ボス戦開始スクリプトを直接呼び出さず、迎撃戦にする。
+		SetFlag(SF_BOSS_BATTLE, 1)
+		ResetStopFlag(STOPFLAG_EVENT)
+		
+		SetEventDriven(EED_TYPE_STUNBOSS, 0, "mp6370:B007_STAN")	// ボスがスタンしたらヘルプカメラを起動
+
+		InterceptStart(INTERCEPT_STAGE10, 0)
+
+	/////////////////////////////////////////
+
+	}
+	// イベントギャラリー中
+	else
+	{
+		FadeBGM(100,15)
+		SoundEfx( SEFX_DEFAULT, 15 )
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+		GalleryEvEnd(0)		// イベントギャラリー終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	}
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+///////////////////////////////////////////////////////////////////
+
+function "EV_M05S293"			//オケアノスとの決戦２
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENTIMPOSE)
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	FadeOut(FADE_WHITE, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定	
+SetChrPos("LAXIA",50.16f,-34.40f,70.00f)
+Turn("LAXIA",100.28f,360.0f)
+SetChrPos("ADOL",48.84f,-35.25f,70.00f)
+Turn("ADOL",94.66f,360.0f)
+
+SetChrPos("SAHAD",51.08f,-35.69f,70.00f)
+Turn("SAHAD",94.07f,360.0f)
+SetChrPos("RICOTTA",49.45f,-36.63f,70.00f)
+Turn("RICOTTA",92.42f,360.0f)
+
+SetChrPos("DANA",50.18f,-33.29f,70.00f)
+Turn("DANA",79.30f,360.0f)
+SetChrPos("HUMMEL",51.48f,-33.89f,70.00f)
+Turn("HUMMEL",83.87f,360.0f)
+
+SetChrWork("ADOL", CWK_BATTLEMODE, 1)
+SetChrWork("LAXIA", CWK_BATTLEMODE, 1)
+SetChrWork("SAHAD", CWK_BATTLEMODE, 1)
+SetChrWork("HUMMEL", CWK_BATTLEMODE, 1)
+SetChrWork("RICOTTA", CWK_BATTLEMODE,1)
+SetChrWork("DANA", CWK_BATTLEMODE, 1)
+
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_MAJI, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag("RICOTTA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_CLOSE, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("SAHAD")
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_CLOSE, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("LAXIA")
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("HUMMEL")
+	SetChrInfoFlag("HUMMEL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("DANA")
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+
+	//オケアノス飛ばす
+	//SetChrPos("ev_b007", -100000.00f,0.00f,0.00f)
+	SetChrPos("ev_b007", -26.25f, 0.95f, 70.48f)
+	Turn("ev_b007", -46.19f, 360.0f)
+
+	SetChrPos("ev_b007",-5.15f,-1.80f,11.32f)
+	Turn("ev_b007",-60.04f,360.0f)
+	PitchChr("ev_b007", -1.20f, 0)
+	RollChr("ev_b007", 0.00f, 0)
+
+
+	//涙アタッチ
+	SetChrPos("namida", 50.16f,-34.40f,70.00f)
+	SetParent( "namida" , "LAXIA", "Bone_head" )
+	ChangeAnimation( "namida" , "ANI_WAIT", -1 , 1 )
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+	StopBGM(30)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	//水中カメラ効果の設定
+	SetWork(WK_WATERFLICKER , 20)
+
+	Wait(30)
+
+//	//--------------------
+//	// Pos Key
+//	KeyAnimeCreate(KEYANIME_EXSKILLPOS, 4)
+//	KeyAnimeSet(0, 1.211, 2.500, 54.879, 9.090, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000)
+//	KeyAnimeSet(65, 8.270, -6.005, 65.793, 18.490, 0.030, -0.160, 0.097, 0.138, 0.030, -0.160, 0.097, 0.138)
+//	KeyAnimeSet(136, 4.545, -15.366, 65.793, 24.490, -0.139, 0.080, 0.000, -0.082, -0.139, 0.080, 0.000, -0.082)
+//	KeyAnimeSet(228, -14.383, 7.047, 65.793, 5.190, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000)
+//
+//	// Rot Key
+//	KeyAnimeCreate(KEYANIME_EXSKILLROT, 4)
+//	KeyAnimeSet(0, 65.752, 8.517, 112.138, 59.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000)
+//	KeyAnimeSet(65, -47.552, -27.013, 106.347, 59.000, -0.208, 0.035, -1.007, 0.063, -0.208, 0.035, -1.007, 0.063)
+//	KeyAnimeSet(136, 42.504, 12.425, -0.635, 66.000, 0.770, 0.240, 0.232, 0.043, 0.770, 0.240, 0.232, 0.043)
+//	KeyAnimeSet(228, 77.923, 12.070, 144.115, 66.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000)
+
+// Pos Key
+KeyAnimeCreate(KEYANIME_EXSKILLPOS, 4)
+KeyAnimeSet(0, 1.211, 2.500, 54.879, 9.090, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000)
+KeyAnimeSet(65, 8.270, -6.005, 65.793, 18.490, 0.030, -0.160, 0.097, 0.138, 0.030, -0.160, 0.097, 0.138)
+KeyAnimeSet(136, 4.600, -10.413, 73.950, 24.490, -0.139, 0.080, 0.000, -0.082, -0.139, 0.080, 0.000, -0.082)
+KeyAnimeSet(228, -14.383, 7.047, 65.793, 5.190, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000)
+
+// Rot Key
+KeyAnimeCreate(KEYANIME_EXSKILLROT, 4)
+KeyAnimeSet(0, 65.752, 8.517, 112.138, 59.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000)
+KeyAnimeSet(65, -47.552, -27.013, 106.347, 59.000, -0.208, 0.035, -1.007, 0.063, -0.208, 0.035, -1.007, 0.063)
+KeyAnimeSet(136, 20.034, 12.425, -0.635, 66.000, 0.770, 0.240, 0.232, 0.043, 0.770, 0.240, 0.232, 0.043)
+KeyAnimeSet(228, 77.923, 12.070, 144.115, 66.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000)
+//----------
+
+	//カメラ設定
+	MoveCameraAt( 0 , 1.211f , 2.500f , 54.879f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 9.090f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 65.752f , 0 )	// 基本仰角
+	RotateCamera( 0 , 112.138f , 0 )				// 角度
+	ChangeCameraPers( 0 , 59.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 8.5f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 100.000, 0.000, 0.550, 0.500)					//イベント毎に調整
+	SetDoFFocus(0, 0, 0)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6370:EV_M05S293_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	// 暗転中にアイテム入手
+//	PlaySE( SE_TUTORIAL , 100 , 0,  0, 0, 1.0f, 0)		//チュートリアル
+	//GetItemMessageExPlus(-1 , 1 , ITEMMSG_SE_JINGLE , "オケアノスから#2C『#325I燃石』#0Cを手に入れた。" , 0 , 0 )
+	WaitPrompt()
+	WaitCloseWindow()
+
+//	Wait(10)
+//	Message("#7C◆イベントアイテムを入手した事で\n　集落の鍜治場が拡張されました。\n　カトリーンに話しかけると\n　武器を新しい段階に進化させることが出来ます。")
+//	WaitPrompt()
+//	Wait(10)
+
+	Wait(10)
+	Wait(60)	//ジングル待ち
+
+	SetEnvSEPlayState(6370001, 1)	//環境SE復帰
+	PlaySE(SE_ENV_RUMBLE_1, 50, 1, 500, 0, 1.0f, 0)
+
+	Slow(0.9)
+
+	Blur(BLUR_TYPE_EXPAND,0.45f , -1)
+
+	PlaySE(SE_M05S293_03, 100, 0, 0, 0, 1.0f, 0)
+
+	ChangeAnimation( "ev_b007" , "ANI_EV_DEAD", -1 , 1 )
+	ExecuteCmd(1000, KeyAnimeCamera, 1.0f, KEYANIME_EXSKILLPOS, KEYANIME_EXSKILLROT, 0 )
+	FadeIn(FADE_WHITE, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+
+	PlaySE(SE_M05S293_02, 100, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_M05S293_04, 100, 0, 0, 0, 1.0f, 0)
+
+	Wait(60)
+	PlaySE(SE_M05S293_05, 80, 0, 300, 0, 1.0f, 0)
+	PlaySE(SE_M05S293_02, 100, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_M05S293_04, 100, 0, 0, 0, 1.0f, 0)
+	Wait(128)
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+
+	KeyAnimeRelease(KEYANIME_EXSKILLPOS)
+	KeyAnimeRelease(KEYANIME_EXSKILLROT)
+
+	Blur(BLUR_TYPE_EXPAND,0.45f , 0)
+	Slow(1.0)
+	Wait(30)
+
+	MoveCameraAt( 0 , 49.858f , -34.262f , 71.180f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.290f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 8.654f , 0 )	// 基本仰角
+	RotateCamera( 0 , 232.895f , 0 )				// 角度
+	ChangeCameraPers( 0 , 24.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 12.8f , 0 )				// ロール回転
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	Wait(10)
+
+	//　　フェードインしてオケアノスの住処──
+	//　　待機しているアドルたち。
+	//　　リコッタに「！」エモーション表示。
+
+	//　　ボス勝利演出後にイベントを再開。
+	//　　フェードインして、各々の武器を収めるアドルたち。
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE ,  49.265f , -35.912f , 71.180f , 160 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 6.290f , 160 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 8.654f , 160 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 302.518f , 160)				// 角度
+	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , -3.9f , 160 )				// ロール回転
+
+	//MoveCameraAt( 0 , 49.265f , -35.912f , 71.180f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 6.290f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 8.654f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 302.518f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 24.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , -3.9f , 0 )				// ロール回転
+
+
+	Wait(30)
+
+	ChangeAnimation( "DANA"   , "ANI_DISARM", -1 , 1 )
+	Wait(10)
+	ChangeAnimation( "HUMMEL" , "ANI_DISARM", -1 , 1 )
+
+	Wait(20)
+
+	ChangeAnimation( "LAXIA"  , "ANI_DISARM", -1 , 1 )
+	Wait(5)
+	ChangeAnimation( "ADOL"   , "ANI_DISARM", -1 , 1 )
+
+	Wait(25)
+
+	ChangeAnimation( "SAHAD"  , "ANI_DISARM", -1 , 1 )
+
+
+	Wait(40)
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	TalkMes("RICOTTA","#2759V#070e#200mあ…………","","")
+	WaitPrompt()
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+
+	ChangeAnimation( "RICOTTA"  , "ANI_DISARM", -1 , 1 )
+	WaitAnimation2( "RICOTTA" , -1, 1, "ANI_DISARM",  0)
+
+	Wait(10)
+
+	CrossFade(FADE_CROSS)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+
+	MoveCameraAt( 0 , 49.855f , -35.812f , 71.329f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.270f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -6.138f , 0 )	// 基本仰角
+	RotateCamera( 0 , 320.256f , 0 )				// 角度
+	ChangeCameraPers( 0 , 24.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 2.9f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 1.600, 3.600 ,0.000 ,0.550 ,1.000)
+	SetDoFFocus(0, 0, 1.0)
+
+	Wait(FADE_CROSS)
+	Wait(10)
+
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	TalkMes("RICOTTA","#2760V#000m……リコッタたち……勝利？","","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// 被写界深度の設定
+	SetDoF(60, LERP_LINEAR, 2.000, 20.000 ,8.000 ,0.150 ,1.000)
+	SetDoFFocus(60, 0, 0)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 49.583f , -35.011f , 71.329f , 160 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 3.270f  , 160 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -6.138f , 160 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 329.486f , 160)				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 160 )				// ロール回転
+
+	//MoveCameraAt( 0 , 49.583f , -35.011f , 71.329f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.270f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -6.138f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 329.486f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 24.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 2.9f , 0 )				// ロール回転
+
+
+	Wait(20)
+
+	ChangeAnimation( "DANA" , "ANI_EV_TEMUNE_S", -1 , 1 )
+
+	//	"DANA"
+	TalkMes("DANA","#3250V#000m海から圧倒的な気配が消えた……",
+		"#011e間違いないみたいだね。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "HUMMEL" , "ANI_EV_RYOTEKOSI_S", -1 , 1 )
+
+	//	"HUMMEL"
+	TalkMes("HUMMEL","#2329V#011e#000mようやく任務完了か……","","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	CrossFade(FADE_FAST)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+
+	MoveCameraAt( 0 , 51.340f , -35.836f , 71.651f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.390f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -11.423f , 0 )	// 基本仰角
+	RotateCamera( 0 , 240.045f , 0 )				// 角度
+	ChangeCameraPers( 0 , 24.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 2.9f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SetDoF(0, LERP_LINEAR, 2.000, 20.000, 0.000, 0.550, 0.500)					//イベント毎に調整
+	SetDoFFocus(0, 0, 0)
+
+
+	Blur(BLUR_TYPE_AFTERIMAGE , 0.5 ,15 )
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_COS , 51.340f , -35.836f , 71.651f , 15 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_COS , 2.690f , 15 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 44.812f , 45 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 238.422f , 45)				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 45 )				// ロール回転
+
+	//MoveCameraAt( 0 , 51.340f , -35.836f , 71.651f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 2.690f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -11.423f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 240.045f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 24.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 2.9f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	ChangeAnimation( "RICOTTA" , "ANI_EV_GUTSPOSE", -1 , 1 )
+
+	
+	EarthQuake(0.07 , 0.07 , 7 )
+
+	//	"SAHAD"
+	TalkMes("SAHAD","#1891V#16S#160e#150m#0Lう…………","","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	ChangeAnimation( "SAHAD" , "ANI_EV_TOKIAGE_S", -1 , 1 )
+	Wait(5)
+
+	PlayBGM(BGM_EVENT_003, 0)
+	FadeBGM(70,0)
+
+	Blur(BLUR_TYPE_AFTERIMAGE , 0.5 ,35 )
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE ,  51.153f , -35.659f , 71.800f , 45 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 2.870f , 45 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 44.812f , 45 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 238.422f , 45)				// 角度
+	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 2.9f , 45 )				// ロール回転
+
+	//MoveCameraAt( 0 , 51.153f , -35.659f , 71.800f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 2.870f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 44.812f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 238.422f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 24.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 2.9f , 0 )				// ロール回転
+
+	//　　両腕を掲げて上空を仰ぎ見るサハド。
+	EarthQuake(0.13 , 0.10 , 20 )
+
+	TalkMes("SAHAD","#1892V#18S#160e#160mうおおお、ついにやったぜ！！","","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(20)
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	CrossFade(FADE_FAST)
+	MoveCameraAt( 0 , 49.397f , -36.215f , 71.326f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.730f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -0.071f , 0 )	// 基本仰角
+	RotateCamera( 0 , 281.740f , 0 )				// 角度
+	ChangeCameraPers( 0 , 33.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -1.7f , 0 )				// ロール回転
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_COS , 49.451f , -36.473f , 71.326f , 25 )	// 注視点
+//	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_COS , 2.870f , 25)				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 44.812f , 45 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 238.422f , 45)				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 45 )				// ロール回転
+
+	//MoveCameraAt( 0 , 49.451f , -36.473f , 71.326f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.730f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -0.071f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 281.740f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 33.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , -1.7f , 0 )				// ロール回転
+
+
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_LAUGH_S,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_LAUGH_S,1)
+
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_SAD_CLOSE,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+
+	ChangeAnimation( "RICOTTA" , "ANI_EV_GUTSPOSE2_S", -1 , 1 )
+
+	Wait(FADE_FAST)
+	Wait(10)
+
+	//	"RICOTTA"
+	EarthQuake(0.07 , 0.07 , 7 )
+	TalkMes("RICOTTA","#2761V#18S#020e#020mうおーっ！","","")
+	WaitPrompt()
+	WaitCloseWindow()
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	Wait(10)
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt( 0 , 51.153f , -35.659f , 71.800f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.870f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 44.812f , 0 )	// 基本仰角
+	RotateCamera( 0 , 238.422f , 0 )				// 角度
+	ChangeCameraPers( 0 , 24.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 2.9f , 0 )				// ロール回転
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 51.153f , -35.659f , 71.800f , 200 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE ,1.900f , 200 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 44.809f , 200 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 290.468f , 200)				// 角度
+	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 2.9f , 200 )				// ロール回転
+
+	//MoveCameraAt( 0 , 51.153f , -35.659f , 71.800f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.900f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 44.809f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 290.468f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 24.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 2.9f , 0 )				// ロール回転
+
+	Wait(FADE_NORMAL)
+	Wait(30)
+
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	SetMotSpd("SAHAD" , SUBMOT_EYE , 0.35f )
+
+	//	"SAHAD"
+	TalkMes("SAHAD","#1893V#062e#080mどうだ、見たか？",
+		"船長殿も見ててくれたか？","")
+	WaitPrompt()
+	WaitCloseWindow()
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	Wait(30)
+
+	CrossFade(FADE_FAST)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+
+	MoveCameraAt( 0 , 48.763f , -34.808f , 71.354f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.720f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.966f , 0 )	// 基本仰角
+	RotateCamera( 0 , 336.524f , 0 )				// 角度
+	ChangeCameraPers( 0 , 31.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 5.0f , 0 )				// ロール回転
+
+	//次シーン準備
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+
+	LookChr("SAHAD" , "LAXIA")
+	LookChr("RICOTTA" , "LAXIA")
+	LookChr("DANA" , "LAXIA")
+	LookChr("HUMMEL" , "LAXIA")
+
+	SetMotSpd("SAHAD" , SUBMOT_EYE , 1.0f )
+
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_SMILE,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_SMILE,1)
+
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_TSMILE,1)
+
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_SMILE,1)
+	ChangeAnimation( "DANA" , "ANI_EV_WAIT2", -1 , 1 )
+
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKL,1)
+	ExecuteCmd( 1, MoveTo, "LAXIA",48.53f,-34.34f,70.00f, 0.1f, 0.20f )
+	//SetChrPos("LAXIA",48.53f,-34.34f,70.00f)
+	//Turn("LAXIA",57.24f,360.0f)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 48.629f , -34.750f , 71.428f , 180 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.710f , 180 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -2.961f , 180 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 337.015f , 180)				// 角度
+	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 180 )				// ロール回転
+
+	//MoveCameraAt( 0 , 48.629f , -34.750f , 71.428f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.710f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -2.961f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 337.015f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 31.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , -3.9f , 0 )				// ロール回転
+
+	WaitThread(1)
+	Look("LAXIA" , -35, 3 )
+
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	//	"LAXIA"
+	TalkMes("LAXIA","#1084V#092e#080mアドル、やりましたね！","","")
+	WaitPrompt()
+
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_SMILE_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_SMILE_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKR_S,1)
+	Wait(10)
+
+	ChangeAnimation( "ADOL" , "ANI_EV_WAIT2_S", -1 , 1 )
+	Look("ADOL" , 15 , 0 ) 
+
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_WAIT2_S",  0)
+	Wait(20)
+
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+
+	// 被写界深度の設定
+	SetDoF(120, LERP_LINEAR, 2.500, 2.000 ,0.000 ,0.550 ,1.000)
+
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 48.679f , -34.337f , 71.378f , 200 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE ,  1.570f , 200 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 1.645f, 200 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE ,319.260f , 200)				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 200 )				// ロール回転
+
+	//MoveCameraAt( 0 , 48.679f , -34.337f , 71.378f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.570f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 1.645f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 319.260f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 31.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 7.8f , 0 )				// ロール回転
+
+	LookReset("LAXIA")
+//	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKL_E,1)
+	Turn("LAXIA",22.77f,6.0f)
+	Look("LAXIA" , -15 , 0 )
+
+	TalkMes("LAXIA","#1085V#060e#080mこれでこの島からやっと……","","")
+	WaitPrompt()
+	WaitCloseWindow()
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	Wait(30)
+
+	//　　ラクシャ、感極まったあまりに
+	//　　ついはらりと涙がこぼれてしまう。
+
+	ChangeAnimation( "namida" , "ANI_DROP", -1 , 1 )
+
+//	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_SUP_S,1)
+//	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_OPEN_S,1)
+
+	Wait(25)
+
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	TalkMes("LAXIA","#1086V#040l#070e#200mあ……？","","")
+	WaitPrompt()
+	WaitCloseWindow()
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	WaitAnimation2( "namida" , -1, 1, "ANI_DROP",  0)
+
+	LookReset("LAXIA")
+//	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKL_E,1)
+
+	ChangeAnimation( "LAXIA" , "ANI_EV_NAMIDA_S", -1 , 1 )
+
+	WaitAnimation2( "LAXIA" , -1, 1, "ANI_EV_NAMIDA_S",  0)
+
+	Wait(15)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"よく頑張ったね")
+	MenuAdd(2,"泣かないでくれ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	Look("ADOL" , 40 , 0 ) 
+	Wait(10)
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		PlayVoice(Y8V_0162,"ADOL",100)	//フッ（微笑）
+		Wait(30)
+	}else {
+		PlayVoice(Y8V_0188,"ADOL",100)	//ええと…（相手に声をかける）
+		Wait(40)
+	}
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 48.679f , -34.337f , 71.378f , 120 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.300f , 120 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -2.593f , 120 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE ,324.168f  , 120)				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 120 )				// ロール回転
+
+	//MoveCameraAt( 0 , 48.679f , -34.337f , 71.378f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.300f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -2.593f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 324.168f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 31.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 7.8f , 0 )				// ロール回転
+
+	//─────────────────────────
+	//	⇒よく頑張ったね
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+
+		TalkMes("LAXIA","#1087V#061e#000mええ……",
+			"す、すみません……つい……","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒泣かないでくれ
+	if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		TalkMes("LAXIA","#1088V#061e#000mそ、そんなこと言われましても……",
+			"勝手に……","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//─────────────────────────
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	ChangeAnimation( "namida" , "ANI_DROP", -1 , 1 )
+	Wait(40)
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , 48.725f , -34.660f , 71.428f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.710f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 12.553f , 0 )	// 基本仰角
+	RotateCamera( 0 , 127.793f , 0 )				// 角度
+	ChangeCameraPers( 0 , 31.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 11.8f , 0 )				// ロール回転
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 48.725f , -34.660f , 71.428f , 90 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.950f  , 90 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 12.553f , 90 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE ,156.052f , 90)				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 90 )				// ロール回転
+
+	//MoveCameraAt( 0 , 48.725f , -34.660f , 71.428f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.950f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 12.553f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 156.052f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 31.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 5.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 1.000, 10.000, 0.000, 0.550, 0.500)					//イベント毎に調整
+
+	//　　ラクシャ顔を背けて涙を拭う素振り。
+
+	LookReset("LAXIA")
+	ChangeAnimation( "LAXIA" , "ANI_EV_NAMIDA_BACK", -1 , 0 )
+	ChangeAnimation( "namida" , "ANI_WAIT", -1 , 1 )
+
+	WaitAnimation2( "LAXIA" , -1, 1, "ANI_EV_NAMIDA_BACK",  0)
+
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	TalkMes("LAXIA","#1089V#010l#062e#000mし、失礼いたしました。","","")
+	WaitPrompt()
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	Wait(20)
+
+	CrossFade(FADE_FAST)
+	MoveCameraAt( 0 , 50.523f , -34.517f , 71.552f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.330f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 21.030f , 0 )	// 基本仰角
+	RotateCamera( 0 , 118.138f , 0 )				// 角度
+	ChangeCameraPers( 0 , 33.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 5.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 15.000, 0.000, 0.700, 0.500)					//イベント毎に調整
+
+	Turn("LAXIA",-69.66f,8.0f)
+	Wait(FADE_FAST)
+
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	ChangeAnimation( "LAXIA" , "ANI_EV_TEBURI", -1 , 1 )
+
+	TalkMes("LAXIA","#1090V#000l#011e#000mさあ、アドル、皆さん。",
+		"ドギたちが待っているはずです。","")
+	WaitPrompt()
+	TalkMes("LAXIA","#1091V#012e#000m地上へ戻りましょう。","","")
+	WaitPrompt()
+	WaitCloseWindow()
+	ResetStopFlag(STOPFLAG_CINEMA)
+	
+	//　　アドル、頷きモーション後に
+	HeadYes("ADOL" , 1 , 25 )
+	Wait(40)
+
+
+//	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 50.523f , -34.517f , 71.552f , 180 )	// 注視点
+//	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 3.430f  , 180 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -7.095f , 180 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 217.256f , 180)				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 6.7f , 180 )				// ロール回転
+
+	//MoveCameraAt( 0 , 50.523f , -34.517f , 71.552f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.430f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -7.095f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 217.256f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 33.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 5.0f , 0 )				// ロール回転
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 50.346f , -33.513f , 71.502f , 180 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 2.130f , 180 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -10.240f, 180 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 234.983f , 180)				// 角度
+	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 5.0f  , 180 )				// ロール回転
+
+	//MoveCameraAt( 0 , 50.346f , -33.513f , 71.502f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 2.130f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -10.240f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 234.983f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 33.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 5.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+
+
+	LookReset("HUMMEL")
+	TurnTo("HUMMEL",79.20f,-48.37f,69.82f,10.0f)
+	ExecuteCmd( 1, MoveTo, "HUMMEL",79.20f,-48.37f,69.82f, 0.1f, 0.20f )
+
+	Wait(15)
+
+	LookReset("SAHAD")
+	TurnTo("SAHAD",81.50f,-51.39f,69.74f,10.0f)
+	ExecuteCmd( 2, MoveTo, "SAHAD",81.50f,-51.39f,69.74f, 0.1f, 0.20f )
+	LookChr("SAHAD" , "RICOTTA")
+
+	LookReset("RICOTTA")
+	TurnTo("RICOTTA",77.85f,-50.38f,69.62f,10.0f)
+	ExecuteCmd( 3, MoveTo, "RICOTTA",77.85f,-50.38f,69.62f, 0.1f, 0.20f )
+	LookChr("RICOTTA" , "SAHAD")
+
+	LookReset("DANA")
+
+	Wait(40)
+
+	TurnTo("LAXIA",75.87f,-47.66f,69.97f,15.0f)
+	ExecuteCmd( 2, MoveTo, "LAXIA",75.87f,-47.66f,69.97f, 0.1f, 0.20f )
+
+	Wait(40)
+
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_SUP_S,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_OPEN_S,1)
+	ChangeAnimation( "DANA" , "ANI_EV_WAIT2_E", -1 , 1 )
+	Blur(BLUR_TYPE_EXPAND_SUB , 1.15f , 15 )
+	PlaySE(SE_M05S293_01, 100, 0, 0, 0, 1.0f, 0)
+	Wait(40)
+
+	//SetChrPos("SAHAD",81.50f,-51.39f,69.74f)
+	//Turn("SAHAD",113.40f,360.0f)
+	//SetChrPos("LAXIA",75.87f,-47.66f,69.97f)
+	//Turn("LAXIA",-66.81f,360.0f)
+	//SetChrPos("RICOTTA",77.85f,-50.38f,69.62f)
+	//Turn("RICOTTA",-58.54f,360.0f)
+	//SetChrPos("HUMMEL",79.20f,-48.37f,69.82f)
+	//Turn("HUMMEL",-55.84f,360.0f)
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKL,1)
+	LookChr("ADOL" , "DANA")
+	ExecuteCmd( 5, MoveTo, "ADOL",51.75f,-35.48f,70.00f, 0.1f, 0.24f )
+//	//SetChrPos("ADOL",51.75f,-35.48f,70.00f)
+//	//Turn("ADOL",-101.17f,360.0f)
+	LookChr("ADOL" , "DANA")
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_LOOKL_S,1)
+
+	Wait(30)
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 50.375f , -33.152f , 71.452f, 170 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.700f , 170 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 7.288f , 170 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE ,296.093f, 170)				// 角度
+	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 5.0f , 170 )				// ロール回転
+
+	//MoveCameraAt( 0 , 50.375f , -33.152f , 71.452f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.700f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 7.288f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 296.093f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 33.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , -1.8f , 0 )				// ロール回転
+
+
+	//　　ラクシャ、サハド、リコッタ、ヒュンメルが退場し、
+	//　　アドルも歩き出そうとした瞬間にキィンという
+	//　　ダーナの予知予告共鳴ＳＥが聞こえる。
+	//　　ダーナに「！」エモーション表示。
+
+	EmotionEx("DANA", 0.005f,EMO_EX2,0,5,1,1,0.72f )
+	ChangeAnimation( "DANA" , "ANI_EV_ZUTUU_S", -1 , 1 )
+
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_SAD_CLOSE_S,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_TAME_S,1)
+
+	Wait(70)
+
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	//HeadNo("DANA" , 1 , 35 )
+
+	TalkMes("DANA","#3251V#062e#000mそんな……今のは…………","","")
+	WaitPrompt()
+	WaitCloseWindow()
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 50.375f , -33.152f , 71.452f, 170 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 1.560f , 170 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , -5.129f, 170 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 304.537f , 170)				// 角度
+	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , -1.8f , 170 )				// ロール回転
+
+	Wait(45)
+
+	//MoveCameraAt( 0 , 50.375f , -33.152f , 71.452f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.560f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -5.129f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 304.537f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 33.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , -1.8f , 0 )				// ロール回転
+
+	SetMotSpd("DANA" , SUBMOT_EYE, 0.60f)
+	SetMotSpd("DANA" , SUBMOT_EXT1, 0.60f)
+	//ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_SAD_CLOSE_E,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKL_S,1)
+
+	Wait(75)
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_SAD_CLOSE_S,1)
+
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+	Wait(20)
+
+	CrossFade(FADE_FAST)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+
+	SetMotSpd("DANA" , SUBMOT_EYE, 1.0f)
+	SetMotSpd("DANA" , SUBMOT_EXT1, 1.0f)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	SetChrPos("ADOL",51.68f,-35.47f,70.00f)
+	Turn("ADOL",-83.44f,360.0f)
+
+	MoveCameraAt( 0 , 50.980f , -34.581f , 71.478f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.180f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 2.340f , 0 )	// 基本仰角
+	RotateCamera( 0 , 57.113f , 0 )				// 角度
+	ChangeCameraPers( 0 , 26.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 1.8f , 0 )				// ロール回転
+
+	SetDoF(0, LERP_LINEAR, 5.000, 50.000, 2.000, 0.450, 0.500)					//イベント毎に調整
+
+	Wait(25)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"どうしたんだい？")
+	MenuAdd(2,"置いていっちゃうぞ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		PlayVoice(Y8V_0190,"ADOL",100)	//どうした？（相手を気遣う、フラット～優しめのテンション）
+		
+	}else {
+		PlayVoice(Y8V_0179,"ADOL",100)	//ふう…（溜息）
+
+		ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+	}
+	ChangeAnimation( "ADOL" , "ANI_EV_TEBURI_L", -1 , 1 )
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_TEBURI_L",  0)
+	Wait(15)
+
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+	ChangeAnimation( "DANA" , "ANI_EV_ZUTUU_E", -1 , 1 )
+	LookSpd("DANA",0.08f,0.08f,0.08f)
+	Look("DANA" , -40 , -3 )
+	Wait(25)
+
+	HeadYes("DANA" , 1 , 25 )
+
+	//─────────────────────────
+	//	⇒どうしたんだい？
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		TalkMes("DANA","#3252V#020l#050e#080mあ、うん……何でもないかな。","","")
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒置いていっちゃうぞ
+	else
+	{
+		TalkMes("DANA","#3253V#020l#050e#080mご、ごめん、今行くね。","","")
+		WaitPrompt()
+		WaitCloseWindow()
+
+		ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+	}
+	//─────────────────────────
+
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	StopThread(1)
+	StopThread(2)
+	StopThread(3)
+	StopThread(4)
+	Turn("SAHAD",113.40f,360.0f)	
+	Turn("HUMMEL",118.42f,360.0f)
+	Turn("LAXIA",124.76f,360.0f)
+	Turn("RICOTTA",121.01f,360.0f)
+	LookReset("SAHAD")
+	LookReset("RICOTTA")
+
+	ChangeAnimation( "SAHAD" , "ANI_EV_RYOTEKOSI", -1 , 1 )
+	ChangeAnimation( "HUMMEL" , "ANI_EV_UDEGUMI", -1 , 1 )
+	ChangeAnimation( "RICOTTA" , "ANI_EV_RYOTEKOSI", -1 , 1 )
+	ChangeAnimation( "LAXIA" , "ANI_EV_WAIT2", -1 , 1 )
+
+	Wait(20)
+	
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKL_E,1)
+	TurnTo("DANA",68.56f,-43.78f,69.42f,10.0f)
+	ExecuteCmd( 6, MoveTo, "DANA",68.56f,-43.78f,69.42f, 0.1f, 0.18f )
+	//SetChrPos("DANA",68.56f,-43.78f,69.42f)
+	//Turn("DANA",-70.15f,360.0f)
+
+	Wait(40)
+
+	TurnTo("ADOL",69.03f,-45.23f,69.34f,6.0f)
+	ExecuteCmd( 5, MoveTo, "ADOL",69.03f,-45.23f,69.34f, 0.1f, 0.18f )
+	//SetChrPos("ADOL",69.03f,-45.23f,69.34f)
+	//Turn("ADOL",-69.80f,360.0f)
+
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	WaitThread(1005)
+	WaitThread(1006)
+
+	//　　ダーナ、アドルに追いついて
+	//　　一緒に歩いてフレームアウトした後に画面フェードアウト。
+
+
+	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 50.975f , -34.547f , 73.338f , 240 )	// 注視点
+	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 5.520f , 240 )				// 基本距離
+	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 7.957f , 240 )				// 基本仰角
+	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 240.837f , 240)				// 角度
+	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 1.8f , 210 )				// ロール回転
+
+	//MoveCameraAt( 0 , 50.975f , -34.547f , 73.338f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 5.520f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 7.957f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 240.837f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 33.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 5.0f , 0 )				// ロール回転
+
+//	ExecuteCmd( 1001,MoveCameraAt, INTERPOLATE_SPHERE , 50.980f , -34.581f , 72.470f , 240 )	// 注視点
+//	ExecuteCmd( 1002,ChangeCameraDistance, INTERPOLATE_SPHERE , 10.580f, 240 )				// 基本距離
+//	ExecuteCmd( 1003,ChangeCameraElevation, INTERPOLATE_SPHERE , 13.947f , 240 )				// 基本仰角
+//	ExecuteCmd( 1004,RotateCamera, INTERPOLATE_SPHERE , 237.681f, 240)				// 角度
+//	ExecuteCmd( 1005,RollCamera, INTERPOLATE_SPHERE , 1.8f , 210 )				// ロール回転
+
+	//MoveCameraAt( 0 , 50.980f , -34.581f , 72.470f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 10.580f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 13.947f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 237.681f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 26.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 1.8f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//MoveCameraAt( 0 , 51.926f , -33.265f , 72.470f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 10.580f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 8.363f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 230.796f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 26.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 1.8f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(50)
+
+	LookSpd("ADOL",0.08f,0.08f,0.08f)
+	LookReset("ADOL")
+
+	Wait(70)
+
+	LookReset("DANA")
+
+	WaitThread(1005)
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+	StopSE(SE_ENV_RUMBLE_1, 1000)
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	StopThread(5)
+	StopThread(6)
+
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+	StopThread(1005)
+	StopThread(1006)
+
+	//　　ブラックアウトのまま以下のテキストを表示。
+	//	テキスト（色替え）
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cセイレン島の番人ともいうべき"
+		"#7Cオケアノスをついに打倒したアドルたち。\p"
+		"#7C一方、地上では漂流者たちが"
+		"#7C古代種たちの猛攻を何とか退けていた。\p"
+		"#7Cアドルたちの報告を聞くや否や、"
+		"#7C大きな歓声が晴れ渡った空にこだまする。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C今や島からの脱出を阻む者はいない。"
+		"#7C船の準備が済み次第、ようやく"
+		"#7Cこの呪われた地を去ることができるのだ。\p"
+		"#7Cその夜、タナトスとサハドの提案で"
+		"#7C脱出に向けた決起会がささやかに催された。\p"
+		"#7C宿敵とも言うべきオケアノスへの"
+		"#7C勝利に漂流者たちは沸き、"
+		"#7C宴は大いに盛り上がるのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	StopBGM(120)
+
+	//	name2()
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cそして────"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(25)
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6370:EV_M05S293_ED")
+}
+
+function "EV_M05S293_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	// 通常
+	if ( !FLAG[SF_GALLERY_EVENT] )
+	{
+		//フラグ
+		SetFlag( SF_BOSS_BATTLE, 0 )		//ボス戦終了
+		SetFlag(GF_INTERCEPT_LASTSTAGEID, INTERCEPT_STAGE_NONE)
+		SetFlag(GF_INTERCEPT_LASTRESULT, 0)
+
+		SetFlag( GF_GALL_EV_05_07, 1 )		// M05S293:オケアノスに勝利する
+
+		//GetItem(ICON3D_FIRESTONE , 1 )		//燃石入手
+		CallFunc("rng:0437")
+		//トロフィー入手
+		GetTrophy("TROPHY_SCENE_C5_HOLLOW_END")		//果たされた宿願			宿敵オケアノスを倒した。
+
+		//NowLoading 時の Tips 表示をカット
+		SetFlag(TF_LOADING_TIPS_OFF, 1)
+
+		StopBGM(60)
+		SetFlag(SF_NOCHANGEBGM, 1)
+
+		LoadArg("map/mp1201/mp1201.arg")
+		EventCue("mp1201:EV_M05S300")
+
+		ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	}
+	// イベントギャラリー中
+	else
+	{
+		FadeBGM(100,15)
+		SoundEfx( SEFX_DEFAULT, 15 )
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+		GalleryEvEnd(0)		// イベントギャラリー終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	}
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+// ---------------------------------------------------------
+//		リアルタイムヘルプ
+// ---------------------------------------------------------
+
+function "B007_STAN"
+{
+	// オケアノスがスタン中
+
+	SetRealTimeHelp(-1, 0)		// リアルタイムヘルプ終了
+	
+	if (!FLAG[GF_05MP6370_BOSS_HELP]) 	// ▽オケアノス戦中の弱点を見せるカメラ移動を見た
+	{
+		SetStopFlag(STOPFLAG_SIMPLEEVENT)
+
+		SaveCamera()
+		
+		ResetMotion( "PARTYALL" , 0 )
+		StopEffect(-1,PARTYALL,1)
+		StopEmotion( "PARTYALL" )
+		ResetMoveVec("PARTYALL")
+		
+		// クロスフェード
+		CrossFade(FADE_CROSS)
+
+		SetChrPos("B007",0.0f,0.0f,0.0f)
+		Turn("B007",0.0f,360.0f)
+
+		// カメラ
+		MoveCameraAt( 0 , -36.618f , -61.477f , 98.662f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 13.824f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 41.745f , 0 )	// 基本仰角
+		RotateCamera( 0 , 327.179f , 0 )				// 角度
+		ChangeCameraPers( 0 , 70.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		Wait(60)
+
+		// カメラ移動
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 6.203f , -3.005f , 25.985f , 210)
+		ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 28.604f , 210 )
+		ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 59.612f , 210 )
+		ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 51.618f , 210 )
+
+		// カメラ待ち
+		WaitThread(1000)
+		WaitThread(1001)
+		WaitThread(1002)
+		WaitThread(1003)
+	
+		Wait(30)
+	
+		// パーティ位置復帰
+
+		if ((PLAYER1.CHRWORK[CWK_POSX] < 15 && PLAYER1.CHRWORK[CWK_POSX] > -15) && 
+			(PLAYER1.CHRWORK[CWK_POSY] < 15 && PLAYER1.CHRWORK[CWK_POSY] > -15) && 
+			(PLAYER1.CHRWORK[CWK_POSZ] < 15 && PLAYER1.CHRWORK[CWK_POSZ] > -15))
+		{
+			SetChrPos("PLAYER1",2.44f,-27.25f,-0.02f)
+			Turn("PLAYER1",174.87f,360.0f)
+			ResetPartyPos()
+			ResetFollowPoint()
+
+			MoveCameraAt( 0 , 2.440f , -27.250f , 2.823f , 0 )	// 注視点
+			ChangeCameraDistance( 0 , 14.000f , 0 )		// 基本距離
+			ChangeCameraElevation( 0 , 6.563f , 0 )	// 基本仰角
+			RotateCamera( 0 , 0.944f , 0 )				// 角度
+			ChangeCameraPers( 0 , 48.000f , 0 )			// 視野角
+			RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			CallFunc("system:camera_reset")		
+		}
+		else
+		{
+			ResetPartyPos()
+			ResetFollowPoint()
+			//Wait(1) //処理待ち用
+			
+			// カメラ復帰
+			RestoreCamera(0,0)
+			ResetCameraObserver(0)
+			ResetCameraZPlane()
+		}
+		// フラグ処理
+		SetFlag(GF_05MP6370_BOSS_HELP, 1)
+		
+		CrossFade(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT)
+		
+	}
+	
+	SetRealTimeHelp(RH_B007_STAN, -1)	// 「オケアノスの弱点を攻撃しろ！」
+	
+	SetEventDriven(EED_TYPE_WAKEBOSS, 0, "mp6370:B007_REMOVE")	// ボスがスタンから復帰したらリアルタイムヘルプを起動
+	
+}
+
+// --------------------------------------------------------
+
+function "B007_REMOVE"
+{
+	// オケアノスがスタンから復帰
+	SetRealTimeHelp(-1, 0)		// リアルタイムヘルプ終了
+	Wait(30)
+
+	SetRealTimeHelp(RH_B007_REMOVE, -1)	// 「水流を使って足場に上れ！」
+	
+	SetEventDriven(EED_TYPE_STUNBOSS, 0, "mp6370:B007_STAN")	// ボスがスタンしたらリアルタイムヘルプを起動
+	
+	EventAreaEnable( "B007_HELP_OFF_1" , 1 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_2" , 1 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_3" , 1 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_4" , 1 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_5" , 1 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_6" , 1 )	// オケアノス戦ヘルプ用
+	
+}
+
+// --------------------------------------------------------
+
+function "B007_HELP_OFF"
+{
+	// 足場に復帰
+	SetRealTimeHelp(-1, 0)		// リアルタイムヘルプ終了
+
+	EventAreaEnable( "B007_HELP_OFF_1" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_2" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_3" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_4" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_5" , 0 )	// オケアノス戦ヘルプ用
+	EventAreaEnable( "B007_HELP_OFF_6" , 0 )	// オケアノス戦ヘルプ用	
+
+}

@@ -1,0 +1,751 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 幽霊船・船倉通路															  //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+// init
+function "init"
+{
+	// 船揺れ
+	CallFunc("system:default_Shake_set")
+
+	if (FLAG[SF_EVENT_ON]) {
+	//エントリー
+		MapHide(ev_entry_fog ,1 )	//初回はON
+		MapHide(ev_entry_black ,0 )	//初回はOFF
+
+		if(FLAG[GF_05MP0405_READ_REED]){	//再訪時
+			EntryOn(02 , 1)	//7411行きをON
+			EntryOn(01 , 0)	//0405行きをOFF
+
+			MapHide(ev_entry_fog ,0 )	//初回はOFF
+			MapHide(ev_entry_black ,1 )	//再探索時はON
+		}
+
+	// マップノード
+		// 再探索時の水面2をOFF
+		MapAnime("ev_water2" , "water_off" )
+		MapDelProp("WL_01" , MNP_GROUND)
+
+		MapHide("ev_awa1" , 0 )	// 再探索時の水中用泡
+		MapHide("ev_awa2" , 0 )	// 再探索時の水中用泡
+		
+		EventBox( 01 , 0 )	//水面（水中）用カメラボックスです。再探索時に有効にしてください。
+
+		//扉		
+		MapAnime("ev_door", "wait1")	// ドア（閉じている状態）
+
+		if (FLAG[GF_05MP0405_READ_REED]) {	// ▼[M05S172][キャプテン・リードと別れる２]
+			// 再探索 --------------------------------------------- //
+			MapAnime("ev_water2" , "water_on" )
+			MapSetProp("WL_01" , MNP_GROUND)
+
+			//初回探索用水面1をOFF
+			MapAnime("ev_water1" ,"water_off" )	// 初回攻略時の水面
+			MapDelProp("WL_00" , MNP_GROUND)
+
+			MapHide("ev_awa1" , 1 )	// 再探索時の水中用泡
+			MapHide("ev_awa2" , 1 )	// 再探索時の水中用泡
+
+			EventBox( 01 , 1 )	//水面（水中）用カメラボックスです。再探索時に有効にしてください。
+			SetEnvSEPlayState(0408003,1)	// envse
+		}
+		if (FLAG[GF_05MP0404_READ_NOTE4]) {		// ▼[M05S152][リードの航海日誌④を読む]
+			// 扉開放後 ------------------------------------------- //
+			MapAnime("ev_door", "wait2")	// ドア（開いている状態）
+		}
+	}
+
+	//骸骨：宝箱
+	if( FLAG[GF_MP0408_SKELETON01] ){
+		ChangeAnimation( "Skeleton01" , "ANI_STOP2", -1 , 1 )		//取った後
+		SetChrWork("Skeleton01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	}
+}
+
+//-------------------------------------------
+//骸骨
+//function "Skeleton01"	//下の【海賊のメモ⑥】に統合致しました
+//{
+//
+////	SetStopFlag(STOPFLAG_PC)
+//	SetStopFlag(STOPFLAG_TALK)
+//
+//	ChangeAnimation( "PLAYER1" , "ANI_GET_ITEM", -1 , 1 )
+//	Wait(10)
+//	ChangeAnimation( "this" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+//
+//	GetItemMessageExPlus( ICON3D_MEMO_P_006, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+//	WaitPrompt()
+//	WaitCloseWindow()
+//	GetItem(ICON3D_MEMO_P_006,1)		//海賊のメモ⑥
+//
+//	PlaySE(SE_BREAK_MAT_0061,100,0,  0, 0, 1.0f, 0)		//◆仮ＳＥ
+//	ChangeAnimation( "this" , "ANI_OPEN", -1 , 1 )		//崩れる
+//
+//	//開けた
+//	SetFlag( GF_MP0408_SKELETON01, 1 )
+//	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+//
+////	ResetStopFlag(STOPFLAG_PC)
+//	ResetStopFlag(STOPFLAG_TALK)
+//
+//}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//──────────────────────────────
+//▼リードの航海日誌④を読む
+//──────────────────────────────
+function "EV_M05S152"			//リードの航海日誌④を読む
+{
+	//開始処理ここから-----------------------------------------------
+	CallFunc("system:event_begin")
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+//	SetChrPos("ADOL", 21.05f, 29.97f, 48.00f)
+//	Turn("ADOL", 103.08f, 360.0f)
+
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 20.05f, 30.87f, -82.00f)
+	Turn("ADOL", 158.50f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookChr("ADOL", "RICOTTA")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", 20.57f, 32.50f, -82.00f)
+	Turn("RICOTTA", 155.59f, 360.0f)
+	ChangeAnimation("RICOTTA", "ANI_EV_TEWATASI", -1, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag("RICOTTA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 19.54f, 30.25f, -82.00f)
+	Turn("SAHAD", -155.84f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookChr("SAHAD", "RICOTTA")
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 21.86f, 31.36f, -82.00f)
+	Turn("LAXIA", 138.46f, 360.0f)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookChr("LAXIA", "RICOTTA")
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", 20.64f, 30.08f, -82.00f)
+	Turn("HUMMEL", 156.40f, 360.0f)
+	ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookChr("HUMMEL", "RICOTTA")
+	SetChrInfoFlag("HUMMEL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA", 19.68f, 32.47f, -82.00f)
+	Turn("DANA", -157.02f, 360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookChr("DANA", "TBOX01")
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+
+	CallFunc("system:event_Shake_set")	// イベント用フナ揺れ
+
+	SetFlag(SF_CHARANORECVSHADOW,1)	//キャラ影受けない
+
+	Wait(10)
+
+	//カメラ設定
+//	MoveCameraAt( 0 , 21.101f , 30.494f , -80.171f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.230f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 5.437f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 44.446f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 36.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	MoveCameraAt( 0 , 21.101f , 30.494f , -80.391f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.230f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.437f , 0 )	// 基本仰角
+	RotateCamera( 0 , 44.446f , 0 )				// 角度
+	ChangeCameraPers( 0 , 36.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 80.000, 2.000, 0.450, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	// 擬似フェード用ポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+
+	//▼ サブポートレート読み込み
+	Portrait_Load(1, "visual/portrait/p_30008.itp")	// リードの航海日誌　※一枚の紙片
+	Portrait_Create(1, SUBP_POS_X, SUBP_POS_Y,
+	0, 0, SUBP_SCALE_X, SUBP_SCALE_Y,
+	0.0f, 0x00ffffff, 0x00000000)
+	
+	//スキップ許可
+	SetSkipScript("mp0408:EV_M05S152_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　　日誌の入った宝箱を調べるとイベント開始。
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	// カメラ移動
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 21.101f , 30.494f , -80.391f, 60 )
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	// カメラ待ち
+//	WaitThread(1000)
+
+	//▼ 航海日誌のページのサブポートレート表示。
+	Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+	
+	//　　航海日誌のページのサブポートレート表示。
+	
+	Wait(45)
+	
+	//	テキスト（色替え）
+	TalkPopup(UNDEF, 0, 3, STOPPER_PPOSX, STOPPER_PPOSY, 0) {
+		"#7C宝箱の中には古びた"
+		"#7C一枚の紙片が収められている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	//　　ポートレートを消す。
+	Portrait_Anime(1, PR_ANIME_COLOR, 0.0f, 0.0f, 0.0f, 0.0f, FADE_FAST)
+	Wait(FADE_FAST)
+	Portrait_Close(1)
+	Portrait_Unload(1)
+
+	TalkPopup("RICOTTA", 0, 0, 0, 0, 0) {
+		"#000e#000mコレ、リードの航海日誌！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//	LookChr("DANA", "RICOTTA")
+
+	//	"DANA"
+	TalkPopup("DANA", 0, 0, 0, 0, 0) {
+		"#000e#000mさっそく読んでみようか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("DANA", "TBOX01")
+
+	// 擬似ハーフフェードアウト表示
+	Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+	Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.5f, FADE_FAST)
+	Wait(FADE_FAST)
+
+	//	テキスト（色替え）
+	TalkPopup(UNDEF, 0, 3, STOPPER_PPOSX, STOPPER_PPOSY, 0) {
+		"#7C巨大な触手のバケモンを振り切り、"
+		"#7C島に上陸した俺たちは調査を開始した。\p"
+		"#7C今回、エレフセリアの船員は"
+		"#7Cあろうことか馬のションベン以下の"
+		"#7Cならず者どもばかりだ。\p"
+		"#7C海軍がよこした連中は全員囚人であり、"
+		"#7C中には全くのド素人まで混じってやがる。\p"
+		"#7C確かにまともな船乗りがセイレン島の"
+		"#7C調査というバカげた話に乗るはずもないが、"
+		"#7Cイカれた状況であることに違いはねえ。\p"
+		"#7C先ほども、俺から船を奪って"
+		"#7Cトンズラしようと画策したボンクラを"
+		"#7C海に叩き落としてやったところだ。\p"
+		"#7Cこの手の反乱が絶えない上に、"
+		"#7C島にはこれまで見たこともない"
+		"#7C異形の獣どもがのさばっていやがる。\p"
+		"#7C調査は何とか進んでいるが、"
+		"#7Cここへ来てから体調も思わしくなく、"
+		"#7C熱っぽくて気だるい状態が続いている。\p"
+		"#7C俺らしくもないが、さすがに"
+		"#7C今回は分が悪いかもしれない……"
+		"#7Cこれを書き終えたら少し休むとしよう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// 擬似フェードアウト削除
+	Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+	Wait(25)
+	// カットX ----------------------------------------------------------------------------------------------
+
+	CrossFade(FADE_NORMAL)
+	
+	MoveCameraAt( 0 , 20.344f , 31.262f , -80.168f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.150f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 2.366f , 0 )	// 基本仰角
+	RotateCamera( 0 , 143.539f , 0 )				// 角度
+	ChangeCameraPers( 0 , 36.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 20.00f, 30.58f, -82.00f)
+	Turn("ADOL", -173.08f, 360.0f)
+	SetChrPos("DANA", 19.77f, 32.38f, -82.00f)
+	Turn("DANA", -157.02f, 360.0f)
+	SetChrPos("LAXIA", 21.66f, 31.30f, -82.00f)
+	Turn("LAXIA", 156.23f, 360.0f)
+	SetChrPos("SAHAD", 18.84f, 30.88f, -82.00f)
+	Turn("SAHAD", -138.08f, 360.0f)
+	SetChrPos("RICOTTA", 20.69f, 32.43f, -82.00f)
+	Turn("RICOTTA", 169.80f, 360.0f)
+	SetChrPos("HUMMEL", 20.86f, 30.40f, -82.00f)
+	Turn("HUMMEL", 167.06f, 360.0f)
+	ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+
+	LookReset("ADOL")
+	LookReset("DANA")
+	LookReset("RICOTTA")
+	LookReset("HUMMEL")
+	LookChr("LAXIA", "DANA")
+	LookChr("SAHAD", "DANA")
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 20.344f , 31.262f , -80.468f, 45 )
+
+	Turn("DANA", -25.56f, 7.0f)
+	Turn("RICOTTA", 20.58f, 7.0f)
+
+	Portrait_Close(0)		// 削除：擬似フェードアウト用ポートレート
+
+	// カメラ待ち
+	WaitThread(1000)
+
+	ChangeAnimation( "DANA", "ANI_EV_RYOTEMAE_S", -1, 1 )	// 両手 前組み
+
+	//	"DANA"
+	TalkPopup("DANA", 0, 1, 0, 0, 0) {
+		"#000e#000m──ここまでみたいだね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	//	"SAHAD"
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#000e#000m触手のバケモンって……"
+		"もしかしてオケアノスのことか？\p"
+		"船体が無事なまま、"
+		"上陸してたなんてさすがだぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "HUMMEL", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	//	"HUMMEL"
+	TalkPopup("HUMMEL", 0, 2, 0, 0, 0) {
+		"#000e#000mだが、これを読む限り"
+		"その後は苦労したようだな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("LAXIA", "ANI_EV_TEMUNE_S", -1, 1)
+
+	//	"LAXIA"
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+		"#051e#000mええ、体調を崩したようですが、"
+		"結局どうなったのでしょう？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	// カットX -----------------------------------------------------------------------------------------
+
+	//　　画面切り替えて、閉鎖されていた扉が開くのを見せ、
+	CrossFade(FADE_CROSS)
+
+	// カメラ
+	MoveCameraAt( 0 , 18.414f , -6.486f , -80.564f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 9.190f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 0.647f , 0 )	// 基本仰角
+	RotateCamera( 0 , 25.797f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	SetDoF(0, LERP_LINEAR, 0.000, 10.000, 2.000, 3.0, 0.500)	// 被写界震度
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 3.132f , 0.663f , -78.084f , 120 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 9.190f , 120 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -2.218f , 120 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 93.119f , 120 )
+
+	Wait(FADE_CROSS)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	CrossFade(FADE_FAST)
+	MapAnime("ev_door", "open")	// 扉開く
+	PlaySE(SE_M05S152_01, 100, 0, 0, 0, 1.0f, 0)
+
+	Wait(30)
+	PlaySE(SE_M05S152_02, 80 1, 100, 0, 1.0f, 0)
+	Wait(180)
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	//　　アドルたちにカメラを戻す。
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// カメラ
+	MoveCameraAt( 0 , 20.542f , 30.335f , -80.382f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.910f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -0.791f , 0 )	// 基本仰角
+	RotateCamera( 0 , 324.672f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SetDoF(0, LERP_LINEAR, 2.000, 10.000, 2.000, 3.0, 0.500)	// 被写界震度
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 20.23f, 30.08f, -82.00f)
+	Turn("ADOL", -5.61f, 360.0f)
+	SetChrPos("DANA", 20.04f, 32.05f, -82.00f)
+	Turn("DANA", -1.30f, 360.0f)
+	SetChrPos("LAXIA", 21.61f, 31.34f, -82.00f)
+	Turn("LAXIA", 12.07f, 360.0f)
+	SetChrPos("SAHAD", 19.16f, 31.18f, -82.00f)
+	Turn("SAHAD", -4.38f, 360.0f)
+	SetChrPos("RICOTTA", 20.85f, 32.07f, -82.00f)
+	Turn("RICOTTA", 13.17f, 360.0f)
+	SetChrPos("HUMMEL", 21.39f, 30.26f, -82.00f)
+	Turn("HUMMEL", -0.02f, 360.0f)
+
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)	// 目
+	ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+
+	LookReset("ADOL")
+	LookReset("DANA")
+	LookReset("LAXIA")
+	LookReset("SAHAD")
+	LookReset("RICOTTA")
+	LookReset("HUMMEL")
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 20.483f , 30.985f , -80.382f , 50 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.910f , 50 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -0.791f , 50 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 315.218f , 50 )
+
+	Wait(20)
+
+	StopSE(SE_M05S152_02,500)
+	PlaySE(SE_M05S152_03, 100, 0, 0, 0, 1.0f, 0)
+	Wait(30)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	TalkPopup("RICOTTA", 0, 2, 0, 0, 0) {
+		"#000e#000m……扉、開いたみたい。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("SAHAD", "ADOL")
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	//	"SAHAD"
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0) {
+		"#000e#000mアドル、先へ進むとしようぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドル頷きモーションの後に操作許可。
+
+	// うなずきセット
+	HeadYes("ADOL" , 1 , 25 )
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Wait(15)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+	Wait(25)
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp0408:EV_M05S152_ED")
+}
+
+function "EV_M05S152_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	CallFunc("system:default_Shake_set")	// デフォルト船揺れ
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	SetFlag(SF_CHARANORECVSHADOW,0)	//キャラ影受ける
+
+
+	//フラグ処理
+	SetFlag(GF_05MP0404_READ_NOTE4, 1)
+	CallFunc("mp0408:init")
+
+	//ポートレート全開放・全クローズ
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//イベント後の再配置
+	SetChrPos("LEADER", 20.26f, 28.63f, -82.00f)
+	Turn("LEADER", 6.39f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 20.263f , 28.633f , -80.124f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.800f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 16.454f , 0 )	// 基本仰角
+	RotateCamera( 0 , 173.609f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+//	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//================================================
+//【海賊のメモ⑥】（海賊船・終盤）　　※航海日誌④後に配置				GF_MP0408_SKELETON01
+//================================================
+function "SubEV_Memo_P_06"
+{
+	//	※海賊の死骸を調べて入手するようにする。
+	//	※入手時に、海賊のメモのポートレートと
+	//	　メモの内容を表示する。
+	//	　メモの内容はその後冒険日誌の「ストーリー」「メモ」タブにに登録される。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	// ポートレート読み込み
+	Portrait_Load(1, "visual/portrait/p_30013.itp")	// 海賊のメモ
+	Portrait_Create(1, SUBP_POS_X, SUBP_POS_Y,
+	0, 0, SUBP_SCALE_X, SUBP_SCALE_Y,
+	0.0f, 0x00ffffff, 0x00000000)
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	ChangeAnimation( "PLAYER1" , "ANI_GET_ITEM", -1 , 1 )
+	Wait(10)
+	ChangeAnimation( "this" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+
+	//GetItemMessageExPlus( ICON3D_MEMO_P_006, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+	//WaitPrompt()
+	//WaitCloseWindow()
+	//GetItem(ICON3D_MEMO_P_006,1)		//海賊のメモ⑥
+	CallFunc("rng:0499")
+
+	//ポートレート表示
+	Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+	Wait(20)
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cキャプテンの指示で"
+		"#7C島の調査を進めている……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cお陰でまだ死なずに済んでいるようだ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cだが俺たちは本当に"
+		"#7C生きて島を出られるのか……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C分からねえ……"
+		"#7Cただ俺はキャプテンについていくと決めた……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cこの先に、救いがあると信じて……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(20)
+
+	//ポートレートを消去
+	Portrait_Anime(1, PR_ANIME_COLOR, 0.0f, 0.0f, 0.0f, 0.0f, FADE_FAST)
+	Wait(FADE_FAST)
+
+	Portrait_Close(1)
+	Portrait_Unload(1)
+
+	//SE埋め込み済み
+	ChangeAnimation( "this" , "ANI_OPEN", -1 , 1 )		//崩れる
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+	//フラグ処理
+	SetFlag( GF_SUBEV_GET_MEMO, 1 )		//Ｔ・海賊のメモを手に入れた（１つでも手に入れたら立つ）
+	SetFlag( GF_SUBEV_GET_MEMO_P_06 1 )		//海賊のメモ⑥を手に入れた
+
+	//開けた
+	SetFlag( GF_MP0408_SKELETON01, 1 )
+	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	
+	//イベント後の再配置
+	//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+	//Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+		
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+	
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}

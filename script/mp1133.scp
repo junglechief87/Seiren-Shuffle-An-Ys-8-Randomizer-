@@ -1,0 +1,802 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 1133：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+//	MapHide( "@BG2_mp1102" , 0 )
+	MapHide( "@BG2_mp1201_3" , 0 )
+	MapHide( "BG2_mp1110" , 0 )
+	MapHide( "@BG2_mp1113" , 0 )
+	MapHide( "@BG2_mp1132" , 0 )
+
+	MapHide( "BG2_groundfog_SW2" , 0 )	//遠景の板フォグを消す
+
+	// イベントエリア/設定制御
+	EventAreaEnable( "evc_M02S080" , 0 )
+//	EventAreaEnable( "evb2_lookmark" , 0 )
+//	EventAreaEnable( "evb2_S000" , 0 )
+//	EventAreaEnable( "evb2_S001" , 0 )
+//	EventAreaEnable( "evb2_S002" , 0 )
+	EventAreaEnable( "evb2_act_0226" , 0 )	//アクティブボイス
+
+	MapHide( "skyfog1" , 0 )		//濃霧（薄）非表示
+
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog1" , 1 )		//濃霧（薄）表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			//SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.1f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			//SetFogBack(FOG_BOTH, 0x00939aa0, 200.0f, 1000.0f , 1.0f , 0.3f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.2f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f , 0.2f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.9f )
+		}
+		// イベント発生制御
+		if(!FLAG[GF_TBOX_DUMMY059]){
+		//if( !FLAG[GF_02MP1201_JOIN_ALISON] ){	// アリスンを救出してない
+
+			//モブを一旦どかす
+			ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+
+			//アリスンの設置
+			EventAreaEnable( "evc_M02S080" , 1 )
+			SetChrPos("Alison", 515.95f, -1607.85f, 0.13f)
+			Turn("Alison", -147.90f, 360.0f)
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0226] && FLAG[GF_02MP1101_START_RESCUE] && !FLAG[GF_02MP1113_WIN_ENEMY]){
+			EventAreaEnable( "evb2_act_0226" , 1 )
+		}
+
+//		// イベントエリア/設定制御
+//		else if( !FLAG[GF_SUBEV_1133_LOOK_MARK] ){	// アリスンの姿に気付く
+//			EventAreaEnable( "evb2_lookmark" , 1 )
+//			SetChrPos("LP_lookmark",410.75f,-1594.18f,0.98f)
+//		}
+
+	//ＮＰＣマーカーセット
+		CallFunc("system:SetMarkerNPC")
+
+		//マップ
+		if (FLAG[GF_02MP1201_JOIN_ALISON]){
+			MapHide(EVENT01, 0)			//足跡消去
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0226"
+{
+	if (!FLAG[GF_AVOICE_0226])
+	{
+		EventAreaEnable( "evb2_act_0226" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0226, 1, 0)	//翌日カーラン追跡時、適当な位置で
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function "EV_OpenChack"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	ChangeAnimation( "PLAYER1" , "ANI_WAIT", -1 , 1 )
+
+	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C漂流者と思わしき人物が佇んでいる。"		//◆仮　ストッパー用メッセージ
+		"#7C声をかけてみようか？"
+	}
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "PLAYER1" ,-1 ,1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"声をかける")
+	MenuAdd(-1, "後にする")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	//─────────────────────────
+	//	⇒声をかける
+	if (FLAG[TF_MENU_SELECT] == 1){
+
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		EventCue("mp1133:EV_M02S080")
+
+	}
+	//─────────────────────────
+	//	⇒後にする
+	else {
+
+		CrossFade(FADE_NORMAL)
+	
+		// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+		// PLAYER1のそばにワープする
+		SetFlag( TF_CHECK_DISTANCE, 1 )
+		SetFlag( TF_CHECK_DISTANCE2, 1 )
+		if( WORK[WK_ISEXIST_PLAYER2] )
+		{
+			CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+		}
+		if( WORK[WK_ISEXIST_PLAYER3] )
+		{
+			CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+		}
+	
+		if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+		{
+			ChrAlpha( "PLAYER2" , 0.0f , 0 )
+			ChrAlpha( "PLAYER3" , 0.0f , 0 )
+			ResetPartyPos()
+		}
+
+		if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+		{
+			ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+			ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+			WaitThread(3)
+			WaitThread(4)
+		}
+
+		SetChrPos("LEADER", 508.77f, -1611.62f, 0.24f)
+		Turn("LEADER", 44.47f, 360.0f)
+
+		ResetPartyPos()
+		ResetFollowPoint()
+	
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+
+		//マップマーカー更新
+		DelMapMarker( SMI_SYMBOL,PAGE_F005,MARKER_EV_M02S080, 0, 0)
+
+		Wait(FADE_NORMAL)
+	//─────────────────────────
+	}
+
+
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+
+//──────────────────────────────
+//▼アリスンを救出する(mp11133)
+//──────────────────────────────
+function "EV_M02S080"		//アリスンを発見する
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrInfoFlag( "Alison" , INFOFLAG_NOCHRATARI )
+	SetChrWork("Alison", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Alison", 515.95f, -1607.85f, 0.13f)
+	Turn("Alison", -147.90f, 360.0f)
+	LookReset("Alison")
+	ChangeSubAnimation("Alison",SUBMOT_EYE,ANI_E_SAD,1)
+	ChangeSubAnimation("Alison",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Alison",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 512.07f, -1609.79f, 0.19f)
+	Turn("ADOL", -112.53f, 360.0f)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("ADOL" , "Alison" )
+
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 511.26f, -1611.48f, 0.23f)
+	Turn("LAXIA", -130.48f, 360.0f)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("LAXIA", "Alison" )
+
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI )
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 510.38f, -1609.49f, 0.19f)
+	Turn("SAHAD", -98.03f, 360.0f)
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("SAHAD" , "Alison" )
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+//	MoveCameraAt(0, 515.648f, -1605.143f, 2.336f, 0)	// 注視点
+//	ChangeCameraDistance(0, 6.999f, 0)		// 基本距離
+//	ChangeCameraElevation(0, -10.442f, 0)	// 基本仰角
+//	RotateCamera(0, 355.543f, 0)				// 角度
+//	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+//	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+//	RollCamera(0, 0.0f, 0)				// ロール回転
+	
+	MoveCameraAt(0, 515.648f, -1605.143f, 2.336f, 0)	// 注視点
+	ChangeCameraDistance(0, 5.814f, 0)		// 基本距離
+	ChangeCameraElevation(0, -10.442f, 0)	// 基本仰角
+	RotateCamera(0, 355.543f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+//	ExecuteCmd(1000, ChangeCameraDistance, INTERPOLATE_SPHERE, 5.814f, 75)		// 基本距離
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 140.000 ,1.000 ,0.550 ,0.530)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1133:EV_M02S080_ED")
+
+//開始処理ここまで-----------------------------------------------
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	FadeBGM(60,30)
+	WaitFade()
+
+//	Wait(40)
+//	WaitThread(1000)
+
+
+	//　　アリスン配置場所付近の浜辺には
+	//　　サハドの時のように彷徨ったような足跡を配置。
+	//　　足跡をたどっていくとアリスンを発見できる。
+	//　　配置場所に近づくことで下記のイベントを開始。
+	//　　フェードインして海を眺めているアリスンを映す。
+
+	SetName("？？？？")
+	TalkPopup("Alison",0,2,0,0,0)
+	{
+		"#4440V#1W……………………………………\p"
+		"#4441V……ここは一体どこなのでしょう？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	CrossFade(FADE_CROSS)
+
+MoveCameraAt( 0 , 516.098f , -1607.703f , 1.617f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.191f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 13.772f , 0 )	// 基本仰角
+	RotateCamera( 0 , 164.185f , 0 )				// 角度
+	ChangeCameraPers( 0 , 41.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SetChrPos("Alison",515.95f,-1607.85f,0.13f)
+	Turn("Alison",-123.76f,360.0f)
+
+	Wait(FADE_CROSS)
+
+	//　　アリスン、空を仰ぐ仕草。
+	LookSpd( "Alison", 0.08f, 0.08f, 0.08f )// ゆっくりめに首向き
+	Look("Alison" , 0 , 30)
+	Wait(20)
+	ChangeSubAnimation("Alison", SUBMOT_EYE, ANI_E_SAD_CLOSE_S, 1)
+	Wait(25)
+
+	ChangeAnimation("Alison", "ANI_EV_TEMUNE_S", -1, 1)
+	TalkPopup("Alison",0,2,0,0,0)
+	{
+		"#4442V#000mあなた……どこへ行ってしまったの……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(15)
+
+	SetName("")
+	ChangeAnimation("SAHAD", "ANI_EV_UDEGUMI_S", -1, 1)
+	TalkPopup("SAHAD",0,3,380,40,0)
+	{
+		"#080e#080mガハハ、ようやく見つけたぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	EmotionEx("Alison", -0.02f,EMO_EX,0,5,1,1,0.7f )
+	ChangeSubAnimation("Alison",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	
+	Wait(20)
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE ,515.937f , -1607.429f , 1.617f  , 70 )	// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 0.841f , 70 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.964f , 70 )	// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 129.501f , 70 )				// 角度
+	
+	//MoveCameraAt( 0 , 515.937f , -1607.429f , 1.617f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 0.841f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -1.964f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 129.501f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 41.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+
+	ChangeAnimation("Alison", "ANI_EV_TEMUNE_E", -1, 1)
+	ChangeSubAnimation("Alison", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+	LookSpd("Alison", LOOKSPD_DEFAULT, LOOKSPD_DEFAULT, LOOKSPD_DEFAULT)
+	LookReset("Alison")
+
+	WaitAnimation2( "Alison" , -1, 1, "ANI_EV_TEMUNE_E",  0)
+	TurnToChr("Alison", "ADOL", 12.0f)
+	Wait(20)
+//	ChangeAnimation( "Alison", "ANI_EV_SUP_S", -1, 1 )	// 驚く、軽くのけぞる
+	
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+
+	//	？？？？
+	SetName("？？？？")
+	TalkPopup("Alison",0,2,0,0,0)
+	{
+		"#050e#000mひっ……だ、だれ！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE ,515.863f , -1607.340f , 1.518f , 70 )	// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.539f, 70 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE ,  5.602f , 70 )	// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 131.921f , 70 )				// 角度
+
+	//MoveCameraAt( 0 , 515.863f , -1607.340f , 1.518f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.539f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 5.602f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 131.921f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 41.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//　　思わず後ずさりするアリスン。
+	//　　怯えさせないようサハドを制してラクシャが前へ出る。
+
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+	ExecuteCmd(1, MoveTo, "LAXIA", 513.84f, -1609.21f, 0.18f, 0.1f, 0.22f)
+
+	WaitThread(1)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_TEBURI", -1, 1 )
+	SetName("")
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#080e#080mこんにちは、ひょっとして"
+		"ロンバルディア号の乗客の方ですか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(10)
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	CrossFade(FADE_CROSS)
+
+	MoveCameraAt( 0 , 513.432f , -1608.756f , 1.535f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.582f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 9.098f , 0 )	// 基本仰角
+	RotateCamera( 0 , 336.589f , 0 )				// 角度
+	ChangeCameraPers( 0 , 27.001f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SetChrPos("ADOL", 512.72f, -1609.67f, 0.19f)
+	Turn("ADOL", -142.66f, 360.0f)
+
+	SetChrPos("LAXIA", 513.46f, -1610.18f, 0.20f)
+	Turn("LAXIA", -155.74f, 360.0f)
+
+	SetChrPos("SAHAD", 512.34f, -1608.28f, 0.16f)
+	Turn("SAHAD", -64.77f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+
+	SetChrPos("Alison", 514.10f, -1608.21f, 0.16f)
+	Turn("Alison", 32.53f, 360.0f)
+
+	LookChr("Alison", "LAXIA")
+	LookChr("ADOL", "Alison")
+
+//	ChangeAnimation( "Alison", "ANI_EV_SUP_E", -1, 1 )	// 驚く、軽くのけぞる
+
+	Wait(FADE_CROSS)
+
+	Wait(10)
+
+	//	？？？？
+	SetName("？？？？")
+	TalkPopup("Alison",0,2,0,0,0)
+	{
+		"#000mそ、そうですけど……あなたたちは？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//	MoveCameraAt(0, 512.356f, -1608.165f, 1.195f, 0)	// 注視点
+//	ChangeCameraDistance(0, 6.502f, 0)		// 基本距離
+//	ChangeCameraElevation(0, 7.092f, 0)	// 基本仰角
+//	RotateCamera(0, 53.654f, 0)				// 角度
+//	ChangeCameraPers(0, 27.001f, 0)			// 視野角
+//	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+//	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ChangeAnimation("ADOL", "ANI_EV_TEBURI", -1, 1)
+	LookChr("Alison", "ADOL")
+
+	//	テキスト
+	SetName("")
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+
+	{
+		"#7Cアドルたちはロンバルディアの難破から"
+		"#7C現在に至る状況を一通り説明するのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	？？？？
+	Look("Alison" , 0 , -20 )
+	Wait(12)
+	HeadNo("Alison" , 1 , 40)
+
+	SetName("？？？？")
+	TalkPopup("Alison",0,2,0,0,0)
+	{
+		"#061e#000m無人島……そんなことって……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )
+
+	//	"LAXIA"
+	SetName("")
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#000e#000mとにかく、ここからしばらく"
+		"歩いたところに漂流者が集まっています。\p"
+		"まずはそこまで一緒に参りましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Alison", "LAXIA")
+
+	//	？？？
+	SetName("？？？？")
+	TalkPopup("Alison",0,2,0,0,0)
+	{
+		"#062e#000m分かりました、私はアリスン……"
+		"アリスンと申します。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(20)
+
+	StopBGM(120)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1133:EV_M02S080_ED")
+}
+function "EV_M02S080_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+//	//モンスターを復帰
+//	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+//
+//	SetChrPos("Alison", -100000.00f, 0.00f, 0.00f)
+//
+//	//キャラクター初期化
+//	CallFunc("system:reset_chrmot_ADOL")
+//	CallFunc("system:reset_chrmot_LAXIA")
+//	CallFunc("system:reset_chrmot_SAHAD")
+//	CallFunc("system:reset_chrmot_Alison")
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	StopBGM(60)
+	SetFlag(SF_NOCHANGEBGM, 1)
+	FadeBGM(100,10)
+
+	LoadArg("map/mp1201/mp1201.arg")
+	EventCue("mp1201:EV_M02S090")
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function "Stopper_S000"
+{
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+
+	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C今はここから離れる訳にはいかない。"		//◆仮　ストッパー用メッセージ
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	CrossFade(FADE_CROSS)
+	SetChrPos("LEADER",388.82f,-1611.79f,1.06f)
+	Turn("LEADER",-126.58f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}
+function "Stopper_S001"
+{
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+
+	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C今はここから離れる訳にはいかない。"		//◆仮　ストッパー用メッセージ
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	CrossFade(FADE_CROSS)
+	SetChrPos("LEADER",405.37f,-1563.10f,-0.05f)
+	Turn("LEADER",-64.17f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}
+
+function "Stopper_S002"
+{
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+
+	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C今はここから離れる訳にはいかない。"		//◆仮　ストッパー用メッセージ
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	SetChrPos("LEADER",535.27f,-1615.42f,0.24f)
+	Turn("LEADER",83.24f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}

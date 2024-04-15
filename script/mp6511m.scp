@@ -1,0 +1,1446 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/music.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+#include "inc/temp/mp6511m.h"
+
+//-------------------------------------------
+// mp6511m：地下聖堂　階層１　エントランス
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	MapAnime("@gate_01","close")
+	MapAnime("@gate_05","close")
+	MapAnime("gate01_lumi1","off")//像光1_OFF
+	MapAnime("gate05_lumi1","off")//像光5_OFF
+	EventAreaEnable(SubEV_Past_02_Quest_G,0)
+	EventAreaEnable(SubEV_Crypt_Out,0)
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		if(!FLAG[GF_SUBEV_PAST_02_QUEST_G])
+		{
+			SetFlag(GF_MPxxxx_MAP_NAME_NO_DRAW,1)	//次のイベントでマップネーム出す用
+			EventAreaEnable(SubEV_Past_02_Quest_G,1)
+			SetWork( WK_BGM , BGM_Nothing )
+		}
+
+		if(FLAG[GF_SUBEV_PAST_02_MONOLITH])	//精霊の一般配置が始まったら敵をどかす
+		{
+			//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+			SetChrPos("mons05",-100000.00f,0.00f,0.00f)
+			SetChrPos("mons03",-100000.00f,0.00f,0.00f)
+//			SetChrPos("mons04",-100000.00f,0.00f,0.00f)
+		}
+
+		if (FLAG[GF_PAST_EPISODE_6_GO_GARDEN] || FLAG[GF_PAST_EPISODE_5_GO_VALLAY])			//過去Ⅵor過去Ⅴ
+		{
+			EventAreaEnable(SubEV_Crypt_Out,1)
+		}
+		else if (FLAG[GF_PAST_EPISODE_7_ENDEPISODE])		//過去Ⅶ
+		{
+			EntryOn( 00 , 0 )	//mp6211m（通常）をOFF
+			EntryOn( 03 , 1 )	//mp6211m2（寒冷）をON
+		}
+		if(FLAG[GF_BOSSFLOOR_NUM] >= 1)		//一層目最奥まで到達している
+		{
+			ChangeAnimation( "chkpt_dummy" , "ANI_STOP", -1 , 1 )
+		}
+		else
+		{
+			SetChrPos("chkpt_dummy",-100000.00f,0.00f,0.00f)
+			SetChrPos("chkpt2_dummy",6.20f,3.97f,0.00f)
+			ChangeAnimation( "chkpt2_dummy" , "ANI_STOP", -1 , 1 )
+		}
+	}
+
+	// イベントエリア設定制御
+
+	//if( FLAG[SF_EVENT_ON] ){
+	
+		// 一般配置ファンクション呼び出し
+		CallFunc("mp6511m:NpcPosition")
+
+	//ギミック制御
+		// 灯火の扉_最初のフロア右
+		if( FLAG[GF_MP6511_SWITCH_01] ){
+			MapAnime( "@gate_01" , "open" )
+			SetChrWork("statue01_01_1", CWK_TEMP_INT2, 0)//像1_OFF
+			ChangeAnimation( "statue01_01_1" , "ANI_DEAD2", -1 , 1 )
+		} else {
+			MapAnime( "@gate_01" , "close" )
+			SetChrWork("statue01_01_1", CWK_TEMP_INT2, 1)//像1_ON
+		}
+
+		// 灯火の扉_最初のフロア左
+		if( FLAG[GF_MP6511_SWITCH_05] ){
+			MapAnime( "@gate_05" , "open" )
+			SetChrWork("statue05_05_1", CWK_TEMP_INT2, 0)//像5_OFF
+			ChangeAnimation( "statue05_05_1" , "ANI_DEAD2", -1 , 1 )
+			
+		} else {
+			MapAnime( "@gate_05" , "close" )
+			SetChrWork("statue05_05_1", CWK_TEMP_INT2, 1)//像5_ON
+		}
+
+	//}
+	
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == -1  ){
+			VisualName("visual/mapname/mn_6511m.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//地下聖堂・燈火の間
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■配置制御セクション
+//////////////////////////////////////////////////////////////////////
+function "NpcPosition"
+{
+	if (FLAG[GF_PAST_EPISODE_7_ENDEPISODE])		//過去Ⅶ
+	{
+		//エイミーいない
+	}
+	else if (FLAG[GF_PAST_EPISODE_5_GO_VALLAY])			//過去Ⅴ
+	{
+		//精霊エイミー
+		SetChrPos("Eimy",6.04f,0.05f,0.00f)
+		Turn("Eimy",95.07f,360.0f)
+
+		if(FLAG[GF_SUBEV_PAST_SPIRITI])
+		{
+			//精霊クシュナ
+			SetChrPos("Kushna",-2.75f,5.79f,0.00f)
+			Turn("Kushna",-4.16f,360.0f)
+		}
+	}
+	else if (FLAG[GF_PAST_EPISODE_3_GO_BAHA])			//過去Ⅲ
+	{
+		if(!FLAG[GF_SUBEV_PAST_03_HUNTA_KILL])	//ワグマール救出前
+		{
+			//精霊エイミー
+			SetChrPos("Eimy",6.04f,0.05f,0.00f)
+			Turn("Eimy",95.07f,360.0f)
+			ChangeAnimation( "Eimy" , "ANI_WAIT", -1 , 1 )
+		}
+		else
+		{
+			//精霊エイミー
+			SetChrPos("Eimy",6.04f,0.05f,0.00f)
+			Turn("Eimy",95.07f,360.0f)
+
+			//精霊ワグマール
+			SetChrPos("Waghmare",7.85f,-1.18f,0.00f)
+			Turn("Waghmare",156.36f,360.0f)
+		}
+	}
+	else if (FLAG[GF_PAST_EPISODE_1_GO_CAMP])			//過去Ⅰ
+	{
+		//まだ出会っていないからエイミーいない？
+	}
+	else
+	{
+		if(FLAG[GF_SUBEV_PAST_02_MONOLITH])
+		{
+			//精霊エイミー
+			SetChrPos("Eimy",6.04f,0.05f,0.00f)
+			Turn("Eimy",95.07f,360.0f)
+			ChangeAnimation( "Eimy" , "ANI_WAIT", -1 , 1 )
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■エイミーの会話
+//////////////////////////////////////////////////////////////////////
+
+function "Talk_Eimy"
+{
+	SetStopFlag(STOPFLAG_TALKTURN)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	//　　話しかけると以下の選択肢。
+	//選択肢
+	
+	SetFlag(TF_MENU_SELECT,0)
+	while( FLAG[TF_MENU_SELECT] >= 0 )	//選択肢ループ
+	{
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(1,"話をする")
+		MenuAdd(2,"精霊の品を求める")
+		MenuAdd(-1,"やめる")
+		MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+		WaitMenu(0)
+		MenuClose(10,0)
+	
+		if(FLAG[TF_MENU_SELECT] == 1)
+		{
+			CallFunc("mp6511m:Talk_Eimy2")
+		}
+		else if(FLAG[TF_MENU_SELECT] == 2)
+		{
+			ShopOpen(SHOP_ID_PAST1,-1)
+		}
+	}
+	ResetStopFlag(STOPFLAG_TALKTURN)
+}
+
+function "Talk_Eimy2"
+{
+	if (FLAG[GF_PAST_EPISODE_2_GO_SOUTHGATE])		//過去Ⅱ
+	{
+		//	------------------------------------------------------------
+		//▼地下聖堂・フロア１のモノリスを読んだ後
+		//───────────────
+		//	場所		：地下聖堂・フロア１（過去）
+		//───────────────
+		//	配置・カメラ：入り口フロア
+		//	モーション	：
+		//───────────────
+		//　　※以降は入り口フロアに固定配置になる。
+		//	つくもの精霊エイミー
+		TalkPopup("Eimy",0,0,0,0,0)
+		{
+			"遺跡っていいですよね。"
+			"広くて暗くて、珍しい物が一杯あって！\p"
+			"……ふふ、ヒトは嫌いですけど"
+			"ヒトが作った物は嫌いじゃありませんよ？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else if (FLAG[GF_PAST_EPISODE_3_GO_BAHA])			//過去Ⅲ
+	{
+		if(!FLAG[GF_SUBEV_PAST_03_HUNTA_KILL])	//ワグマール救出前
+		{
+			if(!FLAG[TF_EIMY_TALK])
+			{
+				//	------------------------------------------------------------
+				//▼過去編Ⅲの時代
+				//───────────────
+				//	場所		：地下聖堂・フロア１（過去）
+				//───────────────
+				//	配置・カメラ：入り口フロア
+				//	モーション	：
+				//───────────────
+				//	つくもの精霊エイミー
+				TalkPopup("Eimy",0,0,0,0,0)
+				{
+					"うふふ～、今日もいっぱい"
+					"アイテムを拾っちゃいました。"
+				}
+				WaitPrompt()
+				WaitCloseWindow()
+
+				//　　ＰＡエモーション。
+				//	つくもの精霊エイミー
+				TalkPopup("Eimy",0,0,0,0,0)
+				{
+					"あ、あれ？　この気配は……"
+					"故郷の森に似ているような……\p"
+					"……ま、いーですよね！\p"
+					"きゅっ、きゅっ……♪"
+					"これらのお手入れしないと！"
+				}
+				WaitPrompt()
+				WaitCloseWindow()
+				SetFlag(TF_EIMY_TALK,1)
+
+			}
+			else
+			{
+				//　　★繰り返し
+				//	つくもの精霊エイミー
+				TalkPopup("Eimy",0,0,0,0,0)
+				{
+					"新しく拾ったアイテムの"
+					"お手入れしないと！\p"
+					"きゅっ、きゅっ……♪"
+					"……あー幸せ㈱"
+				}
+				WaitPrompt()
+				WaitCloseWindow()
+				SetFlag(TF_EIMY_TALK,1)
+			}
+		}
+		else
+		{
+			if(!FLAG[GF_1STTALK_PAST_3_EIMY])		//ＧＦ初回
+			{
+				CallFunc("mp6511m:Talk_Eimy_Wagh")
+			}
+			else
+			{
+				//　　★ＧＦ以降
+				//	つくもの精霊エイミー
+				TalkPopup("Eimy",0,0,0,0,0)
+				{
+					"この遺跡は素晴らしいです。"
+					"まだまだ回ってみないと……\p"
+					"ふん、帰る気なんてありませんから！"
+					"帰る気4行目"
+				}
+				WaitPrompt()
+				WaitCloseWindow()
+			}
+		}
+	}
+	else if (FLAG[GF_PAST_EPISODE_4_GO_CASTLE])			//過去Ⅳ
+	{
+		if(!FLAG[TF_EIMY_TALK])
+		{
+			//	------------------------------------------------------------
+			//▼過去編Ⅳの時代
+			//───────────────
+			//	場所		：地下聖堂・フロア１（過去）
+			//───────────────
+			//	配置・カメラ：入り口フロア
+			//	モーション	：
+			//───────────────
+			//	つくもの精霊エイミー
+			TalkPopup("Eimy",0,0,0,0,0)
+			{
+				"西域の森には、ずっと昔"
+				"朽ち果てた遺跡の残骸があったんです……\p"
+				"エタニア王国ができるより前からある、"
+				"いつの時代とも知れない遺跡です。\p"
+				"とうの昔に崩れ去ってしまいましたけど"
+				"実は私、その遺跡で生まれたんです……\p"
+				"こんな立派な遺跡を回ってると、"
+				"なんだか思い出しちゃいますね。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+
+			SetFlag(TF_EIMY_TALK,1)
+		}
+		else
+		{
+			//　　★繰り返し
+			//	つくもの精霊エイミー
+			TalkPopup("Eimy",0,0,0,0,0)
+			{
+				"この遺跡はまだまだ"
+				"先があるみたいです……\p"
+				"こんな立派な遺跡を回ってると、 "
+				"なんだかあの頃を思い出しちゃいますね。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+	}
+	else if (FLAG[GF_PAST_EPISODE_5_GO_VALLAY])			//過去Ⅴ
+	{
+		if(!FLAG[GF_SUBEV_PAST_SPIRITI])			//クシュナを助けた
+		{
+			if(!FLAG[TF_EIMY_TALK])
+			{
+			//	------------------------------------------------------------
+				//▼過去編Ⅴの時代
+				//───────────────
+				//	場所		：地下聖堂・フロア１（過去）
+				//───────────────
+				//	配置・カメラ：入り口フロア
+				//	モーション	：
+				//───────────────
+				//	つくもの精霊エイミー
+				TalkPopup("Eimy",0,0,0,0,0)
+				{
+					"ダーナ……"
+					"あなたは無事だったんですね。\p"
+					"エタニア人たちは大変みたいです。"
+					"ここにいても苦しみが伝わってきます……\p"
+					"そのぅ、ヒトは嫌いですけど……\p"
+					"やっぱりこんなの可哀想です……"
+				}
+				WaitPrompt()
+				WaitCloseWindow()
+
+				SetFlag(TF_EIMY_TALK,1)
+
+				//　　★繰り返し
+			}
+			else
+			{
+				//	つくもの精霊エイミー
+				TalkPopup("Eimy",0,0,0,0,0)
+				{
+					"私、ヒトは嫌いですけど……\p"
+					"やっぱりこんなの可哀想です……"
+				}
+				WaitPrompt()
+				WaitCloseWindow()
+			}
+		}
+		else
+		{
+			//	------------------------------------------------------------
+			//▼過去編Ⅴの時代で、精霊クシュナを助けた後
+
+			//───────────────
+			//	場所		：地下聖堂・フロア１（過去）
+			//───────────────
+			//	配置・カメラ：入り口フロア
+			//	モーション	：
+			//───────────────
+			//	つくもの精霊エイミー
+			TalkPopup("Eimy",0,0,0,0,0)
+			{
+				"（な、なんですかぁ？"
+				"  陰気なヤツが来たんですけど……）\p"
+				"（まさか、私のアイテムを"
+				"  奪おうっていうんじゃ！）\p"
+				"（ゆ、ゆるしませんよ～！"
+				"  メラメラメラ～っ！！）"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+	}
+	else if (FLAG[GF_PAST_EPISODE_6_GO_GARDEN])			//過去Ⅵ
+	{
+		if(!FLAG[TF_EIMY_TALK])
+		{
+
+			//	------------------------------------------------------------
+			//▼過去編Ⅵの時代
+			//───────────────
+			//	場所		：地下聖堂・フロア１（過去）
+			//───────────────
+			//	配置・カメラ：入り口フロア
+			//	モーション	：
+			//───────────────
+			//	つくもの精霊エイミー
+			TalkPopup("Eimy",0,0,0,0,0)
+			{
+				"私、仲間の精霊には"
+				"よく鈍感って言われます……\p"
+				"でも私でもわかります……"
+				"終末が近づいているんですね……\p"
+				"…………………………\p"
+				"ダーナ、その……"
+				"あなたは私の、"
+				"数少ない友人の一人です。\p"
+				"黙っていなくなったり"
+				"しないでくださいね……？"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+
+			SetFlag(TF_EIMY_TALK,1)
+		}
+		else
+		{
+			//　　★繰り返し
+			//	つくもの精霊エイミー
+			TalkPopup("Eimy",0,0,0,0,0)
+			{
+				"ダーナ、その……"
+				"あなたは私の、"
+				"数少ない友人の一人です。\p"
+				"黙っていなくなったり"
+				"しないでくださいね……？"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+	}
+}
+
+function "Talk_Waghmare"
+{
+	SetStopFlag(STOPFLAG_TALKTURN)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if(!FLAG[GF_1STTALK_PAST_3_EIMY])	//エイミーＧＦ初回
+	{
+		//──────────────────────────────
+		//	【PS4】【森の精霊ワグマール】
+		//──────────────────────────────
+		//▼過去編Ⅲの時代で、ワグマールを助けた後
+		//───────────────
+		//	場所		：地下聖堂・フロア１（過去）
+		//───────────────
+		//	配置・カメラ：入り口フロア
+		//	モーション	：
+		//───────────────
+		//　　★ＧＦ初回はエイミーと共通
+	
+		CallFunc("mp6511m:Talk_Eimy_Wagh")
+			
+	}
+	else
+	{
+		if(!FLAG[TF_SPIRIT_TALK])
+		{
+			//　　★ＧＦ以降
+			//	森の精霊ワグマール
+			TalkPopup("Waghmare",0,0,0,0,0)
+			{
+				"ワシも暇ではなくてな……"
+				"ほどほどで帰らなくてはならんのだが。\p"
+				"こやつを放っておくのは"
+				"つくづく心配だわい。\p"
+				"ダーナよ、すまんが時々"
+				"こやつを気に掛けてやってくれんか。"
+				"よろしく頼んだぞ。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+
+			SetFlag(TF_SPIRIT_TALK,1)
+
+		}
+		else
+		{
+			//　　★繰り返し
+			//	森の精霊ワグマール
+			TalkPopup("Waghmare",0,0,0,0,0)
+			{
+				"ダーナよ、すまんが時々"
+				"こやつを気に掛けてやってくれんか。"
+				"よろしく頼んだぞ。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+	}
+	ResetStopFlag(STOPFLAG_TALKTURN)
+}
+function "Talk_Eimy_Wagh"
+{
+	SetStopFlag(STOPFLAG_TALKTURN)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	//	------------------------------------------------------------
+	//▼過去編Ⅲの時代で、ワグマールを助けた後
+	//───────────────
+	//	場所		：地下聖堂・フロア１（過去）
+	//───────────────
+	//	配置・カメラ：入り口フロア／ワグマールと話す
+	//	モーション	：
+	//───────────────
+	//　　★ＧＦ初回
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,0,0,0,0)
+	{
+		"ひえ～ん！　痛いですよぅ！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	森の精霊ワグマール
+	TalkPopup("Waghmare",0,0,0,0,0)
+	{
+		"まったく……当然のバツであろう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"DANA"
+	TalkPopup("PLAYER1",0,0,0,0,0)
+	{
+		"#000e#000mあれ？　２人は知り合いだったんだ。\p"
+		"じゃあワグマールが"
+		"探していた精霊って……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	森の精霊ワグマール
+	TalkPopup("Waghmare",0,0,0,0,0)
+	{
+		"うむ、このエイミーの事よ。\p"
+		"エイミーはこう見えて"
+		"西域の森の古き精霊でな。\p"
+		"エタニア王国が成立する以前から"
+		"我が森で暮らしておったのだ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,0,0,0,0)
+	{
+		"森の生まれってだけです……"
+		"それ以上の意味なんてないですから。\p"
+		"そんな事より、私は好きに旅をして"
+		"いっぱいアイテムを集めるんです！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	森の精霊ワグマール
+	TalkPopup("Waghmare",0,0,0,0,0)
+	{
+		"やれやれ……\p"
+		"しかしお主、今回は妙な消え方をしたな。"
+		"みな心配しておったぞ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,0,0,0,0)
+	{
+		"そ、それは……"
+		"実は私にもさっぱり……\p"
+		"…………………………"
+		"さっぱり4行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ダーナとワグマールに？エモーション
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,0,0,0,0)
+	{
+		"……なんでもないです。\p"
+		"ともかく、今はこの遺跡を"
+		"巡るのに忙しいんです！\p"
+		"帰る気なんてありませんから！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	森の精霊ワグマール
+	TalkPopup("Waghmare",0,0,0,0,0)
+	{
+		"やれやれ、頭が痛いわい……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"DANA"
+	TalkPopup("PLAYER1",0,0,0,0,0)
+	{
+		"#000e#000mあははは……\p"
+		"（とりあえず、無事に"
+		"  会えたみたいでよかったかな。）"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	SetFlag(GF_1STTALK_PAST_3_EIMY,1)
+}
+
+function "Talk_Kushna"
+{
+	SetStopFlag(STOPFLAG_TALKTURN)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	if(!FLAG[TF_SPIRIT_TALK])
+	{
+		//──────────────────────────────
+		//	【PS4】【常闇の精霊クシュナ】
+		//──────────────────────────────
+		//▼過去編Ⅴの時代で、精霊クシュナを助けた後
+		//───────────────
+		//	場所		：地下聖堂・フロア１（過去）
+		//───────────────
+		//	配置・カメラ：入り口フロア／エイミーのやや近く
+		//	モーション	：
+		//───────────────
+		//	常闇の精霊クシュナ
+		TalkPopup("Kushna",0,0,0,0,0)
+		{
+			"ダーナ、あなたの言葉は正しかった。"
+			"こうして他の精霊と会うことができた。\p"
+			"しかし、この精霊は騒ぎ立てることもなく"
+			"ただ私の事を見守ってくれている……\p"
+			"フフ、他者と過ごす時間というのは"
+			"悪くないものだな……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		SetFlag(TF_SPIRIT_TALK,1)
+	}
+	else
+	{
+		//　　★繰り返し
+		//	常闇の精霊クシュナ
+		TalkPopup("Kushna",0,0,0,0,0)
+		{
+			"この精霊は騒ぎ立てることもなく"
+			"ただ私の事を見守ってくれている……\p"
+			"フフ、他者と過ごす時間というのは"
+			"悪くないものだな……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	ResetStopFlag(STOPFLAG_TALKTURN)
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+
+function "SubEV_Past_02_QuestF3"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ
+	SetFlag(GF_SUBEV_PAST_02_QUEST_F, 2)	//【過去クエスト②Ｆ：地下への仕掛け扉を開く】を見た
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-33.47f,-72.15f,24.05f)
+	Turn("LEADER",93.73f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -33.466f , -72.149f , 25.912f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.396f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 11.777f , 0 )	// 基本仰角
+	RotateCamera( 0 , 86.272f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+function "SubEV_Past_02_Quest_G"
+{
+	//開始処理ここから-----------------------------------------------
+//	SetStopFlag(STOPFLAG_EVENT)
+//	FadeOut(FADE_BLACK, 0)
+//	WaitFade()
+
+	CallFunc("system:event_begin")
+	
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA",-0.00f,-14.66f,0.00f)
+	Turn("DANA",-179.24f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_SUP, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_OPEN, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+	Look("DANA" , 0 , 8 )
+
+	// チュートリアルポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+	Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(2, "visual/help/hp_a53.itp" )	// help_a53：地下聖堂内の転位
+	Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -4.841f , -30.889f , 2.390f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 8.160f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -6.077f , 0 )	// 基本仰角
+	RotateCamera( 0 , 36.363f , 0 )				// 角度
+	ChangeCameraPers( 0 , 51.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 90.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6511m:SubEV_Past_02_Quest_G_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -0.098f , -27.733f , 1.869f, 135 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.540f , 135 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE ,-4.315f, 135 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 0.553f , 135 )
+
+	//MoveCameraAt( 0 , -0.098f , -27.733f , 1.869f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 5.140f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -4.315f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 0.553f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 51.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	//SetChrPos("DANA",0.07f,-0.52f,0.00f)
+	//Turn("DANA",-179.24f,360.0f)
+
+	PlayBGM(BGM_6511_M, 0)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	ExecuteCmd( 1, MoveTo, "DANA", 0.07f,-0.52f,0.00f, 0.1f, 0.22f )
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt( 0 , -0.313f , -8.516f , 1.373f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.740f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 10.037f , 0 )	// 基本仰角
+	RotateCamera( 0 , 203.941f , 0 )				// 角度
+	ChangeCameraPers( 0 , 51.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 0.021f , 2.957f , 1.894f , 150 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 6.940f , 150 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -9.619f , 150 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 12.970f  , 150 )
+
+	//MoveCameraAt( 0 , 0.021f , 2.957f , 1.894f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 6.940f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -9.619f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 12.970f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 51.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(50)
+
+	VisualName("visual/mapname/mn_6511m.itp",VN_NAMEMAP,-1,-1,VN_MAPNAME_TIME)//地下聖堂・燈火の間
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1)
+	
+	//──────────────────────────────
+	//	【PS4】【過去クエスト②Ｇ：地下聖堂フロア１に到達する】
+	//──────────────────────────────
+	//　　上の流れから接続。
+	//　　階段を抜けて地下聖堂・フロア１の入り口に入ってくるダーナ。
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000e#000mこ、ここは……！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookSpd("",0.08f,0.08f,0.08f)
+	Look("DANA", -20 , 0 )
+
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+
+		"立派な遺跡……"
+		"何かの聖堂みたいだね。\p"
+		"塔堂の地下に"
+		"こんな場所があったなんて。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//LookReset("DANA")
+	Look("DANA", 25 , 0 )
+	
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 1.318f , 2.859f , 1.696f , 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 5.520f, 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -3.282f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 347.649f , 100 )
+
+	//MoveCameraAt( 0 , 1.318f , 2.859f , 1.696f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 5.520f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -3.282f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 347.649f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 51.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(15)
+
+	//　　ダーナ、正面に視線を向ける。
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000e#000m人の気配は……"
+		"ちょっと分からないかな。\p"
+		"でも守護像たちが徘徊してるみたい。"
+		"慎重に進んでみよう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　イベント終了、操作許可。
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	// チュートリアル =================================================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+		
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+		FadeIn(FADE_BLACK, 0)
+		WaitFade()
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+		Portrait_Close(2)
+		
+		// 擬似フェードアウト削除
+		FadeOut(FADE_BLACK, 0)
+		WaitFade()
+		Portrait_Close(0)
+		Portrait_Close(1)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	}
+	// ================================================================================================
+
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6511m:SubEV_Past_02_Quest_G_ED")
+}
+
+function "SubEV_Past_02_Quest_G_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	//ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	Portrait_Close( -1 )
+	Portrait_Unload( -1 )
+
+	//マーカー
+	DelMapMarker( SMI_DANA_SYMBOL ,PAGE_MP6511M, MARKER_SUBEV_PAST02_6, 0,0)		//過去編Ⅱ：子供を見つける(迷子クエスト)
+	SetMapMarker( SMI_DANA_SYMBOL ,PAGE_MP6511M, MARKER_SUBEV_PAST02_7, 0.07f, 387.81f, 10.50f, 0.07f, 387.81f,MARKER_SUBEV_PAST02_7,MN_D_MP6511M,0)	// 過去編Ⅱ：地下聖堂を探索する(迷子クエスト)
+
+	//フラグ処理
+	SetFlag(GF_MPxxxx_MAP_NAME_NO_DRAW,0)
+	SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+	SetFlag(GF_HELP_A53,1)		//聖堂内の転位
+
+	SetFlag(GF_SUBEV_PAST_02_QUEST_G, 1)	//【過去クエスト②Ｆ：地下への仕掛け扉を開く】を見た
+	//SetFlag( SF_MISSIONNO, MS_08_02D )		//★冒険メモ：地下聖堂を探索してみよう
+
+	CallFunc("system:SetMarkerDANA")
+
+	CallFunc("mp6511m:init")
+	
+	ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+	ActiveVoiceStart(EACT_EVID_1402, 1, 0)	//	はじめてギミックエリアに入ったら（B1灯火エリアのチュートリアル後）
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-0.06f,-2.60f,0.00f)
+	Turn("LEADER",180.0f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -0.057f , -2.596f , 1.843f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.011f , 0 )	// 基本仰角
+	RotateCamera( 0 , 0.564f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	PlayBGM(BGM_6511_M, 0)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+function "Relocate_B1"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",3.99f,2.21f,0.00f)
+	Turn("LEADER",177.97f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 3.986f , 2.214f , 1.869f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 2.035f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+function "SubEV_Crypt_Out"
+{
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+//開始処理ここまで-----------------------------------------------
+
+	Wait(15)
+
+	SetFlag( TF_MENU_SELECT, 0 )
+	YesNoMenu(TF_MENU_SELECT,"#7C地下聖堂を出ますか？",1)
+
+	//────────────────────
+	//	⇒はい
+	
+	if(FLAG[TF_MENU_SELECT])
+	{			
+		FadeOut(FADE_BLACK,FADE_FAST)
+		WaitFade()
+
+		SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+		if (FLAG[GF_PAST_EPISODE_5_GO_VALLAY])			//過去Ⅴ
+		{
+			LoadArg("map/mp6113m/mp6113m.arg")
+			EventCue("mp6113m:Relocate_6113m")
+		}
+		else if (FLAG[GF_PAST_EPISODE_6_GO_GARDEN])			//過去Ⅵ
+		{
+			LoadArg("map/mp5104m/mp5104m.arg")
+			EventCue("mp5104m:Relocate_5104m")
+		}
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	else
+	{
+		//　　暗転後、鳥のさえずりSEにを再生しつつ
+		//　　朝の野営地で暗転明けて操作許可。
+		//	⇒いいえ
+
+		//　　その場で操作許可。
+		//────────────────────
+
+	//終了処理ここから----------------------------------------------------
+		CrossFade(FADE_CROSS)
+
+		SetChrPos("LEADER",-36.89f,-72.03f,24.00f)
+		Turn("LEADER",89.85f,360.0f)
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		WaitFade()
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	//終了処理ここまで----------------------------------------------------
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+//////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+// スイッチ 01_01
+function "switch_01_01"
+{
+	if (statue01_01_1.CHRWORK[CWK_TEMP_INT2]) {
+		// 灯火が消える
+		SetChrWork("statue01_01_1", CWK_TEMP_INT2, 0)//像1_OFF
+		MapAnime( "gate01_lumi1" , "off-on" )//像光1_ON
+		MapAnimeLast("gate01_lumi1", "on" )
+		
+		PlaySE( SE_GIM_PAST_STATUE_OFF , 100 , 0,  0, 0, 1.0f, 0)
+		
+		CallFunc("mp6511m:switch_01_check")// 像をチェック
+	}
+}
+
+function "switch_05_01"
+{
+	if (statue05_05_1.CHRWORK[CWK_TEMP_INT2]) {
+		// 灯火が消える
+		SetChrWork("statue05_05_1", CWK_TEMP_INT2, 0)//像5_OFF
+		MapAnime( "gate05_lumi1" , "off-on" )//像光5_ON
+		MapAnimeLast("gate05_lumi1", "on" )
+
+		PlaySE( SE_GIM_PAST_STATUE_OFF , 100 , 0,  0, 0, 1.0f, 0)
+		
+		CallFunc("mp6511m:switch_05_check")// 像をチェック
+	}
+}
+
+function "switch_01_check"
+{
+	SetFlag(TF_MP6511_NO_FIRE_COUNT, 0)	// 鎮火カウント　リセット
+	if (statue01_01_1.CHRWORK[CWK_TEMP_INT2]==0) {
+		SetFlag(TF_MP6511_NO_FIRE_COUNT, (FLAG[TF_MP6511_NO_FIRE_COUNT] + 1))	// 鎮火カウント
+	}
+	if (FLAG[TF_MP6511_NO_FIRE_COUNT] >= 1) {
+		// 扉を開く
+		EventCue("mp6511m:switch_01_open")
+	}
+}
+
+function "switch_05_check"
+{
+	SetFlag(TF_MP6511_NO_FIRE_COUNT, 0)	// 鎮火カウント　リセット
+	if (statue05_05_1.CHRWORK[CWK_TEMP_INT2]==0) {
+		SetFlag(TF_MP6511_NO_FIRE_COUNT, (FLAG[TF_MP6511_NO_FIRE_COUNT] + 1))	// 鎮火カウント
+	}
+	if (FLAG[TF_MP6511_NO_FIRE_COUNT] >= 1) {
+		// 扉を開く
+		EventCue("mp6511m:switch_05_open")
+	}
+}
+
+function "switch_01_open"
+{
+	//短いものはイベントスキップ不要とのこと
+
+	//叩いた直後のウエイト----------------------------------------------------
+//	SetStopFlag(STOPFLAG_EVENT)		// LP操作、ストッパーなどのシンプルイベント
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)		// LP操作、ストッパーなどのシンプルイベント
+	SetStopFlag(STOPFLAG_SKIPOK)		// ×ボタンスキップを許可する
+	
+	// 一時的にプレイヤー無敵
+	SetChrWork(PLAYER1, CWK_MUTEKITIME, 90)
+	SetChrWork(PLAYER2, CWK_MUTEKITIME, 90)
+	SetChrWork(PLAYER3, CWK_MUTEKITIME, 90)
+	SetChrWork(PLAYER4, CWK_MUTEKITIME, 90)
+	if( LEADER.CHRWORK[CWK_YUKA] ) {
+		ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+	}
+	Wait(10)
+//		TalkMes("DANA","#3614V#011e#080mバルバロス船長か。","","")
+//		WaitPrompt()
+		
+	//開始処理ここから----------------------------------------------------
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+	MapAnime( "gate01_lumi1" , "on" )
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+	//パーティ状態のリセット
+	CallFunc("system:party_reset_nopos")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//カメラ設定
+	MoveCameraAt( 0 , 15.667f , 41.072f , 2.861f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 17.920f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 7.342f , 0 )	// 基本仰角
+	RotateCamera( 0 , 0.403f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 40.000, 1.000, 0.700, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	// 扉見せる
+	PlaySE(SE_GIM_PAST_DOOR_PRE, 100, 0, 0, 0, 1.0f, 0)
+	MapAnime( "gate01_lumi1" , "on-off" )
+	MapAnimeLast("gate01_lumi1"       , "off" )
+	Wait(40)
+	
+	// 扉開く
+	PlaySE(SE_GIM_PAST_DOOR, 100, 1, 0, 0, 1.0f, 0)
+	MapAnime( "@gate_01" , "close-open" )
+	MapAnimeLast("@gate_01"       , "open" )
+	Wait(45)
+	EarthQuake(0.1f,0.1f,10)
+	PlaySE(SE_GIM_PAST_DOOR_STOP, 100, 0, 0, 0, 1.0f, 0)
+	StopSE(SE_GIM_PAST_DOOR, 200)
+	Wait(30)
+
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//　　操作許可を戻す。
+
+	//終了処理ここから----------------------------------------------------
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+	SetChrPos("mons05",-100000.00f,0.00f,0.00f)
+	SetChrPos("mons03",-100000.00f,0.00f,0.00f)
+//	SetChrPos("mons04",-100000.00f,0.00f,0.00f)
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL_nopos")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//エフェクトの停止
+	StopEffect(-1, ALL, 1)
+
+	//フラグ処理
+	SetFlag(GF_MP6511_SWITCH_01, 1)
+
+	//イベント後の再配置
+
+	//カメラ位置復帰
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_SKIPOK)
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+}
+
+
+function "switch_05_open"
+{
+	//短いものはイベントスキップ不要とのこと
+
+	//叩いた直後のウエイト----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)		// LP操作、ストッパーなどのシンプルイベント
+	SetStopFlag(STOPFLAG_SKIPOK)		// ×ボタンスキップを許可する
+
+	// 一時的にプレイヤー無敵
+	SetChrWork(PLAYER1, CWK_MUTEKITIME, 90)
+	SetChrWork(PLAYER2, CWK_MUTEKITIME, 90)
+	SetChrWork(PLAYER3, CWK_MUTEKITIME, 90)
+	SetChrWork(PLAYER4, CWK_MUTEKITIME, 90)
+	if( LEADER.CHRWORK[CWK_YUKA] ) {
+		ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+	}
+	Wait(10)
+
+	//開始処理ここから----------------------------------------------------
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+	MapAnime( "gate05_lumi1" , "on" )
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset_nopos")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//カメラ設定
+MoveCameraAt( 0 , -19.348f , 56.307f , 4.588f , 0 )	// 注視点
+ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+ChangeCameraElevation( 0 , 10.751f , 0 )	// 基本仰角
+RotateCamera( 0 , 194.743f , 0 )				// 角度
+ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+RollCamera( 0 , 0.0f , 0 )				// ロール回転
+// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 40.000, 1.000, 0.700, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	// 扉見せる
+	PlaySE(SE_GIM_PAST_DOOR_PRE, 100, 0, 0, 0, 1.0f, 0)
+	MapAnime( "gate05_lumi1" , "on-off" )
+	MapAnimeLast("gate05_lumi1"       , "off" )
+	Wait(40)
+
+	// 扉開く
+	PlaySE(SE_GIM_PAST_DOOR, 100, 1, 0, 0, 1.0f, 0)
+	MapAnime( "@gate_05" , "close-open" )
+	MapAnimeLast("@gate_05"       , "open" )
+	Wait(45)
+	EarthQuake(0.1f,0.1f,10)
+	PlaySE(SE_GIM_PAST_DOOR_STOP, 100, 0, 0, 0, 1.0f, 0)
+	StopSE(SE_GIM_PAST_DOOR, 200)
+	Wait(30)
+
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//　　操作許可を戻す。
+
+	//終了処理ここから----------------------------------------------------
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL_nopos")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//エフェクトの停止
+	StopEffect(-1, ALL, 1)
+
+	//フラグ処理
+	SetFlag(GF_MP6511_SWITCH_05, 1)
+
+	//イベント後の再配置
+
+	//カメラ位置復帰
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_SKIPOK)
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+}

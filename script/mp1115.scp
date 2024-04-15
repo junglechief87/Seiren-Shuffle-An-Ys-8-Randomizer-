@@ -1,0 +1,939 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/fish.h"
+#include "inc/temp/mp1115.h"
+
+//-------------------------------------------
+// 1115：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1114" , 0 )
+	MapHide( "@BG2_mp1115" , 0 )
+	MapHide( "@BG2_mp2105" , 0 )
+	MapHide( "@BG2_mp2106" , 0 )
+	MapHide( "BG2_groundfog_SE1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SE2" , 0 )	//遠景の板フォグを消す
+
+//	MapHide( "BG2_groundfog_main" , 0 )	//遠景の板フォグを消す
+//	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+//	MapHide( "BG2_groundfog_SW1" , 0 )	//遠景の板フォグを消す
+
+	MapAnime("CT_WJUMP","close")		//空気アタリON
+	MapHide( "skyfog2" , 0 )		//濃霧非表示
+	
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog2" , 1 )		//濃霧表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 120.0f , 2.0f, 0.3f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00939aa0, 200.0f, 1000.0f , 1.0f , 0.7f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.8f )
+		}
+
+		//2段ジャンプ取得後ストッパー解除
+		if( ALLITEMWORK[ICON3D_DOUBLEJUMP]){
+			MapAnime("CT_WJUMP","open")		//空気アタリ解除
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0802] && FLAG[SF_LASTENTRY_NO] == 2 ){
+			//ActiveVoiceStart(EACT_EVID_0802, 1, 0)	//初めてエリアに入ったら
+			SetEventDriven(EED_TYPE_TIMER,120,"mp1115:act_0802")		//アクティブボイスの再生タイミング調整する時はここの数値をいじってください
+		}
+		
+		//釣り場制御
+		SetFishingAreaState(FISH_AREA_TBOX_05_R , FISH_AREASTATE_DISABLED )	// 再出現宝箱をOFF
+		if(FLAG[GF_FISH_FEATURE_T05] )	//初回宝箱を釣り上げている
+		{
+			SetFishingAreaState(FISH_AREA_TBOX_05 , FISH_AREASTATE_DISABLED )	// 初回宝箱をOFF
+			if(rand() % 100 <= 5 || FLAG[TF_MP1115_TBOX_FISHABLE] )		//再出現宝箱を5％の確率で復活
+			{
+				SetFlag(TF_MP1115_TBOX_FISHABLE, 1)
+				SetFishingAreaState(FISH_AREA_TBOX_05_R , FISH_AREASTATE_ENABLED )	// 再出現宝箱 ON
+			}
+		}
+	}
+
+	//骸骨：宝箱
+	if( FLAG[GF_MP1115_SKELETON01] ){
+		ChangeAnimation( "Skeleton01" , "ANI_STOP2", -1 , 1 )		//取った後
+		SetChrWork("Skeleton01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	}
+
+	//-----------------------------------------------------------------------------------------------------------
+	// イベントエリア・イベントＬＰ制御
+	
+	// イベントエリア初期設定
+	EventAreaEnable( "evb2_Join_Reja1_Stop2" , 0 )	// ▼合流イベント① ストッパー無効化
+	EventAreaEnable( "evb2_Join_Reja1_Stop3" , 0 )	// ▼合流イベント① ストッパー無効化
+
+	// レーヤ：合流イベント
+	if( FLAG[GF_SUBEV_LOOK_REJA1] &&	// レーヤの合流イベント①を見た
+		!FLAG[GF_TBOX_DUMMY064] )		// レーヤと合流した
+	{
+		EventAreaEnable( "evb2_Join_Reja1_Stop2" , 1 )	// レーヤの合流イベント ストッパー
+		EventAreaEnable( "evb2_Join_Reja1_Stop3" , 1 )	// レーヤの合流イベント ストッパー
+	}
+
+//	// ナスビの苗×２～３
+//	SetChrPos("ev_Join_Reja_paprika1",861.51f, -904.77f, 8.91f)
+//	Turn("ev_Join_Reja_paprika1",-164.70f,360.0f)
+//	
+//	SetChrPos("ev_Join_Reja_paprika2",858.84f, -903.03f, 9.26f)
+//	Turn("ev_Join_Reja_paprika2",31.47f,360.0f)
+//	
+//	SetChrPos("ev_Join_Reja_paprika3",863.77f, -904.24f, 8.91f)
+//	Turn("ev_Join_Reja_paprika3",-113.00f,360.0f)
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 2 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_1114.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//ロングフォーン海岸
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+	
+	
+	if( FLAG[GF_SUBEV_LOOK_REJA1] 		// レーヤの合流イベント①を見た
+	&& !FLAG[GF_TBOX_DUMMY064])		// レーヤと合流した
+	{
+		// ピッカード
+		SetChrPos("Picard_1114",862.16f, -903.34f, 9.22f)
+		Turn("Picard_1114",39.70f,360.0f)
+	}
+	
+}
+
+function "act_0802"
+{
+	ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+	ActiveVoiceStart(EACT_EVID_0802, 1, 0)	//初めてエリアに入ったら
+}
+
+//-------------------------------------------
+//骸骨
+//function "Skeleton01"	//下の【海賊のメモ⑤】に統合致しました
+//{
+//
+////	SetStopFlag(STOPFLAG_PC)
+//	SetStopFlag(STOPFLAG_TALK)
+//
+//	ChangeAnimation( "PLAYER1" , "ANI_GET_ITEM", -1 , 1 )
+//	Wait(10)
+//	ChangeAnimation( "this" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+//
+//	GetItemMessageExPlus( ICON3D_MEMO_P_005, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+//	WaitPrompt()
+//	WaitCloseWindow()
+//	GetItem(ICON3D_MEMO_P_005,1)		//海賊のメモ⑤
+//
+//	PlaySE(SE_BREAK_MAT_0061,100,0,  0, 0, 1.0f, 0)		//◆仮ＳＥ
+//	ChangeAnimation( "this" , "ANI_OPEN", -1 , 1 )		//崩れる
+//
+//	//開けた
+//	SetFlag( GF_MP1115_SKELETON01, 1 )
+//	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+//
+////	ResetStopFlag(STOPFLAG_PC)
+//	ResetStopFlag(STOPFLAG_TALK)
+//
+//}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//──────────────────────────────
+//▼合流イベント②・ピッカードを発見
+//──────────────────────────────
+function "Join_Reja2"
+{
+	//　　同じmp1114の高台、732.51f	-776.95f	16.86f	-99.22f付近に
+	//　　ピッカードとパプリカの苗×２～３が配置される。
+	//　　（ピッカードは合流イベント①を起こすまで出現しない）
+	//　　ピッカードを調べるとイベント起動。
+
+	//　　パプリカを懸命に食べているピッカードの後ろに
+	//　　アドルたちを再配置する。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL",862.02f, -901.44f, 9.56f)
+	Turn("ADOL",-2.94f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr( "ADOL", "Picard_1114" )
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA",860.48f, -900.60f, 9.79f)
+	Turn("LAXIA",-14.69f,360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr( "LAXIA", "Picard_1114" )
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD",863.50f, -901.25f, 9.65f)
+	Turn("SAHAD",22.66f,360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr( "SAHAD", "Picard_1114" )
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("HUMMEL",862.66f, -900.60f, 9.73f)
+		Turn("HUMMEL",7.95f,360.0f)
+		ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookChr( "HUMMEL", "Picard_1114" )
+		SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+	}
+
+	if( FLAG[SF_RICOTTA_JOINOK] )	// リコッタがいる
+	{
+		SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("RICOTTA",861.18f, -901.32f, 9.60f)
+		Turn("RICOTTA",-16.83f,360.0f)
+		ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookChr( "RICOTTA", "Picard_1114" )
+		SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	}
+
+	if( FLAG[SF_DANA_JOINOK] )		// ダーナがいる
+	{
+		SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("DANA",861.40f, -900.39f, 9.79f)
+		Turn("DANA",-14.50f,360.0f)
+		ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookChr( "DANA", "Picard_1114" )
+		SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	}
+
+	SetChrPos("Picard_1114",862.16f, -903.34f, 9.22f)
+	Turn("Picard_1114",39.70f,360.0f)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+//	//カメラ設定
+//	MoveCameraAt( 0 , 862.005f , -903.410f , 10.662f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.481f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -8.408f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 14.379f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 45.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	MoveCameraAt( 0 , 861.858f , -903.015f , 10.261f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.960f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -9.758f , 0 )	// 基本仰角
+	RotateCamera( 0 , 7.894f , 0 )				// 角度
+	ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 100.000 ,1.000 ,0.700 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1115:Join_Reja2_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	// カット1 -----------------------------------------------------------------------------------------
+
+//	// カメラ移動
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 862.005f , -903.410f , 10.162f , 75 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//	// カメラ待ち
+//	WaitThread(1000)
+
+	//────────────────────
+	//	⇒リコッタがいる
+	if( FLAG[SF_RICOTTA_JOINOK] )	// リコッタがいる
+	{
+		//	  　リコッタに！エモーション
+		EmotionEx("RICOTTA", 0.00f, EMO_EX, 0, 5, 1, 1, 1.5f)	//！
+		Wait(40)
+		ChangeAnimation( "RICOTTA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+		
+		// リコッタ
+		TalkPopup("RICOTTA",0,2,0,0,0) {
+			"#000e#080m丸くてカワイイ！"
+			"これは確か……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒それ以外
+	else
+	{
+		
+		// サハド
+		TalkPopup("SAHAD",0,2,0,0,0) {
+			"#000e#000mお？　この丸っこい動物は……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	ChangeAnimation( "LAXIA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000mピッカードという家畜ですね。\p"
+		"野生種には見えません……"
+		"難破船から流れ着いたのでしょうか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("SAHAD", "LAXIA")
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	TalkPopup("SAHAD",0,1,0,0,0)
+	{
+		"#000e#000mてーことは、ロンバルディア号に"
+		"乗ってたヤツってことか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//────────────────────
+	//	⇒ヒュンメルがいる
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		HeadYes("HUMMEL", 1, 25)	// キャラ, うなずき回数, 速さ
+		
+		TalkPopup("HUMMEL",0,2,0,0,0)
+		{
+			"#011e#000mまあそうなるだろうな。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	//	ピッカード
+	TalkPopup("Picard_1114",0,2,0,0,0)
+	{
+		"……もきゅ、もきゅ……！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドルたちにＰＡエモーション
+	EmotionEx("ADOL", 0.025f, EMO_PA, 0, 5, 1, 1, 1.4f)	//パッ
+	EmotionEx("LAXIA", 0.025f, EMO_PA, 0, 5, 1, 1, 1.4f)	//パッ
+	EmotionEx("SAHAD", 0.025f, EMO_PA, 0, 5, 1, 1, 1.4f)	//パッ
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		EmotionEx("HUMMEL", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	}
+	if( FLAG[SF_RICOTTA_JOINOK] )	// リコッタがいる
+	{
+		EmotionEx("RICOTTA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	}
+	if( FLAG[SF_DANA_JOINOK] )		// ダーナがいる
+	{
+		EmotionEx("DANA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+	}
+	Wait(35)
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cピッカードは懸命に何かをむさぼっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("SAHAD", "Picard_1114")
+
+	TalkPopup("SAHAD",0,1,0,0,0)
+	{
+		"#000e#000mへえ、ここにはナスビが"
+		"自生してるみてーだぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	ピッカード
+	TalkPopup("Picard_1114",0,2,0,0,0)
+	{
+		"もきゅ～っ！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "LAXIA", "ANI_EV_UDEGUMI_E", -1, 1 )	// 腕組
+
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000mあら、何かをくわえているようですね。\p"
+		"大きなナスビの種のようです。"
+		"これは貴重かもしれません……\p"
+		"念のため入手しておきませんか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドルうなずいて近づき、ひざまずく。
+	HeadYes("ADOL" , 1 , 25 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+	Wait(15)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+	Wait(20)
+	
+	Look("ADOL" , 0 , -11)	
+	ExecuteCmd( 1, MoveTo, "ADOL", 861.74f, -902.67f, 9.33f, 0.1f, 0.2f )
+	WaitThread(1)
+
+	Wait(10)
+
+	ChangeAnimation("ADOL", "ANI_EV_SHAGAMI_S", -1, 1)
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_SHAGAMI_S",  0)
+	
+	//アイテム入手テキスト
+	//「ナスビの種を入手した。」
+	GetItemMessageExPlus(ICON3D_SEED_EGGPLANT, 1, ITEMMSG_SE_JINGLE, "を入手した。", 0, 0)	//ナスビの種
+	WaitPrompt()
+	WaitCloseWindow()
+//
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 861.906f , -901.968f , 11.065f , 60 )	// 注視点
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.481f , 60 )		// 基本距離
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 3.337f, 60 )	// 基本仰角
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 355.186f, 60 )				// 角度
+//
+	LookReset("ADOL")
+	ChangeAnimation("ADOL", "ANI_EV_SHAGAMI_E", -1, 1)
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_SHAGAMI_E",  0)
+	Turn("ADOL",-171.08f,8.0f)
+	Wait(10)
+
+	CrossFade(FADE_CROSS)
+	LookChr( "LAXIA", "ADOL" )
+	LookChr( "SAHAD", "ADOL" )
+	if( FLAG[SF_HUMMEL_JOINOK] ) { LookChr( "HUMMEL", "ADOL" ) }
+	if( FLAG[SF_RICOTTA_JOINOK] ) { LookChr( "RICOTTA", "ADOL" ) }
+	if( FLAG[SF_DANA_JOINOK] ) { LookChr( "DANA", "ADOL" ) }
+
+	MoveCameraAt( 0 , 862.226f , -901.136f , 11.090f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.680f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.573f , 0 )	// 基本仰角
+	RotateCamera( 0 , 31.511f , 0 )				// 角度
+	ChangeCameraPers( 0 , 49.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	CrossFade(FADE_CROSS)
+
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_SIAN_S", -1, 1 )	// 思案
+
+	//	"LAXIA"
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#011e#000mそれにしても"
+		"引っかかりますね……\p"
+		"#012e#000m漂流者を探していたのに"
+		"ピッカードを見つけてしまいました。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_SIAN_E", -1, 1 )	// 思案
+	
+	//	"LAXIA"
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"これは偶然なのでしょうか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"もちろん偶然だ")
+	MenuAdd(2,"いや、もしかして……")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	LookChr("ADOL", "LAXIA")
+
+	// 手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI", -1, 1 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(20)
+	
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_TEBURI", -1, 1 )	// 両手腰手振り
+
+	//────────────────────
+	//	⇒もちろん偶然だ
+	if (FLAG[TF_MENU_SELECT] == 1 ) {
+
+		TalkPopup("SAHAD",0,2,0,0,0)
+		{
+			"#000e#000mだよなあ、いくらなんでも"
+			"こいつが命の恩人なわけ……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	} else if (FLAG[TF_MENU_SELECT] == 2 ) {
+	//	⇒いや、もしかして……
+	
+		TalkPopup("SAHAD",0,2,0,0,0)
+		{
+			"#000e#000mお？　なんだアドル。\p"
+			"まさかあの子供の言ってた命の恩人が"
+			"こいつだ、なんて言わねえよな？\p"
+			"#021e#080mガハハ、いくらなんでも……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+	}
+	//────────────────────
+	
+	// カット2 -----------------------------------------------------------------------------------------
+	
+	//　　ピッカードにＰＡエモーション
+	//　　辺りを見渡した後、浜辺のレーヤの方向に移動して
+	//　　キューキュー鳴く。
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	TurnTo("Picard_1114", 858.99f, -905.47f, 8.81f, 360.0f)
+
+	MoveCameraAt( 0 , 861.922f , -903.816f , 9.605f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.521f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.974f , 0 )	// 基本仰角
+	RotateCamera( 0 , 19.021f , 0 )				// 角度
+	ChangeCameraPers( 0 , 45.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	EmotionEx("Picard_1114", 0.00f, EMO_PA, 0, 5, 1, 1, 1.2f )	// 「PA」
+	Wait(35)
+
+//	StopBGM(120)
+
+	// 移動
+	ExecuteCmd(1, MoveTo, "Picard_1114", 858.99f, -905.47f, 8.81f , 0.1f, 0.16f)
+	Wait(50)
+
+	// カット3 -----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_CROSS)
+	
+	MoveCameraAt( 0 , 861.308f , -902.213f , 10.845f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.041f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 19.458f , 0 )	// 基本仰角
+	RotateCamera( 0 , 151.176f , 0 )				// 角度
+	ChangeCameraPers( 0 , 45.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	LookChr( "ADOL", "Picard_1114" )
+	LookChr( "LAXIA", "Picard_1114" )
+	LookChr( "SAHAD", "Picard_1114" )
+	if( FLAG[SF_HUMMEL_JOINOK] ) {	// ヒュンメルがいる
+		LookChr( "HUMMEL", "Picard_1114" )
+	}
+	if( FLAG[SF_RICOTTA_JOINOK] ) {	// リコッタがいる
+		LookChr( "RICOTTA", "Picard_1114" )
+	}
+	if( FLAG[SF_DANA_JOINOK] ) {		// ダーナがいる
+		LookChr( "DANA", "Picard_1114" )
+	}
+
+	Turn("ADOL", 53.91f, 8.0f)
+
+	// フェード待ち
+	Wait(FADE_CROSS)
+
+	PlaySE(SE_JOIN_REJA_01, 100, 0, 0, 0, 1.0f, 0)
+
+	//────────────────────
+	//	⇒リコッタがいる
+	if( FLAG[SF_RICOTTA_JOINOK] )	// リコッタがいる
+	{
+		ChangeAnimation( "RICOTTA", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+	
+		TalkPopup("RICOTTA",0,1,0,0,0)
+		{
+			"#000e#000mコレ……さっきの子がいた方角！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒それ以外
+	else
+	{
+		TalkPopup("LAXIA",0,1,0,0,0)
+		{
+			"#000e#000mこれは……さっきの子が"
+			"いた方角ですね……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_E", -1, 1 )	// 両手腰
+
+	TalkPopup("SAHAD",0,1,0,0,0)
+	{
+		"#000e#000mお？　つーことは"
+		"やっぱそうなのか……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	//────────────────────
+	//	⇒ヒュンメルがいる
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		TalkPopup("HUMMEL",0,1,0,0,0)
+		{
+			"#000e#000mフン、本人に"
+			"確かめてみるのが早そうだな。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒それ以外
+	else
+	{
+		TalkPopup("SAHAD",0,1,0,0,0)
+		{
+			"#000e#000mガハハ……こりゃあ本人に"
+			"確かめてみるのが早そうだな。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	//　　以下のイベントに接続。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1115:Join_Reja2_ED")
+}
+function "Join_Reja2_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//アイテム入手
+	GetItem(ICON3D_SEED_EGGPLANT, 1)	//ナスビの種
+
+	//NowLoading 時の Tips 表示をカット
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )
+
+	LoadArg("map/mp1114/mp1114.arg")
+	EventCue("mp1114:Join_Reja3")
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+//================================================
+//【海賊のメモ⑤】（霞の海岸・後半）	※古代種エリアの手前に配置			GF_MP1115_SKELETON01
+//================================================
+function "SubEV_Memo_P_05"
+{
+	//	※海賊の死骸を調べて入手するようにする。
+	//	※入手時に、海賊のメモのポートレートと
+	//	　メモの内容を表示する。
+	//	　メモの内容はその後冒険日誌の「ストーリー」「メモ」タブにに登録される。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	// ポートレート読み込み
+	Portrait_Load(1, "visual/portrait/p_30013.itp")	// 海賊のメモ
+	Portrait_Create(1, SUBP_POS_X, SUBP_POS_Y,
+	0, 0, SUBP_SCALE_X, SUBP_SCALE_Y,
+	0.0f, 0x00ffffff, 0x00000000)
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	ChangeAnimation( "PLAYER1" , "ANI_GET_ITEM", -1 , 1 )
+	Wait(10)
+	ChangeAnimation( "this" , "ANI_WAIT0", -1 , 1 )		//キラキラ消す
+
+	//GetItemMessageExPlus( ICON3D_MEMO_P_005, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+	//WaitPrompt()
+	//WaitCloseWindow()
+	//GetItem(ICON3D_MEMO_P_005,1)		//海賊のメモ⑤
+	CallFunc("rng:0498")
+
+	//ポートレート表示
+	Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+
+	Wait(20)
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cトカゲやヘビみてえな"
+		"#7C威嚇音が聞こえたら気をつけろ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C“ヤツら”が近い証拠だ……"
+		"#7C“ヤツら”はどこにでも現れる……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C今じゃ気が触れた連中は"
+		"#7C“ヤツら”に食われに行く始末だ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C冗談じゃねえ……泣く子も黙る海賊が、"
+		"#7Cいつから“狩られる側”になったんだ……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(20)
+
+	//ポートレートを消去
+	Portrait_Anime(1, PR_ANIME_COLOR, 0.0f, 0.0f, 0.0f, 0.0f, FADE_FAST)
+	Wait(FADE_FAST)
+
+	Portrait_Close(1)
+	Portrait_Unload(1)
+
+	//SE埋め込み済み
+	ChangeAnimation( "this" , "ANI_OPEN", -1 , 1 )		//崩れる
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+	//フラグ処理
+	SetFlag( GF_SUBEV_GET_MEMO, 1 )		//Ｔ・海賊のメモを手に入れた（１つでも手に入れたら立つ）
+	SetFlag( GF_SUBEV_GET_MEMO_P_05, 1 )		//海賊のメモ⑤を手に入れた
+	//開けた
+	SetFlag( GF_MP1115_SKELETON01, 1 )
+	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	
+	//イベント後の再配置
+	//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+	//Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+	
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+//──────────────────────────────
+// レーヤ：合流イベント ストッパー２
+//──────────────────────────────
+function "Join_Reja1_Stop2"
+{
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	TalkPopup("LAXIA",0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"アドル、この辺りにもう一人"
+		"漂流者がいるはずです。\p"
+		"ともかく探してみましょう！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	SetChrPos("LEADER",861.17f, -845.01f, 13.14f)
+	Turn("LEADER",153.60f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+//	Wait(1)
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}
+
+//──────────────────────────────
+// レーヤ：合流イベント ストッパー３
+//──────────────────────────────
+function "Join_Reja1_Stop3"
+{
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	TalkPopup("LAXIA",0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"アドル、この辺りにもう一人"
+		"漂流者がいるはずです。\p"
+		"ともかく探してみましょう！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	SetChrPos("LEADER",928.78f, -988.53f, 12.33f)
+	Turn("LEADER",-179.69f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+//	Wait(1)
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}

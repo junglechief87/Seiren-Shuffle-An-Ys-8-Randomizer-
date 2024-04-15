@@ -1,0 +1,1491 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/music.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+
+
+//-------------------------------------------
+// 3104：
+//-------------------------------------------
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp3106" , 0 )
+	MapHide( "@BG2_mp3107" , 0 )
+	MapHide( "@BG2_mp3108" , 0 )
+	MapHide( "BG2_groundfog_main" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW2" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SE1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SE2" , 0 )	//遠景の板フォグを消す
+
+	MapAnime(CT_ev00,off)		//初期状態は封鎖OFF
+
+//-----------------------------------------------------------------------------------------------------------
+// イベントエリア・イベントＬＰ制御
+	EventAreaEnable( "evb2_Join_Austen" , 0 )
+	EventAreaEnable( "evb2_act_0309" , 0 )	//アクティブボイス
+	EventAreaEnable( "ev2_EV_LOCATION013" , 0 )
+
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		// オースティン：合流イベント
+		if( FLAG[SF_BOSS_BATTLE] )
+		{
+			//リトライからのイベント戦闘
+			//SetWork( WK_BGM , BGM_Nothing )
+			EventCue("mp3107:Retry_Join_Austen")
+		}
+		else if ( !FLAG[GF_TBOX_DUMMY104] ) //( !FLAG[GF_SUBEV_JOIN_AUSTEN] )	// オースティンの合流イベントを見た
+		{
+			EventAreaEnable( "evb2_Join_Austen" , 1 )
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0309] && FLAG[GF_03MP1107_REPAIR_ROPE] && !FLAG[GF_03MP7401_IN_CAVERN]){
+			EventAreaEnable( "evb2_act_0309" , 1 )
+		}
+
+		if ( !FLAG[GF_LOCATION13] ) {		// ロケーション013
+			EventAreaEnable( "ev2_EV_LOCATION013" , 1 )
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_3106.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//西麓高原
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0309"
+{
+	if (!FLAG[GF_AVOICE_0309])
+	{
+		EventAreaEnable( "evb2_act_0309" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0309, 1, 0)	//3107に入って少し進んだ所で
+	}
+}
+
+//////////////////////////////////////////////
+// ロケーションポイント013:エアーズロックケルン
+//////////////////////////////////////////////
+function "EV_LOCATION013"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+	Portrait_Load(4, "visual/mapname/lnmp3107.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , -444.137f , -342.973f , 250.062f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 80.902f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.658f , 0 )	// 基本仰角
+	RotateCamera( 0 , 83.940f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp3107:EV_LOCATION013_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt , INTERPOLATE_SPHERE , -444.181f , -369.403f , 288.262f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance , INTERPOLATE_SPHERE , 81.902f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation , INTERPOLATE_SPHERE, -37.167f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera , INTERPOLATE_SPHERE , 33.219f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3107:EV_LOCATION013_ED")
+}
+function "EV_LOCATION013_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION13, 1)	//エアーズロックケルン
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_F014, MARKER_EV_LC_MP3107, 0, 0)	//ロケ　：エアーズロックケルン
+	SetMapMarker( SMI_LOCATION ,PAGE_F014, MARKER_EV_LC_MP3107, -431.89f,-340.84f,243.95f, -431.89f,-340.84f,LOCATION_MP3107,MN_F_MP3107,0)		//ロケ　：エアーズロックケルン
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_F014,0 ,-422.55f, -339.15f ,100 )
+
+	CallFunc("mp3107:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , -397.978f , -339.493f , 245.439f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.950f , 0 )	// 基本仰角
+	RotateCamera( 0 , 96.420f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", -397.98f, -339.49f, 243.61f)
+	Turn("LEADER" ,83.58f , 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}
+
+//============================================================
+//オースティン：合流イベント
+//============================================================
+function "Join_Austen"
+{
+	//　　中央高原mp3107の
+	//　　-430.83f,-240.05f,245.39f付近に来るとイベント開始。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL",-432.62f,-238.54f,245.39f)
+	Turn("ADOL",86.94f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	SetChrWork( "ADOL" , CWK_BATTLEMODE , 1 )
+	SetChrInfoFlag( "ADOL" , INFOFLAG_INVISIBLE )
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD",-432.14f,-237.55f,245.37f)
+	Turn("SAHAD",154.60f,360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("SAHAD")
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+	SetChrWork( "SAHAD" , CWK_BATTLEMODE , 1 )
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_INVISIBLE )
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA",-431.57f,-239.57f,245.39f)
+	Turn("LAXIA",-12.24f,360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("LAXIA")
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+	SetChrWork( "LAXIA" , CWK_BATTLEMODE , 1 )
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_INVISIBLE )
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA",-430.65f,-239.06f,245.39f)
+	Turn("RICOTTA",-76.04f,360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	SetChrWork( "RICOTTA" , CWK_BATTLEMODE , 1 )
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_INVISIBLE )
+
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		SetChrPos("HUMMEL",-430.73f,-237.82f,245.35f)
+		Turn("HUMMEL",-87.44f,360.0f)
+		ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset("HUMMEL")
+		SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+		SetChrWork( "HUMMEL" , CWK_BATTLEMODE , 1 )
+		SetChrInfoFlag( "HUMMEL" , INFOFLAG_INVISIBLE )
+	}
+
+	if( FLAG[SF_DANA_JOINOK] )	// ヒュンメルがいる
+	{
+		SetChrPos("DANA",-431.00f,-236.66f,245.31f)
+		Turn("DANA",175.23f,360.0f)
+		ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset("DANA")
+		SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+		SetChrWork( "DANA" , CWK_BATTLEMODE , 1 )
+		SetChrInfoFlag( "DANA" , INFOFLAG_INVISIBLE )
+	}
+
+	SetChrWork("Austen", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Austen",-432.17f,-261.68f,245.36f)
+	Turn("Austen",165.51f,360.0f)
+	ChangeAnimation( "Austen" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Austen",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Austen",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Austen",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Austen")
+	SetChrInfoFlag( "Austen" , INFOFLAG_NOCHRATARI)
+
+
+	// 狼数体の設定
+	ChangeAnimation( "ev_Join_Austen_wolf1" , "ANI_WAIT", -1 , 1 )
+	SetChrPos("ev_Join_Austen_wolf1",-438.36f,-238.50f,245.51f)
+	Turn("ev_Join_Austen_wolf1",-91.62f,360.0f)
+
+	ChangeAnimation( "ev_Join_Austen_wolf2" , "ANI_WAIT", -1 , 1 )
+	SetChrPos("ev_Join_Austen_wolf2",-435.61f,-226.70f,244.96f)
+	Turn("ev_Join_Austen_wolf2",-14.47f,360.0f)
+
+	ChangeAnimation( "ev_Join_Austen_wolf3" , "ANI_WAIT", -1 , 1 )
+	SetChrPos("ev_Join_Austen_wolf3",-426.11f,-238.56f,245.08f)
+	Turn("ev_Join_Austen_wolf3",93.12f,360.0f)
+
+	ChangeAnimation( "ev_Join_Austen_wolf4" , "ANI_WAIT", -1 , 1 )
+	SetChrPos("ev_Join_Austen_wolf4",-428.12f,-242.49f,245.18f)
+	Turn("ev_Join_Austen_wolf4",117.35f,360.0f)
+
+	ChangeAnimation( "ev_Join_Austen_wolf5" , "ANI_WAIT", -1 , 1 )
+	SetChrPos("ev_Join_Austen_wolf5",-421.91f,-228.01f,244.32f)
+	Turn("ev_Join_Austen_wolf5",39.80f,360.0f)
+
+	ChangeAnimation( "ev_Join_Austen_wolf6" , "ANI_WAIT", -1 , 1 )
+	SetChrPos("ev_Join_Austen_wolf6",-436.57f,-243.40f,245.41f)
+	Turn("ev_Join_Austen_wolf6",-142.63f,360.0f)
+
+	ExecuteCmd( 1, MoveTo, "ev_Join_Austen_wolf2" , -434.01f,-232.23f,245.17f, 0.1f , 0.3f )
+	ExecuteCmd( 2, MoveTo, "ev_Join_Austen_wolf5" , -429.28f,-233.84f,245.16f, 0.1f , 0.3f )
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt( 0 , -430.906f , -232.348f , 245.528f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.300f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 339.807f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 200.000 ,1.000 ,0.700 ,0.550)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp3107:Join_Austen_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//　　アドル、サハド、ラクシャ、リコッタ、
+	//　　ヒュンメル（いれば）、が狼に囲まれる。
+
+	Wait(30)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -429.866f , -238.335f , 245.528f , 110 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.300f , 110 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 14.000f , 110 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 269.559f, 110 )
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	PlaySE(SE_JOIN_AUSTEN_01, 80, 0, 0, 0, 1.0f, 0)	//ぐるる
+	StopBGM(120)
+
+	WaitThread(1)
+	WaitThread(2)
+
+	Wait(15)
+	// カットX ----------------------------------------------------------------------------------------
+
+	CrossFade(FADE_NORMAL)
+	SetChrPos("ev_Join_Austen_wolf5",-429.26f,-233.82f,245.16f)
+	Turn("ev_Join_Austen_wolf5",27.03f,360.0f)
+
+	SetChrPos("ev_Join_Austen_wolf4",-430.24f,-242.89f,245.29f)
+	Turn("ev_Join_Austen_wolf4",160.94f,360.0f)
+
+	MoveCameraAt( 0 , -433.307f , -240.572f , 246.518f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.900f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.488f , 0 )	// 基本仰角
+	RotateCamera( 0 , 331.359f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	
+	ResetChrInfoFlag( "ADOL" , INFOFLAG_INVISIBLE )
+	ResetChrInfoFlag( "SAHAD" , INFOFLAG_INVISIBLE )
+	ResetChrInfoFlag( "LAXIA" , INFOFLAG_INVISIBLE )
+	ResetChrInfoFlag( "RICOTTA" , INFOFLAG_INVISIBLE )
+	ResetChrInfoFlag( "HUMMEL" , INFOFLAG_INVISIBLE )
+	ResetChrInfoFlag( "DANA" , INFOFLAG_INVISIBLE )
+
+	Wait(FADE_NORMAL)
+
+	TalkPopup("RICOTTA",0,2,0,0,0)
+	{
+		"#000e#000mしまった、囲まれた！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#000e#000mやれやれ……こんな所で"
+		"狼の群れに出くわすとはなぁ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000m……少々厄介そうですね。"
+		"ですが各個撃破すれば何とか……！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(15)
+
+	EarthQuake(0.07,0.07,10)
+	SetName("男の声")
+	TalkPopup("Austen",0,3,60,70,0)
+	{
+		"#16S待て待て待て～い！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	PlayBGM(BGM_BOSS_002, 15)
+
+	//　　オースティンが西の岩場の方から飛び出てくる。
+	CrossFade(FADE_NORMAL)
+	SetChrPos("ev_Join_Austen_wolf1",-438.36f,-238.50f,245.51f)
+	Turn("ev_Join_Austen_wolf1",-21.23f,360.0f)
+	
+	ExecuteCmd( 1, MoveTo, "Austen" , -433.72f,-250.66f,245.30f, 0.1f, 0.7f )
+		
+	MoveCameraAt( 0 , -434.099f , -250.323f , 246.223f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.121f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.749f , 0 )	// 基本仰角
+	RotateCamera( 0 , 221.070f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -433.755f , -250.359f , 246.903f , 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.121f , 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.976f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 163.200f , 100 )
+
+	Wait(FADE_NORMAL)
+	WaitThread(1)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	SetName("身なりのいい青年")
+	TalkPopup("Austen",0,2,0,0,0)
+	{
+		"#011e#000m騒がしいので来てみれば……"
+		"ようやく人に会うことができたか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Austen" , "ANI_EV_SIAN_S", -1 , 1 )
+
+	TalkPopup("Austen",0,2,0,0,0)
+	{
+		"#012e#080mフッフッフ……"
+		"しかしどうやらピンチのようだな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	WaitAnimation2( "Austen" , -1, 1, "ANI_EV_SIAN_E",  0)
+	ChangeAnimation( "Austen" , "ANI_EV_SIAN_E", -1 , 1 )
+
+	TalkPopup("Austen",0,2,0,0,0)
+	{
+		"#080mここは僕に任せて、"
+		"君たちは逃げるんだ！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	Blur(BLUR_TYPE_AFTERIMAGE,0.45f,-1)
+
+	//　　オースティンがレイピアで狼を一匹倒す。
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE  , -436.384f , -244.502f , 246.587f , 40 )	// 注視点
+	ExecuteCmd(1001,ChangeCameraDistance, INTERPOLATE_SPHERE  , 2.761f , 40 )		// 基本距離
+	ExecuteCmd(1002,ChangeCameraElevation, INTERPOLATE_SPHERE  , 2.081f , 40 )	// 基本仰角
+	ExecuteCmd(1003,RotateCamera, INTERPOLATE_SPHERE  , 159.744f , 40 )				// 角度
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE , 12.9f , 40 )		// ロール回転
+	Wait(5)
+	ExecuteCmd( 1, MoveTo, "Austen",-435.68f, -245.47f, 245.40f, 0.1f, 0.70f)
+	Wait(5)
+	Turn("ev_Join_Austen_wolf6",-25.38f,15.0f)
+	WaitThread(1)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+//	Wait(10)
+
+	CrossFade(10)
+	Blur(BLUR_TYPE_AFTERIMAGE,0.45f,0)
+
+	Blur(BLUR_TYPE_EXPAND, 0.35f, 20)	//ブラー
+	Turn("Austen",154.23f,360.0f)
+	ResetMotion("Austen" , 1)
+	ChangeAnimation( "Austen", "ANI_EV_BTL_WAIT", -1, 1 )	// 武器構え
+	SetChrPos("ev_eq4021", -435.85f, -245.09f, 245.41f)
+	SetParent("ev_eq4021", "Austen", "Null_buki")
+
+	MoveCameraAt( 0 , -436.036f , -244.301f , 246.792f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.410f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.307f , 0 )	// 基本仰角
+	RotateCamera( 0 , 42.759f , 0 )				// 角度
+	ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , -14.2f , 0 )				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_COS  , -436.391f , -243.917f , 246.792f  , 20 )	// 注視点
+	ExecuteCmd(1001,ChangeCameraDistance, INTERPOLATE_COS  , 3.750f , 20 )		// 基本距離
+	ExecuteCmd(1002,ChangeCameraElevation, INTERPOLATE_COS  , -2.310f , 20 )	// 基本仰角
+	ExecuteCmd(1003,RotateCamera, INTERPOLATE_COS  , 42.764f , 20 )				// 角度
+
+	//MoveCameraAt( 0 , -436.391f , -243.917f , 246.792f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.750f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -2.310f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 42.764f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , -14.2f , 0 )				// ロール回転
+
+	Wait(5)
+	
+	ChangeAnimation( "Austen", "ANI_EV_ATK", -1, 1 )	// 突き
+	Wait(5)
+	PlaySE(SE_JOIN_AUSTEN_02, 100, 0, 0, 0, 1.0f, 0)
+	Wait(10)
+	EarthQuake( 0.07f , 0.07f , 10 )	// 縦揺れ幅, 横揺れ幅, 時間
+//	Effect2( 110110, -436.866f , -244.211f , 246.720f, 90.00f, 0, 0, 0, 0, 0, 1.0f, 1.0f)	// ◆使っていいか確認
+
+	ChangeAnimation( "ev_Join_Austen_wolf6" , "ANI_DEAD", -1 , 1 )
+	ChrEffect( ev_Join_Austen_wolf6 , SYSEFX_BASH_BLOOD , 0 , 0 , 0 , 0 , 0 , IMPACT_NONE , KNOCK_EFXPOS,0.0f,0.0f,0, 1.0f, 1.0f)
+//	ChrAlpha("ev_Join_Austen_wolf6", 0.0f, 30)	// ID, 変化後のアルファ値, 変化にかかるフレーム数
+	PlaySE(SE_JOIN_AUSTEN_03, 80, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_JOIN_AUSTEN_04, 100, 0, 0, 0, 1.0f, 0)
+
+	Wait(60)
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	CrossFade(FADE_CROSS)
+
+	SetChrPos("ev_Join_Austen_wolf6" , -100000.00f  , 0.00f ,0.00f )	//狼消滅
+
+	MoveCameraAt( 0 , -432.022f , -239.260f , 246.990f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.940f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 9.557f , 0 )	// 基本仰角
+	RotateCamera( 0 , 125.350f , 0 )				// 角度
+	ChangeCameraPers( 0 , 44.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	TurnToChr( "ADOL", "Austen", 360.0f)
+	TurnToChr( "SAHAD", "Austen", 360.0f)
+	TurnToChr( "LAXIA", "Austen", 360.0f)
+	TurnToChr( "RICOTTA", "Austen", 360.0f)
+	TurnToChr( "HUMMEL", "Austen", 360.0f)
+
+	if( FLAG[SF_DANA_JOINOK] )	// ダーナがいる
+	{
+		SetChrPos("DANA",-429.61f,-238.98f,245.38f)
+		Turn("DANA",61.34f,360.0f)
+	}
+
+	Wait(FADE_CROSS)
+
+	TalkPopup("SAHAD",0,1,0,0,0)
+	{
+		"#000e#000mおお、やるじゃねーか！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	Wait(10)
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	//　　狼の増援が現れ、オースティンが囲まれる。
+	CrossFade(FADE_FAST)
+	
+	MoveCameraAt( 0 , -436.608f , -241.510f , 247.020f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.221f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 2.688f , 0 )	// 基本仰角
+	RotateCamera( 0 , 147.522f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	ChangeAnimation( "Austen", "ANI_WAIT", -1, 1 )	// 待機
+	SetParent("ev_eq4021", "", "")
+	SetChrPos("ev_eq4021", -100000.0f , 0.00f ,0.00f)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE  , -435.764f , -243.254f , 247.020f, 110 )	// 注視点
+	ExecuteCmd(1001,ChangeCameraDistance, INTERPOLATE_SPHERE  , 3.221f , 110 )		// 基本距離
+	ExecuteCmd(1002,ChangeCameraElevation, INTERPOLATE_SPHERE  ,2.115f , 110 )	// 基本仰角
+	ExecuteCmd(1003,RotateCamera, INTERPOLATE_SPHERE  , 171.586f , 110 )				// 角度
+	
+	ChangeAnimation( "ev_Join_Austen_wolf7" , "ANI_WAIT", -1 , 1 )
+	SetChrPos("ev_Join_Austen_wolf7",-432.07f,-257.03f,245.60f)
+	Turn("ev_Join_Austen_wolf7",162.21f,360.0f)
+	
+	ChangeAnimation( "ev_Join_Austen_wolf8" , "ANI_WAIT", -1 , 1 )
+	SetChrPos("ev_Join_Austen_wolf8",-426.03f,-251.99f,245.13f)
+	Turn("ev_Join_Austen_wolf8",-55.11f,360.0f)
+	
+	ChangeAnimation( "ev_Join_Austen_wolf9" , "ANI_WAIT", -1 , 1 )
+	SetChrPos("ev_Join_Austen_wolf9",-442.87f,-239.15f,245.75f)
+	Turn("ev_Join_Austen_wolf9",-47.97f,360.0f)
+	
+	ExecuteCmd( 1, MoveTo,"ev_Join_Austen_wolf7",-434.62f,-249.09f,245.31f, 0.1f, 0.6f)
+	ExecuteCmd( 2, MoveTo,"ev_Join_Austen_wolf8",-431.86f,-247.92f,245.11f, 0.1f, 0.4f)
+	ExecuteCmd( 3, MoveTo,"ev_Join_Austen_wolf9",-438.48f,-242.76f,245.50f, 0.1f, 0.2f)
+	
+	
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1)
+	PlaySE(SE_JOIN_AUSTEN_01, 80, 0, 0, 0, 1.0f, 0)	//ぐるる
+
+	Turn("Austen",-31.67f,15.0f)
+	Wait(10)
+	ChangeAnimation( "Austen", "ANI_EV_SUP_S", -1, 1 )	// 驚く、軽くのけぞる
+
+	SetName("身なりのいい青年")
+	TalkPopup("Austen",0,2,0,0,0)
+	{
+		"#000e#000mぞ、増援だと……小癪な！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	HeadNo("Austen" , 1 , 30 )
+
+	TalkPopup("Austen",0,2,0,0,0)
+	{
+		"くそ……あ、あっちへ行け！"
+		"あっちへ行けってば！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	WaitThread(2)
+	WaitThread(3)
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	CrossFade(FADE_CROSS)
+
+	MoveCameraAt( 0 , -431.302f , -239.037f , 247.020f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.701f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 9.277f , 0 )	// 基本仰角
+	RotateCamera( 0 , 132.051f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	//　　仲間たちに「冷や汗」エモーション。
+	EmotionEx("ADOL", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	EmotionEx("SAHAD", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	EmotionEx("LAXIA", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	EmotionEx("RICOTTA", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		EmotionEx("HUMMEL", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	}
+	if( FLAG[SF_DANA_JOINOK] )	// ヒュンメルがいる
+	{
+		EmotionEx("DANA", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	}
+
+	Wait(50)
+	
+	//──────────────────────
+	//	⇒ヒュンメルがいる
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		TalkPopup("HUMMEL",0,1,0,0,0)
+		{
+			"#000e#000mふむ……さきほどまでの"
+			"威勢はどこへやら。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒それ以外
+	else
+	{
+		TalkPopup("LAXIA",0,2,0,0,0)
+		{
+			"#000e#000m何だか騒がしい方のようですね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//──────────────────────
+
+	//　　ここでイベント戦闘。	◆仮入力
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//　　オースティンは戦闘フィールド外で
+	//　　「汗汗」エモーションを出しながら武器を持って構えている状態。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3107:Join_Austen_ED")
+}
+function "Join_Austen_ED"
+{
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ALL")	
+	
+	// イベントで使用した狼を画面外に移動
+	SetChrPos("ev_Join_Austen_wolf1" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_Join_Austen_wolf2" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_Join_Austen_wolf3" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_Join_Austen_wolf4" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_Join_Austen_wolf5" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_Join_Austen_wolf6" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_Join_Austen_wolf7" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_Join_Austen_wolf8" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_Join_Austen_wolf9" , -100000.00f  , 0.00f ,0.00f )
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+	
+	//NowLoading 時の Tips 表示をカット
+	SetFlag(TF_LOADING_TIPS_OFF, 1)
+
+	CallFunc("system:camera_reset")
+
+	EventAreaEnable( "evb2_Join_Austen" , 0 )	// 戦闘中にイベントが発動しないように入れてあります
+	EventCue("mp3107:Retry_Join_Austen")	//◆仮入力：イベント戦闘
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+}
+function "Retry_Join_Austen"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))	//リトライ時にザコモンスタが表示されるので消去させています
+
+	SetChrPos("Join_Austen_mons1",-438.10f,-243.68f,245.47f)
+	Turn("Join_Austen_mons1",-144.80f,360.0f)
+	ChangeAnimation("", "ANI_WAIT", -1, 1)
+
+	SetChrPos("Join_Austen_mons2",-437.14f,-235.38f,245.36f)
+	Turn("Join_Austen_mons2",-53.54f,360.0f)
+	ChangeAnimation("Join_Austen_mons2", "ANI_WAIT", -1, 1)
+
+	SetChrPos("Join_Austen_mons3",-434.01f,-232.23f,245.17f)
+	Turn("Join_Austen_mons3",-18.81f,360.0f)
+	ChangeAnimation("Join_Austen_mons3", "ANI_WAIT", -1, 1)
+
+	SetChrPos("Join_Austen_mons4",-426.11f,-238.56f,245.08f)
+	Turn("Join_Austen_mons4",93.12f,360.0f)
+	ChangeAnimation("Join_Austen_mons4", "ANI_WAIT", -1, 1)
+
+	SetChrPos("Join_Austen_mons5",-434.63f,-249.45f,245.32f)
+	Turn("Join_Austen_mons5",-170.64f,360.0f)
+	ChangeAnimation("Join_Austen_mons5", "ANI_WAIT", -1, 1)
+
+	SetChrPos("Join_Austen_mons6",-427.74f,-246.41f,244.94f)
+	Turn("Join_Austen_mons6",155.11f,360.0f)
+	ChangeAnimation("Join_Austen_mons6", "ANI_WAIT", -1, 1)
+
+	SetChrPos("Join_Austen_mons7",-431.27f,-248.05f,245.08f)
+	Turn("Join_Austen_mons7",158.53f,360.0f)
+	ChangeAnimation("Join_Austen_mons7", "ANI_WAIT", -1, 1)
+
+	SetChrPos("Join_Austen_mons8",-429.00f,-233.16f,245.13f)
+	Turn("Join_Austen_mons8",34.91f,360.0f)
+	ChangeAnimation("Join_Austen_mons8", "ANI_WAIT", -1, 1)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos("PLAYER1",-430.88f,-238.35f,245.38f)
+	Turn("PLAYER1",78.28f,360.0f)
+	//TurnToChr("PLAYER1" , "Join_Austen_mons1" , 360.0f )
+	//TurnToChr("Join_Austen_mons1" , "PLAYER1" , 360.0f )
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+//	SetYs8Camera(7.0f, 60.0f, 10.0f, 0.0f, 0.0f)		//……ボスルーチン作成者の指定があれば入力
+
+	MoveCameraAt( 0 , -430.880f , -238.350f , 247.248f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 148.311f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start")						//……イベントバトル用の色々な処理を行うfunction
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_002, 0)	//◆検証版用仮
+	MapAnime(CT_ev00,on)	//封鎖ON
+
+	SetFlag( TF_KILLENEMY_CNT, 0 )					//合流イベント戦闘用準備
+	//　　オースティンは戦闘フィールド外で
+	//　　「汗汗」エモーションを出しながら武器を持って構えている状態。
+	
+	SetChrPos("Austen",-430.81f,-258.24f,245.54f)
+	Turn("Austen",171.90f,360.0f)
+//	SetChrPos("Austen",-443.39f,-240.18f,245.77f)
+//	Turn("Austen",-81.76f,360.0f)
+	ChangeAnimation( "Austen", "ANI_EV_BTL_WAIT", -1, 1 )	// 武器構え
+	SetChrPos("ev_eq4021", -443.39f,-240.18f,245.77f)
+	SetParent("ev_eq4021", "Austen", "Null_buki")
+	EmotionEx("Austen", 0.00f, EMO_ASE, 0, 5, 0, 0, 1.0f)	//汗汗（無限ループ、SE無し）
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+	ResetStopFlag(STOPFLAG_EVENT)
+
+}
+function "battleend_check"
+{
+	//敵を全部倒したかチェックする
+	SetFlag( TF_KILLENEMY_CNT, (FLAG[TF_KILLENEMY_CNT]+1) )
+
+	if( FLAG[TF_KILLENEMY_CNT] == 8 )
+	{
+	//戦闘終了処理ここから-----------------------------------------------
+		SetFlag( TF_KILLENEMY_CNT, 0 )
+	
+		//無敵ON・色々終了させる---------------------------
+		SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	
+		Wait(90)											//……ボス死亡モーション見せる＆ドロップアイテムを拾う時間
+		StopBGM(90)
+		Wait(60)
+	
+		//イベントバトル用CallFunc-------------------------
+		CallFunc("system:boss_end")							//……イベントバトル用の色々な処理を行うfunction
+	
+		//封鎖解除・ボス消去-------------------------------
+		MapAnime("syswall", "open")								//……逃げられないストッパー解除。マップによってアニメ名は異なります。
+		SetChrPos("Join_Austen_mons1",-100000.00f,0.00f,0.00f)	//……ボスを見えない位置に飛ばす
+		SetChrPos("Join_Austen_mons2",-100000.00f,0.00f,0.00f)	//……ボスを見えない位置に飛ばす
+		SetChrPos("Join_Austen_mons3",-100000.00f,0.00f,0.00f)	//……ボスを見えない位置に飛ばす
+		SetChrPos("Join_Austen_mons4",-100000.00f,0.00f,0.00f)	//……ボスを見えない位置に飛ばす
+		SetChrPos("Join_Austen_mons5",-100000.00f,0.00f,0.00f)	//……ボスを見えない位置に飛ばす
+		SetChrPos("Join_Austen_mons6",-100000.00f,0.00f,0.00f)	//……ボスを見えない位置に飛ばす
+		SetChrPos("Join_Austen_mons7",-100000.00f,0.00f,0.00f)	//……ボスを見えない位置に飛ばす
+		SetChrPos("Join_Austen_mons8",-100000.00f,0.00f,0.00f)	//……ボスを見えない位置に飛ばす
+		ResetChrPos((CHRTYPE_MONS | REMOVE_POS))				//……ザコならこちら
+	
+		MapAnime(CT_ev00,off)	//封鎖解除
+
+		StopEmotion("Austen")	//オースティンの汗汗エモを止める
+	
+		EventCue("mp3107:Join_Austen_B")	//オースティン：合流イベント　戦闘終了後のイベント
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+}
+function "Join_Austen_B"
+{
+	//　　戦闘後、オースティンとアドルたちが向き合う。
+
+//開始処理ここから-----------------------------------------------
+
+//	CallFunc("system:event_begin")
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_WHITE,0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL",-434.45f,-239.74f,245.40f)
+	Turn("ADOL",88.29f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	LookChr("ADOL","Austen")
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD",-434.14f,-238.25f,245.40f)
+	Turn("SAHAD",45.06f,360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("SAHAD")
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+	LookChr("SAHAD","Austen")
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA",-434.86f,-240.67f,245.40f)
+	Turn("LAXIA",118.77f,360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("LAXIA")
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+	LookChr("LAXIA","Austen")
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA",-434.93f,-238.87f,245.40f)
+	Turn("RICOTTA",64.19f,360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	LookChr("RICOTTA","Austen")
+
+	if( FLAG[SF_HUMMEL_JOINOK] )	// ヒュンメルがいる
+	{
+		SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("HUMMEL",-432.95f,-239.94f,245.40f)
+		Turn("HUMMEL",97.39f,360.0f)
+		ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset("HUMMEL")
+		SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+		LookChr("HUMMEL","Austen")
+	}
+	if( FLAG[SF_DANA_JOINOK] )	// ダーナがいる
+	{
+		SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("DANA",-432.92f,-241.23f,245.40f)
+		Turn("DANA",110.32f,360.0f)
+		ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+		ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+		ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+		LookReset("DANA")
+		SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+		LookChr("DANA","Austen")
+	}
+	
+	SetChrWork("Austen", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Austen",-436.77f,-239.72f,245.42f)
+	Turn("Austen",-78.45f,360.0f)
+	ChangeAnimation( "Austen" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Austen",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Austen",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Austen",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Austen")
+	SetChrInfoFlag( "Austen" , INFOFLAG_NOCHRATARI)
+
+	SetParent("ev_eq4021", "", "")
+	SetChrPos("ev_eq4021", -100000.0f, 0.0f, 0.0f)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt( 0 , -435.214f , -239.237f , 247.012f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.412f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.894f , 0 )	// 基本仰角
+	RotateCamera( 0 , 97.667f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.001f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 200.000 ,1.000 ,0.700 ,0.550)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp3107:Join_Austen_B_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	// カットX -----------------------------------------------------------------------------------------
+
+	Wait(10)
+
+	PlayBGM(BGM_EVENT_004, 0)
+
+	FadeIn(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+
+	Wait(10)
+	
+	ChangeAnimation( "Austen" , "ANI_EV_RYOTEBURI", -1 , 1 )
+
+	SetName("身なりのいい青年")
+	TalkPopup("Austen",0,2,0,0,0)
+	{
+		"#021e#000mいやあ、しかし危なかったな君たち。\p"
+		"#022e#000mだが僕のおかげで何とかなっただろう。"
+		"心から感謝するといい。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+	
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"ありがとう、助かったよ")
+	MenuAdd(2,"ほとんど僕たちが倒したような……")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	// 手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI", -1, 1 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(10)
+	
+	LookChr("Austen", "ADOL")
+	Wait(10)
+	
+	//──────────────────────
+	//	⇒ありがとう、助かったよ
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		HeadYes("Austen", 2, 25)	// キャラ, うなずき回数, 速さ
+		
+		SetName("身なりのいい青年")
+		TalkPopup("Austen",0,2,0,0,0)
+		{
+			"#021e#080mフフ、そうだろうそうだろう！\p"
+			"#022e#080mこれもノブレスオブリージュというヤツだ。"
+			"どうか気にしないでくれたまえ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		SetName("")
+	}
+	//	⇒ほとんど僕たちが倒したような……
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		SetName("身なりのいい青年")
+		TalkPopup("Austen",0,2,0,0,0)
+		{
+			"#031e#000mし、失敬な……\p"
+			"#041e#000mこれだから平民というヤツは……！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		SetName("")
+	}
+	//──────────────────────
+
+	ChangeAnimation( "RICOTTA", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	TalkPopup("RICOTTA",0,1,0,0,0)
+	{
+		"#000e#000mなんか偉そうなヤツだな？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "SAHAD", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	TalkPopup("SAHAD",0,1,0,0,0)
+	{
+		"#000e#000mま、何にせよ無事で何よりだ。\p"
+		"とりあえず、この兄ちゃんにも"
+		"状況を説明しておくか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+	ChangeSubAnimation("Austen", SUBMOT_EYE, ANI_E_WAIT_S, 1)
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cアドルたちは現在の状況と"
+		"#7C漂流村のことを説明した。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	// カットX -----------------------------------------------------------------------------------------
+
+	//　　ここでオースティンを注目するカメラ。
+	CrossFade(FADE_CROSS)
+
+	FadeBGM(60,30)
+	
+	MoveCameraAt( 0 , -436.577f , -239.558f , 246.990f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 0.741f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -0.491f , 0 )	// 基本仰角
+	RotateCamera( 0 , 94.916f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.001f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	Wait(FADE_CROSS)
+
+	ChangeSubAnimation("Austen", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Look("Austen", 0.0f, -10.0f)	// うつむく
+
+	//	身なりのいい青年（ボイス付き）
+	SetName("身なりのいい青年")
+	TalkPopup("Austen",0,2,0,0,0)
+	{
+		"#4895V#000m成程、無人島というのは気づいていたが……"
+		"まあともかく状況は理解した。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	//　　ここでオースティンの名前演出。
+	VisualName("visual/chrname/cn_c116.itp", VN_NAMEVOICE, VN_CHRNAME_RB_X, VN_CHRNAME_RB_Y,VN_NPCNAME_TIME)	//オースティン
+
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -436.493f , -239.705f , 247.015f , 260 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 0.741f , 260 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -8.757f , 260 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 57.678f , 260 )
+
+	Wait(60)
+	ChangeSubAnimation("Austen", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+	Look("Austen", 0.0f, 0.0f)	// うつむく
+
+	//時限式選択肢
+	//◆SE無効化コマンド置換用
+	SetFlag(TF_MENU_SELECT2,0)
+	MenuReset()
+	MenuAdd( 1 , "" )
+	MenuOpen( TF_MENU_SELECT2 , 0 ,0 , 0 , 0 , 0 , 0 )
+	WaitMenu(VN_NPCNAME_SKIP) //ウェイトしたい数値
+	MenuClose(0,0)
+
+	if(FLAG[TF_MENU_SELECT2] == 1 )
+	{
+		CrossFade(FADE_FAST)
+		VisualNameEnd()
+		StopThread(1000)
+		StopThread(1001)
+		StopThread(1002)
+		StopThread(1003)
+
+		MoveCameraAt( 0 , -436.493f , -239.705f , 247.015f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 0.741f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , -8.757f , 0 )	// 基本仰角
+		RotateCamera( 0 , 57.678f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.001f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		Wait(FADE_FAST)
+	}
+	else
+	{
+		Wait(30)
+	}
+
+	//Wait(130)
+
+	//ChangeSubAnimation("Austen", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+	//Look("Austen", 0.0f, 0.0f)	// うつむく
+	//Wait(80)
+
+	//	身なりのいい青年（ボイス付き）
+	SetName("身なりのいい青年")
+	TalkPopup("Austen",0,2,0,0,0)
+	{
+		"#4896V#012e#000m改めて──僕はグリア貴族の"
+		"オースティンという。\p"
+		"#4897V#000e#080m後世に名を残す偉大なる芸術家の名だ。"
+		"ぜひとも覚えておくといい。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	Wait(10)
+
+	// カットX -----------------------------------------------------------------------------------------
+
+	CrossFade(FADE_CROSS)
+	
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+		
+	MoveCameraAt( 0 , -436.248f , -240.302f , 246.927f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.001f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.730f , 0 )	// 基本仰角
+	RotateCamera( 0 , 295.878f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.001f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	Wait(FADE_CROSS)
+
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#000e#000mほう、芸術家だと？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("Austen", "SAHAD")
+
+	ChangeAnimation( "Austen" , "ANI_EV_TEBURI", -1 , 1 )
+	PlayVoice(Y8V_4857,"Austen",100)	//ああ（平常のテンション。あらゆる場面で使用）
+	TalkPopup("Austen",0,1,0,0,0)
+	{
+		"#000e#000mああ、絵画に彫刻に詩歌・劇作、"
+		"音楽以外なら何でも任せてくれ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "LAXIA" , "ANI_EV_HOHOKAKI", -1 , 1 )
+
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#011e#000mよく分かりませんが……"
+		"音楽だけは専門外なんですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookReset("Austen")
+	
+	ChangeAnimation( "Austen" , "ANI_EV_RYOTEKOSI_S", -1 , 1 )
+	TalkPopup("Austen",0,1,0,0,0)
+	{
+		"#011e#000m──何はともあれ漂流村だったか。\p"
+		"この僕が直々に"
+		"力を貸してやろうではないか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Austen" , "ANI_EV_RYOTEKOSI_E", -1 , 1 )
+
+	TalkPopup("Austen",0,1,0,0,0)
+	{
+		"#012e#000mさあ、そうと決まればさっさと行くか。"
+		"それでは君たち、また会おう！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	WaitAnimation2( "Austen" , -1, 1, "ANI_EV_RYOTEKOSI_E",  0)
+
+	LookReset("Austen")
+	TurnTo("Austen" , -434.60f,-231.84f,245.17f, 10.0f )
+	ExecuteCmd( 1, MoveTo, "Austen",-434.65f,-228.26f,245.01f, 0.1f, 0.3f)
+	Wait(15)
+
+	//　　オースティンが画面外へ歩き去っていく。
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -435.541f , -241.173f , 246.828f , 90 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 2.171f , 90 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 0.640f , 90 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 315.320f, 90 )
+
+	//MoveCameraAt( 0 , -435.541f , -241.173f , 246.828f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 2.171f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 0.640f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 315.320f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 50.001f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+//	WaitThread(1)
+
+	TalkPopup("RICOTTA",0,1,0,0,0)
+	{
+		"#061e#000m……あいつ、大丈夫か？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("LAXIA",0,1,0,0,0)
+	{
+		"#012e#000mまあそれなりに腕は立つようですし"
+		"心配はないのではないかと。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(10)
+
+	PlaySE(SE_PARTYIN, 100, 0, 0, 0, 1.0f, 0)	//仲間に加わる
+
+	//	システムテキスト
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#8S"
+		"#-1W#4Cオースティンが漂流村に参加することになった！#10W" 
+		"#8S"
+	}
+	Wait(10)
+	WaitPrompt()
+	WaitCloseWindow()
+
+	StopBGM(60)
+
+	//　　イベント終了、操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	StopThread(1)
+	
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3107:Join_Austen_B_ED")
+}
+function "Join_Austen_B_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")	
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	//SetFlag( GF_SUBEV_JOIN_AUSTEN, 1 )			// オースティンと合流した
+	SetFlag(SF_BOSS_BATTLE, 0)		//ボス戦終了
+	SetFlag(GF_TBOX_DUMMY104,1)
+	//SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )			//オースティン合流	名声値+2
+	CallFunc("rng:0418")
+
+	CallFunc( "system:Get_DrifterRescue" )		//漂流村の合流トロフィー判定
+
+	// 人物メモを切り替える・オースティン（１）	合流
+	//SetDiaryCharaFlag( DRCHA_AUSTEN, DRCHA_FLAG_OPEN, 1 )	//★人物メモ：合流時に登録（オースティン）
+	//SetDiaryCharaFlag( DRCHA_AUSTEN2, DRCHA_FLAG_OPEN, 0 )	//★人物メモ：合流時に登録（オースティン）
+
+	CallFunc("mp3107:init")
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_F014, MARKER_PERSON_AUSTEN, 0,0)		//漂流者：オースティン
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-432.68f,-239.60f,245.40f)
+	Turn("LEADER",-81.77f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	
+	SetChrPos("Austen" , -100000.00f  , 0.00f ,0.00f )	// オースティンを画面外に移動
+	Wait(1)
+
+	//カメラ位置復帰
+	//MoveCameraAt( 0 , 0.0f , 0.0f , 0.0f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 0.0f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 0.0f , 0 )		// 基本仰角
+	//RotateCamera( 0 , 0.0f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 0.0f , 0 )			// 視野角
+	//SetCameraZPlane( 0 , 0.0f )					// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )					// ロール回転
+
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	PlayBGM(BGM_3107, 0)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
