@@ -17,6 +17,21 @@ function "startParameters"
     SetLevel(RICOTTA,1)
     SetLevel(HUMMEL,1)
     SetLevel(DANA,1)
+    //Let's set the flags for checking a bunch of removeable obstacles so the players don't have to click on them twice
+    SetFlag(GF_SUBEV_1111_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_2101_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_1131_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_1120_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_1117_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_2105_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_1116_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_1109_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_6102_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_1132_CHECKED_SAND,1)
+    SetFlag(GF_SUBEV_4110_CHECKED_LADDER,1)
+    SetFlag(GF_SUBEV_6107_CHECKED_SAND,1)
+    SetFlag(GF_SUBEV_6362_CHECKED_PILLAR,1)
+    SetFlag(GF_SUBEV_2104_CHECKED_SAND,1)
     SetFlag( GF_SUBEV_1107_CHECKED_BRIDGE , 1 )  //Checked broken bridge
     SetFlag( GF_03MP1107_REPAIR_ROPE , 1 )      //Had conversation with Ricotta about bridge
     //preset system flags for convenience 
