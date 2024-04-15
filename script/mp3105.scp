@@ -1,0 +1,1702 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 3105：
+//-------------------------------------------
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp3105" , 0 )
+	MapHide( "@BG2_mp3106_alpha" , 0 )
+	MapHide( "@BG2_mp3108_alpha" , 0 )
+	MapHide( "BG2_groundfog_main" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW2" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SE1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SE2" , 0 )	//遠景の板フォグを消す
+
+
+	MapHide( "camp_fire1" , 0)
+	MapHide( "camp_fire2" , 0)
+	MapHide( "camp_smoke" , 0)
+
+	EventAreaEnable( "evb2_M03S100" , 0 )
+	//EventAreaEnable("Stopper_S000", 0)
+	EventAreaEnable( "ST_3105t1_3109" , 0 )	//【ストッパー：3105t1⇒3109】
+	EventAreaEnable( "ST_3105t1_4321" , 0 )	//【ストッパー：3105t1でジャンダルム方面に行けない】
+	EventAreaEnable( "evb2_SubEV_AreaName_3105t3", 0)	//【エリアカメラ演出：ジャンダルム】t3
+	EventAreaEnable("evb2_SubEV_AreaName_3105", 0)		//【エリアカメラ演出：ジャンダルム】
+	EntryOn(00,1)	//【ストッパー：3105t1⇒3109】一時的にOFFにするため、通常はONになるように処理を追加しました
+
+	if( FLAG[SF_EVENT_ON] ){
+
+	// イベント発生制御
+		if (!FLAG[GF_03MP3105_MAKE_CAMP]){			// 野営をしていない
+			//MapAnime( "camp_all" , off )	//キャンプ未設置
+			//SetChrPos("LP_tent",-100000.00f,0.00f,0.00f)	//キャンプLP消す
+			//SetChrPos("LP_cook",-100000.00f,0.00f,0.00f)	//料理LP消す
+			SetFlag(GF_03MP3105_MAKE_CAMP,1)
+			
+			EventAreaEnable( "evb2_M03S100" , 1 )
+			EventAreaEnable("Stopper_S000", 1 )
+		}
+
+		if (!FLAG[GF_SUBEV_AREANAME_3105]){			// 初回mp3105/mp3105t3からジャンダルムに入ろうとする
+
+			EventAreaEnable("evb2_SubEV_AreaName_3105t3", 1)
+			EventAreaEnable("evb2_SubEV_AreaName_3105", 1)
+		}
+
+	// ストッパー制御
+		if (FLAG[GF_03MP3104_CROSS_BRIDGE] &&		//大木の橋を渡り終える
+			!FLAG[GF_03MP3105_MAKE_CAMP] )			//ジャンダルム麓の野営地を出発する
+		{
+			//EventAreaEnable( "ST_3105t1_3109" , 1 )	//【ストッパー：3105t1⇒3109】
+			//EventAreaEnable( "ST_3105t1_4321" , 1 )	//【ストッパー：3105t1でジャンダルム方面に行けない】
+			//EntryOn(00,0)	//【ストッパー：3105t1⇒3109】が有効の間はOFF
+		}
+	}
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_3109.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//古代種の抜け道
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+function "LP_tent"
+{
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+//	//モーションが終了するまで待機
+//	WaitAnimation2( "PLAYER1" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "PARTYALL" , 0 )
+//	StopEffect(-1,PARTYALL,1)
+//	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	if(FLAG[GF_NIGHTHUNT] && FLAG[GF_QS505_GET_HERB_ALL] && !FLAG[GF_QS505_EVENT_2] )
+	{
+		//　　月光草を５つ手に入れている状態で
+		//　　ジャンダルム入口、ジャンダルム下山ルート出口から
+		//　　ダンジョンの外へ出ようとするとストッパーが変化する。
+
+		TalkPopup("LAXIA",0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#000e#000mアドル、今夜は"
+			"リコッタちゃんのお家で休みましょう。\p"
+			"ジャンダルムの中腹にあったはずです。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	}
+	else
+	{
+		//選択肢
+		SetFlag(TF_MENU_SELECT,0)
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(1,"テントで休む")
+
+		if(FLAG[GF_OPEN_GENSD_T2])
+		{
+			if(!FLAG[GF_NIGHTHUNT])		//夜間探索を開始していない
+			{
+				MenuAdd(2,"夜間探索を行う")
+			}
+			else
+			{
+				MenuAdd(3,"夜間探索を終了する")
+			}
+		}
+		MenuAdd(4,"やめる")	
+		MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , -1)
+		WaitMenu(0)
+		MenuClose(10,0)
+
+		
+		if (FLAG[TF_MENU_SELECT] == 1)
+		{
+			SetWork(WK_BGMLIMIT, 1)
+			FadeOut(FADE_BLACK,FADE_NORMAL)
+			WaitFade()
+
+			SaveCamera()
+
+			PlaySE(SE_ENV_FOREST_4, 20, 1, 1000, 0, 1.0f, 0)	//夜の虫
+			PlaySE(SE_ENV_WIND_2, 40, 1, 1000, 0, 1.0f, 0)
+			SetEnvSEPlayState(3105001, 0)
+			SetEnvSEPlayState(3105002, 0)
+
+			CallFunc("system:TentVoice_Sleep")
+		
+			PlaySE( SE_HOTEL_JINGLE , 100 , 0,  0, 0, 1.0f, 0)	//ジングル
+			StopSE(SE_ENV_FOREST_4, 2000)		//虫の音止める
+			StopSE(SE_ENV_WIND_2, 2000)
+			SetEnvSEPlayState(-1, 0)	//環境SE全停止
+		
+			Wait(120)
+		
+			//テント回復処理・リトライセーブ
+			CallFunc("system:camp_rest")
+
+			PlaySE(SE_HEAL, 100, 0, 0, 0, 1.0f, 0)
+
+			TalkPopup(UNDEF,0,5,0,0,0)
+			{
+				"#8S"
+				"#-1W#4C全員のＨＰ、ＳＰとＥＸＴＲＡゲージが全快した！#10W"
+				"#8S"
+			}
+			Wait(10)
+			WaitPrompt()
+			WaitCloseWindow()
+		
+			Wait(15)
+
+			SetChrPos("LEADER",69.43f,-260.98f,187.17f)
+			Turn("LEADER",-24.87f,360.0f)
+			ResetPartyPos()
+			ResetFollowPoint()
+
+			MoveCameraAt( 0 , 69.431f , -260.980f , 189.012f , 0 )	// 注視点
+			ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+			ChangeCameraElevation( 0 , 6.207f , 0 )	// 基本仰角
+			RotateCamera( 0 , -154.024f , 0 )				// 角度
+			ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			SetCameraZPlane( 0.100f , 900.000f )			// ZPlane
+			RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+			CallFunc("system:camera_reset")
+
+
+			SetWork(WK_BGMLIMIT, 0) 	
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+			SetEnvSEPlayState(-1, 1)	//環境SE復帰
+
+			FadeIn(FADE_BLACK,FADE_FAST)
+			//WaitFade()
+
+		}
+		else if (FLAG[TF_MENU_SELECT] == 2)
+		{
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+
+			//テント回復処理・リトライセーブ
+			CallFunc("system:camp_rest")
+			
+			SetFlag(GF_NIGHTHUNT,1)		//夜間探索開始
+			SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+			LoadArg("map/mp4342t2/mp4342t2.arg")
+			EventCue("mp4342t2:NightHunt_Start")
+
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+		}
+		else if (FLAG[TF_MENU_SELECT] == 3)
+		{
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+
+			//テント回復処理・リトライセーブ
+			CallFunc("system:camp_rest")
+			
+			SetFlag(GF_NIGHTHUNT,0)		//夜間探索終了
+			SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+			LoadArg("map/mp3105/mp3105.arg")
+			EventCue("mp3105:NightHunt_End")
+
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+		} else {
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+		}
+	}
+}
+
+//== == == == == == == == == == == == == == == == == == == == == == == ==
+//【エリアカメラ演出：ジャンダルム】
+//== == == == == == == == == == == == == == == == == == == == == == == ==
+//
+
+//初回mp3105 / mp3105t3からジャンダルムに入ろうとすると、
+//坂の途中からカメラが引かれるような自動カメラ処理を入れる。
+//
+//エントリに触れる少し手前でイベントを起動。
+//アドルたちがダンジョン内に走り去っていくのを見せつつ
+//カメラを動かし、ジャンダルムを見上げるカメラ。
+//ここでエリア名スプラッシュを表示。
+//
+//演出終了後、ジャンダルム１マップ目から操作許可を戻す。
+
+function "SubEV_AreaName_3105"
+{
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	SetChrWork("PLAYER1", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("PLAYER1", 84.34f, -206.81f, 221.96f)
+	Turn("PLAYER1", 154.19f, 360.0f)
+	ChangeAnimation("PLAYER1", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	SetChrInfoFlag("PLAYER1", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("PLAYER2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("PLAYER2", 86.36f, -207.51f, 221.75f)
+	Turn("PLAYER2", 163.86f, 360.0f)
+	ChangeAnimation("PLAYER2", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER2", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER2", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER2", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	SetChrInfoFlag("PLAYER2", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("PLAYER3", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("PLAYER3", 84.18f, -208.74f, 221.77f)
+	Turn("PLAYER3", 175.06f, 360.0f)
+	ChangeAnimation("PLAYER3", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER3", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER3", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER3", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	SetChrInfoFlag("PLAYER3", INFOFLAG_NOCHRATARI)
+
+	// カメラ
+	MoveCameraAt(0, 82.867f, -203.869f, 226.074f, 0)	// 注視点
+	ChangeCameraDistance(0, 15.125f, 0)		// 基本距離
+	ChangeCameraElevation(0, -2.866f, 0)	// 基本仰角
+	RotateCamera(0, 31.745f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 900.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+	//// 被写界深度の設定
+	//SetDoF(0, LERP_LINEAR, 2.000, 10.000, 1.000, 0.700, 0.500)
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 64.000, 2.000, 0.150, 0.500)
+
+	//-- カット ----------------------------------------------------------
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 84.986f, -214.711f, 229.119f, 150)	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 6.426f, 150)		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 7.286f, 150)	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 7.799f, 150)				// 角度
+
+	ExecuteCmd(1, MoveTo, "PLAYER1", 78.48f, -194.35f, 222.74f, 0.1f, 0.27f)
+	ExecuteCmd(2, MoveTo, "PLAYER2", 79.45f, -193.64f, 222.74f, 0.1f, 0.27f)
+	ExecuteCmd(3, MoveTo, "PLAYER3", 77.66f, -194.92f, 222.74f, 0.1f, 0.25f)
+
+	PlayBGM(BGM_4331, 0)
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+
+	//// 非表示
+	//WaitThread(1)
+	//SetChrInfoFlag("PLAYER1", INFOFLAG_INVISIBLE)
+	//WaitThread(2)
+	//SetChrInfoFlag("PLAYER2", INFOFLAG_INVISIBLE)
+	//WaitThread(3)
+	//SetChrInfoFlag("PLAYER3", INFOFLAG_INVISIBLE)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	//CrossFade(FADE_NORMAL)
+
+	//MoveCameraAt(0, 86.146f, -203.746f, 235.326f, 0)	// 注視点
+	//ChangeCameraDistance(0, 29.026f, 0)		// 基本距離
+	//ChangeCameraElevation(0, -15.485f, 0)	// 基本仰角
+	//RotateCamera(0, 12.427f, 0)				// 角度
+	//ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	//SetCameraZPlane(0.100f, 900.000f)			// ZPlane
+	//RollCamera(0, 0.0f, 0)				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 113.960f, -207.516f, 300.586f, 360)	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 29.026f, 360)		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, -45.023f, 360)	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 37.714f, 360)				// 角度
+
+
+	Wait(200)
+	VisualName("visual/mapname/mn_4331.itp",VN_NAMEMAP,-1,-1,VN_MAPNAME_TIME)//ジャンダルム
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	Wait(100)
+
+	StopThread(1)
+	StopThread(2)
+	StopThread(3)
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+
+	//-- 終了処理 --------------------------------------------------------
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//// 再表示
+	//ResetChrInfoFlag("PLAYER1", INFOFLAG_INVISIBLE)
+	//ResetChrInfoFlag("PLAYER2", INFOFLAG_INVISIBLE)
+	//ResetChrInfoFlag("PLAYER3", INFOFLAG_INVISIBLE)
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ
+//	SetFlag(TF_MAPNAME_SHOWN, 1)				// 地名表示した（テンポラリ）
+	SetFlag(GF_SUBEV_AREANAME_3105, 1)			// 【エリアカメラ演出：ジャンダルム】を見た
+//	SetFlag(GF_MPxxxx_MAP_NAME_NO_DRAW, 0)		// 地名表示制御解除
+
+	CallFunc("mp3105:init")
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	SetFlag(SF_ALLMUTEKI, 0)		//無敵ＯＦＦ
+
+	SetFlag(TF_LOADING_TIPS_OFF, 1)	//NowLoading 時の Tips 表示をカット
+
+	LoadArg("map/mp4331/mp4331.arg")
+	EventCue("mp4331:SubEV_AreaName_3105_Relocate")		// 再配置
+
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+///////////////////////////////////////////////////////////////////////////////
+
+//──────────────────────────────
+//▼ジャンダルム麓に野営地を築く(mp3105)
+//──────────────────────────────
+function "EV_M03S100"		//ジャンダルム麓に野営地を築く
+{
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定	
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 83.07f, -276.10f, 186.17f)
+	Turn("ADOL", 147.84f, 360.0f)
+	ChangeAnimation("ADOL","ANI_WAIT", -1 , 1 )	
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 84.12f, -276.55f, 186.17f)
+	Turn("LAXIA", 148.76f, 360.0f)
+	ChangeAnimation("LAXIA","ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("LAXIA")
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 82.78f, -277.59f, 186.18f)
+	Turn("SAHAD", 143.91f, 360.0f)
+	ChangeAnimation("SAHAD","ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("SAHAD")
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI )
+	
+	//カメラ設定
+	MoveCameraAt( 0 , 81.240f , -272.439f , 189.279f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.439f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.104f , 0 )	// 基本仰角
+	RotateCamera( 0 , 60.152f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 900.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 160.000, 0.000, 0.150, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp3105:EV_M03S100_ED")
+	
+
+//開始処理ここまで-----------------------------------------------
+
+	//　　マップに入ったところでイベント開始。
+	//　　歩いて野営地に入ってくるアドルたち。
+	
+	// カット1 ----------------------------------------------------------------------------------------
+	
+	ExecuteCmd(1, MoveTo, "ADOL", 80.41f, -271.92f, 186.17f, 0.1f, 0.215f)
+	Wait(2)
+	ExecuteCmd(2, MoveTo, "LAXIA", 81.63f, -272.25f, 186.17f, 0.1f, 0.210f)
+	Wait(3)
+	ExecuteCmd(3, MoveTo, "SAHAD", 80.10f, -273.45f, 186.17f, 0.1f, 0.20f)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 80.173f , -272.423f , 187.979f , 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.419f , 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 2.907f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 35.229f , 100 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	// カメラ移動（角度）
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 48.407f , 600 )
+	
+	// 移動待ち
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#000e#000mここは……"
+		"何とか野営できそうな場所ですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+	Look("SAHAD", -20.0f, 0.0f)	// （＾＾）→
+
+	// サハド
+	TalkPopup("SAHAD",0,2,0,0,0) {
+		"#000e#000mこの先はいよいよ“憲兵さん#8Rジャンダルム#R”だな。"
+		"憲兵2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_RYOTESIRI_S", -1, 1 )	// 両手 尻組み
+	LookChr("LAXIA", "ADOL")
+
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#000e#000mふふ、ここでしっかり"
+		"休憩しておいたほうがよさそうです。\p"
+		"アドル、早速設営いたしましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドル頷きモーション後に
+	HeadYes("ADOL" , 1 , 20)
+	Wait(45)
+	
+	//　　画面ブラックアウトして野営地設営ＳＥ。
+	//　　フェードインすると、野営地が完成している状態に。
+
+	// フェードアウト
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+	// 未入力コメント
+//	TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0) {
+//		"#4C◆野営地設営ＳＥ"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+
+	Wait(20)
+	PlaySE(SE_M03S100_01, 100, 0, 0, 0, 1.0f, 0)
+	Wait(50)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+	Wait(30)
+
+	// カメラ停止
+	StopThread(1003)
+	
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3105:EV_M03S100_ED")
+}
+
+function "EV_M03S100_ED"											//イベントスキップ用に終了処理を別のfunctionとして用意します。
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//モンスターを復帰
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+	
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+//	SetWork( WK_BGM , BGM_Nothing )		//◆BGM消す
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+	LoadArg("map/mp3105t2/mp3105t2.arg")
+	EventCue("mp3105:EV_M03S101")
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+function "EV_M03S101"		//夜の野営地
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	ResetStopFlag(STOPFLAG_CINEMA)	//字幕背景消し
+
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	RestoreEventState()
+	SaveCamera()
+
+	//環境初期化＆不要なものを隠す
+	ClearDebris()
+	ResetMotion( "ALL" , 1 )  
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+	
+//	SetWork( WK_BGM , BGM_Nothing )		//◆BGM消す
+
+	//キャラクター初期化
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL", 68.01f, -264.27f, 187.17f)
+	Turn("ADOL", -78.86f, 360.0f)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	ChangeAnimation( "ADOL" , "ANI_EV_SIT_G", -1 , 1 )
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	SetChrPos("LAXIA", 68.20f, -263.02f, 187.17f)
+	Turn("LAXIA", -41.08f, 360.0f)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	ChangeAnimation( "LAXIA" , "ANI_EV_SIT_G", -1 , 1 )
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI )
+	SetChrPos("SAHAD", 68.69f, -265.59f, 187.17f)
+	Turn("SAHAD", -171.00f, 360.0f)
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_SMILE,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_SMILE,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	ChangeAnimation( "SAHAD" , "ANI_EV_SIT_G", -1 , 1 )
+
+	//野営地マップ制御
+	MapAnime( "camp_all" , on )	//キャンプ設置
+	MapHide( "camp_fire1" , 1)
+	MapHide( "camp_fire2" , 1)
+	MapHide( "camp_smoke" , 1)
+	ChangeAnimation( "chkpt" , "ANI_FIRST", 0 , 1 )	//水晶エフェクト消す
+
+	//カメラ設定
+	MoveCameraAt( 0 , 70.796f , -267.919f , 190.649f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.380f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.532f , 0 )	// 基本仰角
+	RotateCamera( 0 , 22.421f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 60.000, 0.000, 0.150, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp3105:EV_M03S101_ED")
+
+//開始処理ここまで-----------------------------------------------
+	
+	//　　フェードインすると、野営地が完成している状態に。
+	//　　焚火を囲んで座っているアドル、サハド、ラクシャ。
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	PlayBGM(BGM_EVENT_005, 0)
+	SetEnvSEPlayState(-1, 1)	//環境SE復帰
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 70.159f , -268.516f , 188.569f, 110 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 4.380f , 110 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -8.970f , 110 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 39.323f , 110 )
+	
+	LookChr("SAHAD", "ADOL")
+	LookChr("LAXIA", "SAHAD")
+	LookChr("ADOL", "SAHAD")
+	
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	Wait(10)
+
+	// カットX ----------------------------------------------------------------------------------------
+	
+	CrossFade(FADE_NORMAL)
+
+	MoveCameraAt( 0 , 68.582f , -264.189f , 187.872f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.420f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.764f , 0 )	// 基本仰角
+	RotateCamera( 0 , 171.843f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 68.434f , -263.972f , 187.872f , 600 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.420f , 600 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.331f , 600 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 145.487f , 600 )
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	// サハド
+	TalkPopup("SAHAD",0,2,0,0,0) {
+		"#000e#000mそれにしても空飛ぶ"
+		"デカい古代種にもたまげたが……\p"
+		"あの小型のヤツらも"
+		"思った以上にやっかいだぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("LAXIA", "ANI_EV_SG_TEBURI", -1, 1)
+
+	// ラクシャ
+	TalkPopup("LAXIA",0,1,0,0,0) {
+		"#000e#000mカトリーンさんの武器でも"
+		"攻撃が通用しませんでしたね……\p"
+		"どうやら彼らは研究で分かっている以上に"
+		"強靭な身体をもっているようです。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation("SAHAD", "ANI_EV_SG_TEBURI", -1, 1)
+
+	// サハド
+	TalkPopup("SAHAD",0,2,0,0,0) {
+		"#000e#000mこの先、あんなのばかり"
+		"出てきたら正直ツライところだな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(10)
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	
+	// カメラ
+	MoveCameraAt( 0 , 68.235f , -264.145f , 187.872f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.740f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.819f , 0 )	// 基本仰角
+	RotateCamera( 0 , 14.278f , 0 )				// 角度
+	ChangeCameraPers( 0 , 35.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 位置調整・表情・モーション
+	SetChrPos("ADOL", 68.01f, -264.27f, 187.17f)
+	Turn("ADOL", -107.28f, 360.0f)
+
+	LookSpd("ADOL" , 0.09 , 0.09 , 0.09 )
+	LookChr("ADOL", "LAXIA")
+	
+	// 非表示・再表示
+	SetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 非表示
+	
+	// カメラ移動
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 40.061f , 900 )
+	
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	//選択肢
+	//「引き返すかい？
+	//　行けるところまで行こう
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"引き返すかい？")
+	MenuAdd(2,"行けるところまで行こう")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	// 手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_SG_TEBURI", -1, 1 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(20)
+
+	LookSpd("LAXIA" , 0.09 , 0.09 , 0.09 )
+	LookChr("LAXIA", "ADOL")
+
+	// ─────────────────────────
+	//⇒引き返すかい？
+	if (FLAG[TF_MENU_SELECT] == 1){
+		
+		//ラクシャ
+		TalkPopup("LAXIA",0,2,0,0,0) {
+			"#091e#080m……そう言いながらも目は全く"
+			"引き返すつもりがなさそうですが？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+	}
+	//⇒行けるところまで行こう
+	if (FLAG[TF_MENU_SELECT] == 2){
+
+		// ラクシャ
+		TalkPopup("LAXIA",0,2,0,0,0) {
+			"#011e#080mふう、そうおっしゃると思いました。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//─────────────────────────
+
+	//ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#012e#000m古代種は無理に倒そうとせず、"
+		"先へ進んだほうがいいかもしれません。\p"
+		"#000e#000m明日からはいよいよ"
+		"あのジャンダルムを登ることになります。\p"
+		"#011e#000mとにかく十分慎重に"
+		"行動するよう心がけましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	HeadYes("ADOL", 1, 25)	// キャラ, うなずき回数, 速さ
+	Wait(40)
+
+	SetEnvSEPlayState(3105103, 0)
+
+	//　　画面一旦フェードアウト。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	// カメラ停止
+	StopThread(1003)
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3105:EV_M03S101_ED")
+}
+
+function "EV_M03S101_ED"
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//モンスターを復帰
+	//ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+	//フラグ処理
+	
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+	
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+	
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	PlayBGM(BGM_EVENT_005, 0)
+	//SetFlag(SF_NOCHANGEBGM, 1)
+
+	EventCue("mp3105:EV_M03S102")
+
+//終了処理ここまで----------------------------------------------------
+
+}
+
+
+function "EV_M03S102"		//夜の野営地2
+//開始処理ここから----------------------------------------------------
+{
+	SetStopFlag(STOPFLAG_EVENT)
+
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//野営地マップ制御
+	MapAnime( "camp_all" , "on" )	//キャンプ設置
+	MapHide( "camp_fire1" , 0)
+	MapHide( "camp_fire2" , 0)
+	MapHide( "camp_smoke" , 0)
+	ChangeAnimation( "chkpt" , "ANI_FIRST", 0 , 1 )	//水晶エフェクト消す
+
+	//カメラ設定
+	MoveCameraAt( 0 , 72.699f , -260.201f , 194.949f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 8.920f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -7.198f , 0 )	// 基本仰角
+	RotateCamera( 0 , 38.010f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 900.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 30.000, 0.000, 0.150, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	PlayBGM(BGM_EVENT_005, 0)
+
+	//スキップ許可
+	SetSkipScript("mp3105:EV_M03S102_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//　　フェードインして焚火が消えた野営地周辺を映す。
+	//　　虫の声と各キャラの寝言が聞こえて暗転。
+
+	// カットX ----------------------------------------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 80.772f , -257.122f , 188.748f , 360 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 8.920f , 360 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -6.339f , 360 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 42.360f , 360 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	Wait(20)
+
+	StopBGM(120)
+
+	CallFunc("system:TentVoice_Sleep")
+
+	Wait(20)
+	PlaySE( SE_HOTEL_JINGLE , 100 , 0,  0, 0, 1.0f, 0)	//ジングル
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+	
+	//　　画面フェードアウト。
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	
+	Wait(30)
+	Wait(30)
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3105:EV_M03S102_ED")
+}
+
+function "EV_M03S102_ED"
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//モンスターを復帰
+	//ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+	//フラグ処理
+	
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+	
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+	StopBGM(30)
+	SetFlag(SF_NOCHANGEBGM, 1)
+
+	LoadArg("map/mp6402m/mp6402m.arg")
+	EventCue("mp6402m:EV_M03S110")	// NEXT：[M03S110][ダーナ② サライとの別れ]
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+//終了処理ここまで----------------------------------------------------
+
+}
+
+//──────────────────────────────
+//▼ジャンダルム麓の野営地を出発する(mp3105)
+//──────────────────────────────
+function "EV_M03S120"			//ジャンダルム麓の野営地を出発する
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//野営地マップ制御
+	MapAnime( "camp_all" , "on" )	//キャンプ設置
+	MapHide( "camp_fire1" , 0)
+	MapHide( "camp_fire2" , 0)
+	MapHide( "camp_smoke" , 0)
+
+	//キャラ初期状態の設定				
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 72.60f, -265.44f, 187.17f)
+	Turn("ADOL", 59.00f, 360.0f)
+	ChangeAnimation("ADOL","ANI_WAIT", -1 , 1 )	
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 71.13f, -265.50f, 187.17f)
+	Turn("LAXIA", -61.95f, 360.0f)
+	ChangeAnimation("LAXIA","ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("LAXIA")
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 71.64f, -266.83f, 187.17f)
+	Turn("SAHAD", -149.63f, 360.0f)
+	ChangeAnimation("SAHAD","ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("SAHAD")
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI )
+	
+	//カメラ設定
+	MoveCameraAt( 0 , 74.152f , -264.871f , 191.630f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 9.320f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -8.164f , 0 )	// 基本仰角
+	RotateCamera( 0 , 50.645f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 80.000, 0.000, 0.150, 0.500)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp3105:EV_M03S120_ED")
+
+		
+//開始処理ここまで-----------------------------------------------
+
+	LookChr("SAHAD", "ADOL")
+	LookChr("LAXIA", "ADOL")
+
+	PlaySE(SE_WHITEOUT, 100, 0, 0, 0, 1.0f, 0)
+	Wait(70)
+
+	//　　画面暗転のまま、
+	PlaySE("SE_SUZUME", 100, 0,  0, 0, 1.0f, 0)		//◆鳥のさえずり
+	SetEnvSEPlayState(-1, 1)	//環境SE
+	Wait(50)
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+	//　　フェードインして、朝日の中、
+	//　　簡易小屋前で向き合っているアドルたち。
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 74.152f , -264.871f , 189.890f , 75 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	// カメラ待ち
+	WaitThread(1000)
+	Wait(10)
+	
+	// カット2 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ
+	MoveCameraAt( 0 , 71.841f , -266.002f , 188.630f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.200f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.015f , 0 )	// 基本仰角
+	RotateCamera( 0 , 75.858f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#000e#000mおはようございます。"
+		"今日からいよいよジャンダルムですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1)
+	Look("SAHAD", -20.0f, 20.0f)	// （＾＾）↑→
+	Wait(15)
+
+	// サハド
+	TalkPopup("SAHAD",0,2,0,0,0) {
+		"#061e#000mゴクリ、あんな高い山に"
+		"果たして本当に登れるのかね……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("LAXIA", "SAHAD")
+	ChangeAnimation("LAXIA", "ANI_EV_UDEGUMI_S", -1, 1)
+
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#000e#000mここから脱出するためです……"
+		"頑張るしかありませんね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookChr("LAXIA", "ADOL")
+	
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#000mさて、念のために"
+		"もう一度確認をしておきますが……\p"
+		"#000m倒せない古代種は深追いしないこと。"
+		"アドル、よろしくて？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("SAHAD" , "ADOL")
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_SAD_CLOSE_E,1)
+
+	//　　アドル、頷きエモーション。
+	LookChr("ADOL", "LAXIA")
+	Wait(15)
+
+	HeadYes("ADOL" , 1 , 25 )
+	Wait(30)
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_TEBURI", -1, 1 )	// 両手腰手振り
+
+	// サハド
+	TalkPopup("SAHAD",0,2,0,0,0) {
+		"#000m頼むから無茶をしないでくれよ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("LAXIA", "ANI_EV_UDEGUMI_E", -1, 1)
+
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#000e#000mさて、それでは参りましょうか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//　　操作許可。
+
+//-- 周辺の地図登録システムメッセージ --------------------------------
+
+	PlaySE(SE_EV_POINT, 100, 0, 0, 0, 1.0f, 0)	//イベントポイント登録
+	Message("#4C周辺のイベントポイントが地図に記された。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp3105:EV_M03S120_ED")
+}
+
+function "EV_M03S120_ED"
+{
+	SetSkipScript("")												//終了処理はスキップ禁止
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//モンスターを復帰
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラクター初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//チェックポイント開放
+	SetCheckPoint(CP_MP3105)
+	DelMapMarker( SMI_WARPPT,PAGE_F007  , -1,68.0f,-270.0f)
+	SetMapMarker( SMI_CHECKED_WARPPT,PAGE_F007 ,-1 ,68.0f,-270.0f,187.0f,68.0f,-270.0f, CP_MP3105, MN_F_MP3105,0)
+	ChangeAnimation( "chkpt" , "ANI_STOP", -1 , 1 )
+
+	//フラグ処理
+	SetFlag(SF_SETRAMSAVE,1)		//リトライセーブ
+	SetFlag(GF_03MP3105_MAKE_CAMP, 1)			// ジャンダルム麓の野営地を出発する
+
+	//マーカーセット
+	DelMapMarker( SMI_SYMBOL,PAGE_F007,MARKER_EV_M03S100, 0, 0)
+
+	SetMapMarker( SMI_SYMBOL, PAGE_MP433x, MARKER_EV_M03S150, 427.57f, -9.42f, 759.63f, 427.57f, -9.42f, MARKER_EV_M03S150, MN_D_MP4341,0)	// ジャンダルムで大型古代種に遭遇
+
+	CallFunc("system:camp_rest")
+	CallFunc("mp3105:init")
+	//EventAreaEnable( "evb2_M03S100" , 0 )
+
+	SetChrPos("LP_tent",66.659f,-264.213f,187.249f)	//キャンプＬＰ設置
+	SetChrPos("LP_cook",69.818f,-264.115f,186.00f)	//料理ＬＰ設置
+
+	//イベント後の再配置位置
+	SetChrPos("PLAYER1",78.99f, -264.94f, 186.17f)
+	Turn("PLAYER1",-22.86f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//#28570修正
+	SetEnvSEPlayState(-1, 1)	//環境SE
+
+	//カメラ位置復帰or初期位置設定
+	MoveCameraAt( 0 , 78.988f , -264.945f , 188.035f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -160.133f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 900.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	CallFunc("system:camera_reset")
+
+	//リトル・パロのボイス
+	CallFunc("system:SetMarkerParoVoice")		//リトルパロのマーカー登録ボイス
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー・ＬＰセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+function "ST_3105t1_3109"
+{
+	//▼GF_03MP3104_CROSS_BRIDGE,		//大木の橋を渡り終える
+	//	～！GF_03MP3105_MAKE_CAMP,		//ジャンダルム麓の野営地を出発する
+	//　　夕方マップに仕掛ける。
+
+//開始処理ここから----------------------------------------------------
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+//開始処理ここまで-----------------------------------------------
+
+	TalkPopup("LAXIA",0,3,0,0,0)
+	{
+		"#000e#000mもう日も暮れそうですね……\p"
+		"アドル、野営できそうな場所を"
+		"探してみませんか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetChrPos("PLAYER1",135.37f,-331.17f,182.71f)
+	Turn("PLAYER1",165.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+function "NightHunt_Stopper"
+{
+
+//開始処理ここから----------------------------------------------------
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+//開始処理ここまで-----------------------------------------------
+
+	if(FLAG[GF_QS505_GET_HERB_ALL] && !FLAG[GF_QS505_EVENT_2] )
+	{
+		//　　月光草を５つ手に入れている状態で
+		//　　ジャンダルム入口、ジャンダルム下山ルート出口から
+		//　　ダンジョンの外へ出ようとするとストッパーが変化する。
+
+		TalkPopup("LAXIA",0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#000e#000mアドル、今夜は"
+			"リコッタちゃんのお家で休みましょう。\p"
+			"ジャンダルムの中腹にあったはずです。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		SetFlag( TF_MENU_SELECT, 0 )
+	}
+	else
+	{
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C夜間探索を終了しますか？",1)
+	}
+	//────────────────────
+	//	⇒はい
+	
+	if(FLAG[TF_MENU_SELECT] == 1)
+	{
+	
+		Wait(30)
+	
+		PlaySE( SE_TUTORIAL , 100 , 0,  0, 0, 1.0f, 0)		//チュートリアル
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{
+			"#7C夜間探索を再開する場合は、"
+			"#7C野営地のテントを調べてください。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		//テント回復処理・リトライセーブ
+		CallFunc("system:camp_rest")
+		
+		SetFlag(GF_NIGHTHUNT,0)		//夜間探索終了
+		SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+		LoadArg("map/mp3105/mp3105.arg")
+		EventCue("mp3105:NightHunt_End")
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	else
+	{
+		//　　暗転後、鳥のさえずりSEにを再生しつつ
+		//　　朝の野営地で暗転明けて操作許可。
+		//	⇒いいえ
+
+
+		//　　その場で操作許可。
+		//────────────────────
+
+	//終了処理ここから----------------------------------------------------
+		CrossFade(FADE_CROSS)
+
+		SetChrPos("LEADER",131.85f,-329.00f,182.70f)
+		Turn("LEADER",152.10f,360.0f)
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		WaitFade()
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	//終了処理ここまで----------------------------------------------------
+	}
+}
+function "NightHunt_End"
+{
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+	
+	SetChrPos("LEADER",69.43f,-260.98f,187.17f)
+	Turn("LEADER",-24.87f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	MoveCameraAt( 0 , 69.431f , -260.980f , 189.012f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.207f , 0 )	// 基本仰角
+	RotateCamera( 0 , -154.024f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 900.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+//	WaitFade()
+//
+//	PlaySE( SE_TUTORIAL , 100 , 0,  0, 0, 1.0f, 0)		//チュートリアル
+//	//	ナレーション
+//	TalkPopup(UNDEF,0,5,0,0,0)
+//	{
+//		"#-1W#4C夜間探索を再開する場合は"
+//		"#-1W#4C野営地のテントを調べてください。#10W"
+//	}
+//	Wait(10)
+//	WaitPrompt()
+//	WaitCloseWindow()
+//
+//	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}
+
+//	================================================
+//	【ストッパー：3105t1でジャンダルム方面に行けない】
+//	================================================
+function "ST_3105t1_4321"
+{
+	//▼GF_03MP3104_CROSS_BRIDGE,		//大木の橋を渡り終える
+	//	～！GF_03MP3105_MAKE_CAMP,		//ジャンダルム麓の野営地を出発する
+	//　　夕方マップに仕掛ける。
+	//　　3105t1　115.64f	-281.09f	188.67f	165.00f付近でストッパー
+
+//開始処理ここから----------------------------------------------------
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+//開始処理ここまで-----------------------------------------------
+
+	TalkPopup("LAXIA",0,3,0,0,0)
+	{
+		"#000e#000mもう日も暮れそうですね……\p"
+		"アドル、野営できそうな場所を"
+		"探してみませんか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetChrPos("PLAYER1",118.46f,-285.01f,187.03f)
+	Turn("PLAYER1",-19.92f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
