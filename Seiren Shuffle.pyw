@@ -14,9 +14,10 @@ def buttons(inpt):
     if inpt == 'Patch Files':
         cleanChests()
         miscFixes()
-        app.setLabel("status", "Patch Complete")
+        app.okBox("Task Complete", "Patch Complete!")
 
     elif inpt == 'Generate Seed':
+        parameters.getSeed(app.getEntry("Seed#: "))
         parameters.getGoal(app.getOptionBox("Goal: "),app.getEntry("Goal Count: "))
         parameters.getLuckyChecks('big',app.getEntry("Big Lucky Checks: "))
         parameters.getLuckyChecks('med',app.getEntry("Medium Lucky Checks: "))
@@ -25,7 +26,7 @@ def buttons(inpt):
         parameters.getProgressionMods(app.getOptionBox("Jewel Trade Items: "),app.getOptionBox("Fish Trades: "),app.getOptionBox("Discoveries: "),app.getOptionBox("Map Completion: "),app.getOptionBox("Food Trades: "),app.getCheckBox("dogiIntercept"))
         parameters.getIntRewards(app.getCheckBox("intRewards"))
         rngPatcherMain(parameters) 
-        app.setLabel("status", "Seed Generation Complete")
+        app.okBox("Task Complete", "Seed Generation Complete!")
         
     elif inpt == 'New Seed':
         seed=int(random.random()*pow(10,16))
@@ -96,7 +97,6 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.stopLabelFrame()
 
     app.startFrame("commands",6,0)
-    app.addEmptyLabel("status",0,1)
     app.setSticky("ne")
     app.addButtons(['Patch Files', 'Generate Seed'], [buttons, buttons],0,0)
     app.stopFrame()
