@@ -62,7 +62,7 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.setSticky("NW")
     app.stretch = "column"
     app.addLabelOptionBox("Jewel Trade Items: ", ["None","Jewel Trades Costing 1","Jewel Trades Costing <= 2","Jewel Trades Costing <= 3","Jewel Trades Costing <= 10","All"],1)
-    app.setOptionBox("Jewel Trade Items: ", "All")
+    app.setOptionBox("Jewel Trade Items: ", "Jewel Trades Costing <= 10")
     app.stopFrame()
     app.startFrame("progression placement modifiers2",4,0)
     app.setSticky("NEW")
