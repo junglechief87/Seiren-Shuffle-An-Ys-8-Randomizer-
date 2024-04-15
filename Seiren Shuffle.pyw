@@ -18,7 +18,7 @@ def buttons(inpt):
 
     elif inpt == 'Generate Seed':
         parameters.getSeed(app.getEntry("Seed#: "))
-        parameters.getGoal(app.getOptionBox("Goal: "),app.getEntry("Goal Count: "))
+        parameters.getGoal(app.getOptionBox("Goal: "),app.getScale("Goal Count: "))
         parameters.getLuckyChecks('big',app.getEntry("Big Lucky Checks: "))
         parameters.getLuckyChecks('med',app.getEntry("Medium Lucky Checks: "))
         parameters.getLuckyChecks('small',app.getEntry("Small Lucky Checks: "))
@@ -44,10 +44,15 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.stopFrame()
 
     app.startFrame("goalFrame",1,0,0)
-    app.setSticky("w")
+    app.setSticky("ew")
     app.addLabelOptionBox("Goal: ", ["Find Crew"],1,0,0)
-    app.addLabelEntry("Goal Count: ",1,1,0)
-    app.setEntry("Goal Count: ",parameters.numGoal)
+    app.addScale("Goal Count: ",1,1,3)
+    app.setScaleIncrement("Goal Count: ",1)
+    app.showScaleValue("Goal Count: ",True)
+    app.showScaleIntervals("Goal Count: ",5)
+    app.setScaleLength("Goal Count: ", 10)
+    if app.getOptionBox("Goal: ") == "Find Crew":
+        app.setScaleRange("Goal Count: ",1,29,parameters.numGoal)
     app.stopFrame()
 
     app.startLabelFrame("Shuffle Locations",2,0,0)
@@ -57,16 +62,13 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.setCheckBox("party", ticked=True)
     app.stopLabelFrame()
 
+    
     app.startLabelFrame("Progression Placement Modifiers")
     app.startFrame("progression placement modifiers1",3,0)
-    app.setSticky("NW")
-    app.stretch = "column"
     app.addLabelOptionBox("Jewel Trade Items: ", ["None","Jewel Trades Costing 1","Jewel Trades Costing <= 2","Jewel Trades Costing <= 3","Jewel Trades Costing <= 10","All"],1)
     app.setOptionBox("Jewel Trade Items: ", "Jewel Trades Costing <= 10")
     app.stopFrame()
     app.startFrame("progression placement modifiers2",4,0)
-    app.setSticky("NEW")
-    app.stretch = "column"
     app.addLabelOptionBox("Fish Trades: ", ["None","1","2","3","4","5","6"],1)
     app.setOptionBox("Fish Trades: ", "6")
     app.addLabelOptionBox("Food Trades: ", ["None","1","2","3","4","5","6"],2)
@@ -80,12 +82,8 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.stopFrame()
     app.stopLabelFrame()
     
-    app.setSticky("nw")
     app.startLabelFrame("Speed Hacks",5,0)
-    app.stretch = "column"
-    app.setSticky("nw")
     app.addLabel("luckyChecks","Lucky Checks:",0)
-    app.setSticky("nw")
     app.addLabelNumericEntry("Big Lucky Checks: ",1)
     app.setEntry("Big Lucky Checks: ",7)
     app.addLabelNumericEntry("Medium Lucky Checks: ",2)
@@ -97,7 +95,6 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.stopLabelFrame()
 
     app.startFrame("commands",6,0)
-    app.setSticky("ne")
     app.addButtons(['Patch Files', 'Generate Seed'], [buttons, buttons],0,0)
     app.stopFrame()
 
