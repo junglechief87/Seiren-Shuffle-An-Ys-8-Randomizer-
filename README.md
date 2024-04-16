@@ -23,7 +23,7 @@ The is the unique identifier for the randomization of your playthrough. Seeds wi
 ### Goal:
 This sets the goal for your seed and the required amount. The goal and the required number are used to determine when the player will gain access to the Selection Sphere, the game's final room that leads to the final boss. Right now the only goal in the rando finding castaways and the required amount is how many that need to be found before the selection sphere unlocks. More goals are planned post 1.0.
 
-###Shuffle Locations:
+### Shuffle Locations:
 **Shuffle Castaways**: This sets whether or not the castaways, the other people stranded on the island that you're searching for that aren't party members, will be included in the shuffle. With this off they will be acquired in their original locations. (Note the rando alters the original game behavior so you never lose castaways regardless of this setting).
 **Shuffle Party**: This sets whether or not the part members will be included in the shuffle. With this off they will be acquired in their original locations. (Note the rando alters the original game behavior so you never lose party members regardless of this setting).
 
