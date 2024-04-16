@@ -4,13 +4,13 @@ Ys 8 is a game about an adventurer, Adol, who gets stranded on a deserted Island
 ## Installation
 
 Installation should be pretty simple. 
-- Download the source files from the most recent release then extract the contents to your root Ys 8 folder. For most the root will be somewhere around "SteamLibrary\steamapps\common\Ys VIII Lacrimosa of Dana" on whatever drive your steam library is placed. 
-- (Note that before this next step you might want to copy your Ys 8 "Scripts" and "Maps" folders as those are going to be edited heavily during installation of the rando and you'll need to do a fresh install to return the game to normal functionality otherwise.) Once the archive is extracted grab the contents from the archive, you should be under the folder "Seiren-Shuffle-An-Ys-8-Randomizer" and see multiple other folders like "Randomizer" and "Shared" on your screen. Select all the contents from this folder and move them to the Ys 8 root directory. This is all that you should see to copy:
+1. Download the source files from the most recent release then extract the contents to your root Ys 8 folder. For most the root will be somewhere around "SteamLibrary\steamapps\common\Ys VIII Lacrimosa of Dana" on whatever drive your steam library is placed. 
+2. (Note that before this next step you might want to copy your Ys 8 "Scripts" and "Maps" folders as those are going to be edited heavily during installation of the rando and you'll need to do a fresh install to return the game to normal functionality otherwise.) Once the archive is extracted grab the contents from the archive, you should be under the folder "Seiren-Shuffle-An-Ys-8-Randomizer" and see multiple other folders like "Randomizer" and "Shared" on your screen. Select all the contents from this folder and move them to the Ys 8 root directory. This is all that you should see to copy:
 ![example](https://i.imgur.com/qeWkQ1k.png)
-- Select yes to overwrite any files it prompts you on.
-- Once this step is finished the rando gui can be launched by simply selecting the "Seiren Shuffle.pyw".
-- Before generating a seed the first thing that should be done is clicking the "Patch Files"(This only needs to be done during the first time you're running the randomizer), this will do another round of file edits to the base game needed for the rando.
-- Once that patch is complete feel free to toy with settings and generate a seed, start the game, then select new game, and you should be good to go.
+3. Select yes to overwrite any files it prompts you on.
+4. Once this step is finished the rando gui can be launched by simply selecting the "Seiren Shuffle.pyw".
+5. Before generating a seed the first thing that should be done is clicking the "Patch Files"(This only needs to be done during the first time you're running the randomizer), this will do another round of file edits to the base game needed for the rando.
+6. Once that patch is complete feel free to toy with settings and generate a seed, start the game, then select new game, and you should be good to go.
 *A note on the edits this makes to the original game - The rando messes with the game's intended structure heavily so loading saves from the vanilla game will have unintended consequences, the saves won't be broken or anything just don't expect your old save files to work as intended while the rando is installed, saves from the rando will work fine.
 
 ## Settings
@@ -24,23 +24,30 @@ This sets the goal for your seed and the required amount. The goal and the requi
 
 ### Shuffle Locations:
 **Shuffle Castaways**: This sets whether or not the castaways, the other people stranded on the island that you're searching for that aren't party members, will be included in the shuffle. With this off they will be acquired in their original locations. (Note the rando alters the original game behavior so you never lose castaways regardless of this setting).
+
 **Shuffle Party**: This sets whether or not the part members will be included in the shuffle. With this off they will be acquired in their original locations. (Note the rando alters the original game behavior so you never lose party members regardless of this setting).
 
 ### Progression Placement Modifiers:
 These are settings that modify how much players may need to do of certain activities other than running around the island and exploring. These settings only affect where progression items will land, other useful non-progression items, could still land in the spots you have turned off.
+
 **Jewel Trade Items**: These are the *Prismatic Jewel* trades at Dina's shop. In order to access these *Dina* must first join the village, I know she's visible in the village on game start but she won't have her shop options yet. Extra Prismatic Jewels have been added to the item pool and are considered for Dina's Jewel locations up to the item that costs 10 Prismatic Jewels. The 25 Jewel location is tied to finding the fishing rod and also having access up to Pangai Plains Night Exploration, this is for Jewel farming. The reason 25 more Jewels weren't added to the item pool was to both avoid flooding the pool completely and to preserve the 25 Jewel location as a "Masochist Location", the default settings use all Jewel locations of 10 or less and there are enough Jewels from checks to buy everything 10 or less. There are 10 Trades total: 4 costing 1 Jewel, 3 costing 2 Jewels, 1 costing 3 Jewels, 1 costing 10 Jewels, and 1 costing 25 Jewels.
+
 **Fish Trades**: These are the rewards the player gets for turning in 4,8,12,16,20, and 24 unique fish to Shoebill. *Shoebill* joining the village is **not** required for these and those large numbers of fish required have been greatly reduced. The 6 rewards are now at 1,2,3,4,5,6 unique fish. The *fishing rod* is required to make these checks.
+
 **Food Trades**: These are the rewards the player gets for turning in 2,4,6,8,10, and 12 unique cooked recipes to Mishy Mishy. The numbers of recipes required has been greatly reduced. The 6 rewards are now at 1,2,3,4,5,6 unique recipes. Access to Gendarme's Midpoint is required to make this check, as well as access to 6 *unique recipes*.
+
 **Map Completion**: These are the rewards given by Euron/Captain Barbaros for filling in the map of Seiren Island. *Euron* joining the village is required to make these checks. The requirements are loosely based on the amount of world access each progression item adds with a generous margin of error in favor of the player and the *Eagle Eye Orb* is considered required for percents 60 or greater. Note that the setting caps at 90%. Logically progression can never land at 100% as 100% access to the island would necessitate having all progression items.
+
 **Discoveries**: This is only two rewards, so both are on by default. While finding all 24 would be a lot, the odds progression ends up here are low and most of the discoveries are both along the way and useful for getting around the island, they open up new fast travel spots. So all 24 are still required for the second reward with 12 required for the first, *Austin* joining the village is also required.
+
 **Dogi Intercept Rewards**: Dogi gives out 5 rewards for completing specific intercept stages. They are at stages 2,3,5,7, and 9. This setting is only an on or off setting and *Dogi* is *not* required to have joined the village. Most of these rewards aren't really more out of the way than others. The way intercepts unlock is also different in the rando and will be covered more in the "New Progression Items" section. A quick summary is they're now unlocked via *T's Memos* that are found in the world, so specific numbers of those are required to get these rewards: 1 for stages 1-7 and 3 for stage 9. 
 
 ### Speed Hacks:
 These are settings that help with the pacing of the rando. Like most randos Seiren Shuffle is designed to be complete-able in a single sitting, these settings are meant to help with that. Most RPG randos use things like an exp multiplier for this. Seiren Shuffle uses some slightly different methods for pumping the player with experience and tools.
 **Lucky Checks**: This setting makes specific random checks more rewarding by having an additional reward appear after the initial item placed at that check. These additional rewards can be the following: 
--*Big* gives 3 Tempest Elixirs (Raises a character 1 level times 3).
--*Medium* gives 3 Hermit's Remedy (Gives a character 10,000 experience times 3).
--*Small* gives 5 Bitter Remedy (Gives a character 1000 experience times 5).
+- *Big* gives 3 Tempest Elixirs (Raises a character 1 level times 3).
+- *Medium* gives 3 Hermit's Remedy (Gives a character 10,000 experience times 3).
+- *Small* gives 5 Bitter Remedy (Gives a character 1000 experience times 5).
 **Additional Intercept Rewards**: This settings causes intercepts to give out up to four additional rewards after returning to Castaway Village post intercept. Tempest Elixirs are always given out at some rate but there are also rewards to help players upgrade weapons as well as exp and stat increasing food rewards. This setting is highly encouraged as it helps a lot with endgame prep work. 
 
 ## New Progression Items
