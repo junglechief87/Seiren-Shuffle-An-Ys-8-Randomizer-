@@ -1,7 +1,5 @@
 # Seiren-Shuffle-An-Ys-8-Randomizer-
-This is an Ys 8 randomizer. This is a playable beta. 
-
-Ys 8 is a game about and Adventurer, Adol, who gets stranded on a deserted Island of Seiren after a shipwreck and must escape while solving the island's many mysteries. Over the course of the adventure Adol also must find other castaways who got stranded from the same shipwreck and this is where the rando kicks off. The rando starts after the game's prologue and plops Adol right into the heart of Castaway Village, the home base of the survivors on the deserted Island of Seiren. So now it's time to begin exploring and discovering what this island is and find a way to escape it. Let's get into how to set this up.
+Ys 8 is a game about an adventurer, Adol, who gets stranded on a deserted Island of Seiren after a shipwreck and must escape while solving the island's many mysteries. Over the course of the adventure Adol also must find other castaways who got stranded from the same shipwreck and this is where the rando kicks off. The rando starts after the game's prologue and plops Adol right into the heart of Castaway Village, the home base of the survivors on the deserted Island of Seiren. So now it's time to begin exploring and discovering what this island is and find a way to escape it. Let's get into how to set this up.
 
 ## Installation
 
@@ -17,6 +15,7 @@ Installation should be pretty simple.
 
 ## Settings
 ![settings example](https://i.imgur.com/Ig9naCM.png)
+
 ### Seed: 
 The is the unique identifier for the randomization of your playthrough. Seeds with the same settings and number here should generate the same playthrough.
 
