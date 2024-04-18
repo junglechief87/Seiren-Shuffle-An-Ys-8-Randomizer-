@@ -52,7 +52,7 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.showScaleIntervals("Goal Count: ",5)
     app.setScaleLength("Goal Count: ", 10)
     if app.getOptionBox("Goal: ") == "Find Crew":
-        app.setScaleRange("Goal Count: ",1,29,parameters.numGoal)
+        app.setScaleRange("Goal Count: ",1,28,parameters.numGoal)
     app.stopFrame()
 
     app.startLabelFrame("Shuffle Locations",2,0,0)
