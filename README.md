@@ -83,6 +83,7 @@ The player can still access the *enhance* feature for weapons before getting Kat
 - *Alison* is access to the tailor.
 - *Euron* is access to both showing the map for map completion rewards and accessory craft.
 - *Austin* is access to rewards for finding discoveries.
+- *Little Paro* doesn't count toward overall village numbers. In the original game Shoebill and Master Kong didn't either but I used some of the extra Castaway allocations to make them count. However I was one short to make Paro count and Paro is a small bird so it honestly makes sense he wouldn't be help moving large objects. 
 
 ## Final Notes
 At this point everything in the game should be randomized other than quest rewards, which I ultimately decided weren't worth it and flagged most of the quests as completed on startup (a majority of the quest rewards are pretty meh and the quests are mostly about building rep for the "good ending" and the few quests rewards that were decent were added to the shuffle and have the potential to still appear). If you find anything that you think isn't that isn't a quest reward feel free to let me know. Locations generally aren't difficult to add.
