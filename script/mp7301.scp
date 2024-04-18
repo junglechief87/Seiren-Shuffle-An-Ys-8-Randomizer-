@@ -1,0 +1,300 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+
+#include "inc/temp/mp7301.h"
+
+//-------------------------------------------
+// 7301：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	if( FLAG[SF_EVENT_ON] )
+	{
+		if( FLAG[GF_01MP1201_LOOK_MAN] && !FLAG[GF_01MP7301_IN_CAVE] )
+		{
+			SetFlag(GF_01MP7301_IN_CAVE,1)
+			//EventCue("mp7301:EV_M01S090")
+			//SetFlag( GF_MPxxxx_MAP_NAME_NO_DRAW, 1)		// 地名表示制御
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN])
+	{
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 100  )
+		{	
+			//拠点側／ワープ
+			VisualName("visual/mapname/mn_7301.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//水音の洞窟
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_act_0101" , 0 )	//アクティブボイス
+
+	if( FLAG[SF_EVENT_ON] ){
+	// イベント発生制御
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0101] && FLAG[GF_01MP7301_IN_CAVE] && !FLAG[GF_01MP7302_IN_RUIN]){
+			EventAreaEnable( "evb2_act_0101" , 1 )
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0101"
+{
+	if (!FLAG[GF_AVOICE_0101])
+	{
+		EventAreaEnable( "evb2_act_0101" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0101, 1, 0)	//少し進んで外の光が見えた所で
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+function "EV_M01S090"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	SaveEventState()
+	SaveCamera()
+
+	MoveCameraAt( 0 , 0 , 0 , 0 , 0 )	// 着地音消す
+
+	ClearDebris()
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL",-2.60f,0.17f,-0.20f)
+	Turn("ADOL",90.00f,360.0f)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	SetChrPos("LAXIA",-2.10f,-0.87f,-0.13f)
+	Turn("LAXIA",90.00f,360.0f)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	Wait(30)
+
+	//MoveCameraAt( 0 , -4.625f , -0.621f , 1.150f , 0 )	// 注視点
+
+	MoveCameraAt( 0 , -6.350f , -0.350f , 1.150f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.900f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 7.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 75.000f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 25.000 ,0.000 ,0.150 ,0.500)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	SetSkipScript("mp7301:EV_M01S090_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd( 1, MoveTo, "ADOL", -6.60f,0.17f,-0.20f, 0.1f, 0.25f )
+	Wait(5)
+	ExecuteCmd( 2, MoveTo, "LAXIA", -6.10f,-0.87f,-0.13f, 0.1f, 0.25f )
+
+	//ExecuteCmd(1000, ChangeCameraDistance, INTERPOLATE_SPHERE ,  4.700f , 90 )
+	ExecuteCmd(1000, ChangeCameraDistance, INTERPOLATE_SPHERE ,  3.500f , 90 )
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE ,  74.329f , 90 )
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(1000)
+	WaitThread(1001)
+
+	//　　洞窟に入ったところでイベント開始。
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000mここは……\p"
+		"ど、どうやらこの先は"
+		"洞窟になっているようですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr( "ADOL" , "LAXIA" )
+	Wait(5)
+
+	//─────────────────────────
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"慎重に先へ進もう")
+	MenuAdd(2,"怖気ついたのかい？")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)
+	ChangeAnimation( "ADOL" , "ANI_EV_TEBURI_L", -1 , 1 )
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_TEBURI_L",  0)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(10)
+
+	LookChr( "LAXIA" , "ADOL" )
+
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		//	⇒慎重に先へ進もう
+		TalkPopup("LAXIA",0,2,0,0,0)
+		{
+			"#000e#000mえ、ええ……もちろんです！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		//	⇒怖気ついたのかい？
+		TalkPopup("LAXIA",0,2,0,0,0)
+		{
+			"#000e#000mだ、誰に向かって、"
+			"口を利いているのですか？\p"
+			"さ、さっさと奥へ向かいましょう！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//─────────────────────────
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp7301:EV_M01S090_ED")
+}
+
+function "EV_M01S090_ED"
+{
+	SetSkipScript("")
+	RestoreEventState()
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+
+	SetFlag(GF_01MP7301_IN_CAVE,			1)// 洞窟に入った
+	SetFlag( GF_MPxxxx_MAP_NAME_NO_DRAW, 0)		// 地名表示制御
+	CallFunc("mp7301:init" )
+
+	SetChrPos("PLAYER1",-7.00f,-0.35f,-0.20f)
+	Turn("PLAYER1",90.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	RotateCamera( 0 , 90.000f , 0 )				// 角度
+	CallFunc("system:camera_reset")
+
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//	================================================
+//	【ＬＰ：水音の洞窟に入る】（続き）
+//	================================================
+function "LP_fence_ARRIVE_7301"
+{
+	//　　水音の洞窟に入ったところから操作許可
+	CallFunc("system:event_begin")
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	CallFunc("mp7301:init")
+
+	SetChrPos("LEADER",-11.21f,0.74f,-0.23f)
+	Turn("LEADER",79.03f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	MoveCameraAt( 0 , -11.210f , 0.740f , 1.630f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 99.872f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	VisualName("visual/mapname/mn_7301.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)
+	SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+	SetFlag( TF_MENU_SELECT, 1 )
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+}
