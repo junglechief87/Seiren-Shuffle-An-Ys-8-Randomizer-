@@ -38,7 +38,8 @@ def canAccess(inventory,location,goal):
             elif location.mapCheckID == 'All' and canDiscover(access,24) and access.canShowDiscoveries(): return False
             else: return False
         elif location.locName == 'Fish Trade' and access.canFish(): return True
-        elif location.locName not in ['Fish Trade','Map Completion','Jewel Trade','Intercept','Discovery Rewards']: return True
+        elif location.locName == 'Ricotta Bonus' and access.ricotta(): return True
+        elif location.locName not in ['Fish Trade','Map Completion','Jewel Trade','Intercept','Discovery Rewards','Ricotta Bonus']: return True
         else: return False
     elif location.locRegion == 'Nameless Coast':
         if location.locName == 'Shoreline North of Boulder' and (access.canMove(6) or access.canClimb()): return True

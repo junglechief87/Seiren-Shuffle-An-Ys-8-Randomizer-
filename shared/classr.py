@@ -157,7 +157,13 @@ class access(goal):
       if item.itemName == 'Dana':
         return True
     return False
-
+  
+  def ricotta(self):
+    for item in self.inventoryObjects:
+      if item.itemName == 'Ricotta':
+        return True
+    return False
+  
   def canShowDiscoveries(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Austin':
