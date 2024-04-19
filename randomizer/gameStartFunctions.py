@@ -20,6 +20,7 @@ function "startParameters"
     //Let's set the flags for checking a bunch of removeable obstacles so the players don't have to click on them twice
     SetFlag(GF_SUBEV_1111_CHECKED_ROCK,1)
     SetFlag(GF_SUBEV_2101_CHECKED_ROCK,1)
+    SetFlag(GF_SUBEV_2101_SIEN03_LOOK, 1)
     SetFlag(GF_SUBEV_1131_CHECKED_ROCK,1)
     SetFlag(GF_SUBEV_1120_CHECKED_ROCK,1)
     SetFlag(GF_SUBEV_1117_CHECKED_ROCK,1)
@@ -82,6 +83,9 @@ function "startParameters"
 	SetFlag(GF_GALL_EVIMG_02,1)		
 	SetFlag(GF_GALL_EVIMG_03,1)	
     SetFlag(GF_02MP1110_REMOVE_OBSTACLE, 1)     // removed initial tree, lets the player see numbers required to move obstacles and makes sphere 0 more dynamic 
+    SetFlag(GF_SUBEV_HELP_NUSHI,1)
+    SetFlag( GF_02MP2102_LOOK_MONSTER , 1 )	
+    SetFlag( GF_SUBEV_03_2102_SWAMP, 1 )
     //set flags fro arriving at the shoreline for great river valley
     SetFlag(GF_02MP1120_MEET_HUMMEL,1)
     SetFlag(GF_02MP1121_MAKE_CAMP,1)
