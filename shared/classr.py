@@ -90,7 +90,7 @@ class access(goal):
   def canMove(self,requiredCrew):
     count = 0
     for item in self.inventoryObjects:
-      if item.crew and item.itemName == 'Little Paro': #I used the curran2 and austen2 NPC allocated space to make kong and shoebill count towards village totals, there wasn't another free one for paro but paro is a small bird anyway so it's logical he doesn't count for moving obstacles
+      if item.crew and item.itemName != 'Little Paro': #I used the curran2 and austen2 NPC allocated space to make kong and shoebill count towards village totals, there wasn't another free one for paro but paro is a small bird anyway so it's logical he doesn't count for moving obstacles
         count+=1
 
     if count >= requiredCrew:
