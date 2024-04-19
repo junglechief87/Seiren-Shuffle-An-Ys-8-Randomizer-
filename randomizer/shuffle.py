@@ -166,7 +166,7 @@ def fillShuffledLocations(inventory, fillLocations, shuffledLocations,parameters
             chestsToCopy[3].locID = 179
             shuffledLocations.append(chestsToCopy[3])
 
-    generateSpoiler(shuffledLocations,parameters.seed,goal,blacklistRegion,duplicateChests)
+    generateSpoiler(shuffledLocations,parameters,goal,blacklistRegion,duplicateChests)
         
     return shuffledLocations
 

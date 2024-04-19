@@ -1,16 +1,16 @@
 import shared.classr as classr
 from randomizer.accessLogic import *
 
-def generateSpoiler(shuffledLocations,seed,goal,blacklistRegion,duplicateChests):
+def generateSpoiler(shuffledLocations,parameters,goal,blacklistRegion,duplicateChests):
     sphere = 0
     newInventory = []
     foundLocations = []
     accessibleLocation = []
     progressionInventory = []
     win = False
-    spoilerLog = open('Ys_8_' + str(seed) + '.txt', 'w')
+    spoilerLog = open('Ys_8_' + str(parameters.seed) + '.txt', 'w')
 
-    spoilerLog.write("Seed# " + str(seed) + '\n')
+    spoilerLog.write("Seed# " + str(parameters.seed) + '\n')
     spoilerLog.write('\n')
     spoilerLog.write('Goal: ' + goal.goal + '\t Number: ' + str(goal.numGoal))
     spoilerLog.write('\n \n \n')
