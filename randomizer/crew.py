@@ -363,7 +363,6 @@ def getCrewFlags(location):
     SetDiaryCharaFlag( DRCHA_KIERGAARD, DRCHA_FLAG_INFO1, 1 ) 
     SetDiaryCharaFlag( DRCHA_KIERGAARD, DRCHA_FLAG_INFO2, 1 ) 
     SetDiaryCharaFlag( DRCHA_KIERGAARD, DRCHA_FLAG_INFO3, 1 )
-    GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Medicine can now be brewed.",0,0)
     WaitPrompt()
     WaitCloseWindow()
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )	
@@ -466,6 +465,7 @@ def getCrewFlags(location):
     SetDiaryCharaFlag( DRCHA_LICHT, DRCHA_FLAG_INFO1, 1 ) 
     SetDiaryCharaFlag( DRCHA_LICHT, DRCHA_FLAG_INFO2, 1 ) 
     SetDiaryCharaFlag( DRCHA_LICHT, DRCHA_FLAG_INFO3, 1 )
+    GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Medicine can now be brewed.",0,0)
     SetFlag( GF_CAMP_BED_LV, 2 ) // Drifting village development settings: Bed LV2
     JoinNPC( NPC_LICHT, JOIN_NPC_JOIN ) // Licht has become a friend
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )	

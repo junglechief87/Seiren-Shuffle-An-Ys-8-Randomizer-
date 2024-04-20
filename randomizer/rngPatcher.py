@@ -261,7 +261,7 @@ def danaPastEvents(pastItem):
     {
         SetFlag(GF_05MP6201M_GOTO_BAHA,1)
         SetFlag(GF_SUBEV_PAST_03_GIMMICK_L,1) // Watched Past Edition III: [Past Gimmick : Helping Animals]
-        SetFlag(GF_SUBEV_PAST_03_GIMMICK_A, 1) // Past Edition III: Achieved [Past Gimmick: Helping animals] (substitute 2)
+        SetFlag(GF_SUBEV_PAST_03_GIMMICK_A, 2) // Past Edition III: Achieved [Past Gimmick: Helping animals] (substitute 2)
         SetFlag(GF_SUBEV_PAST_03_GIMMICK_B, 1) // Viewed past edition III: [Past gimmick : Reflection in modern edition]
         SetFlag(GF_GET_GRATICA,	1)
         GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"The Leaning Tower can now be scaled.",0,0)
