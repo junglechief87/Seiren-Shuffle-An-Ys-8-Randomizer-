@@ -36,7 +36,7 @@ def rngPatcherMain(parameters):
         if location.locID not in duplicateChests: #no need to build out functions for the same location twice, these chests share flags with the not dawn version
             #cleanup the placeholders the game had for chests without scripts
             if location.script != "--------":
-                script = ('CallFunc("' + location.script + '")')
+                script = ('EventCue("' + location.script + '")')
             else:
                 script = ""
                 
