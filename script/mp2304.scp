@@ -1,0 +1,631 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 密林                                                                       //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+// init
+function "init"
+{
+	//◆マップエフェクト
+	//胞子
+	Set3DParticle(PARTICLE_TYPE_SPORE, 0.0f,0.0f,0.0f, 0.05f,0.05f,0.02f, 0.0f,0.0f,0.0f, 0.0f,0.0f,0.0f, 180.0f, 0.0f)
+
+	// ボス戦用扉開ける
+	//MapAnime("syswall", "open");
+	MapAnime("CT_BOSS","wait1")	//逃げられないストッパー開ける
+
+	// イベント発生制御
+	if( FLAG[SF_BOSS_BATTLE] )
+	{
+		//リトライやデバッグボスジャンプからのボス戦
+		SetWork( WK_BGM , BGM_Nothing )
+		EventCue("mp2304:EV_RetryBoss")
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+		// 中ボス開始まだなら中ボス開始する為のイベントボックスオンにする
+		if ( !FLAG[GF_02MP2304_KILL_MIDBOSS] && !FLAG[GF_EVENT_CTL])
+		{
+			SetWork( WK_BGM , BGM_Nothing )
+			EventCue("mp2304:EV_M02S740")
+		}
+
+		// クエスト制御
+		// 【QS602】白酒の調達（カシュー）	▼発酵樹液を入手する
+		if( FLAG[GF_QUEST_602] == QUEST_START && !FLAG[GF_QS602_SAP_A] )	// 【QS602】白酒の調達（カシュー）	クエストを開始した
+		{
+			SetChrPos("LP_QS_602_A", 91.10f, 132.05f, -1.00f)
+			SetChrWork( "LP_QS_602_A" , CWK_CHECKRADIUS , 2.5f )		// 範囲
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0224] && FLAG[GF_02MP2304_KILL_MIDBOSS] && !FLAG[GF_02MP2308_KILL_HIPPO]){
+			SetEventDriven( EED_TYPE_EQUIPMAGICITEM, ICON3D_NUMA_BOOTS, "mp2304:act_0224" )	//初めて水グモを装備した
+		}
+	}
+
+	// ボス倒した事があるならば、ボスを撤去して宝箱を置く
+	if ( !FLAG[SF_TIMEATK] && FLAG[GF_02MP2304_KILL_MIDBOSS])
+	{
+		SetChrPos("TBOX01",114.82f,109.38f,1.12f)
+		SetChrPos("B102",-100000.0f, 0.0f, 0.0f)
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0224"
+{
+	if (!FLAG[GF_AVOICE_0224])
+	{
+		EventAreaEnable( "evb2_act_0224" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0224, 1, 0)	//初めて水グモを装備した
+	}
+}
+
+//-------------------------------------------
+// ボス戦リトライ
+function "EV_RetryBoss"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("B102",115.00f,110.00f,1.11f)
+	Turn("B102",57.30f,360.0f)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos("PLAYER1",105.63f,102.10f,0.78f)
+	Turn("PLAYER1",-130.32f,360.0f)
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+	SetYs8Camera(7.0f, 62.0f, 6.0f, 0.3f, 0.3f);
+
+	MoveCameraAt( 0 , 105.634f , 102.103f , 2.940f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -51.433f , 0 )				// 角度
+	ChangeCameraPers( 0 , 62.000f , 0 )			// 視野角
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_001, 0)
+	//MapAnime("syswall", "close")
+	MapAnime("CT_BOSS","wait2")	//逃げられないストッパーON
+
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+
+	if (FLAG[SF_TIMEATK])
+	{
+		// タイムアタックの場合はボス名出してあげる
+		VisualName("visual/bossname/bn_b102.itp", VN_NAMEBOSS2, VN_BOSSNAME_LT_X, VN_BOSSNAME_LT_Y,VN_BOSSNAME_TIME)
+	}
+
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//------------------------------------------------
+}
+
+//-------------------------------------------
+// ボス死亡（ワンクッション挟む）
+function "EV_BossDead"
+{
+	//無敵ON・色々終了させる---------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+
+	Wait(160)
+	StopBGM(120)
+	Wait(60)
+
+	//イベントバトル用CallFunc-------------------------
+	// SF_BOSS_BATTLEのみイベント内で対処して下さい
+	CallFunc("system:boss_end")
+
+	//封鎖解除・ボス消去-------------------------------
+	MapAnime("CT_BOSS","wait1")	//逃げられないストッパーOFF
+	//MapAnime("syswall", "open");
+
+	SetChrPos("B102",-100000.00f,0.00f,0.00f)
+
+	//事後処理-----------------------------------------
+	// タイムアタック中
+	if (FLAG[SF_TIMEATK])
+	{
+		EndTimeAtk()		// タイムアタック終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+		EventCue("mp2304:EV_M02S741")
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else
+	{
+		// ボスラッシュ？
+		FadeIn(FADE_WHITE,FADE_FAST)
+		WaitFade()
+
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	//------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// サブイベント
+////////////////////////////////////////////////////////////////////////////////
+
+function "EV_M02S740"			//密林中ボス登場演出
+{
+	//開始処理ここから-----------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrPos("PLAYER1", 103.41f, 100.94f, 0.73f)
+	Turn("PLAYER1", -130.32f, 360.0f)
+	SetChrPos("PLAYER2", 103.42f, 99.34f, 0.57f)
+	Turn("PLAYER2", -133.87f, 360.0f)
+	SetChrPos("PLAYER3", 101.84f, 101.76f, 0.42f)
+	Turn("PLAYER3", -119.66f, 360.0f)
+
+	SetChrWork("PLAYER1", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("PLAYER1", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	Look("PLAYER1", -20, 0)
+	SetChrInfoFlag("PLAYER1", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("PLAYER2", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("PLAYER2", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER2", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER2", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER2", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	Look("PLAYER2", -20, 0)
+	SetChrInfoFlag("PLAYER2", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("PLAYER3", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation("PLAYER3", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER3", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER3", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER3", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	Look("PLAYER3", -20, 0)
+	SetChrInfoFlag("PLAYER3", INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+
+	// ボスの位置セット
+	SetChrPos("B102",-100000.0f, 0.0f, 0.0f)	//MONSをどかす
+	SetChrPos("ev_b102",115.00f,110.00f,1.11f)
+	Turn("ev_b102",57.30f,360.0f)
+
+	//カメラ設定
+	MoveCameraAt( 0 , 108.511f , 95.129f , 8.533f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 9.953f , 0 )	// 基本仰角
+	RotateCamera( 0 , 340.628f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -8.3f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000, 1.000, 0.700, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp2304:EV_M02S740_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　中ボス登場演出
+	
+	// カット1 ----------------------------------------------------------------------------------------
+
+	// 非表示・再表示
+	SetChrInfoFlag("PLAYER1", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("PLAYER2", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("PLAYER3", INFOFLAG_INVISIBLE)	// 非表示
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 112.016f , 107.245f , 3.813f, 110 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 9.240f , 110 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 1.072f , 110 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 318.853f , 110 )
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE , 0.0f , 110 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+
+	Wait(70)
+
+	SetMotSpd("ev_b102" ,-1 , 1.0f )
+	ChangeAnimation( "ev_b102", "ANI_ATK4", -1, 1 )
+	PlaySE(SE_M02S740_01, 80, 1, 2000, 0, 1.0f, 0)		//くねくね
+
+	Wait(40)
+
+	// カメラ待ち
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+
+	PlaySE(SE_M02S740_02, 100, 0, 0, 0, 1.0f, 0)		//吐息
+	StopSE(SE_M02S740_01,500)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_COS , 104.613f , 107.247f , 4.520f, 30 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_COS , 10.216f , 30 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_COS , 7.422f , 30 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_COS , 264.468f , 30)
+
+	Blur(BLUR_TYPE_EXPAND, 0.5f, 60)	//ブラー
+	EarthQuake( 0.05f , 0.05f , 60 )	// 縦揺れ幅, 横揺れ幅, 時間
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	Wait(15)
+	// カット2 -----------------------------------------------------------------------------------------
+
+	PlayBGM(BGM_BOSS_001, 0)
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	// カメラ
+	MoveCameraAt( 0 , 106.779f , 106.878f , 13.404f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 15.816f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -41.416f , 0 )	// 基本仰角
+	RotateCamera( 0 , 249.587f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 非表示・再表示
+	ResetChrInfoFlag("PLAYER1", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("PLAYER2", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("PLAYER3", INFOFLAG_INVISIBLE)	// 再表示
+
+	SetMotSpd("ev_b102" ,-1 , 1.0f )	// ブレスっぽいの
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 110.681f , 104.627f , 4.814f, 180)
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 16.104f , 180 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -4.508f , 180 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 341.405f , 180 )
+
+	EarthQuake( 0.05f , 0.05f , 120 )	// 縦揺れ幅, 横揺れ幅, 時間
+
+	// フェード待ち
+	Wait(FADE_NORMAL)
+
+	//ボスネーム表示
+	VisualName("visual/bossname/bn_b102.itp", VN_NAMEBOSS, VN_BOSSNAME_LB_X, VN_BOSSNAME_LB_Y,VN_BOSSNAME_TIME)
+
+	ChangeAnimation( "ev_b102", "ANI_ATK8", -1, 1 )		// ぶるぶるしてるの
+	PlaySE(SE_M02S740_01, 80, 1, 500, 0, 1.0f, 0)		//くねくね
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 107.963f , 104.757f , 3.382f, 100)
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 16.328f , 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -4.829f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 303.206f , 100 )
+	ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE , -12.9f , 100 )
+
+//	Blur( BLUR_TYPE_AFTERIMAGE ,0.3f , 90 )	// 残像
+	Wait(10)
+	
+	ChangeAnimation("PLAYER1", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("PLAYER2", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("PLAYER3", "ANI_EV_SETARM", -1, 1)	// 武器構え
+
+	Wait(30)
+	Blur(BLUR_TYPE_EXPAND, 0.5f, 50)	//ブラー
+	Wait(30)
+
+	StopSE(SE_M02S740_01, 1000)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+	
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp2304:EV_M02S740_ED")
+}
+
+function "EV_M02S740_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	ActiveVoiceStop(ACTIVEVOICESTOP_FORCE)		//アクティブボイス強制終了
+
+	//イベント用NPC撤去
+	SetChrPos("ev_b102",-100000.00f,0.00f,0.00f)
+
+	EventCue("mp2304:EV_RetryBoss")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+
+function "EV_M02S741"			//密林中ボスを撃破
+{
+	//開始処理ここから-----------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_WHITE, 0)
+	WaitFade()
+
+	Wait(30)
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	//フラグ処理
+	SetFlag(SF_SETRAMSAVE,1)		//リトライセーブ
+	SetFlag(GF_02MP2304_KILL_MIDBOSS, 1)	//密林中ボスを撃破
+	SetFlag(SF_BOSS_BATTLE,0)			//ボス戦解除
+	CallFunc("mp2304:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",105.63f,102.10f,0.78f)
+	Turn("LEADER",-130.32f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 105.630f , 102.100f , 2.924f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 308.567f , 0 )				// 角度
+	ChangeCameraPers( 0 , 62.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//BGM再生
+	PlayBGM( BGM_2304, 0 )	//
+	SetEnvSEPlayState(-1, 1)	//環境SE復帰
+
+	FadeIn(FADE_WHITE, FADE_NORMAL)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+
+function "EV_M02S741b"
+{
+	
+	SetStopFlag(STOPFLAG_EVENT)
+
+	// チュートリアル =================================================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+		
+		// チュートリアルポートレート読み込み
+		Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+		Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+		Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+		Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+		Portrait_Load(2, "visual/help/hp_a31.itp" )	// help_a31：浮き靴の効果
+		Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+		
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.5f, FADE_FAST)
+		Wait(FADE_FAST)
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+		Portrait_Close(1)
+		Portrait_Close(2)
+		
+		// 擬似フェードアウト削除
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+		Portrait_Close(0)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+		// ポートレートリリース
+		Portrait_Close(-1)
+		Portrait_Unload(-1)
+	
+	}
+	// ================================================================================================
+
+	SetFlag( GF_HELP_A31, 1 )	// チュートリアル：浮き靴の効果
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//===============================================================
+//
+// 【QS602】白酒の調達（カシュー）
+// ▼発酵樹液を入手する
+//
+function "QS_602_Sap_A"
+{
+	//　　濃霧の密林　mp2304 91.28f	134.87f	-1.00f	3.80f付近
+	//　　大河流域　mp2102 -36.63f	-632.52f	29.10f	-60.59f付近
+	//　　湿原地帯　mp6114 -980.40f	788.65f	96.55f	91.84f付近（※マップの扱いで変わるかも）
+	//　　の３箇所に、同じ果樹の老木オブジェをおく。
+	//　　（クエスト以前からある）
+	//　　ＬＰで調べるとアイテムを入手する。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cうろには発酵した樹液が溜まっている……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	アイテム入手テキスト
+	//「『発酵樹液』を手に入れた。」
+	GetItemMessageExPlus(ICON3D_FERMENTATION_SAP, 1, ITEMMSG_SE_JINGLE, "を手に入れた。", 0, 0)	//（発酵樹液）
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//フラグ立て・アイテム入手
+	SetFlag( GF_QS602_SAP_A, 1 )		//【QS602】▼発酵樹液を入手する を見た
+	GetItem( ICON3D_FERMENTATION_SAP, 1 )	//（発酵樹液）
+
+	SetChrPos("LP_QS_602_A", -100000.00f , 0.00f ,0.00f )		// ＬＰを消去
+
+	// クエストマークの消去
+	DelMapMarker( SMI_QUEST, PAGE_MP230x, MARKER_QS_602_LP1, 0, 0)	// 【QS602】白酒の調達（カシュー）▽タナトスに聞く を見た場合に付く発酵樹液のポイント用
+
+	//イベント後の再配置
+//	SetChrPos("LEADER", 92.38f, 130.41f, 0.53f)
+//	Turn("LEADER", 144.35f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	WaitFade()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
