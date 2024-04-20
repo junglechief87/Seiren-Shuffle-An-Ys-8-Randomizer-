@@ -21,9 +21,6 @@ rngScriptFile = getLocFile('rng','script')
 
 def rngPatcherMain(parameters):
     global patchFile
-    numBigLuckyBox = parameters.bigLuckyBox
-    numLuckyBox = parameters.mediumLuckyBox
-    numSmallLuckyBox = parameters.smallLuckyBox
     
     shuffledLocations = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
@@ -60,13 +57,14 @@ def rngPatcherMain(parameters):
         fileToPatch.write(patchFile)
         fileToPatch.close()
 
-def genericItemMessage(location,script,parameters):    
+def genericItemMessage(location,vanillaScript,parameters):    
     scriptName = buildLocScripts(location.locID,False)
     itemIcon = getIcon(location.itemID)
     itemQuantity = location.quantity
     #'Maiden Journal','Blue Seal of Whirling Water','Green Seal of Roaring Stone','Golden Seal of Piercing Light','Treasure Chest Key','Frozen Flower','Shrine Maiden Amulate'
     danaPastEventsItems = [698,700,701,702,796,699,727]
-    
+    script = ""
+
     #if the item is progression let's do the jingle
     if location.progression:
         itemSE = 'ITEMMSG_SE_JINGLE'
@@ -107,6 +105,7 @@ def genericItemMessage(location,script,parameters):
             parameters.getLuckyChecks('small',parameters.smallLuckyBox-1)
         
     message = genericMessage
+    script =  script + vanillaScript #append the original chest scripts to the end of the function
 
      #if the location is not inside an event we want to freeze the player while they receive the item. This prevents some awkwardness, it's strictly for polish.
      #setting the talk flags and then unsetting them during events can break many events though, so we don't want to do it there. Many events already have these flags set at their starts and ends.
