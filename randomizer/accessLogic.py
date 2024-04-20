@@ -150,7 +150,7 @@ def canAccess(inventory,location,goal):
         elif location.locName == 'End' and access.canSwampWalk(): return True
         else: return False
     elif location.locRegion == 'Odd Rock Coast' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())) and access.canInsect() and access.canSwampWalk(): return True
-    elif location.locRegion == 'The Primodrial Passage' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1(): return True
+    elif location.locRegion == 'The Primordial Passage' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1(): return True
     elif location.locRegion == 'Mont Gendarme' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1(): 
         if location.locName == 'Mishy Rewards':
             if location.mapCheckID == 'Food 2' and access.canCook(1): return True
