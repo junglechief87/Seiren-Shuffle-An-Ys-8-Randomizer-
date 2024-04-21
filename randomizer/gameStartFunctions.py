@@ -100,6 +100,7 @@ function "startParameters"
                                         // Dana Edition Proceed deep into the valley
                                         //Dana Part 1: Start the tree-planting ceremony
     //SetFlag(GF_03MP1101_LEAVE_CAMP,1)  //Spawns tree that leads to primordial passage
+    SetFlag(GF_03MP4202_IN_LODGE,1)
     SetFlag(GF_03MP4202_LOOK_LODGE,1)
     SetFlag(GF_03MP4202_LOOK_NOTE,1)
     SetFlag(GF_03MP4202_LOOK_FLOWER,1)
