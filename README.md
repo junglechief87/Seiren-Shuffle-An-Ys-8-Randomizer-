@@ -73,6 +73,8 @@ The Pirate's *Logbook* from the East Coast Cave Docks lowers the gangway that gr
 
 The *Glow Stone* is an item of limited utility in the original game, very few areas were dark enough to make it remotely useful (this might depend a little on your monitor though and it is still logically required for items in some of those dark rooms but not really necessary). To improve it's utility it now unlocks Night Hunts too. The night hunt versions of Towering Coral Forest and Mount Gendarme are quality checks per minute plays and Pangaia Plains Night is a quality exp per minute play, so this adds greater importance to this item of questionable merit. 
 
+The *Ship Blueprints* open repair the boat that leads to Solitude Island.
+
 ## Other Notes for Progression
 A couple quick notes that might not be immediately obvious.
 
@@ -86,11 +88,13 @@ The player can still access the *enhance* feature for weapons before getting Kat
 - *Austin* is access to rewards for finding discoveries.
 - *Little Paro* doesn't count toward overall village numbers. In the original game Shoebill and Master Kong didn't either but I used some of the extra Castaway allocations to make them count. However I was one short to make Paro count and Paro is a small bird so it honestly makes sense he wouldn't be help moving large objects.
 - *Octus Overlook* is open from the start of the game and if it can be reached then it can be entered, only Selection Sphere access is tied to the goal.
-- Spawning the boat to *Solitude Isle* is tied to completing the boss of Valley of Kings.
-- The vanilla *Licht* check leads to the whole sequence that ends in the Kiergaard boss fight. There are checks behind these events, like the vanilla Quina check.
+- The vanilla *Licht* check leads to the whole sequence that ends in the Kiergaard boss fight. Defeating Kiergaard gives the player the vanilla Quina joining event check.
+- Defeating *Avalodragil* normally triggers the events that have the vanilla Dogi and Paro joining events along with the Fishing Rod check. These are rewarded after the boss fight instead. Normally Barbaros would join here too but his join event was moved to after the end of Waterdrop Cave for balance reasons (There would have been no reason to fight the boss otherwise).
+- There was a check added to the monolith scene at the top of Baja Tower, this was because there were no checks behind the boss of Baja Tower otherwise. 
 
 ## Final Notes
-At this point everything in the game should be randomized other than quest rewards, which I ultimately decided weren't worth it and flagged most of the quests as completed on startup (a majority of the quest rewards are pretty meh and the quests are mostly about building rep for the "good ending" and the few quests rewards that were decent were added to the shuffle and have the potential to still appear). If you find anything that you think isn't that isn't a quest reward feel free to let me know. Locations generally aren't difficult to add.
+Here is a list of all checks in the rando for assistance: [Chescks](https://docs.google.com/spreadsheets/d/e/2PACX-1vTk6waI_Ymz1SiK90FnF1b2hDCgdZCVTrhFAX-O2-K_ovf0R3HA07AI90D5vQXPKrYBoMxH4Zu7tclx/pubhtml)
+At this point everything in the game should be randomized other than quest rewards, which I ultimately decided weren't worth it and flagged most of the quests as completed on startup (a majority of the quest rewards are pretty meh and the quests are mostly about building rep for the "good ending" and the few quest rewards that were decent were added to the shuffle and have the potential to still appear). If you find anything that you think isn't that isn't a quest reward feel free to let me know. Locations generally aren't difficult to add.
 
 The core of the randomizer uses a large script file to drive what items are and what items do, this is much more flexible than simply placing new items in chests. Ys 8 chests take a script as an agrument that is then executed on open and this is what's used to give out rewards from the chests. To make sure the chests stay closed junk has been filled into every chests that does nothing, this is why you see an initial chest popup before the actual item you get. I would love to find a way to supress the initial chest message. I spent some time dissecting the chest function in Cheat Engine looking for a way to do this but didn't find one. If you'd like to look into this then let me know and I can provide some of the notes I took on the game's chest function. 
 
