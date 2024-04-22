@@ -1,0 +1,869 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 寺院ボス						                                              //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+// init
+function "init"
+{
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+
+//		if ( !FLAG[GF_04MP6402_IN_DANAROOM] )
+//		{
+//			EventCue("mp6402:EV_M04S230")
+//		}
+
+		// クエスト制御
+		// 【QS610】親友の遺言（ダーナ）	▽ダーナの部屋の棚を調べる
+		if( FLAG[GF_QUEST_610] == QUEST_START )	// 【QS610】親友の遺言（ダーナ）	クエストを開始した
+		{
+			//SetChrPos("LP_QS_610_Look_A", 27.44f,5.07f,0.30f)
+			//SetChrWork( "LP_QS_610_Look_A" , CWK_CHECKRADIUS , 2.5f )		// 範囲
+		}
+
+		// 【QS522】奮起の演奏会	▽楽譜探しイベント③（３）
+		if (!FLAG[GF_QS522_TALK_SERACH4])
+		{
+			SetChrPos("LP_QS_522_Look", 27.17f, 10.74f, -1.16f)
+			SetChrWork("LP_QS_522_Look", CWK_CHECKRADIUS, 2.5f)		// 範囲
+		}
+
+		// ＬＰ制御
+		if( FLAG[GF_05MP1201_IN_MEETING] )	//ドギたちに北部の状況を伝える
+		{
+			//SetChrPos("LP_6402_Altar", -100000.00f, 00.00f, 00.00f)	// 【ＬＰ：ダーナの部屋の祭壇】
+			//SetChrPos("LP_6402_Bed", -100000.00f, 00.00f, 00.00f)	// 【ＬＰ：ダーナの部屋のベッド】
+		}
+		else
+		{
+			//SetChrWork( "LP_6402_Bed" , CWK_CHECKRADIUS , 3.5f )	// 範囲	【ＬＰ：ダーナの部屋のベッド】
+		}
+	}
+
+	// ◆寝室ダーナ確認用　SF_EVENT_ONフラグが立っていると消します
+	if( FLAG[SF_EVENT_ON] )
+	{
+		SetChrPos("Dana" , -100000.00f , 0.00f , 0.00f )
+		SetChrPos("ev_tuta2" , -100000.00f , 0.00f , 0.00f )
+	}
+
+}
+
+
+
+
+
+
+
+
+
+
+
+//-------------------------------------------
+// 隠し通路穴 out
+function "hole_01_out"
+{
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,0)
+
+	SetChrPos("LEADER",24.58f, 2.98f, 0.30f)
+	Turn("LEADER" ,107.13f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	MoveCameraAt( 0 , 24.579f , 2.975f , 2.174f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -107.130f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.500f , 900.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+
+//-------------------------------------------
+// 隠し通路穴 in
+function "hole_02_in"
+{
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+//	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	LoadArg("map/mp6401/mp6401.arg")
+	EventCue("mp6401:hole_02_out")
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// メインスクリプト
+////////////////////////////////////////////////////////////////////////////////
+
+function "EV_M04S230"		 //ダーナの部屋に到着する
+{
+//開始処理ここから-----------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 26.40f, 1.83f, 0.30f)
+	Turn("ADOL", 99.15f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", 26.41f, 0.93f, 0.30f)
+	Turn("RICOTTA", 88.50f, 360.0f)
+	ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag("RICOTTA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 27.50f, 0.83f, 0.30f)
+	Turn("SAHAD", 92.05f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("SAHAD")
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 26.91f, 2.47f, 0.30f)
+	Turn("LAXIA", 116.92f, 360.0f)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("LAXIA")
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", 27.74f, 2.22f, 0.30f)
+	Turn("HUMMEL", 95.60f, 360.0f)
+	ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("HUMMEL")
+	SetChrInfoFlag("HUMMEL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("Thanatos", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Thanatos", 26.85f, 0.59f, 0.30f)
+	Turn("Thanatos", 88.49f, 360.0f)
+	ChangeAnimation("Thanatos", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("Thanatos", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("Thanatos", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("Thanatos", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("Thanatos")
+	SetChrInfoFlag("Thanatos", INFOFLAG_NOCHRATARI)
+
+	//ポートレート処理
+	Portrait_Load(   1 , "visual/portrait/p_20004.itp" )
+	Portrait_Create(1 , 0 , 0 , 
+					0 , 0 , 3840,2160 , 
+					0.0f , 0x00ffffff , 0x00000000 )
+
+	Portrait_Anime( 1 , PR_ANIME_SCALE ,0.5 , 0.5 ,-1,-1 ,0 )
+
+	//カメラ設定
+	MoveCameraAt( 0 , 25.465f , 1.747f , 1.647f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.981f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.111f , 0 )	// 基本仰角
+	RotateCamera( 0 , 218.679f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.500f , 900.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 80.000, 2.000, 0.700, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6402:EV_M04S230_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　　部屋に入ったところでイベント開始。
+	//　　部屋を眺めるアドル班＋タナトス。
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,  25.465f , 1.747f , 1.746f , 60 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE ,  3.581f  , 60 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -5.260f  , 60 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 218.679f , 60 )
+
+	//MoveCameraAt( 0 , 25.465f , 1.747f , 1.746f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.581f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -5.260f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 218.679f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.500f , 900.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	ExecuteCmd(1, MoveTo, "ADOL", 24.96f, 2.22f, 0.30f, 0.1f, 0.15f)
+	ExecuteCmd(2, MoveTo, "LAXIA", 25.72f, 3.08f, 0.30f, 0.1f, 0.15f)
+	Wait(2)
+	ExecuteCmd(3, MoveTo, "RICOTTA", 24.42f, 1.15f, 0.30f, 0.1f, 0.15f)
+	ExecuteCmd(4, MoveTo, "HUMMEL", 26.25f, 2.37f, 0.30f, 0.1f, 0.15f)
+	ExecuteCmd(5, MoveTo, "Thanatos", 25.11f, 0.77f, 0.30f, 0.1f, 0.15f)
+	ExecuteCmd(6, MoveTo, "SAHAD", 26.43f, 0.98f, 0.30f, 0.1f, 0.15f)
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	// 移動待ち
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+	WaitThread(4)
+	WaitThread(5)
+	WaitThread(6)
+
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0) {
+		"#000e#000mこの部屋は一体……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "HUMMEL", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	// ヒュンメル
+	TalkPopup("HUMMEL", 0, 2, 0, 0, 0) {
+		"#000e#000m分からんが、今入ってきた穴は"
+		"隠し扉だったのではないか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// カット2 ----------------------------------------------------------------------------------------
+
+	//　　荒れ果てた部屋を見せてからメッセージ表示。
+	
+	// クロスフェード
+	CrossFade(FADE_FAST)
+	
+	// カメラ
+	MoveCameraAt( 0 , 24.377f , 1.939f , 1.870f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.817f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 2.068f , 0 )	// 基本仰角
+	RotateCamera( 0 , 50.516f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.500f , 900.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	// 非表示・再表示
+	SetChrInfoFlag("LAXIA", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("HUMMEL", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("RICOTTA", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("Thanatos", INFOFLAG_INVISIBLE)	// 非表示
+	
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 24.377f , 1.939f , 1.870f, 700 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.817f , 700 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 1.495f , 700 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 105.807f , 700 )
+	
+	// フェード待ち
+	Wait(FADE_FAST)
+	
+	LookSpd("ADOL", 0.08f, 0.08f, 0.08f )// ゆっくりめに首向き
+	Look("ADOL", 30.0f, 00.0f)	// 右
+	Wait(65)
+	Look("ADOL", -60.0f, 00.0f)	// 左
+	
+	// テキスト（色替え）
+	TalkPopup(UNDEF, 0, 3, SYSTEM_PPOSX, SYSTEM_PPOSY, 0) {
+		"#7Cどことなく見覚えのある部屋だ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookSpd( "SAHAD", LOOKSPD_DEFAULT, LOOKSPD_DEFAULT, LOOKSPD_DEFAULT )
+
+	//　　アドルに「…」エモーション表示。
+	EmotionEx("ADOL", 0.0f, "EMO_3DOT", 27, 5, 1, 1, 0.9f)	// 「…」
+	Wait(63)
+	
+	//　　部屋の映像に合わせて、ダーナ編の映像を
+	//　　フラッシュバックさせて操作許可。
+
+
+	//フラッシュバック演出 ----------------------------------- ▼		//穏やかなフラッシュバック
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+	FadeBGM(20, 30)
+	FadeOut(FADE_WHITE,FADE_FAST)
+	WaitFade()
+	Wait(15)
+	FadeIn(FADE_WHITE,FADE_FAST)
+	Portrait_Anime(  1 , PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+	Wait(100)
+
+	SetEnvSEPlayState(-1, 1)	//環境SE復帰
+	FadeBGM(100, 60)
+	FadeOut(FADE_WHITE,FADE_FAST)
+	WaitFade()
+
+	Portrait_Close(  1 )
+	Portrait_Unload( 1 )
+
+	FadeIn(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+	// --------------------------------------------------------- ▲
+
+	Wait(40)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp6402:EV_M04S230_ED")
+}
+
+function "EV_M04S230_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラクター飛ばす
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+	CallFunc("system:reset_chrmot_HUMMEL")
+	CallFunc("system:reset_chrmot_RICOTTA")
+	//CallFunc("system:reset_chrmot_Thanatos")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//フラグ処理
+	//SetFlag(SF_SETRAMSAVE, 1)
+	SetFlag(GF_04MP6402_IN_DANAROOM,1)	//ダーナの部屋に到着する
+	SetFlag(SF_ALLMUTEKI,0)		//無敵OFF
+
+	//イベント後の再配置
+	SetChrPos("LEADER",23.03f,7.61f,0.30f)
+	Turn("LEADER",146.32f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 23.030f , 7.608f , 2.148f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.145f , 0 )	// 基本仰角
+	RotateCamera( 0 , 16.066f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 900.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//===============================================================
+//
+// 【QS610】親友の遺言（ダーナ）
+// ▽ダーナの部屋の棚を調べる
+//
+function "QS_610_Look_A"
+{
+	//　　ＬＰで調べるとメッセージ。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	//	テキスト
+	TalkPopup(UNDEF, 0, 3, SYSTEM_PPOSX, SYSTEM_PPOSY, 0)
+	{
+		"#7C書架にはほとんど何も残っていない。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("DANA", 0, 3, STOPPER_PPOSX, STOPPER_PPOSY, 0)
+	{
+		"#000e#000mうーん、本が残っていれば"
+		"参考になったかもしれないのに……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//マーカー消去
+	DelMapMarker( SMI_QUEST, PAGE_MP6401, MARKER_QS_610_LP1, 0, 0)		// 【QS610】親友の遺言（ダーナ）「▽ダーナの部屋の棚を調べる」の場所用
+
+	//イベント後の再配置
+//	SetChrPos("LEADER",25.11f,5.26f,0.30f)
+//	Turn("LEADER",-85.23f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	/*WaitFade()
+	Wait(FADE_CROSS)*/
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+//===============================================================
+//
+// 【QS522】奮起の演奏会（オースティン）
+// ▼楽譜探しイベント③（３）
+//
+
+function "QS_522_Event3"
+{
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_EVENTIMPOSE)
+
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	CallFunc("rng:0439")
+	SetFlag(GF_QS522_TALK_SERACH4,1)
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetMapParam( -1 )
+	StopEffect(-1,ALL,1)
+	ResetStopFlag(STOPFLAG_EVENTIMPOSE)
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	CallFunc("mp6402:init")
+}
+
+function "QS_522_Event3_old"
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存										
+	SaveEventState()
+	CallFunc("system:event_chrinfoflag_set")
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_remove")
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラクター初期化
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_FLING)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA", 25.70f, 10.66f, 0.00f)
+	Turn("DANA", -104.07f, 360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("ADOL", INFOFLAG_FLING)
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+	SetChrPos("ADOL", 24.17f, 12.15f, 0.00f)
+	Turn("ADOL", -80.35f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookChr("ADOL", "DANA")
+
+	//BGM設定
+	//	PlayBGM( BGM_FIELD_101 , XX )	
+
+//	//カメラ設定
+//	MoveCameraAt(0, 23.034f, 11.658f, 1.449f, 0)	// 注視点
+//	ChangeCameraDistance(0, 1.460f, 0)		// 基本距離
+//	ChangeCameraElevation(0, 9.519f, 0)	// 基本仰角
+//	RotateCamera(0, 263.041f, 0)				// 角度
+//	ChangeCameraPers(0, 48.000f, 0)			// 視野角
+//	SetCameraZPlane(0.500f, 900.000f)			// ZPlane
+//	RollCamera(0, 0.0f, 0)				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+MoveCameraAt( 0 , 23.605f , 11.586f , 1.424f , 0 )	// 注視点
+ChangeCameraDistance( 0 , 1.460f , 0 )		// 基本距離
+ChangeCameraElevation( 0 , 9.519f , 0 )	// 基本仰角
+RotateCamera( 0 , 271.099f , 0 )				// 角度
+ChangeCameraPers( 0 , 48.000f , 0 )			// 視野角
+SetCameraZPlane( 0.500f , 900.000f )			// ZPlane
+RollCamera( 0 , 0.0f , 0 )				// ロール回転
+// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 10.000, 1.000, 0.700, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+
+	//スキップ許可
+	SetSkipScript("mp6402:QS_522_Event3_ED")
+
+	//開始処理ここまで-----------------------------------------------
+//	Wait(10)
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 23.605f, 11.586f, 1.424f, 60)		// 注視点
+//	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 271.099f, 60)		// 角度
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+
+//	WaitThread(1000)
+//	WaitThread(1001)
+	//mp6402　ダーナの部屋（現代）の
+	//部屋の東側にある壷が３つ固まっている場所。
+	//角にある壷を調べるとイベント開始。
+
+	//壷の前にダーナ、その後ろにアドルを立たせる。
+	ChangeAnimation("DANA", "ANI_EV_SHAGAMI_S", -1, 1)
+	WaitAnimation2("DANA", -1, 1, "ANI_EV_SHAGAMI_S", 0)
+
+	TalkPopup("DANA", 0, 2, 0, 0, 0)
+	{
+		"#000e#000mこの壺は確か私が"
+		"理力でおまじないをした……\p"
+		"よかった……"
+		"何とか残っていてくれたみたい。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	アイテム入手メッセージ
+	//	「『蒼き豊穣の楽譜』を手に入れた！」
+	GetItemMessageExPlus(ICON3D_BLUE_SCORE, 1, ITEMMSG_SE_JINGLE, "を手に入れた！", 0, 0)
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	//	"DANA"
+	ChangeAnimation("DANA", "ANI_EV_SHAGAMI_E", -1, 1)
+	WaitAnimation2("DANA", -1, 1, "ANI_EV_SHAGAMI_E", 0)
+
+	Turn("DANA", 122.82f, 8.0f)
+	LookChr("DANA", "ADOL")
+	Wait(10)
+	ChangeAnimation("DANA", "ANI_EV_WAIT2_S", -1, 1)
+	TalkPopup("DANA", 0,2, 0, 0, 0)
+	{
+		"#080e#080mふふ、何とか楽譜が手に入ったね。\p"
+		"アドルさん、オースティンさんの所へ"
+		"渡しに行こう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドルが頷く。
+	//　　イベント終了、操作許可。
+	HeadYes("ADOL", 1, 25)
+	Wait(35)
+
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6402:QS_522_Event3_ED")
+}
+
+function "QS_522_Event3_ED"
+{
+	//スキップ禁止														
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰									
+	RestoreEventState()
+
+	//隠したものを復帰												
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化										
+	CallFunc("system:reset_chrmot_DANA")
+	CallFunc("system:reset_chrmot_ADOL")
+
+	SetChrPos("LP_QS_522_Look", -100000.00f, 00.00f, 00.00f)
+
+	//init呼び出し				
+	//CallFunc("mp6402:init" )
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag(GF_QS522_TALK_SERACH4, 1)	//【QS522】▼楽譜探しイベント③ （３）を見た
+	GetItem(ICON3D_BLUE_SCORE, 1)		// 『蒼き豊穣の楽譜』
+	//マーカー消去
+	DelMapMarker( SMI_QUEST, PAGE_MP6401, MARKER_QS_522_LP4, 0, 0)	// 【QS522】奮起の演奏会（オースティン）「▼楽譜入手イベント」の場所用
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", 20.18f, 10.72f, 0.30f)
+	Turn("LEADER", 178.60f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰or初期位置設定
+	MoveCameraAt(0, 20.180f, 10.722f, 2.155f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 7.413f, 0)	// 基本仰角
+	RotateCamera(0, 1.400f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.500f, 900.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+	//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー・ＬＰセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//	================================================
+//	【ＬＰ：ダーナの部屋の祭壇】
+//	================================================
+function "LP_6402_Altar"
+{
+	//▼～！GF_05MP1201_IN_MEETING,			//ドギたちに北部の状況を伝える
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	//	テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C祭壇は色褪せ、厚くホコリが積もっている……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+//	SetChrPos("LEADER",0.00f,0.00f,0.00f)
+//	Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+//	================================================
+//	【ＬＰ：ダーナの部屋のベッド】
+//	================================================
+function "LP_6402_Bed"
+{
+	//▼～！GF_05MP1201_IN_MEETING,			//ドギたちに北部の状況を伝える
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	//	テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C朽ちた寝台が置かれている。"
+		"#7Cこれも見覚えがある気がするが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+//	SetChrPos("LEADER",0.00f,0.00f,0.00f)
+//	Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
