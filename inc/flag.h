@@ -2643,7 +2643,7 @@ enum {
 	GF_TBOX_DUMMY103, //Intercept Set 4
 	GF_TBOX_DUMMY104, //Austen Joining Event
 	GF_TBOX_DUMMY105, //replaces flag for MISTILTEINN
-	GF_TBOX_DUMMY106,
+	GF_TBOX_DUMMY106, //flag for ship blueprints
 	GF_TBOX_DUMMY107,
 	GF_TBOX_DUMMY108,
 	GF_TBOX_DUMMY109,

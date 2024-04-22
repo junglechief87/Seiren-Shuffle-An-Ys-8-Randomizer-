@@ -38,7 +38,7 @@ def canAccess(inventory,location,goal):
             elif location.mapCheckID == 'All' and canDiscover(access,24) and access.canShowDiscoveries(): return False
             else: return False
         elif location.locName == 'Fish Trade' and access.canFish(): return True
-        elif location.locName == 'Ricotta Bonus' and access.ricotta(): return True
+        elif location.locName == 'Ricotta and Shoebill Reunite' and access.ricotta(): return True
         elif location.locName not in ['Fish Trade','Map Completion','Jewel Trade','Intercept','Discovery Rewards','Ricotta Bonus']: return True
         else: return False
     elif location.locRegion == 'Nameless Coast':
@@ -274,7 +274,7 @@ def canAccess(inventory,location,goal):
         elif location.locName == 'Seren Garden' and access.canUndead(): return True
         else: return False
     elif location.locRegion == 'The Submerged Cemetery' and access.canClimb() and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
-    elif location.locRegion == 'Solitude Island' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and access.canUndead(): return True
+    elif location.locRegion == 'Solitude Island' and access.hasBoat(): return True
     elif location.locRegion == 'Hill of Eternity'and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and access.past7(): return True
     elif location.locRegion == 'Octus Overlook' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()):
         if (location.locName == 'Path of the Frozen Era' or location.locName == 'Path of the Insectoid Era' or location.locName == 'Path of the Sky Era') and access.canUndead(): return True

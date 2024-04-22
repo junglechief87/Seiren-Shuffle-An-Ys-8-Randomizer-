@@ -92,6 +92,12 @@ def genericItemMessage(location,vanillaScript,parameters):
     GetItem(ICON3D_FISHBAIT_WORM,10)
     """
         script = script + startingBait
+    
+    elif location.itemID == 779: #ship blueprints
+        buildBoat = """
+    SetFlag(GF_SUBEV_06_1111_LOOK_BOAT,1)
+    """
+        script = script + buildBoat
 
     if not location.progression and not location.event and location.item and location.locRegion.find('Sanctuary Crypt') == -1:
         if parameters.bigLuckyBox > 0:

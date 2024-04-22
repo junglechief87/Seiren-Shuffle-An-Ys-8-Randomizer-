@@ -251,6 +251,12 @@ class access(goal):
         return True
       return False
   
+  def hasBoat(self):
+    for item in self.inventoryObjects:
+      if item.itemID == 779:
+        return True
+      return False
+    
 class guiInput:
   def __init__(self):
      self.seed = None
