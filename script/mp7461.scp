@@ -1,0 +1,161 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 水源地																	  //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+// init
+function "init"
+{
+	//キラキラ：落とし物
+	if( FLAG[GF_MP7461_KIRAKIRA01] ){
+		ChangeAnimation( "KiraKira01" , "ANI_STOP2", -1 , 1 )		//取った後
+		SetChrWork("KiraKira01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	}
+	
+	if (FLAG[SF_EVENT_ON]){
+	
+		// やり込み農場：たくましいピッカード
+		if( !FLAG[GF_SPEEDRUN_FARM_GETPICARD] )		// やり込み農場：たくましいピッカードを手に入れた
+		{
+			SetChrPos("ev_Picard",-17.80f, 47.31f, -9.19f)
+			Turn("ev_Picard", 166.17f, 360.0f)
+		}
+	}
+	
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 1 ){
+			VisualName("visual/mapname/mn_7461.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//地下水脈
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+//キラキラ
+function "LP_KiraKira01"
+{
+
+//	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_TALK)
+
+	//　　箱が開くアニメーションとSE。
+	ChangeAnimation( "this" , "ANI_OPEN", 0 , 1 )
+	Wait(30)
+
+	ChangeAnimation( "LEADER" , "ANI_GET_ITEM", -1 , 1 )	//アイテム入手モーション
+	Wait(15)
+
+	//	テキスト
+	CallFunc("rng:0517")
+	//GetItemMessageExPlus( ICON3D_PRESENT_LICHT, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+	//WaitPrompt()
+	//WaitCloseWindow()
+	//GetItem(ICON3D_PRESENT_LICHT,1)		//プレゼントアイテム（古びた聴診器：リヒト）
+
+	//フラグ
+	SetFlag( GF_MP7461_KIRAKIRA01, 1 )
+	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+
+//	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+//===============================================================
+//
+// やり込み農場：▼ピッカード回収メッセージ
+//
+function "Speedrun_Reja_GetPicard"
+{
+	//▼ピッカード回収メッセージ
+
+	//　　mp7461（-20.91f, 43.59f, -9.19f ,-98.09f）付近にピッカードがおり、
+	//　　話しかけるとカメラ切り替えを行わず以下のメッセージ。
+	
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	LookChr("this", "LEADER")
+
+	PlaySE(SE_PIKA_03, 100, 0, 0, 0, 1.0f, 0)
+	//	たくましいピッカード
+	TalkPopup("ev_Picard",0,0,0,0,0)
+	{
+		"プキー！"	//（ＳＥ付き）
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//──────────────────────
+	//	⇒レーヤと合流している場合
+	if( FLAG[GF_SUBEV_JOIN_REJA] )				// レーヤと合流した
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cレーヤに話せば、農場で飼えそうだ。\p"
+			"#7Cピッカードを捕まえますか？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//選択肢
+		SetFlag(TF_MENU_SELECT,0)
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(1,"捕まえる")
+		MenuAdd(2,"やめておく")
+		MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+		WaitMenu(0)
+		MenuClose(10,0)
+		
+		//────────────────────
+		//	⇒捕まえる
+		if (FLAG[TF_MENU_SELECT] == 1)
+		{
+			//	  　「捕まえる」を選択すると以下の流れ。
+			SetChrInfoFlag("ev_Picard", INFOFLAG_INVISIBLE)
+			
+			//	アイテム入手テキスト
+			GetItem(ICON3D_PICARD, 1)		//ピッカード
+			GetItemMessageExPlus(ICON3D_PICARD, 1, ITEMMSG_SE_JINGLE, "を手に入れた！", 0, 0)	//ピッカード
+			WaitPrompt()
+			WaitCloseWindow()
+			
+			SetFlag( GF_SPEEDRUN_FARM_GETPICARD, 1 )		// やり込み農場：たくましいピッカードを手に入れた
+		}
+		//────────────────────
+	}
+	//──────────────────────
+
+	ResetStopFlag(STOPFLAG_TALK)
+	
+	if( FLAG[GF_SPEEDRUN_FARM_GETPICARD] )		// やり込み農場：たくましいピッカードを手に入れた
+	{
+		SetChrPos("ev_Picard",-100000.00f, 00.00f, 00.00f )	// ピッカードを消す
+	}
+}
+//===============================================================
+//
