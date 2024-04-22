@@ -1,0 +1,1019 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/fish.h"
+#include "inc/temp/mp1122.h"
+
+//-------------------------------------------
+// 1122：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1122" , 0 )
+	MapHide( "@BG2_taiju" , 0 )
+	MapHide( "BG2_groundfog_SE1" , 0 )
+
+	// イベント制御
+	EventAreaEnable( "ev2_EV_LOCATION023" , 0 )
+	EventAreaEnable( "SubEV_06_Look_Curran" , 0 )	// 【カーラン卿を発見する】
+	EventAreaEnable( "evb2_act_0812" , 0 )
+	EventAreaEnable( "evb2_act_0812b" , 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+		if ( !FLAG[GF_LOCATION23] ) {		// ロケーション023
+			EventAreaEnable( "ev2_EV_LOCATION023" , 1 )
+		}
+
+		if( !FLAG[GF_SUBEV_06_1111_LOOK_BOAT] )	//【小舟を発見する】
+		{
+			SetChrPos("LP_1122_Boat",  -100000.00f,0.00f,0.00f)
+		}
+		else
+		{
+			SetChrWork( "LP_1122_Boat" , CWK_CHECKRADIUS , 6.0f )	// 範囲
+			if( !FLAG[GF_SUBEV_JOIN_CURRAN2] )	// カーラン卿が改めて合流した
+			{
+				SetChrPos("Curran",574.96f,-1225.30f,8.61f)
+				Turn("Curran",-106.75f,360.0f)
+				ChangeAnimation( "Curran" , "ANI_EV_DOWN", -1 , 1 )
+
+				EventAreaEnable( "SubEV_06_Look_Curran" , 1 )	// 【カーラン卿を発見する】
+			}
+		}
+
+		if(!FLAG[GF_AVOICE_0812] && FLAG[GF_SUBEV_06_1111_LOOK_BOAT] && !FLAG[GF_SUBEV_JOIN_CURRAN2]){
+			EventAreaEnable( "evb2_act_0812" , 1 )
+			EventAreaEnable( "evb2_act_0812b" , 1 )
+		}
+
+		//ＮＰＣマーカーセット
+		CallFunc("system:SetMarkerNPC")
+		
+		//釣り場制御
+		SetFishingAreaState(FISH_AREA_TBOX_11_R , FISH_AREASTATE_DISABLED )	// 再出現宝箱をOFF
+		if(FLAG[GF_FISH_FEATURE_T11] )	//初回宝箱を釣り上げている
+		{
+			SetFishingAreaState(FISH_AREA_TBOX_11, FISH_AREASTATE_DISABLED )	// 初回宝箱をOFF
+			if(rand() % 100 <= 5 || FLAG[TF_MP1122_TBOX_FISHABLE] )		//再出現宝箱を5％の確率で復活
+			{
+				SetFlag(TF_MP1122_TBOX_FISHABLE, 1)
+				SetFishingAreaState(FISH_AREA_TBOX_11_R , FISH_AREASTATE_ENABLED )	// 再出現宝箱 ON
+			}
+		}
+	}
+
+	//キラキラ：落とし物
+	if( FLAG[GF_MP1122_KIRAKIRA01] ){
+		ChangeAnimation( "KiraKira01" , "ANI_STOP2", -1 , 1 )		//取った後
+		SetChrWork("KiraKira01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN] && !FLAG[SF_LASTENTRY_NO] == 0){	//ひとり島屋内から出た時は表示しない
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_1122.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//ひとり島
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0812"
+{
+	if (!FLAG[GF_AVOICE_0812])
+	{
+		EventAreaEnable( "evb2_act_0812" , 0 )
+		EventAreaEnable( "evb2_act_0812b" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0812, 1, 0)	//カーラン卿に近づいたら
+	}
+}
+
+//-------------------------------------------
+//キラキラ
+function "LP_KiraKira01"
+{
+
+//	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_TALK)
+
+	//　　箱が開くアニメーションとSE。
+	ChangeAnimation( "this" , "ANI_OPEN", 0 , 1 )
+	Wait(30)
+
+	ChangeAnimation( "LEADER" , "ANI_GET_ITEM", -1 , 1 )	//アイテム入手モーション
+	Wait(15)
+
+	//	テキスト
+	GetItemMessageExPlus( ICON3D_PRESENT_THANATOS, 1 , ITEMMSG_SE_BETTER , "を手に入れた。" , 0 , 0 )
+	WaitPrompt()
+	WaitCloseWindow()
+	GetItem(ICON3D_PRESENT_THANATOS,1)		//プレゼントアイテム（文字入りの万年筆：タナトス）
+
+	//フラグ
+	SetFlag( GF_MP1122_KIRAKIRA01, 1 )
+	SetChrWork("this", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+
+//	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+//////////////////////////////////////////////
+// ロケーションポイント023:マングローダ
+//////////////////////////////////////////////
+function "EV_LOCATION023"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+
+	Portrait_Load(4, "visual/mapname/lnmp1122.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , 476.868f , -1144.720f , 46.208f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 42.501f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 21.998f , 0 )	// 基本仰角
+	RotateCamera( 0 , 243.617f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp1122:EV_LOCATION023_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt , INTERPOLATE_SPHERE, 467.524f , -1171.941f , 53.897f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance , INTERPOLATE_SPHERE, 42.500f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation , INTERPOLATE_SPHERE, -37.844f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera , INTERPOLATE_SPHERE, 262.950f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1122:EV_LOCATION023_ED")
+}
+function "EV_LOCATION023_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION23, 1)	//マングローダ
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_F013, MARKER_EV_LC_MP1122, 0, 0)	//ロケ　：マングローダ
+	SetMapMarker( SMI_LOCATION ,PAGE_F013, MARKER_EV_LC_MP1122, 530.35f, -1178.29f, 2.62f, 530.35f, -1178.29f,LOCATION_MP1122,MN_F_MP1122,0)		//ロケ　：マングローダ
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_F013,0 ,525.36f, -1171.42f ,100 )
+
+	CallFunc("mp1122:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , 493.051f , -1129.894f , 3.544f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -10.284f , 0 )	// 基本仰角
+	RotateCamera( 0 , -145.762f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", 493.05f, -1129.89f, 1.74f )
+	Turn("LEADER" ,-37.45f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//	================================================
+//	【小舟を発見する】	1122→1111への移動
+//	================================================
+function "LP_1122_Boat"
+{
+	//　　※mp1122の浜辺にも小舟が置かれる。
+	//　　ＬＰで調べると以下の選択肢
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+
+	//	選択テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C小舟で移動しますか？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"はい")
+	MenuAdd(2,"いいえ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	//────────────────────
+	//	⇒はい
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		//　　画面暗転。
+		FadeOut(FADE_BLACK,FADE_FAST)
+		WaitFade()
+		
+		PlaySE(SE_SHIP_01, 80, 0, 500, 0, 1.0f, 0)
+		Wait(30)
+		StopBGM(120)
+		PlaySE(SE_SHIP_02, 80, 0, 500, 0, 1.0f, 0)
+		Wait(40)
+		PlaySE(SE_SHIP_02, 60, 0, 500, 0, 1.0f, 0)
+		Wait(40)
+		StopBGM(120)
+		PlaySE(SE_SHIP_02, 40, 0, 500, 0, 1.0f, 0)
+		Wait(40)
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+		//　　ＳＥがフェードアウトして、mp1111から操作許可。
+		//　　近くには小舟が泊っている。
+	
+		//SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+	
+		//LoadArg("map/mp1111/mp1111.arg")
+		//
+	
+		//SetStopFlag(STOPFLAG_NOCHARACLIP)
+		//ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+		SetFlag(TF_LOADING_TIPS_OFF, 1)	//NowLoading 時の Tips 表示をカット
+		LoadArg("map/mp1111/mp1111.arg")
+		EventCue("mp1111:SubEV_06_Boat_ARRIVE_1111")		// 続き
+
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	}
+	//	⇒いいえ
+	else
+	{
+		//　　そのまま操作許可を戻す。
+	//終了処理ここから----------------------------------------------------
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+		//Turn("LEADER",0.00f,360.0f)
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	//終了処理ここまで----------------------------------------------------
+	}
+	//────────────────────
+}
+
+//小舟到着配置
+function "SubEV_06_Boat_ARRIVE_1122"
+{
+	CallFunc("system:event_begin")
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	CallFunc("mp1122:init")
+
+	SetChrPos("LEADER", 508.31f, -1104.09f, 0.01f)
+	Turn("LEADER", -16.93f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	MoveCameraAt(0, 508.305f, -1104.091f, 1.851f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 2.797f, 0)	// 基本仰角
+	RotateCamera(0, -163.066f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 300.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	CallFunc("system:camera_reset")
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+//		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_1122.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//ひとり島
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+//		}
+	}
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+}
+
+//	================================================
+//	【カーラン卿を発見する】
+//	================================================
+function "SubEV_06_Look_Curran"
+{
+	//　　mp1122　574.96f	-1225.30f	8.61f	18.70f付近に
+	//　　果物の木があり、その前にカーラン卿がいる。
+	//　　後姿でガッツポーズモーション？
+	//　　近づくとイベント起動。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 577.35f, -1220.81f, 8.82f)
+	Turn("ADOL", 8.98f, 360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	LookChr("ADOL", "Curran")
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 578.58f, -1221.22f, 8.82f)
+	Turn("LAXIA", 39.09f, 360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+	LookChr("LAXIA", "Curran")
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 575.52f, -1219.94f, 9.17f)
+	Turn("SAHAD", -3.72f, 360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+	LookChr("SAHAD", "Curran")
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", 576.40f, -1220.30f, 9.00f)
+	Turn("RICOTTA", 4.51f, 360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	LookChr("RICOTTA", "Curran")
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", 576.81f, -1219.19f, 9.03f)
+	Turn("HUMMEL", 7.03f, 360.0f)
+	ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+	LookChr("HUMMEL", "Curran")
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA", 577.97f, -1219.92f, 8.82f)
+	Turn("DANA", 31.54f, 360.0f)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	LookChr("DANA", "Curran")
+
+	SetChrWork("Curran", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Curran",574.96f,-1225.30f,8.61f)
+	Turn("Curran",-60.64f,360.0f)
+	PitchChr("Curran", 0.00f, 0)
+	RollChr("Curran", 0.00f, 0)
+	ChangeAnimation( "Curran" , "ANI_EV_DOWN", -1 , 1 )
+	ChangeSubAnimation("Curran",SUBMOT_EYE,ANI_E_SAD_CLOSE,1)
+	ChangeSubAnimation("Curran",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Curran",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "Curran" )
+	SetChrInfoFlag( "Curran" , INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt( 0 , 574.915f , -1225.280f , 8.995f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.453f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 11.444f , 0 )	// 基本仰角
+	RotateCamera( 0 , 148.544f , 0 )				// 角度
+	ChangeCameraPers( 0 , 43.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 200.000 ,1.000 ,0.700 ,0.600)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp1122:SubEV_06_Look_Curran_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE,574.915f , -1225.280f , 9.168f, 80)		// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE,  3.458f, 80)		// 基本距離
+
+	//MoveCameraAt( 0 , 574.915f , -1225.280f , 9.168f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.458f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 11.424f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 148.571f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 43.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	StopBGM(150)
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	Wait(20)
+	Look("Curran", 0.00f, -7.00f)
+	Wait(10)
+	Look("Curran", 0.00f, 0.00f)
+	Wait(10)
+	Look("Curran", 0.00f, -5.00f)
+	Wait(10)
+	Look("Curran", 0.00f, 0.00f)
+
+	SetName("？？？")
+	TalkPopup("Curran", 0, 2, 0, 0, 0)
+	{
+		"は、腹が減って動けぬ……"
+		"動けぬ2行目"
+
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	PlayVoice(Y8V_4524,"Katrin",100)	//はぁ…（溜息）
+
+	TalkPopup("Curran", 0, 2, 0, 0, 0)
+	{
+		"食えるもの……食えるものはないのか……"
+		"……ぶつぶつぶつぶつ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	WaitThread(1000)
+	WaitThread(1001)
+
+
+	Wait(20)
+	CrossFade(FADE_NORMAL)
+
+	PlayBGM(BGM_EVENT_004, 0)
+
+	MoveCameraAt(0, 576.678f, -1224.705f,  9.786f, 0)	// 注視点
+	ChangeCameraDistance(0, 4.501f, 0)		// 基本距離
+	ChangeCameraElevation(0,  -11.662f, 0)	// 基本仰角
+	RotateCamera(0, 290.035f, 0)				// 角度
+	ChangeCameraPers(0, 43.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 300.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1, MoveTo, "RICOTTA", 575.05f, -1222.79f, 8.69f,  0.1f, 0.22f)
+	ExecuteCmd(2, MoveTo, "ADOL", 575.67f, -1223.23f, 8.71f, 0.1f, 0.22f)
+	ExecuteCmd(3, MoveTo, "LAXIA", 576.94f, -1223.04f, 8.77f, 0.1f, 0.22f)
+	ExecuteCmd(4, MoveTo, "SAHAD", 574.19f, -1222.68f, 8.77f, 0.1f, 0.22f)
+	ExecuteCmd(5, MoveTo, "HUMMEL", 575.53f, -1221.56f, 8.93f, 0.1f, 0.22f)
+	ExecuteCmd(6, MoveTo, "DANA", 576.78f, -1221.89f, 8.80f, 0.1f, 0.22f)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 575.587f , -1223.157f , 9.786f, 110)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 329.744f, 110)		// 角度
+
+	//MoveCameraAt( 0 , 575.587f , -1223.157f , 9.786f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 4.501f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -11.662f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 329.746f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 43.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	Wait(FADE_NORMAL)
+	WaitThread(2)
+
+	TurnToChr("ADOL", "Curran", 10.0f)
+
+	WaitThread(1)
+
+	TurnToChr("RICOTTA", "Curran", 10.0f)
+
+	WaitThread(4)
+	Turn("SAHAD", -6.99f, 10.0f)
+
+
+	//　　カーラン卿にＰＡエモーション
+	EmotionEx("Curran", 0.03f, EMO_PA, 0, 5, 1, 1, 1.0f )	// 「PA」
+	LookReset("Curran")
+	Wait(35)
+
+	ChangeAnimation("Curran", "ANI_EV_DOWN_LOOKSIDE_S", -1, 1)
+
+	//　　振り返るとそこにアドルたちがやってくる
+
+	WaitAnimation2( "Curran" , -1, 1, "ANI_EV_DOWN_LOOKSIDE_S",  0)
+	Wait(30)
+
+	WaitThread(1000)
+	WaitThread(1001)
+
+//	Blur(BLUR_TYPE_AFTERIMAGE,0.45f ,10)
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , 575.587f , -1223.157f , 9.836f, 15 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 5.201f, 15 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE ,-7.390f  , 15 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 330.665f,  15 )		// 角度
+//	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -3.6f, 15 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 180 )		// 視野角
+
+	//MoveCameraAt( 0 , 575.587f , -1223.157f , 9.836f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 5.201f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -7.390f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 330.665f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 43.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ChangeAnimation("Curran", "ANI_EV_DOWN_LOOKSIDE_E", -1, 1)
+
+	ChangeSubAnimation("Curran", SUBMOT_EYE, ANI_E_SUP_S, 1)
+	ChangeSubAnimation("Curran", SUBMOT_MOUTH, ANI_M_SUP_S, 1)
+
+	EarthQuake(0.02f, 0.02f, 8)
+	SetName("？？？")
+	TalkPopup("Curran", 0, 2, 0, 0, 0)
+	{
+		"#18Sむう？　お前たちはっ……！？"
+	}
+	Wait(5)
+	PlaySE(SE_SUB_11, 60, 0, 100, 0, 1.0f, 0)
+	WaitPrompt()
+	WaitCloseWindow()
+
+	SetName("")
+	//	"LAXIA"
+	EmotionEx("LAXIA", 0.00f, EMO_EX2, 0, 5, 1, 1, 1.0f)	// 「！!」
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_SUP_S,1)
+	ChangeAnimation( "LAXIA" , "ANI_EV_SUP_S", -1 , 1 )
+
+	Wait(35)
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000mやはり、カーラン卿！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"SAHAD"
+	ChangeAnimation("SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1)
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#070e#110m生きてたのかよ！！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"RICOTTA"
+	LookRoll("RICOTTA", 20.0f)	// かしげる
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000m#0L（だれだ……？）"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	LookRoll("RICOTTA", 0.0f)	// かしげる
+
+	EmotionEx("Curran", 0.00f, EMO_3DOT, 0, 5, 1, 1, 1.0f)	//…
+	Wait(60)
+
+	CrossFade(FADE_NORMAL)
+
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	LookChr("ADOL" , "Curran" )
+	LookChr("LAXIA" , "Curran" )
+
+	Turn("RICOTTA", -5.09f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+
+	MoveCameraAt( 0 , 574.828f , -1225.950f , 9.615f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.899f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -9.086f , 0 )	// 基本仰角
+	RotateCamera( 0 , 168.332f , 0 )				// 角度
+	ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , 574.828f , -1225.950f , 9.292f , 100 )		// 注視点
+	ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.898f , 100 )		// 基本距離
+	ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , -9.087f , 100 )		// 基本仰角
+	ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE , 187.400f ,  100)		// 角度
+//	ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE , -3.6f, 100 )		// ロール回転
+//	ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 100 )		// 視野角
+
+	//MoveCameraAt( 0 , 574.828f , -1225.950f , 9.292f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 1.898f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -9.087f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 187.400f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	WaitThread(1000)
+	WaitThread(1001)
+
+
+	//	"Curran"
+
+	TalkPopup("Curran",0,0,0,0,0)
+	{
+		"#080mフフ、幻覚まで見えてきおったわ……\p"
+		"#061e#080m私もいよいよのようであるな……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeSubAnimation("Curran",SUBMOT_EYE,ANI_E_SAD_CLOSE_E,1)
+	ChangeSubAnimation("Curran",SUBMOT_EXT1,ANI_E_LOOKU_S,1)
+	LookSpd("Curran",0.08f,0.08f,0.08f)
+	Look("Curran", 0.00f, -10.00f)
+	Wait(30)
+	HeadNo("Curran", 1, 45)
+	Wait(60)
+
+	CrossFade(FADE_CROSS)
+	ChangeSubAnimation("Curran",SUBMOT_EYE,ANI_E_SAD_CLOSE_E,1)
+	ChangeSubAnimation("Curran",SUBMOT_EXT1,ANI_E_LOOKC,1)
+
+	MoveCameraAt( 0 , 575.186f , -1223.245f , 9.849f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.400f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -9.317f , 0 )	// 基本仰角
+	RotateCamera( 0 , 2.756f , 0 )				// 角度
+	ChangeCameraPers( 0 , 40.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	Wait(FADE_CROSS)
+
+	//アドルたちに冷や汗エモーション
+	EmotionEx("ADOL", 0.1f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	EmotionEx("LAXIA", 0.1f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	EmotionEx("SAHAD", 0.1f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	EmotionEx("RICOTTA", 0.1f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	EmotionEx("HUMMEL", 0.1f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	EmotionEx("DANA", 0.1f, EMO_TARA, 0, 5, 1, 1, 1.0f)	//冷や汗
+	Wait(50)
+
+	ExecuteCmd(4, MoveTo, "LAXIA", 575.98f, -1224.11f, 8.69f, 0.1f, 0.18f)
+	WaitThread(4)
+
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0)
+	{
+		"#000e#000mカーラン卿……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	LookReset("LAXIA")
+	ChangeAnimation( "LAXIA" , "ANI_EV_SHAGAMI_S", -1 , 1 )
+	Look("LAXIA", 0 , 20)
+
+	ExecuteCmd(5, MoveTo, "ADOL", 575.37f, -1223.79f, 8.68f, 0.1f, 0.18f)
+	WaitThread(5)
+	LookReset("ADOL")
+	ChangeAnimation( "ADOL" , "ANI_EV_SHAGAMI_S", -1 , 1 )
+	Look("ADOL", 0 , 28)
+
+	LookChr("Curran", "ADOL")
+	ChangeSubAnimation("Curran", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT, 0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1, "どうか気を確かに持ってください")
+	MenuAdd(2, "僕たちは本物です")
+	MenuOpen(TF_MENU_SELECT, -1, ADOLMENU_PPOSY, -2, -2, 10, 0)
+	WaitMenu(0)
+	MenuClose(10, 0)
+
+	HeadYes("ADOL" , 1 , 25 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Wait(20)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+	Wait(15)
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , 574.365f , -1225.800f , 9.119f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.599f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 11.361f , 0 )	// 基本仰角
+	RotateCamera( 0 , 121.938f , 0 )				// 角度
+	ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	Wait(10)
+
+	//────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+
+		HeadNo("Curran" , 1 , 35 )
+		EarthQuake(0.035f, 0.035f, 8)
+
+		TalkPopup("Curran", 0, 1, 0, 0, 0)
+		{
+			"#040e#000mええい、気休めなどよせ！\p"
+			"あの怪物に舟を沈められ、"
+			"九死に一生を得たのも束の間……\p"
+			"#042e気がつけば小島で一人"
+			"泥水をススって生きる日々……！\p"
+			"#061e#000mぐすっ、幻覚でないというなら、"
+			"今すぐ私を救い出すがいい！！"	//（涙目）"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+		//	⇒僕たちは本物です
+	if (FLAG[TF_MENU_SELECT] == 2)
+	{
+	
+		EarthQuake(0.035f, 0.035f, 8)
+		TalkPopup("Curran", 0, 1, 0, 0, 0)
+		{
+			"#070e#070m#16Sなに……？　本物だと申すか！？\p"
+			"#061e#000mあの怪物に舟を沈められ、"
+			"九死に一生を得たのも束の間……\p"
+			"気がつけば小島で一人"
+			"泥水をススって生きる日々……！\p"
+			"#062e#080mお、お、お前たち……本当の本当に、"
+			"この私を救いに来たのだな！？"	//（嬉し泣き）"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+
+	//────────────────────
+
+	Wait(10)
+
+	CrossFade(FADE_CROSS)
+	SetChrPos("DANA", 576.70f, -1221.99f, 8.79f)
+	Turn("DANA", 31.11f, 360.0f)
+	MoveCameraAt( 0 , 576.126f , -1222.816f , 10.161f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.400f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 10.361f , 0 )	// 基本仰角
+	RotateCamera( 0 , 107.035f , 0 )				// 角度
+	ChangeCameraPers( 0 , 39.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	ChangeAnimation("SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1)
+
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0)
+	{
+		"#000e#000mガハハハ……こりゃあ"
+			"随分苦労したみたいだなぁ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"DANA"
+	ChangeAnimation("DANA", "ANI_EV_RYOTESIRI_S", -1, 1)
+	TalkPopup("DANA", 0, 1, 0, 0, 0)
+	{
+		"#000e#000mでもよく生きていてくれたよね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"LAXIA"
+	HeadYes("LAXIA", 1, 25)
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0)
+	{
+		"#000e#000mそうですね、かつては散々"
+		"迷惑を被ったと思いましたが……\p"
+		"今となっては些細な"
+		"事だったかもしれません。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookSpd("LAXIA",0.1f,0.1f,0.1f)
+	LookRoll("LAXIA" , -18 , 0 )
+	Look("LAXIA" , 22 , 22 )
+
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0)
+	{
+		"#000mともかくアドル、連れ帰って"
+		"差し上げるとしましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドル頷く。
+	HeadYes("ADOL", 1, 25)
+	Wait(35)
+
+	//────────────────────
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	//　　暗転
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//	ナレーション
+	TalkPopup(UNDEF, 0, 3, SYSTEM_PPOSX, SYSTEM_PPOSY, 0)
+	{
+		"#7Cオケアノスによって"
+		"#7C海の藻屑と消えたはずのカーラン卿……\p"
+		"#7C少しやつれてはいるものの、奇跡的に"
+		"#7C小島で生き延びていたことが分かった。\p"
+		"#7Cそして今、アドルたちに連れられ"
+		"#7C再び漂流村に戻ってきたのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	StopBGM(90)
+
+	//PlaySE(SE_PARTYIN, 100, 0, 0, 0, 1.0f, 0)	//仲間に加わる
+
+	//　　暗転明けで漂流村の中央から
+	//────────────────────────────────────────
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1122:SubEV_06_Look_Curran_ED")
+}
+function "SubEV_06_Look_Curran_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	//ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+	CallFunc("system:reset_chrmot_Curran")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	ActiveVoiceStop(ACTIVEVOICESTOP_FORCE)		//アクティブボイス強制終了
+
+	StopBGM(60)
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+	LoadArg("map/mp1201/mp1201.arg")
+	EventCue("mp1201:SubEV_06_Look_Curran2")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+//終了処理ここまで----------------------------------------------------
+}

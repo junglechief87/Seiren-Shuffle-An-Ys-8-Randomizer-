@@ -1,0 +1,549 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 塔・下層	1	    			                                              //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	// イベントエリア設定制御
+	EventAreaEnable("evb2_M05S100", 0)
+	EventAreaEnable( "evb2_act_0505" , 0 )	//アクティブボイス
+
+	if (FLAG[SF_EVENT_ON]){
+
+		// イベント発生制御
+		if (FLAG[GF_05MP6110_OUT_CAMP] && !FLAG[GF_05MP6321_ATTACK_TOWER]){
+			SetFlag(GF_05MP6321_ATTACK_TOWER,1)
+			//SetFlag(GF_MPxxxx_MAP_NAME_NO_DRAW, 1)		// 地名表示制御
+			//EventAreaEnable("evb2_M05S100", 1)
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0505] && FLAG[GF_05MP6321_ATTACK_TOWER] && !FLAG[GF_05MP6325_KILL_MIDBOSS]){
+			EventAreaEnable( "evb2_act_0505" , 1 )
+		}
+
+		//マップ名表示カメラ演出
+		//if (!FLAG[SF_LOADINIT] && !FLAG[GF_SUBEV_AREANAME_6321]){
+		//	if (FLAG[SF_LASTENTRY_NO] == 0){
+
+		//		//SetFlag(GF_MPxxxx_MAP_NAME_NO_DRAW, 1)		// 地名表示制御
+		//		//EventCue("mp6321:SubEV_AreaName_6321")		//【エリアカメラ演出：バハの塔】
+		//	}
+		//}
+	}
+
+	//マップ名表示
+	if (!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if (FLAG[SF_LASTENTRY_NO] == 0){
+
+			VisualName("visual/mapname/mn_6321.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//バハの塔
+			SetFlag(TF_MAPNAME_SHOWN, 1)				// 地名表示した（テンポラリ）
+
+		}
+	}
+}
+
+//== == == == == == == == == == == == == == == == == == == == == == == ==
+//【エリアカメラ演出：バハの塔】
+//== == == == == == == == == == == == == == == == == == == == == == == ==
+//
+
+///////////////////////////////////////////////////////
+/// 2016/5/10 Redmine #26650 対応
+/// 初回エリアカメラ演出は EV_M05S100 に組み込みました
+///////////////////////////////////////////////////////
+/*
+
+//初回バハの塔に入ると、カメラを動かし
+//ダンジョンの様子を見せる。
+//ここでエリア名スプラッシュを表示。
+//
+//演出終了後、暗転を挟んで操作許可を戻す。
+
+function "SubEV_AreaName_6321"
+{
+
+	SetFlag(SF_ALLMUTEKI, 1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation("LEADER", "ANI_WAIT", -1, 1)
+
+	//モーションが終了するまで待機
+	WaitAnimation2("LEADER", -1, -1, ANI_WAIT, 1)
+
+	ResetMotion("ALL", 1)
+	StopEffect(-1, ALL, 1)
+	StopEmotion("ALL")
+	ResetMoveVec("PARTYALL")
+
+	// カメラ
+	MoveCameraAt(0, -109.492f, -0.199f, -5.845f, 0)	// 注視点
+	ChangeCameraDistance(0, 6.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 1.256f, 0)	// 基本仰角
+	RotateCamera(0, 278.699f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 200.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	//-- カット ----------------------------------------------------------
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -51.337f, -0.229f, 3.085f, 300)	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 6.000f, 300)		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 1.256f, 300)	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 267.984f, 300)				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	Wait(10)
+
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt(0, -11.166f, 15.923f, 38.457f, 0)	// 注視点
+	ChangeCameraDistance(0, 14.900f, 0)		// 基本距離
+	ChangeCameraElevation(0, -25.236f, 0)	// 基本仰角
+	RotateCamera(0, 170.335f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 200.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_COS, 14.035f, -27.143f, 12.263f, 430)	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_COS, 14.900f, 430)		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_COS, -7.356f, 430)	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_COS, 45.382f, 430)				// 角度
+
+	//ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_COS, 12.673f, -28.772f, 12.263f, 400)	// 注視点
+	//ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_COS, 14.900f, 400)		// 基本距離
+	//ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_COS, -7.356f, 400)	// 基本仰角
+	//ExecuteCmd(1003, RotateCamera, INTERPOLATE_COS, 42.579f, 400)				// 角度
+
+
+	Wait(130)
+	VisualName("visual/mapname/mn_6321.itp",VN_NAMEMAP,-1,-1,VN_MAPNAME_TIME)//バハの塔
+
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//-- 終了処理 --------------------------------------------------------
+
+	//フラグ
+	SetFlag(TF_MAPNAME_SHOWN, 1)				// 地名表示した（テンポラリ）
+	SetFlag(GF_SUBEV_AREANAME_6321, 1)			// 【エリアカメラ演出：バハの塔】を見た
+	SetFlag(GF_MPxxxx_MAP_NAME_NO_DRAW, 0)		// 地名表示制御解除
+
+	CallFunc("mp6321:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt(0, -118.431f, -0.197f, -6.157f, 0)	// 注視点
+	ChangeCameraDistance(0, 6.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 5.000f, 0)	// 基本仰角
+	RotateCamera(0, -90.000f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 200.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", -118.43f, -0.20f, -8.00f)
+	Turn("LEADER", -90.00f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI, 0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+
+}
+*/
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0505"
+{
+	if (!FLAG[GF_AVOICE_0505])
+	{
+		EventAreaEnable( "evb2_act_0505" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0505, 1, 0)	//下層攻略開始
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+//──────────────────────────────
+//▼塔の探索を開始した(mp6321)
+//──────────────────────────────
+function "EV_M05S100"			//塔の探索を開始した
+{
+	//開始処理ここから-----------------------------------------------
+	
+	CallFunc("system:event_begin")	// イベントボックス起動
+	
+//	SetStopFlag(STOPFLAG_EVENT)
+//	FadeOut(FADE_BLACK, 0)
+//	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -56.64f, -0.80f, -0.06f)
+	Turn("ADOL", -99.38f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", -54.33f, 0.11f, 0.01f)
+	Turn("RICOTTA", -72.58f, 360.0f)
+	ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag("RICOTTA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", -54.43f, 1.10f, 0.10f)
+	Turn("SAHAD", -64.36f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("SAHAD")
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", -56.59f, 0.04f, 0.00f)
+	Turn("LAXIA", -72.56f, 360.0f)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("LAXIA")
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", -58.30f, 0.41f, 0.00f)
+	Turn("HUMMEL", -80.98f, 360.0f)
+	ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("HUMMEL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("HUMMEL")
+	SetChrInfoFlag("HUMMEL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA", -56.14f, -1.43f, -0.08f)
+	Turn("DANA", -96.25f, 360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("DANA")
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+//	MoveCameraAt(0, -49.315f, 0.991f, 2.106f, 0)	// 注視点
+//	ChangeCameraDistance(0, 6.000f, 0)		// 基本距離
+//	ChangeCameraElevation(0, 3.737f, 0)	// 基本仰角
+//	RotateCamera(0, 235.218f, 0)				// 角度
+//	ChangeCameraPers(0, 38.600f, 0)			// 視野角
+//	SetCameraZPlane(0.100f, 200.000f)			// ZPlane
+//	RollCamera(0, 0.0f, 0)				// ロール回転
+
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -51.772f, -0.134f, 1.387f, 120)		// 注視点
+//	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 3.625f, 120)		// 基本仰角
+//	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 254.032f, 120)		// 角度
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 220.000, 2.000, 0.300, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6321:EV_M05S100_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	////////////////////////////////////////////////////////
+	////// Redmine #26650 対応                       ///////
+	////// function SubEV_AreaName_6321 より抜き出し ///////
+	////////////////////////////////////////////////////////
+
+	// カメラ
+	MoveCameraAt(0, -109.492f, -0.199f, -5.845f, 0)	// 注視点
+	ChangeCameraDistance(0, 6.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 1.256f, 0)	// 基本仰角
+	RotateCamera(0, 278.699f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 200.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	//-- カット ----------------------------------------------------------
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -51.337f , -0.229f , 3.845f, 150)	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 6.000f, 150)		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 1.256f, 150)	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 267.984f, 150)				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	Wait(15)
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt(0, -11.166f, 15.923f, 38.457f, 0)	// 注視点
+	ChangeCameraDistance(0, 14.900f, 0)		// 基本距離
+	ChangeCameraElevation(0, -25.236f, 0)	// 基本仰角
+	RotateCamera(0, 170.335f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 200.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 90.000, 2.000, 0.200, 0.500)					//イベント毎に調整
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_COS, 14.035f, -27.143f, 12.263f, 340)	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_COS, 14.900f, 340)		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_COS, -7.356f, 340)	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_COS, 45.382f, 340)				// 角度
+
+	//ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_COS, 12.673f, -28.772f, 12.263f, 400)	// 注視点
+	//ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_COS, 14.900f, 400)		// 基本距離
+	//ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_COS, -7.356f, 400)	// 基本仰角
+	//ExecuteCmd(1003, RotateCamera, INTERPOLATE_COS, 42.579f, 400)				// 角度
+
+	Wait(100)
+	VisualName("visual/mapname/mn_6321.itp",VN_NAMEMAP,-1,-1,VN_MAPNAME_TIME)//バハの塔
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	Wait(10)
+
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+
+	MoveCameraAt(0, -49.315f, 0.991f, 2.106f, 0)	// 注視点
+	ChangeCameraDistance(0, 6.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 3.737f, 0)	// 基本仰角
+	RotateCamera(0, 235.218f, 0)				// 角度
+	ChangeCameraPers(0, 38.600f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 200.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 220.000, 2.000, 0.300, 0.500)					//イベント毎に調整
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -51.772f, -0.134f, 1.387f, 80)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 3.625f, 80)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 254.032f, 80)		// 角度
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	//　　入口の回廊を抜けて、階段のある広間へ
+	//　　出たところでイベント開始。
+
+	ChangeAnimation("RICOTTA", "ANI_EV_RYOTEKOSI_S", -1, 1)
+	LookChr("RICOTTA", "SAHAD")
+	TalkPopup("RICOTTA", 0, 2, 0, 0, 0)
+	{
+		"#080e#080mなはは、サハド！"
+		"床、ナナメになってる！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"SAHAD"
+	ChangeAnimation("SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1)
+
+	LookChr("SAHAD", "RICOTTA")
+	TalkPopup("SAHAD", 0, 2, 0, 0, 0)
+	{
+		"#000e#000mそりゃあ、塔が傾いてるから"
+		"当たり前なんだろうが……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , -57.736f , 0.076f , 1.238f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.100f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.750f , 0 )	// 基本仰角
+	RotateCamera( 0 , 62.022f , 0 )				// 角度
+	ChangeCameraPers( 0 , 31.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	Wait(FADE_CROSS)
+
+
+	ChangeAnimation( "DANA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	//	"DANA"
+	TalkPopup("DANA", 0, 2, 0, 0, 0)
+	{
+		"#071e#000mな、中に入ってみると、"
+		"思った以上に傾いているかな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"LAXIA"
+	HeadYes("LAXIA", 1, 25)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_CLOSE_S, 1)
+	Wait(15)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_CLOSE_E, 1)
+
+	TalkPopup("LAXIA", 0, 2, 0, 0, 0)
+	{
+		"#000m足元に気を付けて進みましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ここで操作許可。
+	//　　内部は理力、竜種(古代種)、歴史の研究を行うフロアで
+	//　　構成されていて、各フロアでダーナの説明を聞きながら
+	//　　上層へ進むことになる。
+	//　　尚、本格的に理力を利用したダンジョンギミックも
+	//　　バハの塔から登場。
+	//　　中ボスを倒して理法具入手で二段ジャンプが可能になる。
+
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6321:EV_M05S100_ED")
+}
+
+function "EV_M05S100_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag(GF_05MP6321_ATTACK_TOWER, 1)
+
+	SetFlag(TF_MAPNAME_SHOWN, 1)				// 地名表示した（テンポラリ）
+	SetFlag(GF_SUBEV_AREANAME_6321, 1)			// 【エリアカメラ演出：バハの塔】を見た
+	SetFlag(GF_MPxxxx_MAP_NAME_NO_DRAW, 0)		// 地名表示制御解除
+
+	CallFunc("mp6321:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER", -51.76f, -0.14f, -0.01f)
+	Turn("LEADER", -95.35f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt(0, -51.760f, -0.140f, 1.830f, 0)	// 注視点
+	ChangeCameraDistance(0, 6.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 5.096f, 0)	// 基本仰角
+	RotateCamera(0, -94.462f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 200.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+}
