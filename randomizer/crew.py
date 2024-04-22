@@ -379,7 +379,7 @@ def getCrewFlags(location):
     SetFlag( GF_02MP1201_JOIN_KATRIN , 1 )
     
     SetFlag(GF_SMITHY_LV,2) //Blacksmith level setting
-    SetFlag( GF_CAMP_SHIPYARD_LV, 1 ) // Drifting village development settings: Shipyard LV1
+    //SetFlag( GF_CAMP_SHIPYARD_LV, 1 ) // Drifting village development settings: Shipyard LV1
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
     GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Weapons can now be reforged.",0,0)
     WaitPrompt()
@@ -830,6 +830,7 @@ def getCrewFlags(location):
     SetDiaryCharaFlag( DRCHA_KASHU, DRCHA_FLAG_INFO1, 1 ) 
     SetDiaryCharaFlag( DRCHA_KASHU, DRCHA_FLAG_INFO2, 1 ) 
     SetDiaryCharaFlag( DRCHA_KASHU, DRCHA_FLAG_INFO3, 1 )
+    SetFlag( GF_CAMP_SHIPYARD_LV, 7 )
     JoinNPC( NPC_KASHU, JOIN_NPC_JOIN ) // Joined with Cashu
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )	
 """
