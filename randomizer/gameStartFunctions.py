@@ -131,6 +131,7 @@ function "startParameters"
     SetFlag(GF_04MP6201_TALK_THANATOS,1)
     //There are zero checks in temple of the great tree and the "puzzel" is simple to let's hurry the player along and open the doors for them.
     SetFlag(GF_04MP6402_CHECK_GIM,1)
+    SetFlag(GF_MP6401_SWITCH_03,1)
     SetFlag(GF_MP6401_SWITCH_02,1)
     SetFlag(GF_MP6401_SWITCH_01R,1)
     SetFlag(GF_MP6401_SWITCH_01L,1)
