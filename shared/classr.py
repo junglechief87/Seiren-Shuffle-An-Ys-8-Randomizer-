@@ -238,6 +238,9 @@ class access(goal):
   def goalCheck(self):
     if self.goal == 'Find Crew':
       return self.canMove(self.numGoal)
+    
+    if self.goal == 'Seiren Escape' and self.hasBoat() and self.hasChart() and self.hasMistilteinn():
+      return True
 
   def readNote1(self):
     for item in self.inventoryObjects:
@@ -253,7 +256,19 @@ class access(goal):
   
   def hasBoat(self):
     for item in self.inventoryObjects:
-      if item.itemID == 779:
+      if item.itemID == 779: #ship blueprints
+        return True
+      return False
+    
+  def hasMistilteinn(self):
+    for item in self.inventoryObjects:
+      if item.itemID == 9: #Mistilteinn
+        return True
+      return False
+    
+  def hasChart(self):
+    for item in self.inventoryObjects:
+      if item.itemID == 795: #seiren chart
         return True
       return False
     

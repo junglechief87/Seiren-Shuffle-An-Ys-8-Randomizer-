@@ -56,6 +56,12 @@ def fillShuffledLocations(inventory, fillLocations, shuffledLocations,parameters
     accessibleLocation = []
     progressionBanList = progressionBans(parameters)
 
+    #if we're doing seiren escape then make Mistilteinn and the Seiren Area Map progression items
+    if parameters.goal == 'Seiren Escape':
+        for item in inventory:
+            if item.itemID == 9 or item.itemID == 795:
+                item.progression = True
+
     #pull out progression items to place first for easier processing
     while len(inventory) != 0:
         if inventory[0].progression:    

@@ -8,7 +8,6 @@ from patch.miscPatches import *
 seed=int(random.random()*pow(10,16))
 parameters = classr.guiInput
 parameters.getSeed(seed)
-parameters.getGoal('Find Crew', 24)
 
 def buttons(inpt):
     if inpt == 'Patch Files':
@@ -33,6 +32,14 @@ def buttons(inpt):
         parameters.getSeed(seed)
         app.setEntry("Seed#: ",parameters.seed)
 
+def changeScale():
+    if app.getOptionBox("Goal: ") == "Find Crew":
+        app.setScaleState("Goal Count: ","active")
+        app.setScaleRange("Goal Count: ",1,28,24)
+    elif app.getOptionBox("Goal: ") == "Seiren Escape":
+        app.setScaleState("Goal Count: ","disabled")
+        app.setScaleRange("Goal Count: ",0,0,0)
+
 with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:     
     app.setGuiPadding(10,10)
     app.startFrame("Seed",0)
@@ -45,14 +52,14 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
 
     app.startFrame("goalFrame",1,0,0)
     app.setSticky("ew")
-    app.addLabelOptionBox("Goal: ", ["Find Crew"],1,0,0)
-    app.addScale("Goal Count: ",1,1,3)
+    app.addOptionBox("Goal: ", ["Find Crew", "Seiren Escape"],1,1,0)
+    app.addScale("Goal Count: ",1,2,3)
     app.setScaleIncrement("Goal Count: ",1)
     app.showScaleValue("Goal Count: ",True)
     app.showScaleIntervals("Goal Count: ",5)
     app.setScaleLength("Goal Count: ", 10)
-    if app.getOptionBox("Goal: ") == "Find Crew":
-        app.setScaleRange("Goal Count: ",1,28,parameters.numGoal)
+    app.setScaleRange("Goal Count: ",1,28,24)
+    app.setOptionBoxChangeFunction("Goal: ", changeScale)
     app.stopFrame()
 
     app.startLabelFrame("Shuffle Locations",2,0,0)
