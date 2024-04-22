@@ -412,6 +412,7 @@ function "startParameters"
 	SetFlag(GF_QUEST_505, QUEST_END)				
     SetFlag(GF_SUBEV_JOIN_CURRAN2,1)
     SetFlag(GF_SUBEV_LOOK_NIA1,1) 
+    SetFlag(GF_SUBEV_LOOK_SILVIA2,1)
     EquipCostume(ADOL, ICON3D_COS_ADOL_01, EQC_MAIN, EQC_MODE_EVDEFAULT)
     EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EQUIP)
     EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EVFORCE)	
