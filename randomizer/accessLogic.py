@@ -247,7 +247,7 @@ def canAccess(inventory,location,goal):
         else: return False
     elif location.locRegion == 'Vista Ridge' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()): 
         if location.locName == 'Vista Ridge Upper' and access.canMove(21) and access.canDoubleJump(): return True
-        if location.locName == 'Vista Ridge Lower' and access.canMove(14) and access.canSwampWalk() and access.canInsect() and access.fullParty(): return True
+        if location.locName == 'Vista Ridge Lower' and access.canMove(14) and access.canSwampWalk() and access.canInsect() and access.fullParty() and access.canSeeDark(): return True
     elif location.locRegion == 'Lodinia Marshland' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()):
         if location.locName == 'Entrance from Vista Ridge':
             if location.mapCheckID == 'TBOX01': return True
