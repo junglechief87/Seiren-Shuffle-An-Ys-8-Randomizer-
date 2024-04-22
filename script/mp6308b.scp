@@ -1,0 +1,141 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+#include "inc/enemy/b008.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 天の回廊・ボスマップ		    			                                  //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	if (FLAG[SF_BOSS_BATTLE])
+	{
+		////////////////////////////////////////////////////
+		// ◆仮：重すぎて戦闘にならないので、仮で表示オフに。
+//		MapHide("yuka_sub", 0)
+		////////////////////////////////////////////////////
+
+		//リトライやデバッグボスジャンプからのボス戦
+		SetWork( WK_BGM , BGM_Nothing )
+		EventCue("mp6308b:EV_RetryBoss")
+	}
+
+}
+
+//-------------------------------------------
+// ボス戦リトライ
+function "EV_RetryBoss"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("B008", 7.25f, 0.0f, 0.0f)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos("PLAYER1",-20.00f, 0.0f, 0.0f)
+	TurnToChr("PLAYER1","B008",360.0f)
+	TurnToChr("B008","PLAYER1",360.0f)
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+	SetYs8Camera(B008_CAM_DEFAULT_DIST, B008_CAM_DEFAULT_FOV, B008_CAM_DEFAULT_DIP, B008_CAM_DEFUALT_MINZ, B008_CAM_DEFUALT_MAXZ)
+
+	MoveCameraAt( 0 , -20.000f , 0.000f , 1.869f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 10.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -90.000f , 0 )				// 角度
+	ChangeCameraPers( 0 , 47.000f , 0 )			// 視野角
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_004, 0)
+	MapAnime("CA_asiba","off")	//逃げられないストッパー起動
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+
+	if (FLAG[SF_TIMEATK])
+	{
+		// タイムアタックの場合はボス名出してあげる
+		VisualName("visual/bossname/bn_b008.itp", VN_NAMEBOSS2, VN_BOSSNAME_LT_X, VN_BOSSNAME_LT_Y,VN_BOSSNAME_TIME)
+	}
+
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//------------------------------------------------
+}
+
+// ボス死亡
+function "EV_Boss_Dead"
+{
+	//無敵ON・色々終了させる---------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+
+	Wait(90)
+	StopBGM(120)
+	Wait(60)
+
+	//イベントバトル用CallFunc-------------------------
+	// SF_BOSS_BATTLEのみイベント内で対処して下さい
+	CallFunc("system:boss_end")
+
+	//封鎖解除・ボス消去-------------------------------
+	MapAnime("CA_asiba","on")	//逃げられないストッパー起動
+
+	SetChrPos("B008",-100000.00f,0.0f,0.00f)//表示させたくないので彼方に飛ばす
+
+	//事後処理-----------------------------------------
+	// タイムアタック中
+	if (FLAG[SF_TIMEATK])
+	{
+		EndTimeAtk()		// タイムアタック終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else if( FLAG[SF_EVENT_ON] )
+	{
+		//NowLoading 時の Tips 表示をカット
+		SetFlag(TF_LOADING_TIPS_OFF, 1)
+
+		StopBGM(30)
+		SetFlag(SF_NOCHANGEBGM, 1)
+		
+		LoadArg("map/mp6350v1/mp6350v1.arg")
+		EventCue("mp6350:EV_M06S202")
+		
+		//LoadArg("map/mp6308/mp6308.arg")
+		//EventCue("mp6308:EV_M06S201")
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else
+	{
+		// ボスラッシュ？
+		FadeIn(FADE_WHITE,FADE_FAST)
+		WaitFade()
+
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	//------------------------------------------------
+
+}
