@@ -204,6 +204,7 @@ def canAccess(inventory,location,goal):
         elif location.locName == 'Mid-Boss Arena': return True
         elif location.locName == 'Fifth Floor' and access.canDoubleJump(): return True
         elif location.locName == 'Sixth Floor' and access.canDoubleJump(): return True
+        elif location.locName == 'Top Floor' and access.canDoubleJump(): return True
         else: return False
     elif location.locRegion == 'Nostalgia Cape' and (access.canMove(6) or access.canClimb()) and access.canDoubleJump() and access.canInsect():
         if location.mapCheckID == 'Ed Join' and access.canMove(16): return True
