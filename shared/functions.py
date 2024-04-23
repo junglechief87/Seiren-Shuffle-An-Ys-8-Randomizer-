@@ -1,6 +1,7 @@
 import os.path
 import csv
 import shared.classr as classr
+import sys
 
 encode = "utf-8"
 sourceScript = "rng"
@@ -47,13 +48,15 @@ def getIcon(itemID):
 
 def getLocFile(mapID,fileType):
     if fileType == 'script':
-        for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__),os.pardir) + "/script/"):
+        #for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__),os.pardir) + "/script/"):
+        for root, dirs, files in os.walk(os.path.join(os.path.dirname(sys.executable)) + "/script/"):
             for file in files:
                 if file.endswith('.scp') and file.find(mapID) >= 0:
                     return os.path.join(root, file)
                 
     elif fileType == 'map':
-        for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__),os.pardir) + "/map/"):
+        #for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__),os.pardir) + "/map/"):
+        for root, dirs, files in os.walk(os.path.join(os.path.dirname(sys.executable)) + "/map/"):
             for file in files:
                 if file.endswith('.arb') and file.find(mapID) >= 0:
                     return os.path.join(root, file)
