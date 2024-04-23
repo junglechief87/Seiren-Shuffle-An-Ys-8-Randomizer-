@@ -456,13 +456,13 @@ function "goal"
     elif parameters.goal == 'Seiren Escape':
         selectionSphereAccess ="""
 function "goal"
-{{
+{
     if(ALLITEMWORK[ICON3D_SHIP_PLAN] && ALLITEMWORK[ICON3D_SEIREN_CHART] && ALLITEMWORK[ICON3D_WP_ADOL_008])
-    {{
+    {
         SetFlag( GF_06MP6301_OPEN_STAIRS , 1 )
 	    SetFlag( GF_06MP6301_GOTO_BOSSROOM , 1 )
-    }}
-}}
+    }
+}
 """
         return selectionSphereAccess
 

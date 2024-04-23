@@ -46,17 +46,10 @@ class inventory(location):
     self.crew = location.crew
     self.item = location.item
 
-class goal:
-  def __init__(self, goal, numGoal):
-    self.goal = goal
-    self.numGoal = numGoal
-    
-class access(goal):
-  def __init__(self, inventoryObjects, goal):
+class access:
+  def __init__(self, inventoryObjects):
     self.inventoryObjects = inventoryObjects
-    self.goal = goal.goal
-    self.numGoal = goal.numGoal
-    
+
   def canDoubleJump(self):
     for item in self.inventoryObjects:
       if item.itemID == 741: #archeopteryx wings
@@ -234,14 +227,7 @@ class access(goal):
       if item.itemID == 629: #Fishing Rod
         return True
     return False
-
-  def goalCheck(self):
-    if self.goal == 'Find Crew':
-      return self.canMove(self.numGoal)
-    
-    if self.goal == 'Seiren Escape' and self.hasBoat() and self.hasChart() and self.hasMistilteinn():
-      return True
-
+  
   def readNote1(self):
     for item in self.inventoryObjects:
       if item.itemID == 770: #logbook from east coast cave
@@ -258,20 +244,20 @@ class access(goal):
     for item in self.inventoryObjects:
       if item.itemID == 779: #ship blueprints
         return True
-      return False
-    
+    return False
+      
   def hasMistilteinn(self):
-    for item in self.inventoryObjects:
+    for item in self.inventoryObjects: 
       if item.itemID == 9: #Mistilteinn
         return True
-      return False
-    
+    return False
+      
   def hasChart(self):
     for item in self.inventoryObjects:
       if item.itemID == 795: #seiren chart
         return True
-      return False
-    
+    return False
+      
 class guiInput:
   def __init__(self):
      self.seed = None

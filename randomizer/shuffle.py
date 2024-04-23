@@ -12,8 +12,7 @@ def shuffleLocations(parameters):
     #take standard location list built from the locations.csv and build out shuffle locations and inventory lists
     #filter out locations that are not currently being shuffled.
     global chestsToCopy
-    global goal
-    goal = classr.goal(parameters.goal,parameters.numGoal)
+    
     random.seed(parameters.seed)
     vanillaLocations =  getLocations() #location list built from locations table
     inventory = [] #list of all items in the shuffle pool
@@ -48,7 +47,7 @@ def shuffleLocations(parameters):
 
     return shuffledLocations
 
-def fillShuffledLocations(inventory, fillLocations, shuffledLocations,parameters):
+def fillShuffledLocations(inventory, fillLocations, shuffledLocations, parameters):
     progressionInventory = [] #progression items only
     niceItems = [] #nice to have items that will always exist in the world but don't contain logic
     junkItems = [] #filler items, not all will be placed. Some new progression items, like the Dana past event trigger items, will take their place in the pool of vanilla items.
@@ -58,9 +57,9 @@ def fillShuffledLocations(inventory, fillLocations, shuffledLocations,parameters
 
     #if we're doing seiren escape then make Mistilteinn and the Seiren Area Map progression items
     if parameters.goal == 'Seiren Escape':
-        for item in inventory:
+        for index,item in enumerate(inventory):
             if item.itemID == 9 or item.itemID == 795:
-                item.progression = True
+                inventory[index].progression = True
 
     #pull out progression items to place first for easier processing
     while len(inventory) != 0:
@@ -113,7 +112,7 @@ def fillShuffledLocations(inventory, fillLocations, shuffledLocations,parameters
             itemFound = 0
 
             for index,location in enumerate(accessibleLocation):
-                if location.progression and canAccess(accessibleInventory,location,goal):
+                if location.progression and canAccess(accessibleInventory,location,parameters):
                     accessibleItem = classr.inventory(accessibleLocation.pop(index))
                     accessibleInventory.append(accessibleItem)
                     itemFound+=1
@@ -123,7 +122,7 @@ def fillShuffledLocations(inventory, fillLocations, shuffledLocations,parameters
 
         #loop through locations and test if the player can access them. If they can access them then queue the location to be filled and remove from pool
         for index,location in enumerate(fillLocations):
-            if canAccess(accessibleInventory,fillLocations[index],goal) and location.locID not in progressionBanList:
+            if canAccess(accessibleInventory,fillLocations[index],parameters) and location.locID not in progressionBanList:
                 fillLocation = fillLocations.pop(index)
                 filledLocation = combineShuffledLocAndItem(fillLocation, itemToPlace)
                 shuffledLocations.append(filledLocation)
@@ -172,7 +171,7 @@ def fillShuffledLocations(inventory, fillLocations, shuffledLocations,parameters
             chestsToCopy[3].locID = 179
             shuffledLocations.append(chestsToCopy[3])
 
-    generateSpoiler(shuffledLocations,parameters,goal,blacklistRegion,duplicateChests)
+    generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests)
         
     return shuffledLocations
 

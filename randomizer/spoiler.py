@@ -1,7 +1,7 @@
 import shared.classr as classr
 from randomizer.accessLogic import *
 
-def generateSpoiler(shuffledLocations,parameters,goal,blacklistRegion,duplicateChests):
+def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests):
     sphere = 0
     newInventory = []
     foundLocations = []
@@ -12,13 +12,13 @@ def generateSpoiler(shuffledLocations,parameters,goal,blacklistRegion,duplicateC
 
     spoilerLog.write("Seed# " + str(parameters.seed) + '\n')
     spoilerLog.write('\n')
-    spoilerLog.write('Goal: ' + goal.goal + '\t Number: ' + str(goal.numGoal))
+    spoilerLog.write('Goal: ' + parameters.goal + '\t Number: ' + str(parameters.numGoal))
     spoilerLog.write('\n \n \n')
     
     spoilerLog.write("Locations:\n")
     spoilerLog.write('\n')
     spoilerLog.write('\n')
-                     
+
     for location in shuffledLocations:
         location.writeSpoiler(spoilerLog)
 
@@ -45,7 +45,7 @@ def generateSpoiler(shuffledLocations,parameters,goal,blacklistRegion,duplicateC
         while True:
             itemFound = 0
             for index,location in enumerate(accessibleLocation):
-                if canAccess(progressionInventory,location,goal) or location.locRegion.find(blacklistRegion) >= 0:
+                if canAccess(progressionInventory,location,parameters) or location.locRegion.find(blacklistRegion) >= 0:
                     newLocation = accessibleLocation.pop(index)
                     accessibleItem = classr.inventory(newLocation)
                     

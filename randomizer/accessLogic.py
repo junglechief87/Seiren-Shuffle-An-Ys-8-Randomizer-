@@ -1,7 +1,7 @@
 import shared.classr as classr  
 
-def canAccess(inventory,location,goal):
-    access = classr.access(inventory,goal)
+def canAccess(inventory,location,parameters):
+    access = classr.access(inventory)
     if location.locRegion == 'White Sand Cape':
         if location.locName == 'Cobalt Crag':
             if location.mapCheckID == 'TBOX03' and access.canMove(20): return True
@@ -280,7 +280,9 @@ def canAccess(inventory,location,goal):
     elif location.locRegion == 'Octus Overlook' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()):
         if (location.locName == 'Path of the Frozen Era' or location.locName == 'Path of the Insectoid Era' or location.locName == 'Path of the Sky Era') and access.canUndead(): return True
         elif location.locName == 'Path of the Ocean Era': return True
-        elif location.locName == 'Selection Sphere' and access.goalCheck(): return True
+        elif location.locName == 'Selection Sphere':
+            if parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal): return True
+            elif parameters.goal == 'Seiren Escape' and access.hasBoat() and access.hasMistilteinn() and access.hasChart(): return True
         else: return False
     else: return False
 
