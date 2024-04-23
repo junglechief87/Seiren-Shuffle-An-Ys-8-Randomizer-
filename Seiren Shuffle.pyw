@@ -104,4 +104,6 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.addButtons(['Patch Files', 'Generate Seed'], [buttons, buttons],0,0)
     app.stopFrame()
 
-app.go()
+    app.setFastStop(True)
+    app.go()
+    
