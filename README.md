@@ -23,6 +23,10 @@ The is the unique identifier for the randomization of your playthrough. Seeds wi
 ### Goal:
 This sets the goal for your seed and the required amount. The goal and the required number are used to determine when the player will gain access to the Selection Sphere, the game's final room that leads to the final boss. Right now the only goal in the rando finding castaways and the required amount is how many that need to be found before the selection sphere unlocks. More goals are planned post 1.0.
 
+**Find Crew**: This is short for finding castaways and the required amount is how many that need to be found before the Selection Sphere unlocks. This is tied to the same counts used for moving objects in the world. There are 28 possible and the goal number can be set to any number from 1-28. So this is essentially an X of 28 item hunt.
+
+**Seiren Escape**: This is essentially finding three specific items scattered between the checks. Those items are *Seiren Nautical Chart*, *Ship Blueprints*, and *Mistilteinn*. The goal number does nothing here and is disabled with this setting.
+
 ### Shuffle Locations:
 **Shuffle Castaways**: This sets whether or not the castaways, the other people stranded on the island that you're searching for that aren't party members, will be included in the shuffle. With this off they will be acquired in their original locations. (Note the rando alters the original game behavior so you never lose castaways regardless of this setting).
 
@@ -71,14 +75,14 @@ The Pirate's *Logbook* from the East Coast Cave Docks lowers the gangway that gr
 
 The *Glow Stone* is an item of limited utility in the original game, very few areas were dark enough to make it remotely useful (this might depend a little on your monitor though and it is still logically required for items in some of those dark rooms but not really necessary). To improve it's utility it now unlocks Night Hunts too. The night hunt versions of Towering Coral Forest and Mount Gendarme are quality checks per minute plays and Pangaia Plains Night is a quality exp per minute play, so this adds greater importance to this item of questionable merit. 
 
-The *Ship Blueprints* open repair the boat that leads to Solitude Island.
+The *Ship Blueprints* repair the boat that leads to Solitude Island.
 
 ## Other Notes for Progression
 A couple quick notes that might not be immediately obvious.
 
 The player can still access the *enhance* feature for weapons before getting Kathleen by interacting with the stump near the forge, just like the original game the player had access to some of the village features though in a greatly limited capacity before finding the villagers that run specific shops.
 
-- *Dina* is logically required for getting rid of insect nests, her joining grants the player the abiltiy to trade which is access to Insect Repellant and the player will also get 10 Insect Repellant upon having her join.
+- *Dina* is logically required for getting rid of insect nests, her joining grants the player the abiltiy to trade, including Jewel Trades, which is access to Insect Repellant and the player will also get 10 Insect Repellant upon having her join.
 - *Kathleen* is access to reforge and armor smith.
 - *Licht* is access to the main brew feature.
 - *Alison* is access to the tailor.
@@ -88,13 +92,15 @@ The player can still access the *enhance* feature for weapons before getting Kat
 - *Octus Overlook* is open from the start of the game and if it can be reached then it can be entered, only Selection Sphere access is tied to the goal.
 - The vanilla *Licht* check leads to the whole sequence that ends in the Kiergaard boss fight. Defeating Kiergaard gives the player the vanilla Quina joining event check.
 - Defeating *Avalodragil* normally triggers the events that have the vanilla Dogi and Paro joining events along with the Fishing Rod check. These are rewarded after the boss fight instead. Normally Barbaros would join here too but his join event was moved to after the end of Waterdrop Cave for balance reasons (There would have been no reason to fight the boss otherwise).
-- There was a check added to the monolith scene at the top of Baja Tower, this was because there were no checks behind the boss of Baja Tower otherwise. 
+- There was a check added to the monolith scene at the top of Baja Tower, this was because there were no checks behind the boss of Baja Tower otherwise.
+- *Ricotta* will get an item dropped on her the second she enters Castaway Village for the first time, including if you got her as a starting character, this is the scene where she would meet Shoebill and Shoebill would officially join.
+- Remember that *Dana* can open essence doors, there are two in the game, they are highly relevant to progression. 
 
 ## Final Notes
 Here is a list of all checks in the rando for assistance: [Checks](https://docs.google.com/spreadsheets/d/e/2PACX-1vTk6waI_Ymz1SiK90FnF1b2hDCgdZCVTrhFAX-O2-K_ovf0R3HA07AI90D5vQXPKrYBoMxH4Zu7tclx/pubhtml)
-At this point everything in the game should be randomized other than quest rewards, which I ultimately decided weren't worth it and flagged most of the quests as completed on startup (a majority of the quest rewards are pretty meh and the quests are mostly about building rep for the "good ending" and the few quest rewards that were decent were added to the shuffle and have the potential to still appear). If you find anything that you think isn't that isn't a quest reward feel free to let me know. Locations generally aren't difficult to add.
+At this point everything in the game should be randomized other than quest rewards, which I ultimately decided weren't worth it and flagged most of the quests as completed on startup (a majority of the quest rewards are pretty meh and the quests are mostly about building rep for the "good ending" and the few quest rewards that were decent were added to the shuffle and have the potential to still appear). The only quest that's tied to logic in any way is defeating Master Kong. There is one check tied to the event for beating Master Kong all six times, where he joined the village in the original game, and the quest becomes available when Ricotta is found. If you find anything that you think isn't randomized that isn't a quest reward feel free to let me know. Locations generally aren't difficult to add.
 
-The core of the randomizer uses a large script file to drive what items are and what items do, this is much more flexible than simply placing new items in chests. Ys 8 chests take a script as an agrument that is then executed on open and this is what's used to give out rewards from the chests. To make sure the chests stay closed junk has been filled into every chests that does nothing, this is why you see an initial chest popup before the actual item you get. I would love to find a way to supress the initial chest message. I spent some time dissecting the chest function in Cheat Engine looking for a way to do this but didn't find one. If you'd like to look into this then let me know and I can provide some of the notes I took on the game's chest function. 
+The core of the randomizer uses a large script file to drive what items are and what items do, this is much more flexible than simply placing new items in chests. Ys 8 chests take a script as an agrument that is then executed on open and this is what's used to give out rewards from the chests. To make sure the chests stay closed junk has been filled into every chest that does nothing, this is why you see an initial chest popup before the actual item you get. I would love to find a way to supress the initial chest message. I spent some time dissecting the chest function in Cheat Engine looking for a way to do this but didn't find one. If you'd like to look into this then let me know and I can provide some of the notes I took on the game's chest function. 
 
 This project is open source and I accept all who would like to help or add to the rando.
 
