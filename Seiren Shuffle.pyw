@@ -40,6 +40,9 @@ def changeScale():
         app.setScaleState("Goal Count: ","disabled")
         app.setScaleRange("Goal Count: ",0,0,0)
 
+def close():
+    return app.yesNoBox("Exit", "Close Application?")
+
 with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:     
     app.setGuiPadding(10,10)
     app.startFrame("Seed",0)
@@ -105,5 +108,6 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
     app.stopFrame()
 
     app.setFastStop(True)
+    app.setStopFunction(close)
     app.go()
     
