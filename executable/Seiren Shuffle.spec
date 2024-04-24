@@ -21,6 +21,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name='Seiren Shuffle',
+          icon='ysR Logo.ico'
           debug=False,
           strip=False,
           upx=False,

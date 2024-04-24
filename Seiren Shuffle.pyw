@@ -1,5 +1,6 @@
 from appJar import gui
 import random
+import os.path
 import shared.classr as classr
 from randomizer.rngPatcher import *
 from patch.chestPatcher import *
@@ -43,7 +44,8 @@ def changeScale():
 def close():
     return app.yesNoBox("Exit", "Close Application?")
 
-with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:     
+with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
+    app.setIcon(os.path.dirname(os.path.realpath(__file__)) + "/executable/ysR Logo.ico")    
     app.setGuiPadding(10,10)
     app.startFrame("Seed",0)
     app.setSticky("n")
