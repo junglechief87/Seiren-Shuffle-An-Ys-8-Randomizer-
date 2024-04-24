@@ -45,7 +45,9 @@ def close():
     return app.yesNoBox("Exit", "Close Application?")
 
 with gui('Seiren Shuffle (An Ys 8 Rando)', '600x500',font = {'size':12}) as app:
-    app.setIcon(os.path.dirname(os.path.realpath(__file__)) + "/executable/ysR Logo.ico")    
+    #The top versoin of the icon call is used for running the randomizer from source, the bottom version of the loop is for the executable compile, comment and uncomment accordingly.
+    #app.setIcon(os.path.dirname(os.path.realpath(__file__)) + "/shared/ysR Logo.ico") 
+    app.setIcon(os.path.dirname(os.path.realpath(sys.executable)) + "/shared/ysR Logo.ico")     
     app.setGuiPadding(10,10)
     app.startFrame("Seed",0)
     app.setSticky("n")

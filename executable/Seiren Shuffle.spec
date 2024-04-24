@@ -9,9 +9,8 @@ a = Analysis(
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['*.spec','dist/','build/'],
     noarchive=False,
-    optimize=0,
 )
 pyz = PYZ(a.pure)
 
@@ -21,7 +20,7 @@ exe = EXE(pyz,
           a.zipfiles,
           a.datas,
           name='Seiren Shuffle',
-          icon='ysR Logo.ico'
+          icon='../shared/ysR Logo.ico',
           debug=False,
           strip=False,
           upx=False,
