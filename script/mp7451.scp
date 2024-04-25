@@ -1,0 +1,435 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/temp/mp4335.h"
+
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 水源地①  mp7451                                                           //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// ■初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+// init
+
+function "init"
+{
+	
+	// イベント制御
+	EventAreaEnable("evc_SubEV_Arrive_MP7451", 0)		//【水源地の最奥にきたら】
+	
+	if(FLAG[GF_MP745x_GIM_01] ){		// mp7451 ショートカット_倒木
+		//ショートカット１を開通状態に
+		MapAnime( "gim00" , "wait2" )
+		SetChrWork("lookp00", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	} else {
+		MapAnime( "gim00" , "wait1" )
+		SetChrWork("lookp00", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+	}
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0806] && FLAG[SF_LASTENTRY_NO] == 2 ){
+			//ActiveVoiceStart(EACT_EVID_0806, 1, 0)	//初めてエリアに入ったら
+			SetEventDriven(EED_TYPE_TIMER,90,"mp7451:act_0806")
+		}
+		
+		// サブイベント
+		if (!FLAG[GF_SUBEV_ARRIVE_MP7451] && !FLAG[GF_05MP6365_GET_OXYGEN] ) {	//仙魚の鱗をまだ獲得していない場合のみ
+			SetFlag(GF_SUBEV_ARRIVE_MP7451,1)
+			//EventAreaEnable("evc_SubEV_Arrive_MP7451", 1)		//【水源地の最奥にきたら】
+		}
+		
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 2 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_7451.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//水源の滝
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+	////////////////////////////////////
+	// クノス
+		// クノスマーカー用イベントエリア
+	if (FLAG[GF_MP7451_FOUNDKNOS])
+	{
+		// マーカー設置済みならば、イベントエリアを消す
+		SetEventParam("evb2_KNOS", -100000.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+	}
+		// クノス１
+	if (FLAG[GF_MP7451_KNOS01])
+	{
+		// クノス０１を１匹でも倒した
+		// 壁のあたり判定を撤去
+		MapDelProp("wall1", MNP_GROUND)
+
+		if (FLAG[GF_MP7451_KNOS01] & 0x01)
+		{
+			// クノス０１＿１を倒した
+			SetChrPos("KNOS001_1", -100000.0f, 0.0f, 0.0f)
+		}
+		if (FLAG[GF_MP7451_KNOS01] & 0x02)
+		{
+			// クノス０１＿２を倒した
+			SetChrPos("KNOS001_2", -100000.0f, 0.0f, 0.0f)
+		}
+	}
+	////////////////////////////////////
+}
+
+function "act_0806"
+{
+	ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+	ActiveVoiceStart(EACT_EVID_0806, 1, 0)	//初めてエリアに入ったら
+}
+
+function "shortcut00"
+{
+	// マップのアニメ設定
+	SetFlag(GF_MP745x_GIM_01,1)		// mp7451 ショートカット_倒木
+	SetChrWork("lookp00", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	EventAreaEnable("lookp00",0)
+	MapAnime( "gim00" , "open" )
+	PlaySE("SE_GIM_STOP_WOOD_1", 100, 0,  0, 0, 1.0f, 0)	//gimse
+	Wait(50)
+	Wait(10)	//SE
+	PlaySE("SE_GIM_STOP_WOOD_2", 100, 0,  0, 0, 1.0f, 0)	//gimse
+	EarthQuake(0.1f,0.1f,10)
+	Wait(30)
+
+}
+
+
+//──────────────────────────────
+//▼水源地の最奥にきたら
+//──────────────────────────────
+function "SubEV_Arrive_MP7451"			//水源地の最奥にきたら
+{
+	//開始処理ここから-----------------------------------------------
+	CallFunc("system:event_begin")	// イベントボックス起動
+	
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定							
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", -36.11f, -31.52f, -8.71f)
+	Turn("ADOL", -68.29f, 360.0f)
+	ChangeAnimation("ADOL", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("ADOL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("ADOL")
+	SetChrInfoFlag("ADOL", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", -35.06f, -33.75f, -8.50f)
+	Turn("LAXIA", -100.27f, 360.0f)
+	ChangeAnimation("LAXIA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LAXIA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("LAXIA")
+	SetChrInfoFlag("LAXIA", INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", -35.62f, -32.56f, -8.62f)
+	Turn("SAHAD", -78.95f, 360.0f)
+	ChangeAnimation("SAHAD", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EYE, ANI_E_SAD, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("SAHAD", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("SAHAD")
+	SetChrInfoFlag("SAHAD", INFOFLAG_NOCHRATARI)
+
+	if( FLAG[SF_RICOTTA_JOINOK] ) {		// リコッタがいる
+		SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("RICOTTA", -36.94f, -32.45f, -8.51f)
+		Turn("RICOTTA", -82.50f, 360.0f)
+		ChangeAnimation("RICOTTA", "ANI_WAIT", -1, 1)
+		ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_WAIT, 1)
+		ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+		ChangeSubAnimation("RICOTTA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+		LookReset("RICOTTA")
+		SetChrInfoFlag("RICOTTA", INFOFLAG_NOCHRATARI)
+	}
+
+	if( FLAG[SF_HUMMEL_JOINOK] ) {		// ヒュンメルがいる
+		SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("HUMMEL", -36.28f, -34.54f, -8.24f)
+		Turn("HUMMEL", -114.48f, 360.0f)
+		ChangeAnimation("HUMMEL", "ANI_WAIT", -1, 1)
+		ChangeSubAnimation("HUMMEL", SUBMOT_EYE, ANI_E_WAIT, 1)
+		ChangeSubAnimation("HUMMEL", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+		ChangeSubAnimation("HUMMEL", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+		LookReset("HUMMEL")
+		SetChrInfoFlag("HUMMEL", INFOFLAG_NOCHRATARI)
+	}
+
+	if( FLAG[SF_DANA_JOINOK] ) {		// ダーナがいる
+		SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("DANA", -37.03f, -31.04f, -8.70f)
+		Turn("DANA", -75.40f, 360.0f)
+		ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+		ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+		ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+		ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+		LookReset("DANA")
+		SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	}
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+	
+	//カメラ設定
+	MoveCameraAt( 0 , -36.006f , -32.565f , -6.436f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.600f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.754f , 0 )	// 基本仰角
+	RotateCamera( 0 , 255.887f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 132.000 ,0.000 ,0.450 ,0.500)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp7451:SubEV_Arrive_MP7451_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　　mp7451 -31.71f	-27.76f	-9.69f	-133.96f付近にくるとイベント。
+	//　　パーティ全員を再配置する。（６人全員がいる可能性がある）
+
+	// カット1 ----------------------------------------------------------------------------------------
+	
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -36.006f , -32.565f , -7.056f , 75 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.600f , 75 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 8.472f , 75 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 273.649f , 75 )
+	
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	PlayVoice(Y8V_1414,"SAHAD",100)	//お？（疑問）
+
+	// サハド
+	TalkPopup("SAHAD",0,2,0,0,0) {
+		"お？　キレーな水が"
+		"溜まってるみてーだな。\p"
+		"ガハハ、獣がいなきゃ"
+		"一泳ぎしたい所だが。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("LAXIA", "SAHAD")
+	Turn("LAXIA", -174.88f, 8.0f)
+	LookChr("SAHAD", "LAXIA")
+
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#031e#000mなっ、何を仰っているのです？\p"
+		"こんな暗くて冷たそうな水辺で……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	LookReset("LAXIA")
+	ChangeAnimation( "LAXIA", "ANI_EV_SEKI", -1, 1 )	// 咳払い
+	
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#011e#000mコホン、うっかり横穴に入って"
+		"息継ぎができなくなる危険もあります。\p"
+		"#012e#000m無闇に近づくべきではありません。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_TEBURI", -1, 1 )	// 両手腰手振り
+
+	// サハド
+	TalkPopup("SAHAD",0,2,0,0,0) {
+		"おお……心配しすぎじゃねーか？\p"
+		"顔色も悪いようだが、"
+		"嬢ちゃん、ひょっとして……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("LAXIA", "SAHAD")
+	EmotionEx("LAXIA", 0.00f, EMO_ASE, 0, 5, 1, 1, 1.0f )	// 「あせあせ」
+	ChangeAnimation( "LAXIA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	Wait(30)
+
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#041e#000mち、違います。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("LAXIA")
+	Look("LAXIA", 40.0f, 0.0f)	// ←（＾＾）
+
+	// ラクシャ
+	TalkPopup("LAXIA",0,2,0,0,0) {
+		"#000m断じて水が怖いわけではありませんから"
+		"誤解なさらないように！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ラクシャ以外に冷や汗エモーション。
+	EmotionEx("ADOL", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f )	// 「冷や汗」
+	EmotionEx("SAHAD", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f )	// 「冷や汗」
+	if( FLAG[SF_RICOTTA_JOINOK] ) { EmotionEx("RICOTTA", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f ) }
+	if( FLAG[SF_HUMMEL_JOINOK] ) { EmotionEx("HUMMEL", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f ) }
+	if( FLAG[SF_DANA_JOINOK] ) { EmotionEx("DANA", 0.00f, EMO_TARA, 0, 5, 1, 1, 1.0f ) }
+	Wait(45)
+	
+	//　　イベント終了、操作許可。
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp7451:SubEV_Arrive_MP7451_ED")
+}
+
+function "SubEV_Arrive_MP7451_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag(GF_SUBEV_ARRIVE_MP7451, 1)
+	EventAreaEnable("evc_SubEV_Arrive_MP7451", 0)		//【水源地の最奥にきたら】
+//	CallFunc("mp7451:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER", -36.22f, -34.05f, -8.32f)
+	Turn("LEADER", -143.10f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -36.219f , -34.047f , -6.455f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 19.152f , 0 )	// 基本仰角
+	RotateCamera( 0 , -36.898f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+//	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ■クノス
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// クノス01_1を倒した
+function "knos01_1"
+{
+	SetFlag(GF_MP7451_KNOS01, (FLAG[GF_MP7451_KNOS01] | 0x01))
+	// マーカー解除＆壁撤去
+	CallFunc("mp7451:EV_DELKNOS_01")
+}
+
+// クノス01_2を倒した
+function "knos01_2"
+{
+	SetFlag(GF_MP7451_KNOS01, (FLAG[GF_MP7451_KNOS01] | 0x02))
+	// マーカー解除＆壁撤去
+	CallFunc("mp7451:EV_DELKNOS_01")
+}
+
+// クノス発見⇒マーカー設定
+function "EV_FOUNDKNOS"
+{
+	// マーカー・フラグセット
+	SetFlag(GF_MP7451_FOUNDKNOS, 1)
+	SetMapMarker(SMI_HIVE, PAGE_MP745x, MARKER_HIVE_7451, -56,	-45,	-5, -56, -45, MARKER_HIVE_7451, MN_D_MP7451,0)
+
+	// イベントボックス撤去
+	SetEventParam("evb2_KNOS", -100000.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+}
+
+// クノス01破壊⇒壁撤去＆マーカー解除
+function "EV_DELKNOS_01"
+{
+	MapDelProp("wall1", MNP_GROUND)
+	DelMapMarker(SMI_HIVE, PAGE_MP745x, MARKER_HIVE_7451, -56,	-45)
+}
+
+
+
+
