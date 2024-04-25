@@ -262,7 +262,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Exit to Valley of Kings'  and (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater())): return True
         else: return False
     elif location.locRegion == 'Valley of Kings' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6():
-        if location.locName == 'Valley of Kings - Camp': return True
+        if location.locName == 'Valley of Kings - Camp' and access.canInsect(): return True
         elif location.locName == 'Entrance': return True
         elif location.locName == 'Northern Lower Level': return True
         elif location.locName == 'Mid-Boss Arena' and access.canUndead(): return True

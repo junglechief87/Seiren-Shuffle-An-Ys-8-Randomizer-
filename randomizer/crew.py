@@ -12,13 +12,13 @@ def getCrewFlags(location):
     if( FLAG[GF_03MP1201_ALARM_INTERCEPT] && !FLAG[GF_06MP6350_GET_MISTILTEINN])
     {
         GetItem(ICON3D_WP_ADOL_003, 1)		
-	EquipWeapon(ADOL, ICON3D_WP_ADOL_003)
+	    EquipWeapon(ADOL, ICON3D_WP_ADOL_003)
     }
     if( FLAG[GF_TBOX_DUMMY071])
     {
         GetItem(ICON3D_WP_ADOL_008, 1)		
-	EquipWeapon(ADOL, ICON3D_WP_ADOL_008)
-	SetFlag(GF_ADOLWEAPON_BACKUP,(ADOL.CHRWORK[CWK_WEAPON]))
+	    EquipWeapon(ADOL, ICON3D_WP_ADOL_008)
+	    SetFlag(GF_ADOLWEAPON_BACKUP,(ADOL.CHRWORK[CWK_WEAPON]))
     }
     
     JoinParty(PARTY_ADOL)
@@ -116,10 +116,10 @@ def getCrewFlags(location):
     if( FLAG[GF_03MP1201_ALARM_INTERCEPT])
     {
         GetItem(ICON3D_WP_LAXIA_003, 1)		
-	EquipWeapon(LAXIA, ICON3D_WP_LAXIA_003)
+	    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_003)
     }
+
     JoinParty(PARTY_LAXIA)
-    
     if(LEADER.CHRWORK[CWK_LV] > 90)
     {
                             SetLevel(LAXIA, 95)
@@ -238,8 +238,9 @@ def getCrewFlags(location):
     if( FLAG[GF_03MP1201_ALARM_INTERCEPT])
     {
         GetItem(ICON3D_WP_SAHAD_003, 1)		
-	EquipWeapon(SAHAD, ICON3D_WP_SAHAD_003)
+	    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_003)
     }
+
     JoinParty(PARTY_SAHAD)
     if(LEADER.CHRWORK[CWK_LV] > 90)
     {
@@ -495,6 +496,7 @@ def getCrewFlags(location):
         GetItem(ICON3D_WP_RICOTTA_001	, 1)
 	    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_001)
     }
+    
     JoinParty(PARTY_RICOTTA)
     SetFlag( GF_QUEST_400, QUEST_START )
     SetDiaryFlag( DF_QS400_START, 1 )
