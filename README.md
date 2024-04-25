@@ -62,7 +62,7 @@ The randomizer features a variety of new progression items that are meant to tak
   - *Maiden Journal*: This one spawns the tree to the Primordial Passage which leads to Mount Gendarme.
   - *Blue Seal of Whirling Water*: This one spawns the tree that leads into the Capital of Eternia and also completes the quest related to waterway repair, which spawns a chest in the Titis Primeval Forest.
   - *Green Seal of Roaring Stone*: This one spawns the tree that leads to The Temple of the Great Tree and also completes the quest related to the lost key, which opens a doorway in The Ruins of Eternia with 3 chests behind it.
-  - *Golden Seal of Piercing Light*: This one spawns the tree that leads into Baja Tower and also completes the quest for helping animals which spawns a new discovery on Pangaia Plains
+  - *Golden Seal of Piercing Light*: This one spawns the tree that leads into Baja Tower and also completes the quest for helping animals which spawns a new discovery on Pangaia Plains.
   - *Frozen Flower*: This one spawns the tree that protects The Palace and also completes the quest related to repairing The Monestary Door, which grants access to the optional dungeon Balado Monestary.
   - *Treasure Chest Key*: This one spawns the tree that grants access to the back half of Lodinia Marsh and is itself a key for a locked chest in the one accessible residence in The Ruins of Eternia.
   - *Shrine Maiden Amulate*: This one is both a useful accessory while also unlocking the path to The Hill of Eternity, which is a discovery and one check. Seren Garden is restored by default in the rando though the Mistilteinn spot still requires dealing with the Wardens of Evolution.
