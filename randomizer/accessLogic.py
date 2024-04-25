@@ -125,7 +125,7 @@ def canAccess(inventory,location,parameters):
     elif location.locRegion == 'Longhorn Coast' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())) and access.canInsect():
         if location.locName == 'Reja Shore':
             if (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX03') and access.canInsect(): return True
-            elif location.mapCheckID == 'Reja Join': return True
+            elif location.mapCheckID == 'Reja Join' or location.mapCheckID == 'Pirate Treasure': return True
             else: return False
         elif location.locName == 'Eastern Shore': return True
         else: return False
@@ -160,6 +160,7 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'Food 4' and access.canCook(5): return True
             elif location.mapCheckID == 'Food 4' and access.canCook(6): return True
             else: return False
+        elif location.locName != 'Mishy Rewards': return True
         else: return False
     elif location.locRegion == 'Western Foot of Gendarme' and access.canMove(11) and access.canSwampWalk(): return True
     elif location.locRegion == 'Cavern of the Ancient King' and access.canMove(11) and access.canSwampWalk(): return True
@@ -259,7 +260,10 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'TBOX02' and (access.canSwampWalk() or access.canUnderwater()): return True
             else: return False
         elif location.locName == 'Muddy Lake' and access.canSwampWalk(): return True
-        elif location.locName == 'Exit to Valley of Kings'  and (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater())): return True
+        elif location.locName == 'Exit to Valley of Kings'  and (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater())): 
+            if location.mapCheckID == 'Fermented Sap' and access.canSwampWal() and access.canDoubleJump(): return True
+            elif location.mapCheckID != 'Fermented Sap': return True
+            else: return False
         else: return False
     elif location.locRegion == 'Valley of Kings' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6():
         if location.locName == 'Valley of Kings - Camp' and access.canInsect(): return True
