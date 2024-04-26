@@ -35,9 +35,9 @@ def shuffleLocations(parameters):
 
             if locToBeShuffled.mapID != 'none': #for 'new to the randomizer' progression items we set their map to none, these locations will not exist. There will be fewer locations than items to shuffle.
                 shuffleLocationObject = classr.shuffledLocation(locToBeShuffled)
-
+                preShuffleLoc.append(shuffleLocationObject)
             inventory.append(inventoryObject)
-            preShuffleLoc.append(shuffleLocationObject)
+            
         else:
             #for locations not being shuffled go ahead and add them to the finalized list of shuffled locations
             shuffledLocations.append(vanillaLocations.pop(0))

@@ -116,8 +116,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'End' and access.canClimb(): return True
         elif location.locName == 'Entrance':
             if location.mapCheckID == 'TBOX03' and access.canClimb(): return True
-            elif location.mapCheckID == 'TBOX01' and access.canDoubleJump(): return True
-            elif location.mapCheckID == 'TBOX02': return True
+            elif (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX02') and access.canDoubleJump(): return True
             else: return False
     elif location.locRegion == 'Weathervane Hills' and access.canMove(11) and access.canClimb(): return True
     elif location.locRegion == 'Headwater Falls' and access.canMove(11) and access.canClimb():
@@ -144,7 +143,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Mid-Boss Arena': return True
         elif location.locName == 'Small Passage':
             if location.mapCheckID == 'TBOX02' and (access.canSwampWalk() or access.canDoubleJump()): return True
-            elif location.mapCheckID == 'TBOX01' and ((access.canSwampWalk() and access.canClimb) or access.canDoubleJump()): return True
+            elif location.mapCheckID == 'TBOX01' and ((access.canSwampWalk() and access.canClimb) or (access.canDoubleJump() and access.canClimb)): return True
             else: return False
         elif location.locName == 'Muddy Passage' and (access.canSwampWalk() or access.canDoubleJump()):
             if location.mapCheckID == 'TBOX02' and ((access.canSwampWalk() and access.canClimb()) or access.canDoubleJump()): return True
@@ -231,7 +230,10 @@ def canAccess(inventory,location,parameters):
             if (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX02' or location.mapCheckID == 'TBOX03') and access.canClimb() and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
             elif (location.mapCheckID == 'TBOX04' or location.mapCheckID == 'TBOX05') and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and (access.past2() or (access.past3() and access.dana())) and access.past5(): return True
             else: return False
-        elif location.locName == 'Entrance' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and (access.past2() or (access.past3() and access.dana())) and access.past5(): return True
+        elif location.locName == 'Entrance' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and (access.past2() or (access.past3() and access.dana())) and access.past5():
+            if (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX02' or location.mapCheckID == 'TBOX03') and access.canSeeDark(): return True
+            elif location.mapCheckID not in ['TBOX01','TBOX02','TBOX03']: return True
+            else: return False
         else: return False
     elif location.locRegion == 'Archeozoic Chasm' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and (access.past2() or (access.past3() and access.dana())) and access.past5():
         if location.locName == 'Entrance': return True
@@ -283,10 +285,13 @@ def canAccess(inventory,location,parameters):
         else: return False
     elif location.locRegion == 'The Submerged Cemetery' and access.canSeeDark() and access.canClimb() and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
     elif location.locRegion == 'Solitude Island' and access.hasBoat(): return True
-    elif location.locRegion == 'Hill of Eternity'and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and access.past7(): return True
+    elif location.locRegion == 'Eternal Hill'and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and access.past7(): return True
     elif location.locRegion == 'Octus Overlook' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()):
-        if (location.locName == 'Path of the Frozen Era' or location.locName == 'Path of the Insectoid Era' or location.locName == 'Path of the Sky Era') and access.canUndead(): return True
-        elif location.locName == 'Path of the Ocean Era': return True
+        if (location.locName == 'Path of the Frozen Era' or location.locName == 'Path of the Ocean Era' or location.locName == 'Path of the Sky Era'): return True
+        elif location.locName == 'Path of the Insectoid Era': 
+            if location.mapCheckID == 'TBOX02' and access.canDoubleJump(): return True
+            elif location.mapCheckID != 'TBOX02': return True
+            else: return False
         elif location.locName == 'Selection Sphere':
             if parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal): return True
             elif parameters.goal == 'Seiren Escape' and access.hasBoat() and access.hasMistilteinn() and access.hasChart(): return True

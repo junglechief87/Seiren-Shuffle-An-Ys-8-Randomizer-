@@ -155,6 +155,7 @@ function "startParameters"
     SetFlag(GF_06MP6409_OCCUR_INTERCEPT12,1) // Interception 12 has occurred
     SetFlag(GF_06MP6409_AFTER_INTERCEPT12,1) // Interception Battle 12 has ended
     GetItem(ICON3D_MAP,1) //start with the map for faster exploration
+    SetFlag(SF_ITEMSLOT_NUM,1) //Let's adventure books actually increase slots from the start of the game.
     SetFlag(GF_06MP6409_OPEN_GATE, 1) //Set the great tree of origins to be open if it can be reached, this will probably be a setting at some point.
     //Remove all tutorials from the game
     SetFlag(    GF_HELP_A01,1 )
