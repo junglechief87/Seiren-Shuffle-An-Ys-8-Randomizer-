@@ -103,6 +103,8 @@ At this point everything in the game should be randomized other than quest rewar
 
 The core of the randomizer uses a large script file to drive what items are and what items do, this is much more flexible than simply placing new items in chests. Ys 8 chests take a script as an agrument that is then executed on open and this is what's used to give out rewards from the chests. To make sure the chests stay closed junk has been filled into every chest that does nothing, this is why you see an initial chest popup before the actual item you get. I would love to find a way to supress the initial chest message. I spent some time dissecting the chest function in Cheat Engine looking for a way to do this but didn't find one. If you'd like to look into this then let me know and I can provide some of the notes I took on the game's chest function. 
 
+The "Seiren Shuffle.exe" can sometimes flag as a virus by windows defender, it's a false positive. This is a known issue with pyinstaller's single ".exe" compiles. 
+
 This project is open source and I accept all who would like to help or add to the rando.
 
 Please use the issue tracker built into github for reporting issues as it's much easier to track stuff that way, if you reach out to me directly I might forget. 
