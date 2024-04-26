@@ -98,8 +98,11 @@ def canAccess(inventory,location,parameters):
             else: return False
         else: return False
     elif location.locRegion == 'Eroded Valley' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())):
-        if location.locName == 'Dark Passage' and access.canSeeDark(): return True
-        elif location.locName != 'Dark Passage': return True
+        if (location.locName == 'Dark Passage' or location.locName == 'End') and access.canSeeDark(): return True
+        elif location.locName == 'Webbed Walkways':
+            if location.mapCheckID == 'TBOX03' and canAccess.canSeeDark(): return True
+            elif location.mapCheckID != 'TBOX03': return True
+        elif location.locName not in ['Dark Passage','Webbed Walkways','End']: return True
         else: return False
     elif location.locRegion == 'Sunrise Beach' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())): return True
     elif location.locRegion == 'Towering Coral Forest (Night)' and (access.canClimb() or access.canMove(6)) and access.canSeeDark():
@@ -224,7 +227,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Stairwell': return True
         else: return True
     elif location.locRegion == 'Balado Monastery':
-        if location.locName == 'Basement':
+        if location.locName == 'Basement' and access.canSeeDark():
             if (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX02' or location.mapCheckID == 'TBOX03') and access.canClimb() and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
             elif (location.mapCheckID == 'TBOX04' or location.mapCheckID == 'TBOX05') and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and (access.past2() or (access.past3() and access.dana())) and access.past5(): return True
             else: return False
@@ -278,7 +281,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Boss Arena' and access.canUndead(): return True
         elif location.locName == 'Seren Garden' and access.canUndead(): return True
         else: return False
-    elif location.locRegion == 'The Submerged Cemetery' and access.canClimb() and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
+    elif location.locRegion == 'The Submerged Cemetery' and access.canSeeDark() and access.canClimb() and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
     elif location.locRegion == 'Solitude Island' and access.hasBoat(): return True
     elif location.locRegion == 'Hill of Eternity'and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and access.past7(): return True
     elif location.locRegion == 'Octus Overlook' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()):
