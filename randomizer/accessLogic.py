@@ -264,7 +264,7 @@ def canAccess(inventory,location,parameters):
             else: return False
         elif location.locName == 'Muddy Lake' and access.canSwampWalk(): return True
         elif location.locName == 'Exit to Valley of Kings'  and (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater())): 
-            if location.mapCheckID == 'Fermented Sap' and access.canSwampWal() and access.canDoubleJump(): return True
+            if location.mapCheckID == 'Fermented Sap' and access.canSwampWalk() and access.canDoubleJump(): return True
             elif location.mapCheckID != 'Fermented Sap': return True
             else: return False
         else: return False
