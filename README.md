@@ -97,11 +97,13 @@ The player can still access the *enhance* feature for weapons before getting Kat
 - Remember that *Dana* can open essence doors, there are two in the game, they are highly relevant to progression. 
 
 ## Final Notes
-Here is a list of all checks in the rando for assistance: [Checks](https://docs.google.com/spreadsheets/d/e/2PACX-1vTk6waI_Ymz1SiK90FnF1b2hDCgdZCVTrhFAX-O2-K_ovf0R3HA07AI90D5vQXPKrYBoMxH4Zu7tclx/pubhtml)
+Here is a list of all checks in the rando for assistance, as well as some other useful lists: [Checks](https://docs.google.com/spreadsheets/d/e/2PACX-1vTk6waI_Ymz1SiK90FnF1b2hDCgdZCVTrhFAX-O2-K_ovf0R3HA07AI90D5vQXPKrYBoMxH4Zu7tclx/pubhtml)
 
 At this point everything in the game should be randomized other than quest rewards, which I ultimately decided weren't worth it and flagged most of the quests as completed on startup (a majority of the quest rewards are pretty meh and the quests are mostly about building rep for the "good ending" and the few quest rewards that were decent were added to the shuffle and have the potential to still appear). The only quest that's tied to logic in any way is defeating Master Kong. There is one check tied to the event for beating Master Kong all six times, where he joined the village in the original game, and the quest becomes available when Ricotta is found. If you find anything that you think isn't randomized that isn't a quest reward feel free to let me know. Locations generally aren't difficult to add.
 
 The core of the randomizer uses a large script file to drive what items are and what items do, this is much more flexible than simply placing new items in chests. Ys 8 chests take a script as an agrument that is then executed on open and this is what's used to give out rewards from the chests. To make sure the chests stay closed junk has been filled into every chest that does nothing, this is why you see an initial chest popup before the actual item you get. I would love to find a way to supress the initial chest message. I spent some time dissecting the chest function in Cheat Engine looking for a way to do this but didn't find one. If you'd like to look into this then let me know and I can provide some of the notes I took on the game's chest function. 
+
+The "Seiren Shuffle.exe" can sometimes flag as a virus by windows defender, it's a false positive. This is a known issue with pyinstaller's single ".exe" compiles. 
 
 This project is open source and I accept all who would like to help or add to the rando.
 
