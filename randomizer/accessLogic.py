@@ -100,7 +100,7 @@ def canAccess(inventory,location,parameters):
     elif location.locRegion == 'Eroded Valley' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())):
         if (location.locName == 'Dark Passage' or location.locName == 'End') and access.canSeeDark(): return True
         elif location.locName == 'Webbed Walkways':
-            if location.mapCheckID == 'TBOX03' and canAccess.canSeeDark(): return True
+            if location.mapCheckID == 'TBOX03' and access.canSeeDark(): return True
             elif location.mapCheckID != 'TBOX03': return True
         elif location.locName not in ['Dark Passage','Webbed Walkways','End']: return True
         else: return False
