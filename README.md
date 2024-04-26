@@ -97,7 +97,7 @@ The player can still access the *enhance* feature for weapons before getting Kat
 - Remember that *Dana* can open essence doors, there are two in the game, they are highly relevant to progression. 
 
 ## Final Notes
-Here is a list of all checks in the rando for assistance: [Checks](https://docs.google.com/spreadsheets/d/e/2PACX-1vTk6waI_Ymz1SiK90FnF1b2hDCgdZCVTrhFAX-O2-K_ovf0R3HA07AI90D5vQXPKrYBoMxH4Zu7tclx/pubhtml)
+Here is a list of all checks in the rando for assistance, as well as some other useful lists: [Checks](https://docs.google.com/spreadsheets/d/e/2PACX-1vTk6waI_Ymz1SiK90FnF1b2hDCgdZCVTrhFAX-O2-K_ovf0R3HA07AI90D5vQXPKrYBoMxH4Zu7tclx/pubhtml)
 
 At this point everything in the game should be randomized other than quest rewards, which I ultimately decided weren't worth it and flagged most of the quests as completed on startup (a majority of the quest rewards are pretty meh and the quests are mostly about building rep for the "good ending" and the few quest rewards that were decent were added to the shuffle and have the potential to still appear). The only quest that's tied to logic in any way is defeating Master Kong. There is one check tied to the event for beating Master Kong all six times, where he joined the village in the original game, and the quest becomes available when Ricotta is found. If you find anything that you think isn't randomized that isn't a quest reward feel free to let me know. Locations generally aren't difficult to add.
 
