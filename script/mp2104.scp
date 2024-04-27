@@ -1,0 +1,1234 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/music.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 2104：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp2104" , 0 )
+	MapHide( "@BG2_mp2105_alpha" , 0 )
+	MapHide( "@BG2_mp1118" , 0 )
+	MapHide( "BG2_groundfog_main" , 0 )
+	MapHide( "BG2_groundfog_S1" , 0 )
+	MapHide( "BG2_groundfog_SE1" , 0 )
+	MapHide( "BG2_groundfog_SE2" , 0 )
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		//障害物制御（支援イベント）
+		SetChrWork( "LP_STOP_2104_SAND" , CWK_CHECKRADIUS , 12.0f )		// 範囲
+		SetChrWork( "CP_STOP_2104_SAND" , CWK_CHECKRADIUS , 12.0f )		// 範囲
+		if( FLAG[GF_SUBEV_2104_REMOVE_SAND] )
+		{
+			MapAnime( "mp2104_stop01" , "open" )
+			// 処理を軽くする為吹っ飛ばす
+			SetChrPos("LP_STOP_2104_SAND",  -100000.00f,0.00f,0.00f)
+			SetChrPos("CP_STOP_2104_SAND",  -100000.00f,0.00f,0.00f)
+		}
+		else if (FLAG[GF_SUBEV_2104_CHECKED_SAND])
+		{
+			// 初回チェック済み
+			SetChrWork("LP_STOP_2104_SAND", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_2104_SAND", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		}
+		else
+		{
+			SetChrWork("LP_STOP_2104_SAND", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+			SetChrWork("CP_STOP_2104_SAND", CWK_CHECKOFF, 1)		// 協力イベントルックポイントをオフに
+		}
+	}
+
+	//シスター・ニアの衣装制御
+	if (FLAG[GF_QS311_LOOK_EVENT]){		// 【QS311】▼衣装を破れたイベント を見た
+		SetChrID( "Nia_2", "Nia")		// 破れ衣装
+	} else {
+		SetChrID( "Nia_1", "Nia")		// 初期衣装
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_2105.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//水と森の丘
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function "SubEV_Sien16_open"
+{
+	if( !FLAG[GF_SUBEV_2104_CHECKED_SAND] )
+	{
+		// フラグセット
+		SetFlag(GF_SUBEV_2104_CHECKED_SAND, 1)
+		
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_2104_SAND", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_2104_SAND", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F011,REMOVE_OBJ_2104, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F011, REMOVE_OBJ_2104CE, 1038.33f,-354.66f,76.45f, 1038.33f,-354.66f, COOPEVID_MP2104, MN_F_MP2104,0)
+	}
+}
+//──────────────────────────────
+//▼支援イベントNo.16		必要人数２４人		mp2104：濃霧の森
+//	土砂崩れを撤去④		mp6411：埋没した塔に入れるようになる
+//──────────────────────────────
+function "SubEV_Sien16"		//LP_STOP_2104_SAND
+{
+	//	土砂崩れを撤去④		mp6411：埋没した塔に入れるようになる
+	//　　※最速で「▼第五部②バハの塔に向かう」以降。
+	//　　　ＮＰＣを１０／１０人以上助けた後に撤去可能。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnTo( "LEADER", 1038.33f,-354.66f,76.45f , 15.0f )
+
+	//	ナレーション
+	TalkPopup("UNDEF",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C高く積み重なった土砂が"
+		"#7C入口を塞いでしまっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	GetCoopEvPeopleNum(COOPEVID_MP2104, TF_MENU_SELECT2)	//支援要請で必要な人数を取得
+	
+	//──────────────────────
+	//	⇒人数が足りていない
+	if( FLAG[TF_MENU_SELECT2] > WORK[WK_NPCNUM] )	//必要な人数 ＞ 漂流村の人数
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cこの土砂を撤去するには、"
+			"#7C漂流村の人数が足りないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_2104_CHECKED_SAND, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_2104_SAND", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_2104_SAND", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F011,REMOVE_OBJ_2104, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F011, REMOVE_OBJ_2104CE, 1038.33f,-354.66f,76.45f, 1038.33f,-354.66f, COOPEVID_MP2104, MN_F_MP2104,0)
+/*
+		// 地図登録ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4C障害のある場所として地図に登録した。"
+			"#8S"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+*/
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//	⇒人数が足りている場合
+	else
+	{
+
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C支援要請を出しますか？",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+			//	  　以下の流れに接続
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+			
+			SetFlag( TF_MENU_SELECT, 1 )	//支援イベントに接続
+		}
+		//	⇒やめる
+		else
+		{
+			//	  　そのまま操作許可。
+		
+			// マーカーの切り替え処理
+			
+			// 見たフラグセット
+			SetFlag(GF_SUBEV_2104_CHECKED_SAND, 1)
+			// ルックポイント切り替え
+			SetChrWork("LP_STOP_2104_SAND", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_2104_SAND", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F011,REMOVE_OBJ_2104, 0, 0)
+			
+			// 協力イベントのマーカーもセット
+			SetMapMarker(SMI_COOPEVENT, PAGE_F011, REMOVE_OBJ_2104CE, 1038.33f,-354.66f,76.45f, 1038.33f,-354.66f, COOPEVID_MP2104, MN_F_MP2104,0)
+
+			
+			SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+		}
+		//──────────────────────
+	}
+
+//終了処理ここから----------------------------------------------------
+
+	//ストッパーとして終了
+	if( FLAG[TF_MENU_SELECT] == 0 )
+	{
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1)
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	//支援イベントに接続
+	else
+	{
+		EventCue("mp2104:SubEV_Sien16_B_ED")
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+
+//終了処理ここまで----------------------------------------------------
+}
+
+function "SubEV_Sien16_B"
+{
+	//	⇒人数が足りている場合
+	//	  　以下の流れに接続
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	LoadChr("Aaron"	)		//"エアラン"		
+	LoadChr("Alison")		//"アリスン"		
+	LoadChr("Austen")		//"オースティン"	
+	LoadChr("Curran")		//"カーラン卿"	
+	LoadChr("Dana"	)		//"ダーナ"		
+	LoadChr("Dina"	)		//"ディナ"		
+	LoadChr("Dogi"	)		//"ドギ"			
+	LoadChr("Ed"	)		//"エド"			
+	LoadChr("Franz"	)		//"フランツ"		
+	LoadChr("Griselda")		//"グリゼルダ"	
+	LoadChr("Hummel")		//"ヒュンメル"	
+	LoadChr("Kashu"	)		//"カシュー"		
+	LoadChr("Katrin")		//"カトリーン"	
+	LoadChr("Kuina"	)		//"クイナ"		
+	LoadChr("Licht"	)		//"リヒト"		
+	LoadChr("Miralda")		//"ミラルダ"		
+	LoadChr("Nia_1"	)		//"シスター・ニア"
+	LoadChr("Nia_2"	)		//"シスター・ニア"
+	LoadChr("Nia"	)		//"シスター・ニア"
+	LoadChr("Reja"	)		//"レーヤ"		
+	LoadChr("Ricotta")		//"リコッタ"		
+	LoadChr("Silvia")		//"シルヴィア"	
+	LoadChr("Thanatos")		//"タナトス"		
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	//1:アドル
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL",1038.06f,-378.28f,72.75f)
+	Turn("ADOL",-0.14f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	
+	//2:サハド
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD",1036.65f,-378.64f,72.75f)
+	Turn("SAHAD",-52.73f,360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("SAHAD")
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+	
+	//3:ラクシャ
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA",1039.10f,-378.91f,72.75f)
+	Turn("LAXIA",36.28f,360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("LAXIA")
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+	
+	//4:アリスン
+	SetChrWork("Alison", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Alison",1040.13f,-369.15f,72.75f)
+	Turn("Alison",31.15f,360.0f)
+	ChangeAnimation( "Alison" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Alison",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Alison",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Alison",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Alison")
+	SetChrInfoFlag( "Alison" , INFOFLAG_NOCHRATARI)
+	
+	//5:ドギ
+	SetChrWork("Dogi", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Dogi",1037.88f,-380.61f,72.75f)
+	Turn("Dogi",-175.92f,360.0f)
+	ChangeAnimation( "Dogi" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Dogi",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Dogi",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Dogi",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Dogi")
+	SetChrInfoFlag( "Dogi" , INFOFLAG_NOCHRATARI)
+	
+	//6:カトリーン
+	SetChrWork("Katrin", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Katrin",1040.43f, -364.99f, 72.75f)
+	Turn("Katrin",159.65f,360.0f)
+	ChangeAnimation( "Katrin" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Katrin",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Katrin",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Katrin",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("Katrin", "Aaron")
+	SetChrInfoFlag( "Katrin" , INFOFLAG_NOCHRATARI)
+	
+	//7:エアラン
+	SetChrWork("Aaron", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Aaron",1038.76f, -364.09f, 72.75f)
+	Turn("Aaron",-157.90f,360.0f)
+	ChangeAnimation( "Aaron" , "ANI_EV_SHAGAMI", -1 , 1 )
+	ChangeSubAnimation("Aaron",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Aaron",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Aaron",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Aaron")
+	SetChrInfoFlag( "Aaron" , INFOFLAG_NOCHRATARI)
+	
+	//8:シルヴィア
+	SetChrWork("Silvia", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Silvia",1039.01f, -365.50f, 72.75f)
+	Turn("Silvia",-170.87f,360.0f)
+	ChangeAnimation( "Silvia" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Silvia",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Silvia",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Silvia",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("Silvia", "Aaron")
+	SetChrInfoFlag( "Silvia" , INFOFLAG_NOCHRATARI)
+	
+	//9:クイナ
+	SetChrWork("Kuina", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Kuina",1043.42f,-370.87f,72.75f)
+	Turn("Kuina",56.23f,360.0f)
+	ChangeAnimation( "Kuina" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Kuina",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Kuina",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Kuina",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Kuina")
+	SetChrInfoFlag( "Kuina" , INFOFLAG_NOCHRATARI)
+	
+	//10:レーヤ
+	SetChrWork("Reja", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Reja",1042.29f,-371.61f,72.75f)
+	Turn("Reja",-126.43f,360.0f)
+	ChangeAnimation( "Reja" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Reja",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Reja",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Reja",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Reja")
+	SetChrInfoFlag( "Reja" , INFOFLAG_NOCHRATARI)
+	
+	//11:ディナ
+	SetChrWork("Dina", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Dina",1045.24f,-373.11f,72.75f)
+	Turn("Dina",123.92f,360.0f)
+	ChangeAnimation( "Dina" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Dina",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Dina",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Dina",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Dina")
+	SetChrInfoFlag( "Dina" , INFOFLAG_NOCHRATARI)
+	
+	//12:タナトス
+	SetChrWork("Thanatos", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Thanatos",1035.26f,-372.50f,72.75f)
+	Turn("Thanatos",-44.36f,360.0f)
+	ChangeAnimation( "Thanatos" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Thanatos",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Thanatos",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Thanatos",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("Thanatos","RICOTTA")
+	SetChrInfoFlag( "Thanatos" , INFOFLAG_NOCHRATARI)
+	
+	//13:リコッタ
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA",1036.34f,-373.59f,72.75f)
+	Turn("RICOTTA",135.64f,360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookChr("RICOTTA","Thanatos")
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	
+	//14:ダーナ
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA",1039.06f,-380.21f,72.75f)
+	Turn("DANA",127.40f,360.0f)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("DANA")
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	
+	//15:カシュー
+	SetChrWork("Kashu", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Kashu",1035.02f,-364.43f,72.75f)
+	Turn("Kashu",162.84f,360.0f)
+	ChangeAnimation( "Kashu" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Kashu",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Kashu",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Kashu",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Kashu")
+	SetChrInfoFlag( "Kashu" , INFOFLAG_NOCHRATARI)
+	
+	//16:オースティン
+	SetChrWork("Austen", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Austen",1036.23f,-364.55f,72.75f)
+	Turn("Austen",151.13f,360.0f)
+	ChangeAnimation( "Austen" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Austen",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Austen",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Austen",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Austen")
+	SetChrInfoFlag( "Austen" , INFOFLAG_NOCHRATARI)
+	
+	//17:ミラルダ
+	SetChrWork("Miralda", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Miralda",1039.92f,-370.47f,72.75f)
+	Turn("Miralda",160.31f,360.0f)
+	ChangeAnimation( "Miralda" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Miralda",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Miralda",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Miralda",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Miralda")
+	SetChrInfoFlag( "Miralda" , INFOFLAG_NOCHRATARI)
+	
+	//18:シスター・ニア
+	SetChrWork("Nia", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Nia",1036.30f,-369.17f,72.75f)
+	Turn("Nia",6.39f,360.0f)
+	ChangeAnimation( "Nia" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Nia",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Nia",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Nia",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Nia")
+	SetChrInfoFlag( "Nia" , INFOFLAG_NOCHRATARI)
+	
+	//19:グリゼルダ
+	SetChrWork("Griselda", CWK_DEFAULT_SKIPNODE_OFF, 1)
+SetChrPos("Griselda",1033.94f,-368.33f,72.75f)
+Turn("Griselda",-173.62f,360.0f)
+	ChangeAnimation( "Griselda" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Griselda",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Griselda",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Griselda",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Griselda")
+	SetChrInfoFlag( "Griselda" , INFOFLAG_NOCHRATARI)
+	
+	//20:エド
+	SetChrWork("Ed", CWK_DEFAULT_SKIPNODE_OFF, 1)
+SetChrPos("Ed",1038.81f,-369.50f,72.75f)
+Turn("Ed",-67.13f,360.0f)
+	ChangeAnimation( "Ed" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Ed",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Ed",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Ed",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Ed")
+	SetChrInfoFlag( "Ed" , INFOFLAG_NOCHRATARI)
+	
+	//21:フランツ
+	SetChrWork("Franz", CWK_DEFAULT_SKIPNODE_OFF, 1)
+SetChrPos("Franz",1033.73f,-364.19f,72.75f)
+Turn("Franz",-147.57f,360.0f)
+	ChangeAnimation( "Franz" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Franz",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Franz",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Franz",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Franz")
+	SetChrInfoFlag( "Franz" , INFOFLAG_NOCHRATARI)
+	
+	//22:カーラン卿
+	SetChrWork("Curran", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Curran",1038.59f,-374.12f,72.75f)
+	Turn("Curran",-178.09f,360.0f)
+	ChangeAnimation( "Curran" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Curran",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Curran",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Curran",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Curran")
+	SetChrInfoFlag( "Curran" , INFOFLAG_NOCHRATARI)
+	
+	//23:ヒュンメル
+	SetChrWork("Hummel", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Hummel",1036.78f,-380.02f,72.75f)
+	Turn("Hummel",-124.97f,360.0f)
+	ChangeAnimation( "Hummel" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Hummel",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Hummel",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Hummel",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Hummel")
+	SetChrInfoFlag( "Hummel" , INFOFLAG_NOCHRATARI)
+	
+	//24:リヒト
+	SetChrWork("Licht", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Licht",1036.21f,-370.42f,72.75f)
+	Turn("Licht",-173.61f,360.0f)
+	ChangeAnimation( "Licht" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("Licht",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("Licht",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("Licht",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("Licht")
+	SetChrInfoFlag( "Licht" , INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt( 0 , 1036.929f , -373.222f , 75.653f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.001f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.661f , 0 )	// 基本仰角
+	RotateCamera( 0 , 331.451f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 10.000 ,1.000 ,0.700 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp2104:SubEV_Sien16_B_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	StopBGM(90)
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cリトル・パロに頼んで支援要請を出し、"
+		"#7C漂流村のみんなに集まってもらった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　暗転明けで、入り口前に
+	//　　アドルたち＋漂流者全員がわいわいといる状態。
+	ExecuteFunc( 100 , "mp2104:SubEV_Sien16_Waiwai" )
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 1038.656f , -376.246f , 73.593f , 150 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.000f , 150 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 14.402f , 150 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 332.888f , 150 )
+
+	PlayBGM(BGM_EVENT_012, 0)
+	FadeBGM(70, 0)
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+	
+	
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	ChangeAnimation( "Dogi", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	TalkPopup("Dogi",0,1,0,0,0)
+	{
+		"#000e#000mみんな揃ったみてえだな。\p"
+		"しかしまあ、いつの間にか"
+		"大所帯になったもんだぜ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"ここまで来ると壮観だな")
+	MenuAdd(2,"みんなとなら何でもできそうだ")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+	
+	// 手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI_L", -1, 1 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(30)
+	
+	//────────────────────
+	//	⇒ここまで来ると壮観だな
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+
+		ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+		Wait(10)
+		PlayVoice(Y8V_0374,"LAXIA",100)	//ふふ（微笑）
+
+		TalkPopup("LAXIA",0,2,0,0,0)
+		{
+			"#011e#080mふふ、なんだか"
+			"感慨深いですね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		LookChr("SAHAD", "LAXIA")
+		Wait(5)
+		ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+		Wait(10)
+		PlayVoice(Y8V_1411,"SAHAD",100)	//ガハハ（控えめな笑い）
+		
+		TalkPopup("SAHAD",0,2,0,0,0)
+		{
+			"#021e#080mガハハ、最初は"
+			"ほんの数人だったよなぁ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒みんなとなら何でもできそうだ
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		
+		LookChr("LAXIA", "ADOL")
+		Wait(5)
+		ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+		Wait(10)
+		PlayVoice(Y8V_0370,"LAXIA",100)	//ええ（平常のテンション。あらゆる場面で使用）
+		
+		TalkPopup("LAXIA",0,2,0,0,0)
+		{
+			"#000e#080mええ、心強い専門家も"
+			"多いですからね。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		LookChr("SAHAD", "LAXIA")
+		Wait(5)
+		ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+		Wait(10)
+		PlayVoice(Y8V_1411,"SAHAD",100)	//ガハハ（控えめな笑い）
+		
+		TalkPopup("SAHAD",0,2,0,0,0)
+		{
+			"#000e#000mガハハ、土砂崩れくらい"
+			"みんな手馴れたもんだぜ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	//　　カメラ切り替え。
+	CrossFade(FADE_CROSS)
+	
+	MoveCameraAt( 0 , 1039.478f , -364.359f , 73.848f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.960f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.322f , 0 )	// 基本仰角
+	RotateCamera( 0 , 154.273f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	StopThread(100)
+	
+	Wait(FADE_CROSS)
+
+	//　　エアランとカトリーンが土砂を調べている
+
+	TalkPopup("Aaron",0,2,0,0,0)
+	{
+		"#000e#000m土砂つってもガチガチに"
+		"固まってやがるなァ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Katrin", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+	
+	TalkPopup("Katrin",0,2,0,0,0)
+	{
+		"#000e#000m少し重いけれど頑丈な"
+		"シャベルを用意してあるわ。\p"
+		"こちらを使いましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("Silvia")
+	Wait(5)
+	ChangeAnimation( "Silvia", "ANI_EV_YARUKI_S", -1, 1 )	// こぶしたたきつける
+
+	TalkPopup("Silvia",0,2,0,0,0)
+	{
+		"#011e#080mフフフ、いい鍛錬に"
+		"なりそうだねェ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　カメラ切り替え。
+	CrossFade(FADE_CROSS)
+	
+	MoveCameraAt( 0 , 1042.843f , -371.337f , 73.824f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.480f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -1.333f , 0 )	// 基本仰角
+	RotateCamera( 0 , 167.329f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	//　　クイナとレーヤが話している
+
+	ChangeAnimation( "Kuina", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+	TalkPopup("Kuina",0,1,0,0,0)
+	{
+		"#000e#000mあのすばしっこい古代種が"
+		"よってきたら厄介だよねー。\p"
+		"さいしょの見張りとーばんは"
+		"レーヤとリコッタかな～？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Reja", "ANI_EV_GUTSPOSE_S", -1, 1 )	// ガッツポーズ
+
+	TalkPopup("Reja",0,2,0,0,0)
+	{
+		"#000e#080mオッケー、任せとけっての。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　そこにディナが通りかかる
+	
+	// 移動
+	ExecuteCmd(1, MoveTo, "Dina", 1043.36f, -372.77f, 72.75f, 0.1f, 0.18f)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 1042.843f , -371.337f , 73.824f , 75 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.480f, 75 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.906f , 75 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 183.095f , 75 )
+
+	// 移動待ち
+	WaitThread(1)
+	LookChr("Dina", "Reja")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+
+	TalkPopup("Dina",0,2,0,0,0)
+	{
+		"#000e#080mあ、喉が渇いた人は言ってよね。\p"
+		"#021e#080mおいしい果汁水を限定販売中だから㈱"
+		"果汁水3行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　カメラ切り替え。
+	CrossFade(FADE_CROSS)
+	
+	MoveCameraAt( 0 , 1035.827f , -373.253f , 74.024f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.480f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.006f , 0 )	// 基本仰角
+	RotateCamera( 0 , 1.992f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	ChangeAnimation( "Thanatos", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+	Wait(10)
+	PlayVoice(Y8V_3963,"Thanatos",100)	//ワハハ（笑い）
+
+	TalkPopup("Thanatos",0,2,0,0,0)
+	{
+		"#021e#080mわはは、この人数じゃ。"
+		"２時間もあれば片付くじゃろう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup("RICOTTA",0,1,0,0,0)
+	{
+		"#000e#000mちょうど昼どきだな。"
+		"ゴハンが楽しみだ！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　カメラをアドルたちに戻す
+	CrossFade(FADE_CROSS)
+
+	MoveCameraAt( 0 , 1038.380f , -378.867f , 74.372f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.719f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 9.508f , 0 )	// 基本仰角
+	RotateCamera( 0 , 176.214f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ChangeAnimation( "Thanatos", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeAnimation( "Kuina", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeAnimation( "Reja", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeAnimation( "Aaron", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeAnimation( "Silvia", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeAnimation( "SAHAD", "ANI_WAIT", -1, 1 )	// 待機
+	ChangeAnimation( "LAXIA", "ANI_WAIT", -1, 1 )	// 待機
+	LookReset("LAXIA")
+	LookReset("SAHAD")
+	LookReset("Dina")
+
+	Wait(FADE_CROSS)
+
+	LookChr("DANA", "ADOL")
+	ChangeAnimation( "DANA", "ANI_EV_RYOTESIRI_S", -1, 1 )	// 両手 尻組み
+
+	TalkPopup("DANA",0,2,0,0,0)
+	{
+		"#000e#080m確かにみんな、"
+		"頼もしい限りだよね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドル頷く。
+	LookChr("ADOL", "DANA")
+	Wait(5)
+	
+	HeadYes("ADOL" , 1 , 25)
+	Wait(30)
+
+	//　　皆の方に向いて一歩前へ出る
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , 1038.135f , -376.474f , 74.393f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.280f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 10.105f , 0 )	// 基本仰角
+	RotateCamera( 0 , 13.568f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	LookReset("ADOL")
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 1038.135f , -376.474f , 73.973f , 60 )
+
+	Wait(FADE_CROSS)
+
+	Turn("ADOL",-179.09f,8.0f)
+	MoveTo("ADOL",1038.07f,-377.80f,72.75f, 0.1f, 0.20f )
+	Wait(30)
+	
+	// カメラ待ち
+	WaitThread(1000)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"今回も力を貸してくれ")
+	MenuAdd(2,"みんな、よろしく頼む！")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	// 手振りセット
+	ChangeAnimation( "ADOL", "ANI_EV_TEBURI_L", -1, 1 )
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 1)	// 強制クチパク
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT_S,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(30)
+	//PlayVoice(Y8V_0173,"ADOL",100)	//よし！（意気込み）
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	SetChrWork("ADOL", CWK_FORCELIPSYNC, 0)
+	Wait(30)
+
+	
+	//　　みんな、アドルに向いてワイワイエモーション等。
+	ExecuteCmd( 1,TurnToChr, "LAXIA",	"ADOL", 8,00f )
+	ExecuteCmd( 2,TurnToChr, "SAHAD",	"ADOL", 8,00f )
+	ExecuteCmd( 3,TurnToChr, "Aaron",	"ADOL", 8,00f )
+	ExecuteCmd( 4,TurnToChr, "Alison",	"ADOL", 8,00f )
+	ExecuteCmd( 5,TurnToChr, "Austen",	"ADOL", 8,00f )
+	ExecuteCmd( 6,TurnToChr, "Curran",	"ADOL", 8,00f )
+	ExecuteCmd( 7,TurnToChr, "Dana",	"ADOL", 8,00f )
+	ExecuteCmd( 8,TurnToChr, "Dina",	"ADOL", 8,00f )
+	ExecuteCmd( 9,TurnToChr, "Dogi",	"ADOL", 8,00f )
+	ExecuteCmd(10,TurnToChr, "Ed",		"ADOL", 8,00f )
+	ExecuteCmd(11,TurnToChr, "Franz",	"ADOL", 8,00f )
+	ExecuteCmd(12,TurnToChr, "Griselda","ADOL", 8,00f )
+	ExecuteCmd(13,TurnToChr, "Hummel",	"ADOL", 8,00f )
+	ExecuteCmd(14,TurnToChr, "Kashu",	"ADOL", 8,00f )
+	ExecuteCmd(15,TurnToChr, "Katrin",	"ADOL", 8,00f )
+	ExecuteCmd(16,TurnToChr, "Kuina",	"ADOL", 8,00f )
+	ExecuteCmd(17,TurnToChr, "Licht",	"ADOL", 8,00f )
+	ExecuteCmd(18,TurnToChr, "Miralda",	"ADOL", 8,00f )
+	ExecuteCmd(19,TurnToChr, "Nia",		"ADOL", 8,00f )
+	ExecuteCmd(20,TurnToChr, "Reja",	"ADOL", 8,00f )
+	ExecuteCmd(21,TurnToChr, "RICOTTA",	"ADOL", 8,00f )
+	LookReset("RICOTTA")
+	ExecuteCmd(22,TurnToChr, "Silvia",	"ADOL", 8,00f )
+	ExecuteCmd(23,TurnToChr, "Thanatos","ADOL", 8,00f )
+	LookReset("Thanatos")
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+	WaitThread(4)
+	WaitThread(5)
+	WaitThread(6)
+	WaitThread(8)
+	WaitThread(9)
+	WaitThread(10)
+	WaitThread(11)
+	WaitThread(12)
+	WaitThread(13)
+	WaitThread(14)
+	WaitThread(15)
+	WaitThread(16)
+	WaitThread(17)
+	WaitThread(18)
+	WaitThread(19)
+	WaitThread(20)
+	WaitThread(21)
+	WaitThread(22)
+	WaitThread(23)
+//	EmotionEx( "LAXIA",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "SAHAD",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Aaron",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Alison",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Austen",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Curran",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Dana",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Dina",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Dogi",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Ed",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Franz",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Griselda",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Hummel",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Kashu",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Katrin",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Kuina",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Licht",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Miralda",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Nia",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Reja",		EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Ricotta",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Silvia",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+//	EmotionEx( "Thanatos",	EMO_WAI, 0, 5, 1, 0, 1.5f)	//ワイワイ
+	Wait(20)
+	
+	//────────────────────
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		//	⇒今回も力を貸してくれ
+		PlayVoice(Y8V_5017,"Kashu",100)	//はは（笑い）
+		TalkPopup("Kashu",0,2,0,0,0)
+		{
+			"#000e#000mははは、もちろんさ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//	⇒みんな、よろしく頼む！
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		PlayVoice(Y8V_4861,"Austen",100)	//フフ（微笑）
+		TalkPopup("Austen",0,2,0,0,0)
+		{
+			"#000e#000mフッ、どうか任せくれたまえ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	//────────────────────
+
+	TalkPopup("Dogi",0,1,0,0,0)
+	{
+		"#000e#000mよーしみんな、"
+		"そんじゃ取り掛かるとしようぜ！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	EarthQuake( 0.02f , 0.02f , 10 )	// 縦揺れ幅, 横揺れ幅, 時間
+
+	PlayVoice(Y8V_5889,"SAHAD",70)
+	PlayVoice(Y8V_5893,"Alison",60)
+	PlayVoice(Y8V_5894,"Katrin",50)
+
+	//	みんな
+	SetName("みんな")
+	TalkPopup(UNDEF,0,3,300,50,0)
+	{
+		"#18Sおおーっ！！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+
+	//　　暗転
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cこうして漂流者たちは"
+		"#7C一致団結して仕事に取り掛かった。\p"
+		"#7C風雨にさらされ、硬く固まった土砂も"
+		"#7Cあっという間に片付けられていくのだった。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　障害物撤去ＳＥ
+	PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+	Wait(100)
+
+	PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C全員の力を合わせて、土砂を撤去した！"
+		"撤去2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　＞「▼支援イベント共通処理②」を呼び出す。
+	CallFunc("system:SubEV_Sien_Common2")
+
+	StopBGM(60)
+	Wait(30)
+
+	//　　イベント終了、操作許可。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp2104:SubEV_Sien16_B_ED")
+}
+function "SubEV_Sien16_B_ED"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,FADE_FAST)
+	
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	StopThread(100)
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て
+	//障害物撤去処理
+	MapAnime( "mp2104_stop01" , "open" )
+	SetChrPos("LP_STOP_2104_SAND",  -100000.00f	0.00f	0.00f)
+	SetChrPos("CP_STOP_2104_SAND",  -100000.00f	0.00f	0.00f)
+	SetFlag(GF_SUBEV_2104_REMOVE_SAND, 1)			//【ＬＰ：2104⇒6411の土砂を撤去した】
+	SetFlag(GF_SUBEV_2104_CHECKED_SAND, 1)			//【ＬＰ：2104⇒6411の土砂を調べた】
+	SetDiaryFlag( DF_SUBEV_2104_REMOVE_SAND,1 )		// ★水と森の丘奥にあった土砂を撤去した。
+	
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT,PAGE_F011,REMOVE_OBJ_2104, 0, 0)
+	// 協力イベントのマーカーも削除
+	DelMapMarker( SMI_COOPEVENT, PAGE_F011, REMOVE_OBJ_2104CE, 0, 0)
+
+	//NPCを消去
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	ReleaseChr("Aaron"	)		//"エアラン"		
+	ReleaseChr("Alison")		//"アリスン"		
+	ReleaseChr("Austen")		//"オースティン"	
+	ReleaseChr("Curran")		//"カーラン卿"	
+	ReleaseChr("Dana"	)		//"ダーナ"		
+	ReleaseChr("Dina"	)		//"ディナ"		
+	ReleaseChr("Dogi"	)		//"ドギ"			
+	ReleaseChr("Ed"	)			//"エド"			
+	ReleaseChr("Franz"	)		//"フランツ"		
+	ReleaseChr("Griselda")		//"グリゼルダ"	
+	ReleaseChr("Hummel")		//"ヒュンメル"	
+	ReleaseChr("Kashu"	)		//"カシュー"		
+	ReleaseChr("Katrin")		//"カトリーン"	
+	ReleaseChr("Kuina"	)		//"クイナ"		
+	ReleaseChr("Licht"	)		//"リヒト"		
+	ReleaseChr("Miralda")		//"ミラルダ"		
+	ReleaseChr("Nia_1"	)		//"シスター・ニア"
+	ReleaseChr("Nia_2"	)		//"シスター・ニア"
+	ReleaseChr("Reja"	)		//"レーヤ"		
+	ReleaseChr("Ricotta")		//"リコッタ"		
+	ReleaseChr("Silvia")		//"シルヴィア"	
+	ReleaseChr("Thanatos")		//"タナトス"		
+
+	ReleaseChrGo( )
+
+	CallFunc("mp2104:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , 1038.878f , -362.412f , 75.119f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 0.641f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 800.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	//イベント後の再配置位置
+	SetChrPos("LEADER", 1038.85f,-359.96f,72.75f)
+	Turn("LEADER",179.36f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+	
+	ResetStopFlag(STOPFLAG_EVENT)
+	
+	PlayBGM(BGM_2104, 0)
+	
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+function "SubEV_Sien16_Waiwai"
+{
+	
+	while(1) {
+	
+		Wait(30)
+		EmotionEx("Thanatos", 0.00f, EMO_WAI, 0, 5, 1, 0, 2.0f )	// 「ワイワイ」
+		ChangeAnimation( "Thanatos", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+		Wait(30)
+		EmotionEx("RICOTTA", 0.00f, EMO_WAI, 0, 5, 1, 0, 2.0f )	// 「ワイワイ」
+		HeadYes("RICOTTA", 1, 25)	// キャラ, うなずき回数, 速さ
+		Wait(5)
+		EmotionEx("Alison", 0.00f, EMO_WAI, 0, 5, 1, 0, 2.0f )	// 「ワイワイ」
+		HeadYes("Alison", 1, 25)	// キャラ, うなずき回数, 速さ
+		Wait(20)
+		EmotionEx("Kashu", 0.00f, EMO_WAI, 0, 5, 1, 0, 2.0f )	// 「ワイワイ」
+		Wait(10)
+		EmotionEx("Ed", 0.00f, EMO_WAI, 0, 5, 1, 0, 2.0f )	// 「ワイワイ」
+		ChangeAnimation( "Ed", "ANI_EV_TEBURI", -1, 1 )	// 手振り
+		Wait(40)
+		EmotionEx("Miralda", 0.00f, EMO_WAI, 0, 5, 1, 0, 2.0f )	// 「ワイワイ」
+		Wait(20)
+		EmotionEx("Kuina", 0.00f, EMO_WAI, 0, 5, 1, 0, 2.0f )	// 「ワイワイ」
+		Wait(30)
+		EmotionEx("Reja", 0.00f, EMO_WAI, 0, 5, 1, 0, 2.0f )	// 「ワイワイ」
+		Wait(30)
+		
+	}
+}
