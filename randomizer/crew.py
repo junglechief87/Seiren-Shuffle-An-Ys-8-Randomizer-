@@ -9,7 +9,7 @@ def getCrewFlags(location):
     GetItem(ICON3D_WP_ADOL_000,1)
     EquipWeapon(ADOL,ICON3D_WP_ADOL_000)
     
-    if( FLAG[GF_03MP1201_ALARM_INTERCEPT] && !FLAG[GF_06MP6350_GET_MISTILTEINN])
+    if( FLAG[GF_03MP1201_ALARM_INTERCEPT] && !FLAG[GF_TBOX_DUMMY071])
     {
         GetItem(ICON3D_WP_ADOL_003, 1)		
 	    EquipWeapon(ADOL, ICON3D_WP_ADOL_003)
