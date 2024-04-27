@@ -21,6 +21,7 @@ rngScriptFile = getLocFile('rng','script')
 
 def rngPatcherMain(parameters):
     global patchFile
+    patchFile = ''
     
     shuffledLocations = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
@@ -54,7 +55,6 @@ def rngPatcherMain(parameters):
     patchFile = patchFile + endingHandler(parameters)
 
     with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string
-        fileToPatch.truncate() #make sure whatever was in the file before is removed before writting the new seed information
         fileToPatch.write(patchFile)
         fileToPatch.close()
 
