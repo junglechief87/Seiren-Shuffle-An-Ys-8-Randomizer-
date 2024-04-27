@@ -53,7 +53,8 @@ def rngPatcherMain(parameters):
     patchFile = patchFile + goal(parameters)
     patchFile = patchFile + endingHandler(parameters)
 
-    with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch:
+    with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string
+        fileToPatch.truncate() #make sure whatever was in the file before is removed before writting the new seed information
         fileToPatch.write(patchFile)
         fileToPatch.close()
 
