@@ -1,0 +1,606 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// mp6107m				    			                                      //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp6107m" , 0 )
+
+	// イベントエリア設定制御
+	EventAreaEnable("SubEV_Past_06_HuntC_1", 0)		// 過去編Ⅵ：【討伐イベントＣ：竜種と遭遇】
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		// 雪
+		Set3DParticle(PARTICLE_TYPE_SNOW, 0.0f,0.0f,-0.1f, 0.1f,0.0f,0.2f, 0.0f,0.0f,0.0f, 0.0f,0.0f,0.0f, 180.0f, 0.0f)
+
+		// イベント制御
+		if( FLAG[GF_PAST_EPISODE_6_GO_GARDEN] )			//▼過去編Ⅵセレンの園へ向かう
+		{
+			// イベントエリア制御
+			if( !FLAG[GF_SUBEV_PAST_06_HUNTC_LOOK] )			// 過去編Ⅵ：【討伐イベントＣ：竜種と遭遇】を見た
+			{
+				EventAreaEnable("SubEV_Past_06_HuntC_1", 1)		// 過去編Ⅵ：【討伐イベントＣ：竜種と遭遇】
+			}
+		
+			// 討伐イベント用モンスターの配置
+			if(	FLAG[GF_SUBEV_PAST_06_HUNTC_KILL] )			// 過去編Ⅵ：【討伐イベントＣ：撃破後】を見た
+			{
+				SetChrPos("ev_HuntC_mons",-1050.49f,767.43f,26.11f)
+				Turn("ev_HuntC_mons",162.99f,360.0f)
+				ChangeAnimation( "ev_HuntC_mons", "ANI_DEAD2", -1, 1 )
+			}
+			else if( FLAG[GF_SUBEV_PAST_06_HUNTC_LOOK] )	// 過去編Ⅵ：【討伐イベントＣ：竜種と遭遇】を見た
+			{
+				SetChrPos("HuntC_mons",-1050.49f,767.43f,26.11f)
+				Turn("HuntC_mons",162.99f,360.0f)
+			} else {
+				SetChrPos("ev_HuntC_mons",-1050.49f,767.43f,26.11f)
+				Turn("ev_HuntC_mons",162.99f,360.0f)
+			}
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0606] && FLAG[GF_06MP6202M_GOTO_GARDEN] && !FLAG[GF_06MP6350M_IN_GARDEN]){
+			//ActiveVoiceStart(EACT_EVID_0606, 1, 0)	//禁忌域に入った
+			SetEventDriven(EED_TYPE_TIMER,75,"mp6107m:act_0606")
+		}
+
+		//過去編Ⅵでのみ発生するイベントのため、他のタイミングで来た時のためにマーカーの表示切替え処理をここで入れてます
+		if( FLAG[GF_PAST_EPISODE_6_GO_GARDEN] )			//▼過去編Ⅵセレンの園へ向かう
+		{
+			if( FLAG[GF_SUBEV_PAST_06_HUNTC_LOOK] &&	// 過去編Ⅵ：【討伐イベントＣ：竜種と遭遇】を見た
+				!FLAG[GF_SUBEV_PAST_06_HUNTC_KILL] )	// 過去編Ⅵ：【討伐イベントＣ：撃破後】を見た
+			{
+				SetMapMarker( SMI_SUBEVENT, PAGE_FXXXM, MARKER_SUBEV_PAST06_3,	-1050.49f,767.43f,26.11f, 	-1050.49f,767.43f,	MARKER_SUBEV_PAST06_3, MN_F_MP6107M,	-1)	// 過去編Ⅵ：出現したモンスターの居場所用
+			}
+			else
+			{
+				DelMapMarker( SMI_SUBEVENT, PAGE_FXXXM, MARKER_SUBEV_PAST06_3, 0, 0)	// 過去編Ⅵ：出現したモンスターの居場所用
+			}
+		}
+		else
+		{
+			DelMapMarker( SMI_SUBEVENT, PAGE_FXXXM, MARKER_SUBEV_PAST06_3, 0, 0)	// 過去編Ⅵ：出現したモンスターの居場所用
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_6107m.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//エタニア王家私有道
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+	//サウンド制御
+	if( FLAG[GF_PAST_EPISODE_6_GO_GARDEN] )			//▼過去編Ⅵセレンの園へ向かう
+	{
+		SetWork( WK_BGM , BGM_FIELD_801 )
+	}
+
+}
+
+function "act_0606"
+{
+	if (!FLAG[GF_AVOICE_0606])
+	{
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0606, 1, 0)	//禁忌域に入った
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+//──────────────────────────────
+//	【討伐イベントＣ：竜種と遭遇】
+//──────────────────────────────
+function "SubEV_Past_06_HuntC_1"
+{
+
+	//　　6107m道の外れに行くとイベント。
+	//　　-1057.42f	781.22f	26.11f	-26.26f付近
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA",-1054.89f,783.30f,26.11f)
+	Turn("DANA",-7.81f,360.0f)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "DANA" )
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("ev_HuntC_mons", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_HuntC_mons",-1054.20f, 764.45f, 26.11f)
+	Turn("ev_HuntC_mons",176.62f,360.0f)
+	ChangeAnimation( "ev_HuntC_mons" , "ANI_WAIT", -1 , 1 )
+//	ChangeSubAnimation("ev_HuntC_mons",SUBMOT_EYE,ANI_E_WAIT,1)
+//	ChangeSubAnimation("ev_HuntC_mons",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_HuntC_mons",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_HuntC_mons" , INFOFLAG_NOCHRATARI)
+	LookChr("ev_HuntC_mons", "DANA")
+
+	//カメラ設定
+	MoveCameraAt( 0 , -1054.138f , 783.583f , 27.575f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 0.801f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.283f , 0 )	// 基本仰角
+	RotateCamera( 0 , 159.748f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 1.000, 64.000 ,1.000 ,0.700 ,1.000)
+	SetDoFFocus(0, 0, 0)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp6107m:SubEV_Past_06_HuntC_1_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -1054.138f , 783.583f , 27.575f  , 65 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 0.801f , 65 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -18.326f , 65 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 161.497f , 65 )
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//　　グルルルル……的な唸り声を上げている大型竜種を見上げて
+	//　　ダーナに！？エモーション。
+	EmotionEx("DANA", 0.00f, EMO_EXQ, 0, 5, 1, 1, 1.0f)	//！？
+	Look("DANA", 0.0f, 15.0f)	// 見上げる
+	Wait(50)
+
+	EarthQuake( 0.01 , 0.01 , 50 )
+	PlaySE(SE_KAKO_6_12, 100, 0, 0, 0, 1.0f, 0)	
+	Wait(50)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000e#000mこ、この竜種は……"
+		"聖域に住む最古の竜種……！？\p"
+		"死にかけている……"
+		"それで我を忘れているみたい……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//　　大型竜種、咆哮と共に一撃を放つ
+	ChangeAnimation( "ev_HuntC_mons", "ANI_ATK6", -1, 1 )
+
+	//　　ダーナは飛びのいてかわし、改めて武器を構える
+	//　　（コストが厳しければ咆哮＋構えるなどでＯＫ）
+//	ChangeAnimation( "DANA", "ANI_JUMP_START", -1, 1 )
+
+//	SetChrPos("DANA",-1054.51f,787.59f,26.11f)
+//	Turn("DANA",-7.81f,360.0f)
+//	MoveCameraAt( 0 , -1052.637f , 786.171f , 28.797f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -10.564f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 151.437f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+//	WaitAnimation2( "ev_HuntC_mons" , -1, 1, "ANI_ATK3",  0)
+//	WaitAnimation2( "DANA" , -1, 1, "ANI_JUMP_START",  0)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -1055.947f , 783.749f , 27.336f , 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.720f , 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -18.780f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 201.944f , 100 )
+
+	Wait(30)
+
+	ChangeAnimation( "DANA", "ANI_EV_SETARM", -1, 1 )
+	Wait(18)
+	PlaySE(SE_KAKO_6_10, 100, 0, 0, 0, 1.0f, 0)		//
+	WaitAnimation2( "DANA" , -1, 1, "ANI_EV_SETARM",  0)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	Wait(10)
+
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000e#000mごめんなさい、あなたに"
+		"街を襲わせるわけには行かないの。\p"
+		"せめて、私がこの手で……！"
+		"せめて4行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　大型竜種の咆哮演出など
+	ChangeAnimation( "ev_HuntC_mons", "ANI_ATK3", -1, 1 )
+	Wait(20)
+	PlaySE(SE_KAKO_6_15, 70, 0, 0, 0, 1.0f, 0)		//
+	PlaySE(SE_KAKO_6_14, 100, 0, 0, 0, 1.0f, 0)		//
+	Wait(10)
+
+	//　　イベント終了、操作許可
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	//　　※討伐イベントはストッパーなどは掛からない。
+	//　　　以降、倒すまではマップ切り替えしても出現するようにする。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp6107m:SubEV_Past_06_HuntC_1_ED")
+}
+function "SubEV_Past_06_HuntC_1_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て
+	SetFlag( GF_SUBEV_PAST_06_HUNTC_LOOK, 1 )	// 過去編Ⅵ：【討伐イベントＣ：竜種と遭遇】を見た
+	//マーカー設置
+	//SetMapMarker( SMI_SUBEVENT, PAGE_FXXXM, MARKER_SUBEV_PAST06_3,	-1050.49f,767.43f,26.11f, 	-1050.49f,767.43f,	MARKER_SUBEV_PAST06_3, MN_F_MP6107M,	-1)	// 過去編Ⅵ：出現したモンスターの居場所用
+
+	CallFunc("system:SetMarkerDANA")	//クエスト系マーカー処理
+
+	CallFunc("mp6107m:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-1057.61f,786.87f,26.11f)
+	Turn("LEADER",-21.68f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	SetChrPos("ev_HuntC_mons" , -100000.00f  , 0.00f ,0.00f )	// 大型雑魚を画面外に移動
+	Wait(1)
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -1057.610f , 786.870f , 27.944f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.761f , 0 )	// 基本仰角
+	RotateCamera( 0 , -161.642f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+//	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+//──────────────────────────────
+//	【討伐イベントＣ：撃破後】
+//──────────────────────────────
+function "SubEV_Past_06_HuntC_2"
+{
+	//　　再配置し、大型竜種が倒れている。
+	//　　その前で疲労しているダーナ。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA",-1042.68f, 776.50f, 26.11f)
+	Turn("DANA",47.35f,360.0f)
+	ChangeAnimation( "DANA" , "ANI_EV_ZEEWAIT2", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "DANA" )
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	SetChrWork( "DANA" , CWK_BATTLEMODE , 1 )
+
+	SetChrWork("ev_HuntC_mons", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_HuntC_mons",-1050.49f,767.43f,26.11f)
+	Turn("ev_HuntC_mons",162.99f,360.0f)
+	ChangeAnimation( "ev_HuntC_mons", "ANI_WAIT", -1, 1 )
+//	ChangeSubAnimation("ev_HuntC_mons",SUBMOT_EYE,ANI_E_WAIT,1)
+//	ChangeSubAnimation("ev_HuntC_mons",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_HuntC_mons",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_HuntC_mons" , INFOFLAG_NOCHRATARI)
+
+	SetChrPos("HuntC_mons" , -100000.00f  , 0.00f ,0.00f )	// 戦闘に使用した大型雑魚を画面外に移動
+
+
+	//カメラ設定
+//	MoveCameraAt( 0 , -1044.926f , 773.707f , 26.491f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 11.188f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 162.040f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	MoveCameraAt( 0 , -1047.945f , 774.602f , 33.486f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.360f , 0 )	// 基本仰角
+	RotateCamera( 0 , 161.676f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 1.000, 64.000 ,1.000 ,0.700 ,1.000)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp6107m:SubEV_Past_06_HuntC_2_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	SetMotSpd("ev_HuntC_mons" ,-1 , 0.8f )	// モーションスピード変更
+	ChangeAnimation( "ev_HuntC_mons", "ANI_DEAD", -1, 1 )
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	PlaySE(SE_KAKO_6_13, 90, 0, 100, 0, 1.0f, 0)
+	Wait(30)
+	ExecuteCmd( 1000, MoveCameraAt, INTERPOLATE_SPHERE , -1046.026f , 775.260f , 28.153f , 100 )	// 注視点
+	ExecuteCmd( 1000, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.000f , 100 )		// 基本距離
+	ExecuteCmd( 1000, ChangeCameraElevation, INTERPOLATE_SPHERE , -3.360f , 100 )	// 基本仰角
+	ExecuteCmd( 1000, RotateCamera, INTERPOLATE_SPHERE , 161.676f , 100 )				// 角度
+
+	Wait(30)
+	StopSE(SE_KAKO_6_13, 1000)
+
+//	FadeIn(FADE_BLACK,FADE_NORMAL)
+//	WaitFade()
+	WaitThread(1000)
+	Wait(15)
+
+	TalkPopup("DANA",0,0,0,0,0)
+	{
+		"#000e#000mはあ、はあ、はあ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　武器をしまって竜種の頭部に語りかけるダーナ。
+	ChangeAnimation( "DANA" , "ANI_EV_ZEEWAIT2_E", -1 , 1 )	
+	WaitAnimation2( "DANA" , -1, 1, "ANI_EV_ZEEWAIT2_E",  0)
+	ChangeAnimation( "DANA" , "ANI_DISARM", -1 , 1 )
+
+	CrossFade(FADE_NORMAL)
+	
+	MoveCameraAt( 0 , -1043.184f , 775.878f , 27.398f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.759f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 12.840f , 0 )	// 基本仰角
+	RotateCamera( 0 , 100.570f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_NORMAL)
+
+	WaitAnimation2( "DANA" , -1, 1, "ANI_DISARM",  0)
+	Wait(10)
+	LookSpd("DANA", 0.06f, 0.06f, 0.06f )// ゆっくりめに首向き
+	Look("DANA", 0.0f, -15.0f)	// うつむく
+
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#061e#000mごめんね、本当にごめん……\p"
+		"後でちゃんと弔ってあげるから……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　竜種の最後のうめき声がして、やがて事切れる。
+
+//	PlaySE(SE_KAKO_6_11, 40, 0, 0, 0, 1.0f, 0)
+//	PlaySE(SE_KAKO_6_12, 90, 0, 0, 0, 1.0f, 0)
+//	Wait(30)
+
+	CrossFade(FADE_FAST)
+
+	MoveCameraAt( 0 , -1042.910f , 776.184f , 27.618f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 0.560f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.210f , 0 )	// 基本仰角
+	RotateCamera( 0 , 348.812f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_FAST)
+
+	//　　ダーナ、そっと涙を拭う。
+	LookReset("DANA")
+//	Look("DANA", 0.0f, -5.0f)	// うつむく
+	ChangeAnimation( "DANA", "ANI_EV_NAMIDA", -1, 1 )
+	WaitAnimation2( "DANA" , -1, 1, "ANI_EV_NAMIDA",  0)
+	
+//	Look("DANA", 0.0f, -5.0f)	// うつむく
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_SAD_CLOSE_E,1)
+
+	TalkPopup("DANA",0,2,0,0,0)
+	{
+		"#000m#0L（行こう、セレンの園へ……）\p"
+		"#061e#000m#0L（まだ終わっていない……"
+		"　終わらせたりなんてしない……！）"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　イベント終了、操作許可
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	PlaySE(SE_QUEST_END, 100, 0, 0, 0, 1.0f, 0)		// クエスト達成	
+
+	//	システムテキスト
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#8S"
+		"#-1W#4Cエタニアクエスト#8C【竜種討伐③】#4Cを達成した！#10W" 
+		"#8S"
+	}
+	Wait(10)
+	CallFunc("system:QuestVoice_Success")
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	//　　※可能ならその後も竜種の死体を残しておく。
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp6107m:SubEV_Past_06_HuntC_2_ED")
+}
+function "SubEV_Past_06_HuntC_2_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	LookSpd("DANA", LOOKSPD_DEFAULT, LOOKSPD_DEFAULT, LOOKSPD_DEFAULT)
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て
+	SetFlag( GF_SUBEV_PAST_06_HUNTC_KILL, 1 )	// 過去編Ⅵ：【討伐イベントＣ：撃破後】を見た
+
+	SetFlag(GF_VIRTURE_POINT,(FLAG[GF_VIRTURE_POINT] + 5 ))			//徳ポイント加算
+
+	EventCue("system:EV_FloorOpen")			//扉が開く予知を視る キューを入れる
+
+	//マーカー消去
+	//DelMapMarker( SMI_SUBEVENT, PAGE_FXXXM, MARKER_SUBEV_PAST06_3, 0, 0)	// 過去編Ⅵ：出現したモンスターの居場所用
+
+	CallFunc("system:SetMarkerDANA")	//クエスト系マーカー処理
+
+	CallFunc("mp6107m:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-1055.35f,780.71f,26.11f)
+	Turn("LEADER",159.34f,360.0f)
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -1055.350f , 780.710f , 27.979f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 173.497f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
