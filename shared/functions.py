@@ -49,15 +49,15 @@ def getIcon(itemID):
 def getLocFile(mapID,fileType):
     #The top versoin of the loop is used for running the randomizer from source, the bottom version of the loop is for the executable compile, comment and uncomment accordingly.
     if fileType == 'script':
-        #for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__),os.pardir) + "/script/"):
-        for root, dirs, files in os.walk(os.path.join(os.path.dirname(sys.executable)) + "/script/"):
+        for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__),os.pardir) + "/script/"):
+        #for root, dirs, files in os.walk(os.path.join(os.path.dirname(sys.executable)) + "/script/"):
             for file in files:
                 if file.endswith('.scp') and file.find(mapID) >= 0:
                     return os.path.join(root, file)
                 
     elif fileType == 'map':
-        #for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__),os.pardir) + "/map/"):
-        for root, dirs, files in os.walk(os.path.join(os.path.dirname(sys.executable)) + "/map/"):
+        for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__),os.pardir) + "/map/"):
+        #for root, dirs, files in os.walk(os.path.join(os.path.dirname(sys.executable)) + "/map/"):
             for file in files:
                 if file.endswith('.arb') and file.find(mapID) >= 0:
                     return os.path.join(root, file)

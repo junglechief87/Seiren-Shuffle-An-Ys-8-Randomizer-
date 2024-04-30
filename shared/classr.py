@@ -261,9 +261,6 @@ class access:
 class guiInput:
   def __init__(self):
      self.seed = None
-     self.smallLuckyBox = None
-     self.mediumLuckyBox = None
-     self.bigLuckyBox = None
      self.goal = None
      self.numGoal = None
      self.shuffleCrew = None
@@ -276,17 +273,10 @@ class guiInput:
      self.foodTrades = None
      self.dogiRewards = None
      self.intRewards = None
+     self.expMult = None
   
   def getSeed(seed):
     guiInput.seed = seed
-
-  def getLuckyChecks(checkType, num):
-    if checkType == 'small':
-      guiInput.smallLuckyBox = int(num)
-    elif checkType == 'med':
-      guiInput.mediumLuckyBox = int(num)
-    elif checkType == 'big':
-      guiInput.bigLuckyBox = int(num)
 
   def getGoal(option, num):
     guiInput.goal = option
@@ -307,6 +297,9 @@ class guiInput:
 
   def getIntRewards(intRewards):
     guiInput.intRewards = intRewards
+
+  def getExpMult(expMult):
+    guiInput.expMult = expMult
 
 class interceptReward:
   def __init__(self,stage,rewards):

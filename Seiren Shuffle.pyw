@@ -19,12 +19,10 @@ def buttons(inpt):
     elif inpt == 'Generate Seed':
         parameters.getSeed(app.getEntry("Seed#: "))
         parameters.getGoal(app.getOptionBox("goal"),app.getScale("goalCount"))
-        parameters.getLuckyChecks('big',app.getEntry("Big Lucky Checks: "))
-        parameters.getLuckyChecks('med',app.getEntry("Medium Lucky Checks: "))
-        parameters.getLuckyChecks('small',app.getEntry("Small Lucky Checks: "))
         parameters.getShuffleLocations(True,app.getCheckBox("party"),app.getCheckBox("crew"))
         parameters.getProgressionMods(app.getOptionBox("Jewel Trade Items: "),app.getOptionBox("Fish Trades: "),app.getOptionBox("Discoveries: "),app.getOptionBox("Map Completion: "),app.getOptionBox("Food Trades: "),app.getCheckBox("dogiIntercept"))
         parameters.getIntRewards(app.getCheckBox("intRewards"))
+        parameters.getExpMult(float(app.getScale("expMult")))
         rngPatcherMain(parameters) 
         app.okBox("Task Complete", "Seed Generation Complete!")
         
@@ -46,8 +44,8 @@ def close():
 
 with gui('Seiren Shuffle (An Ys 8 Rando)', '625x500',font = {'size':12}) as app:
     #The top versoin of the icon call is used for running the randomizer from source, the bottom version of the loop is for the executable compile, comment and uncomment accordingly.
-    #app.setIcon(os.path.dirname(os.path.realpath(__file__)) + "/shared/ysR Logo.ico") 
-    app.setIcon(os.path.dirname(os.path.realpath(sys.executable)) + "/shared/ysR Logo.ico")     
+    app.setIcon(os.path.dirname(os.path.realpath(__file__)) + "/shared/ysR Logo.ico") 
+    #app.setIcon(os.path.dirname(os.path.realpath(sys.executable)) + "/shared/ysR Logo.ico")     
     app.setGuiPadding(10,10)
     app.startFrame("Seed",0)
     app.setSticky("n")
@@ -99,16 +97,15 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '625x500',font = {'size':12}) as app:
     app.stopLabelFrame()
     
     app.startLabelFrame("Speed Hacks",5,0)
-    app.setSticky("w")
-    app.addLabel("luckyChecks","Lucky Checks:",0)
     app.setSticky("ew")
-    app.addLabelNumericEntry("Big Lucky Checks: ",1)
-    app.setEntry("Big Lucky Checks: ",7)
-    app.addLabelNumericEntry("Medium Lucky Checks: ",2)
-    app.setEntry("Medium Lucky Checks: ",7)
-    app.addLabelNumericEntry("Small Lucky Checks: ",3)
-    app.setEntry("Small Lucky Checks: ",10)
-    app.addNamedCheckBox("Additional Intercept Rewards", "intRewards",1,3)
+    app.addLabel("expMultLbl","XP Multiplier: ",1,0)
+    app.addScale("expMult",1,1)
+    app.setScaleIncrement("expMult",0.5)
+    app.showScaleValue("expMult",True)
+    app.showScaleIntervals("expMult",5)
+    app.setScaleLength("expMult", 10)
+    app.setScaleRange("expMult",0,10,3) 
+    app.addNamedCheckBox("Additional Intercept Rewards", "intRewards",1,2)
     app.setCheckBox("intRewards", ticked=True)
     app.stopLabelFrame()
 
