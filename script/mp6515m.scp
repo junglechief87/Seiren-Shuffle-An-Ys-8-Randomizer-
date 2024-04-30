@@ -1,0 +1,414 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+#include "inc/temp/mp6514m.h"
+
+//-------------------------------------------
+// mp6515m：地下聖堂　階層１　精霊部屋
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+
+	MapAnime(@gate_04,open)		//常に開放
+
+	if (FLAG[SF_EVENT_ON])
+	{
+		SetChrPos("SubEV_Past_SpiritD", -100000.00f, 0.00f, 0.00f)
+
+		if( !FLAG[GF_SUBEV_PAST_SPIRITD] )					// 過去編Ⅲ：【精霊救出Ｄ：渦から精霊Ｄを救出する】を見た
+		{
+			SetChrPos("SubEV_Past_SpiritD",-159.98f,247.98f,8.00f)		// 過去編Ⅲ：【精霊救出Ｄ：渦から精霊Ｄを救出する】
+
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■配置制御セクション
+//////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+//////////////////////////////////////////////////////////////////////
+
+function "SubEV_Past_SpiritD"
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin")
+
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA",-159.97f,245.30f,8.00f)
+	Turn("DANA",-179.99f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -159.968f , 246.887f , 9.371f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.900f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.805f , 0 )	// 基本仰角
+	RotateCamera( 0 , 25.786f , 0 )				// 角度
+	ChangeCameraPers( 0 , 45.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	SetDoFFocus(0,0,0)
+	
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6515m:SubEV_Past_SpiritD_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	FadeBGM(70,30)
+	PlaySE(SE_SPIRIT_SAVE_01, 80, 1, 500, 0, 1.0f, 0)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//　　地下聖堂・フロア２のどこかに光る渦がある。
+	//　　調べるとイベント起動。
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"淀みを開放する")
+	MenuAdd(-1,"やめておく")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	if(FLAG[TF_MENU_SELECT] == 1)
+	{
+		//────────────────────
+		//	⇒淀みを開放する
+		//　　下の流れに接続。
+		//	⇒やめておく
+		//　　操作許可を戻す。
+		//────────────────────
+		//　　ダーナは指先に理力を纏わせて、光る渦にそっと触れる。
+		//　　すると光る渦ははじけて消滅し、
+		//　　中から小さな精霊が現れる。
+
+		ChangeAnimation( "DANA" , "ANI_EV_SPIRIT_S", -1 , 1 )
+		Wait(15)
+		PlaySE(SE_SPIRIT_SAVE_02, 60, 1, 500, 0, 1.0f, 0)
+		WaitAnimation2( "DANA" , -1, 1, "ANI_EV_SPIRIT_S",  0)
+
+		ChangeAnimation( "DANA" , "ANI_EV_SPIRIT_E", -1 , 1 )
+		StopEffect(106720,ALL,1)
+		StopSE(SE_SPIRIT_SAVE_02, 3000)
+
+		CrossFade(15)
+		ChangeAnimation( "SubEV_Past_SpiritD" , "ANI_RELEASE", -1 , 1 )
+		Wait(90)
+		StopSE(SE_SPIRIT_SAVE_01, 1000)
+		PlaySE(SE_SPIRIT_SAVE_03, 100, 0, 0, 0, 1.0f, 0)
+		WaitAnimation2( "SubEV_Past_SpiritD" , -1, 1, "ANI_RELEASE",  0)
+
+		Wait(15)
+		SetChrPos("Lindell",-159.98f,247.98f,8.00f)
+		ChangeAnimation( "Lindell" , "ANI_EV_ESCAPE", -1 , 1 )
+		Blur(BLUR_TYPE_EXPAND, 0.4f , 10)
+		EarthQuake(0.15, 0.15 , 10)
+		PlaySE(SE_SPIRIT_SAVE_04, 80, 0, 0, 0, 1.0f, 0)
+		Wait(7)
+		ChangeAnimation( "DANA" , "ANI_EV_SUP_S", -1 , 1 )
+
+		Wait(30)
+
+		//	精霊
+		SetName("精霊")
+		TalkPopup("Lindell",0,2,0,0,0)
+		{
+			"ぷはぁ！！　た、助かった～！\p"
+			"やーもー息できないし"
+			"ホント参っちゃう！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		SetName("")
+
+		ChangeAnimation( "DANA" , "ANI_EV_SUP_E", -1 , 1 )
+
+		//	"DANA"
+		TalkPopup("DANA",0,1,0,0,0)
+		{
+			"#000e#000mふふ、無事でよかった。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//　　ダーナにＰＡエモーション。
+		TalkPopup("DANA",0,1,0,0,0)
+		{
+			"#000e#000mあれ？　あなたの気配……"
+			"どこかで覚えがあるような。\p"
+			"以前会った息吹の精霊ジンヤに"
+			"ちょっと似ているかも。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//　　精霊にＰＡエモーション。
+		EmotionEx("Lindell", 0.01f,EMO_PA,0,5,1,1,1.0f )
+		Wait(35)
+		
+		ChangeAnimation( "Lindell" , "ANI_EV_YES", -1 , 1 )
+		
+		//	精霊
+		SetName("精霊")
+		TalkPopup("Lindell",0,2,0,0,0)
+		{
+			"あなた、ジンヤと会ったの！？"
+			"わわ、すごいじゃない！\p"
+			"あいつフラフラしてるから"
+			"あたしでも中々会えないのよねー。\p"
+			"あたしは、ささやきの精霊リンデル。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		SetName("")
+
+		//	ささやきの精霊リンデル
+		TalkPopup("Lindell",0,2,0,0,0)
+		{
+			"ずっと北方にある高原の生まれで"
+			"ジンヤとは同郷なのよ。\p"
+			"そっか、あいつもこっちに来てたんだ。"
+			"………………………………"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		HeadNo("DANA" ,1 , 35 )
+
+		//	"DANA"
+		TalkPopup("DANA",0,1,0,0,0)
+		{
+			"#000e#000mええと、どうかしたの？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//	ささやきの精霊リンデル
+		TalkPopup("Lindell",0,2,0,0,0)
+		{
+			"んーん、なんでもないわ。\p"
+			"ともかく、あなたには礼を言うわ。"
+			"ホント助かっちゃった。\p"
+			"よっしゃ、いっちょ恩返ししますか。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//　　精霊がダーナに力を授けてくれる演出。
+		//　　ダーナの体が光り、精霊の力が宿る。
+
+		PlaySE(SE_SPIRIT_SAVE_05, 70, 1, 1000, 0, 1.0f, 0)
+		ChrEffect2( "Lindell" , 106640 , "effect_base","" , 0 , IMPACT_NONE , KNOCK_EFXPOS , 0.0f,0.0f,0, 1.0f, 1.0f)
+		Wait(20)
+		StopEffect(106640,ALL,1)
+
+		ChrEffect("DANA", 106660, 0.0f , -0.13f , 1.37f, 0, 0, 0 , 0, 1.0f, 0.0f, 0, 1.0f, 1.0f)		//力授かり
+		Wait(45)
+		StopSE(SE_SPIRIT_SAVE_05, 2000)
+		StopEffect(106660,ALL,1)
+		Wait(55)
+		
+		FadeBGM(25,30)	
+		//	アイテム入手テキスト
+		PlaySE( SE_GET_THE_BOX03 , 100 , 0,  0, 0, 1.0f, 0)		//ITEMMSG_SE_JINGLE
+
+		Message("#-1W#4Cダーナに#3Cささやきの精霊リンデル#4Cの力が宿った。#10W")	//（※「ささやきの精霊リンデル」を色換えしたい）"
+		Wait(60)
+		WaitPrompt()
+		WaitCloseWindow()
+
+		PlaySE( SE_HEAL , 100 , 0,  0, 0, 1.0f, 0)
+		Message("#-1W#4CダーナのＳＴＲが２０増えた。#10W")
+		WaitPrompt()
+		WaitCloseWindow()
+
+		FadeBGM(70,30)
+
+		ChangeAnimation( "DANA" , "ANI_EV_TEMUNE_S", -1 , 1 )
+
+		//	"DANA"
+		TalkPopup("DANA",0,1,0,0,0)
+		{
+			"#000e#000mこれは……力が湧いてくる？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//	ささやきの精霊リンデル
+		TalkPopup("Lindell",0,2,0,0,0)
+		{
+			"ふふ、あなたの潜在的な力を"
+			"引き出させてもらったわ。\p"
+			"それじゃ、そろそろ行くわね。\p"
+			"せっかく助かったんだし"
+			"もたもたしてられないもの。\p"
+			"バーイ！"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//　　精霊が去っていって暗転。
+
+		ChangeAnimation( "Lindell" , "ANI_EV_LEAVE", -1 , 1 )
+		
+		Wait(30)
+		PlaySE(SE_SPIRIT_SAVE_07, 80, 0, 0, 0, 1.0f, 0)
+		Wait(15)
+		
+		Look("DANA" , 0 ,13)
+		
+		Wait(25)
+
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		PlaySE(SE_QUEST_END, 100, 0, 0, 0, 1.0f, 0)		// クエスト達成	
+
+		//	システムテキスト
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4Cささやきの精霊リンデルを救出した！#10W" 
+			"#8S"
+		}
+		Wait(10)
+		CallFunc("system:QuestVoice_Success")
+		WaitPrompt()
+		WaitCloseWindow()
+
+		PlaySE(SE_VIRTUE, 100, 0, 0, 0, 1.0f, 0)	//徳ポイントアップ
+
+		//	システムテキスト
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4Cダーナの徳が上昇した。#10W"
+			"#8S"
+		}
+		Wait(10)
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		//　　徳ポイントを+5する。
+		//　　暗転を挟んで操作許可を戻す。
+	}
+
+	StopSE(SE_SPIRIT_SAVE_01, 1000)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6515m:SubEV_Past_SpiritD_ED")
+}
+
+function "SubEV_Past_SpiritD_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	SetChrPos("Lindell",-100000.00f,0.00f,0.00f)
+	
+	if(FLAG[TF_MENU_SELECT] == 1)
+	{
+		//フラグ処理
+		SetFlag(GF_SUBEV_PAST_SPIRITD, 1)			// 過去編Ⅲ：【精霊救出Ｄ：渦から精霊Ｄを救出する】
+		SetFlag(GF_VIRTURE_POINT,(FLAG[GF_VIRTURE_POINT] + 5 ))			//徳ポイント加算
+		SetFlag(GF_TROPHY_ETERNIASPIRIT_04,1)		//精霊救出率カウント
+
+		SetChrWork("DANA",CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 20))		//精霊の力
+
+		EventCue("system:EV_FloorOpen")			//扉が開く予知を視る キューを入れる
+
+		CallFunc("system:Get_DanaSpirit")		//「全てのエタニアの精霊を救出した。」トロフィー判定用
+
+		CallFunc("system:SetMarkerDANA")
+
+		CallFunc("mp6515m:init")
+	}
+	//イベント後の再配置
+	SetChrPos("LEADER",-160.03f,243.23f,8.00f)
+	Turn("LEADER",-174.43f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -160.034f , 243.235f , 9.888f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 20.759f , 0 )	// 基本仰角
+	RotateCamera( 0 , 32.419f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}

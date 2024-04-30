@@ -1,0 +1,350 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 1106：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1104" , 0 )
+	MapHide( "@BG2_mp1106" , 0 )
+	MapHide( "@BG2_mp1112_2" , 0 )
+	MapHide( "@BG2_mp2101" , 0 )
+	MapHide( "@BG2_mp2102_alpha" , 0 )
+	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW2" , 0 )	//遠景の板フォグを消す
+
+	MapHide( "BG2_groundfog_main" , 0 )	//遠景の板フォグを消す
+	MapHide( "skyfog1" , 0 )		//濃霧（薄）非表示
+
+	// イベントエリア制御
+	EventAreaEnable( "evc_QS_223_Mons", 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog1" , 1 )		//濃霧（薄）表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			//SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.1f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			//SetFogBack(FOG_BOTH, 0x00939aa0, 0.0f, 500.0f , 1.0f , 0.5f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.2f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f , 0.2f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+			
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.9f )
+		}
+
+		// クエスト制御
+		if( FLAG[GF_NPC_2_08_JOIN_KATRIN] )	//▼第二部⑧カトリーンを助けた
+		{
+			// 【QS223】ヒュッパーの掃討
+			//▼モンスター処理
+			//　　「▼第二部⑧カトリーンを助けた」以降、
+			//　　mp1106・名知らず海岸に、m1200ヒュッパー×４を配置。
+			//　　※具体的な場所、内容は戦闘方面で検討。
+			//　　近付くとカメラ演出が入り、アドルたちと対峙する。
+			if( FLAG[GF_QUEST_223] < QUEST_START )	// 【QS223】ヒュッパーの掃討 モンスターと遭遇してない
+			{
+				EventAreaEnable( "evc_QS_223_Mons", 1 )
+				
+				// モンスター配置（イベント用）
+				SetChrPos("ev_mons10",39.81f,-902.49f,30.86f)
+				Turn("ev_mons10",102.06f,360.0f)
+				SetChrPos("ev_mons11",37.20f,-895.25f,30.86f)
+				Turn("ev_mons11",117.52f,360.0f)
+				SetChrPos("ev_mons12",30.78f,-900.03f,30.87f)
+				Turn("ev_mons12",162.63f,360.0f)
+				SetChrPos("ev_mons13",41.58f,-897.19f,30.86f)
+				Turn("ev_mons13",87.63f,360.0f)
+			}
+			else if( FLAG[GF_QUEST_223] == QUEST_START &&	// 【QS223】ヒュッパーの掃討
+					 !FLAG[GF_QS223_KILL_MONS] )			// 【QS223】ヒュッパーの掃討 モンスターを討伐した
+			{
+				// モンスター配置（本物）
+				if( FLAG[GF_QS223_KILL_CT] <= 11 ){
+					SetChrPos("mons10",39.81f,-902.49f,30.86f)
+					Turn("mons10",102.06f,360.0f)
+				}
+				if( FLAG[GF_QS223_KILL_CT] <= 10 ){
+					SetChrPos("mons11",37.20f,-895.25f,30.86f)
+					Turn("mons11",117.52f,360.0f)
+				}
+				if( FLAG[GF_QS223_KILL_CT] <= 9 ){
+					SetChrPos("mons12",30.78f,-900.03f,30.87f)
+					Turn("mons12",162.63f,360.0f)
+				}
+				if( FLAG[GF_QS223_KILL_CT] <= 8 ){
+					SetChrPos("mons13",41.58f,-897.19f,30.86f)
+					Turn("mons13",87.63f,360.0f)
+				}
+			}
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 1 ){
+			VisualName("visual/mapname/mn_1110.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//名知らず海岸
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//===============================================================
+//
+// 【QS223】ヒュッパーの掃討
+//▼モンスター処理
+//
+function "QS_223_Mons"
+{
+	//　　「▼第二部⑧カトリーンを助けた」以降、
+	//　　mp1106・名知らず海岸に、m1200ヒュッパー×４を配置。
+	//　　※具体的な場所、内容は戦闘方面で検討。
+
+	//　　近付くとカメラ演出が入り、アドルたちと対峙する。	//◆仮入力：ストッパーの処理をベースに仮作成してあります
+
+//開始処理ここから----------------------------------------------------
+
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする準備
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SaveCamera()
+
+	CrossFade(FADE_CROSS)
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+//開始処理ここまで-----------------------------------------------
+
+	// 範囲外に居るキャラを透明にして操作キャラの後ろにワープさせる
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+
+	// パーティをモンスターに注目させる
+	ExecuteCmd(1, TurnToChr, "PLAYER1" , "ev_mons11" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER2" , "ev_mons11" , 10.0f )
+	ExecuteCmd(3, TurnToChr, "PLAYER3" , "ev_mons11" , 10.0f )
+
+	// 範囲外に居たキャラをジワ出しする
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(4, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(5, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(4)
+		WaitThread(5)
+	}
+
+	// 完了待ち
+	WaitFade()
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+
+	// モンスターをパーティに注目させる
+	ExecuteCmd(1, TurnToChr, "ev_mons10" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "ev_mons11" , "PLAYER1" , 10.0f )
+	ExecuteCmd(3, TurnToChr, "ev_mons12" , "PLAYER1" , 10.0f )
+	ExecuteCmd(4, TurnToChr, "ev_mons13" , "PLAYER1" , 10.0f )
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+	WaitThread(4)
+
+	// ！エモーション
+
+	EmotionEx("PLAYER1", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		EmotionEx("PLAYER2", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		EmotionEx("PLAYER3", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f)	//！
+	}
+
+	Wait(20)
+
+	// 武器構え
+	ChangeAnimation("PLAYER1", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("PLAYER2", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	ChangeAnimation("PLAYER3", "ANI_EV_SETARM", -1, 1)	// 武器構え
+	Wait(25)
+
+	// カメラ演出
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	MoveCameraAt(0, 33.951f, -900.042f, 31.761f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 1.388f, 0)	// 基本仰角
+	RotateCamera(0, 253.661f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 300.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// カメラ演出
+	//ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 39.824f , -901.266f , 33.000f, 160)		// 注視点
+	//ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 30.000f, 160)		// 角度
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 34.151f, -897.890f, 31.761f, 160)		// 注視点
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE, 217.562f, 160)		// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	// モンスター攻撃モーション
+//	ChangeAnimation("ev_mons10","ANI_ATK1",-1,1)
+//	ChangeAnimation("ev_mons11","ANI_ATK1",-1,1)
+//	ChangeAnimation("ev_mons12","ANI_ATK1",-1,1)
+//	ChangeAnimation("ev_mons13","ANI_ATK1",-1,1)
+	
+	WaitThread(1000)
+	WaitThread(1001)
+
+//終了処理ここから----------------------------------------------------
+
+	CrossFade(FADE_CROSS)
+
+	//フラグ処理
+	SetFlag( GF_QUEST_223, QUEST_START )	//【QS223】ヒュッパーの掃討　クエスト開始
+	SetFlag( GF_QS223_KILL_CT, 0 )			//【QS223】ヒュッパーの掃討 倒したモンスターのカウンタ
+
+	// イベントエリアを無効化
+	EventAreaEnable( "evc_QS_223_Mons", 0 )
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	// モンスター配置
+	SetChrPos("ev_mons10" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_mons11" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_mons12" , -100000.00f  , 0.00f ,0.00f )
+	SetChrPos("ev_mons13" , -100000.00f  , 0.00f ,0.00f )
+	
+	SetChrPos("mons10",39.81f,-902.49f,30.86f)
+	Turn("mons10",102.06f,360.0f)
+	SetChrPos("mons11",37.20f,-895.25f,30.86f)
+	Turn("mons11",117.52f,360.0f)
+	SetChrPos("mons12",30.78f,-900.03f,30.87f)
+	Turn("mons12",162.63f,360.0f)
+	SetChrPos("mons13",41.58f,-897.19f,30.86f)
+	Turn("mons13",87.63f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0, 0)
+	CallFunc("system:camera_reset")
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+//終了処理ここまで----------------------------------------------------
+}
+function "QS_223_Kill"
+{
+	//モンスターを倒した時に呼ばれる
+	SetFlag( GF_QS223_KILL_CT, (FLAG[GF_QS223_KILL_CT] + 1)  )	//【QS223】ヒュッパーの掃討 倒したモンスターのカウンタ
+	
+	//12体までモンスターを補充する
+	if( FLAG[GF_QS223_KILL_CT] == 1 )
+	{
+		SetChrPos("mons14",35.77f,-895.46f,40.86f)	//10m上空から落下
+	}
+	else if( FLAG[GF_QS223_KILL_CT] == 2 )
+	{
+		SetChrPos("mons15",40.88f,-897.51f,40.86f)
+	}
+	else if( FLAG[GF_QS223_KILL_CT] == 3 )
+	{
+		SetChrPos("mons16",39.06f,-902.96f,40.86f)
+	}
+	else if( FLAG[GF_QS223_KILL_CT] == 4 )
+	{
+		SetChrPos("mons17",29.88f,-900.20f,40.95f)
+	}
+	else if( FLAG[GF_QS223_KILL_CT] == 5 )
+	{
+		SetChrPos("mons18",37.64f,-894.32f,40.86f)
+	}
+	else if( FLAG[GF_QS223_KILL_CT] == 6 )
+	{
+		SetChrPos("mons19",41.85f,-896.37f,40.95f)
+	}
+	else if( FLAG[GF_QS223_KILL_CT] == 7 )
+	{
+		SetChrPos("mons20",40.78f,-901.92f,40.86f)
+	}
+	else if( FLAG[GF_QS223_KILL_CT] == 8 )
+	{
+		SetChrPos("mons21",31.82f,-899.81f,40.86f)
+	}
+	else if( FLAG[GF_QS223_KILL_CT] == 12 )
+	{
+		//　　セルセタのモンスター掃討クエストと同じように
+		//　　フィールド上には常に４体配置され、
+		//　　計１２体倒した時点で、以下ナレーション。
+	
+		SetStopFlag(STOPFLAG_SIMPLEEVENT)
+		SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+		ResetMoveVec("PARTYALL")
+	
+		ClearDebris()	//落ちているアイテムを拾う
+
+		Wait(60)
+	
+		Message("#4Cヒュッパーの群れを掃討した！")
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)	//チュートリアル
+		WaitPrompt()
+		Wait(10)
+	
+		// フラグセット
+		SetFlag( GF_QS223_KILL_MONS, 1 )		//【QS223】ヒュッパーの掃討 モンスターを討伐した
+		SetDiaryFlag( DF_QS223_001, 1 )			//【QS223】★ヒュッパーの群れを掃討した！　漂流村に戻って報告しよう。
+		DelMapMarker( SMI_QUEST, PAGE_F001, MARKER_QS_223_LP, 0, 0)		// 【QS223】ヒュッパーの掃討　モンスターの居場所用
+
+		SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT)
+	}
+}

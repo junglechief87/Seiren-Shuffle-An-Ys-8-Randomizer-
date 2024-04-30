@@ -1,0 +1,371 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+#include "inc/fish.h"
+#include "inc/temp/mp6112t2.h"
+
+//-------------------------------------------
+// 6112：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp5101_2" , 0 )
+	MapHide( "@BG2_mp5102_2" , 0 )
+	MapHide( "@BG2_mp5103_2" , 0 )
+	MapHide( "@BG2_mp6101_1" , 0 )
+	MapHide( "@BG2_mp6112" , 0 )
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		if( FLAG[GF_QUEST_613] == QUEST_START && !FLAG[GF_QS613_EVENT_1] && FLAG[GF_NIGHTHUNT])
+		{
+			EventCue("mp6112t2:QS_613_Event_1")
+		}
+		// -----------------------------------------------------------------
+		// 過去編ギミック_ヒモロギの樹開拓ルート_王宮側
+		// ※王宮が復活すると、遠景で見えている箇所は全て以下の対応が必要となります
+		// -----------------------------------------------------------------
+		if( FLAG[GF_05MP6204_APPEAR_CASTLE] )	//消滅した王宮が復活する
+		{
+			MapAnime("gim03" , "open" )		//ヒモロギの樹
+		}
+		else
+		{
+			MapAnime("gim03" , "close" )	//ヒモロギの樹
+		}
+
+		// マップノード・アニメ
+		MapAnime("mistSphere", "off")	// 霧のマユ
+		if( FLAG[GF_TBOX_DUMMY087]				// ▼[M06S020][調査のためジャンダルムへ向かう]
+			&& !FLAG[GF_06MP4109_CLEAR_MIST] )		// ▽[M06S111][山門の霧を突破する２]
+		{
+			MapAnime("mistSphere", "on")	// 霧のマユ
+		}
+		//釣り場制御
+		SetFishingAreaState(FISH_AREA_TBOX_08_R , FISH_AREASTATE_DISABLED )	// 再出現宝箱をOFF
+		if(FLAG[GF_FISH_FEATURE_T08] )	//初回宝箱を釣り上げている
+		{
+			SetFishingAreaState(FISH_AREA_TBOX_08 , FISH_AREASTATE_DISABLED )	// 初回宝箱をOFF
+			if(rand() % 100 <= 5 || FLAG[TF_MP6112t2_TBOX_FISHABLE] )		//再出現宝箱を5％の確率で復活
+			{
+				SetFlag(TF_MP6112t2_TBOX_FISHABLE, 1)
+				SetFishingAreaState(FISH_AREA_TBOX_08_R , FISH_AREASTATE_ENABLED )	// 再出現宝箱 ON
+			}
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_6102.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//パンガイア大平原
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+	// モンスター初期化
+	SetChrWorkGroup(M0100, CWK_LV, 60)		// ラタニーを強くする
+	SetChrWorkGroup(M1020, CWK_AIUNIQUE, AIUNIQUE_SLEEP)
+	SetChrWorkGroup(M1021, CWK_AIUNIQUE, AIUNIQUE_SLEEP)
+
+	//野営地着くまで８時だよ全員集合
+	if( FLAG[GF_QUEST_613] == QUEST_START && FLAG[GF_QS613_EVENT_2] && !FLAG[GF_QS613_QUESTCLEAR])
+	{
+
+		SetWork( WK_BGM , BGM_BOSS_003 )
+		SetChrWorkGroup(M1020, CWK_AIUNIQUE, AIUNIQUE_AROUND)
+		SetChrWorkGroup(M1021, CWK_AIUNIQUE, AIUNIQUE_AROUND)
+
+		SetChrWorkGroup(M1020, CWK_DRANGE, 9999.0f)
+		SetChrWorkGroup(M1020, CWK_DANGLE, 360.0f)
+		SetChrWorkGroup(M1020, CWK_LCOUNT, 99999)
+		SetChrWorkGroup(M1020, CWK_AREAOVER, 9999.0f)
+
+		SetChrWorkGroup(M1021, CWK_DRANGE, 9999.0f)
+		SetChrWorkGroup(M1021, CWK_DANGLE, 360.0f)
+		SetChrWorkGroup(M1021, CWK_LCOUNT, 99999)
+		SetChrWorkGroup(M1021, CWK_AREAOVER, 9999.0f)
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+
+
+function "QS_613_Event_1"
+{
+	//　　合流イベント②を見た状態で、mp6102の
+	//　　（68.45f, 1305.44f, 53.35f）付近に近づくとイベント開始。
+
+//開始処理ここから----------------------------------------------------
+
+	//CallFunc("system:event_begin")
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+	CallFunc("system:party_remove")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL",-149.38f,852.39f,56.48f)
+	Turn("ADOL",-122.85f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("ADOL")
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA",-147.27f,853.32f,56.48f)
+	Turn("LAXIA",-140.62f,360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("LAXIA")
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD",-149.51f,854.19f,56.48f)
+	Turn("SAHAD",-97.98f,360.0f)
+		ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("SAHAD")
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA",-148.79f,851.61f,56.48f)
+	Turn("RICOTTA",-144.17f,360.0f)
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("RICOTTA")
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL",-150.24f,852.96f,56.48f)
+	Turn("HUMMEL",-102.25f,360.0f)
+	ChangeAnimation( "HUMMEL" , "ANI_EV_UDEGUMI_S", -1 , 1 )
+	ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("HUMMEL")
+	SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)	
+	SetChrPos("DANA",-148.19f,850.50f,56.48f)
+	Turn("DANA",-162.65f,360.0f)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("DANA")
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -147.772f , 853.867f , 61.429f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 8.210f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.988f , 0 )	// 基本仰角
+	RotateCamera( 0 , 318.604f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 180.000 ,1.000 ,0.700 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp6112t2:QS_613_Event_1_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, -147.772f , 853.867f , 57.708f, 120)	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 6.110f, 120)		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE,  7.895f, 120)	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 333.936f, 120)				// 角度
+//	ExecuteCmd(1004, ChangeCameraPers, INTERPOLATE_SPHERE, 28.000f, 120)		// 視野角
+
+	//MoveCameraAt( 0 , -147.772f , 853.867f , 57.708f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 6.110f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 7.895f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 333.936f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+	
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	
+	TurnToChr("LAXIA","ADOL",8.0f)
+
+	//　　夜の野営地から、パンガイア大平原マップへ
+	//　　進入したところでイベント。
+	//　　平原側を眺めるアドルたちを写してから、
+	//　　ラクシャがアドルに向き直る。
+
+	TalkPopup("LAXIA",0,0,0,0,0)
+	{
+		"#000mさぁ、行動開始です。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "LAXIA" , "ANI_EV_TEBURI", -1 , 1 )
+
+	TalkPopup("LAXIA",0,0,0,0,0)
+	{
+		"#000m古代種の巣を見つけたら"
+		"翼竜の卵がないか調べてみましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("DANA","ADOL")
+
+	//	"DANA"
+	TalkPopup("DANA",0,0,0,0,0)
+	{
+		"#000e#000m巣の近くにはきっと竜種がいるはず。\p"
+		"迂闊に近づかないようにね。"
+		"休息を邪魔されるとすごく凶暴になるよ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "SAHAD" , "ANI_EV_RYOTEKOSI_S", -1 , 1 )
+	LookChr("SAHAD","DANA")
+
+	//	"SAHAD"
+	TalkPopup("SAHAD",0,0,0,0,0)
+	{
+		"#051e#000mご、ごくり。"
+		"うっかり屁が出ないようにしねーとな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "RICOTTA" , "ANI_EV_GUTSPOSE_S", -1 , 1 )
+
+	//	"RICOTTA"
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000m抜き足差し足忍び足、だな！"
+		"忍び足2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//	LookChr("HUMMEL","ADOL")
+	ChangeAnimation( "HUMMEL" , "ANI_EV_UDEGUMI_TEBURI", -1 , 1 )
+
+	//	"HUMMEL"
+	TalkPopup("HUMMEL",0,0,0,0,0)
+	{
+		"#000e#000mよしアドル、仕事を始めるぞ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドル頷きを見せてから操作許可。
+
+	//　　イベント終了、操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp6112t2:QS_613_Event_1_ED")
+}
+function "QS_613_Event_1_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て
+	SetFlag( GF_QS613_EVENT_1, 1 )		//
+
+	//マーカー
+	SetMapMarker( SMI_NIGHT_QUEST ,PAGE_F034t2, MARKER_QS_613_1, 146.32f, 1259.97f, 44.28f , 146.32f, 1259.97f ,MARKER_QS_613_1, MN_F_MP6116T2,0)	// 【QS613】卵の奪還（巣の位置）※アタリ
+	SetMapMarker( SMI_NIGHT_QUEST ,PAGE_F034t2, MARKER_QS_613_3, -112.74f, 1057.31f, 44.29f ,-112.74f, 1057.31f ,MARKER_QS_613_3,MN_F_MP6112T2,0)	// 【QS613】卵の奪還（巣の位置）
+	SetMapMarker( SMI_NIGHT_QUEST ,PAGE_F034t2, MARKER_QS_613_4, 38.75f, 1090.82f, 44.65f , 38.75f, 1090.82f ,MARKER_QS_613_4,   MN_F_MP6111T2,0)	// 【QS613】卵の奪還（巣の位置）
+
+	CallFunc("mp6112t2:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-144.79f,849.49f,56.48f)
+	Turn("LEADER",-93.04f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -144.787f , 849.486f , 58.343f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 13.591f , 0 )	// 基本仰角
+	RotateCamera( 0 , -86.959f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeBGM(100,30)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+

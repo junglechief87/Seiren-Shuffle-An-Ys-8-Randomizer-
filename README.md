@@ -105,6 +105,8 @@ The core of the randomizer uses a large script file to drive what items are and 
 
 The "Seiren Shuffle.exe" can sometimes flag as a virus by windows defender, it's a false positive. This is a known issue with pyinstaller's single ".exe" compiles. 
 
+I don't know why but the close method that appJar uses seems kinda sloppy, so the gui seems to always need to have close hit twice to actually close. The extra "Yes/No" close menus is for feedback, so you know it did something when you hit close. 
+
 This project is open source and I accept all who would like to help or add to the rando.
 
 Please use the issue tracker built into github for reporting issues as it's much easier to track stuff that way, if you reach out to me directly I might forget. 

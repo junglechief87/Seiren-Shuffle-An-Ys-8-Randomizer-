@@ -1,0 +1,175 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// mp6213    			                 			                         //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	CallFunc("rng:expMult")
+
+	// イベントエリア制御
+	EventAreaEnable( "evb2_SubEV_Past_02_MARKER" , 0 )
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		if( FLAG[GF_SUBEV_PAST_02_GIMMICK_A] )	// 過去編Ⅱ：【過去ギミック②：鍵の話を聞く】扉を開いた
+		{
+			MapAnime("door1", "wait2")	// ドア（開いてる状態）
+			MapAnime("door1_atari", "wait2")	// ドア（開いてる状態）
+		}
+		else
+		{
+			MapAnime("door1", "wait1")	// ドア（閉じている状態）
+			MapAnime("door1_atari", "wait1")	// ドア（閉じている状態）
+		
+			// ＬＰ制御
+			SetChrPos("SubEV_Past_02_GimmickLP",-230.17f,1009.13f,4.30f)	// 過去編Ⅱ：【過去ギミック②：鍵の話を聞く】扉ＬＰ
+			SetChrWork( "SubEV_Past_02_GimmickLP" , CWK_CHECKRADIUS , 2.5f )		// 範囲
+		}
+
+		if( FLAG[GF_SUBEV_PAST_02_GIMMICK_A] )	// 過去編Ⅱ：【過去ギミック②：鍵の話を聞く】
+		{
+			EventAreaEnable( "evb2_SubEV_Past_02_MARKER" , 1 )
+		}
+
+		// アクティブボイス
+		if (!FLAG[GF_AVOICE_0410])
+		{
+			SetEventDriven(EED_TYPE_TIMER,60,"mp6213:act_0410")
+			//ActiveVoiceStart(EACT_EVID_0410, 1, 0)	//最初の建物に入った
+		}
+	}
+}
+
+function "act_0410"
+{
+	ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+	ActiveVoiceStart(EACT_EVID_0410, 1, 0)	//初めてエリアに入ったら
+}
+
+//──────────────────────────────
+//	【過去ギミック②：鍵の話を聞く】マーカー消去
+//──────────────────────────────
+
+function "SubEV_Past_02_MARKER"
+{
+	EventAreaEnable( "evb2_SubEV_Past_02_MARKER" , 0 )
+
+	//マーカー
+	DelMapMarker( SMI_SUBEVENT, PAGE_F032, MARKER_SUBEV_PAST02_2, 0,0)	// 開いている倉庫
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー・ＬＰセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//──────────────────────────────
+//	【過去ギミック②：鍵の話を聞く】扉ＬＰ
+//──────────────────────────────
+function "SubEV_Past_02_GimmickLP"
+{
+//──────────────────────────────
+//　　※このサブイベントを見た後、現代編で
+//　　　付近の特定のスポットに対して釣りをすると
+//　　　『衛士隊の倉庫の鍵』が釣れる。
+//　　　これをmp6213mの扉の前で使うことができる。
+//──────────────────────────────
+
+	//　　mp6213mの扉ＬＰを調べると以下の処理。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+
+	//────────────────────
+	//	⇒鍵を持っていない場合
+	if( !FLAG[GF_SUBEV_PAST_02_GIMMICK_A] )	//「衛士隊の倉庫の鍵」
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7C扉には鍵が掛かっている。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+	//	⇒鍵を持っている
+	else
+	{
+		MapAnime( "door1" , "open" )	// ドア（開くアニメ）
+		//Wait(30)	//SE
+		Wait(5)		//SE
+		PlaySE(SE_GIM_DOOR_ROCK,80,1,0,100,1.0f,0)	//gimse
+		Wait(38)	//SE
+		StopSE(SE_GIM_DOOR_ROCK,1000)	//gimse
+		PlaySE(SE_GIM_DOOR_ROCK_STOP,80,0,0,600,0.0f,0)	//gimse
+
+		//　扉が開くアニメの後、操作許可。
+		//　以降扉は開き固定、ＬＰは出なくなる。
+		
+		//フラグ立て
+		SetFlag( GF_SUBEV_PAST_02_GIMMICK_B, 1 )	// 過去編Ⅱ：【過去ギミック②：鍵の話を聞く】扉を開いた
+		SetChrPos("SubEV_Past_02_GimmickLP" , -100000.00f  , 0.00f ,0.00f )	// 扉ＬＰを画面外に移動
+
+		//アタリを消去
+		MapAnime("door1_atari", "wait2")	// ドア（開いてる状態）
+	}
+	//────────────────────
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+//	SetChrPos("LEADER",-231.05f,1007.94f,4.30f)
+//	Turn("LEADER",-142.53f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+

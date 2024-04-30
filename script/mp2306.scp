@@ -1,0 +1,246 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/music.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 2306：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//◆マップエフェクト
+	//胞子
+	Set3DParticle(PARTICLE_TYPE_SPORE, 0.0f,0.0f,0.0f, 0.05f,0.05f,0.02f, 0.0f,0.0f,0.0f, 0.0f,0.0f,0.0f, 180.0f, 0.0f)
+
+	// イベント制御
+	EventAreaEnable( "ev2_EV_LOCATION011" , 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+		if ( !FLAG[GF_LOCATION11] ) {		// ロケーション011
+			EventAreaEnable( "ev2_EV_LOCATION011" , 1 )
+		}
+	}
+
+
+	////////////////////////////////////
+	// クノス
+		// クノスマーカー用イベントエリア
+	if (FLAG[GF_MP2306_FOUNDKNOS])
+	{
+		// マーカー設置済みならば、イベントエリアを消す
+		SetEventParam("evb2_KNOS", -100000.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+	}
+		// クノス
+	if (FLAG[GF_MP2306_KNOS])
+	{
+		// クノスを１匹でも倒した
+		// 壁のあたり判定を撤去
+		MapDelProp("wall1", MNP_GROUND)
+
+		if (FLAG[GF_MP2306_KNOS] & 0x01)
+		{
+			// クノス０１＿１を倒した
+			SetChrPos("KNOS001_1", -100000.0f, 0.0f, 0.0f)
+		}
+		if (FLAG[GF_MP2306_KNOS] & 0x02)
+		{
+			// クノス０１＿２を倒した
+			SetChrPos("KNOS001_2", -100000.0f, 0.0f, 0.0f)
+		}
+	}
+	////////////////////////////////////
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_2301.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//隆起珊瑚の森
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////
+// ロケーションポイント011:薬草の群生地
+//////////////////////////////////////////////
+function "EV_LOCATION011"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+	Portrait_Load(4, "visual/mapname/lnmp2305.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , 302.990f , -2.000f , 14.449f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 11.999f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.602f , 0 )	// 基本仰角
+	RotateCamera( 0 , 262.855f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp2306:EV_LOCATION011_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt , INTERPOLATE_SPHERE , 302.990f , -2.000f , 14.449f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance , INTERPOLATE_SPHERE , 19.398f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation , INTERPOLATE_SPHERE , 29.775f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera , INTERPOLATE_SPHERE, 191.178f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp2306:EV_LOCATION011_ED")
+}
+function "EV_LOCATION011_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION11, 1)	//薬草の群生地
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_MP230x, MARKER_EV_LC_MP2306, 0, 0)	//ロケ　：薬草の群生地
+	SetMapMarker( SMI_LOCATION ,PAGE_MP230x, MARKER_EV_LC_MP2306, 300.59f,-2.19f,12.86f, 300.59f,-2.19f,LOCATION_MP2306,MN_D_MP2306,0)		//ロケ　：薬草の群生地
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_MP230x,0 ,297.19f, 3.64f ,100 )
+
+	CallFunc("mp2306:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , 294.319f , 7.686f , 14.763f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -152.011f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", 294.32f, 7.69f, 12.89f )
+	Turn("LEADER" ,-27.99f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// ■クノス
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// クノス01_1を倒した
+function "knos01_1"
+{
+	SetFlag(GF_MP2306_KNOS, (FLAG[GF_MP2306_KNOS] | 0x01))
+	// マーカー解除＆壁撤去
+	CallFunc("mp2306:EV_DELKNOS")
+}
+
+// クノス01_2を倒した
+function "knos01_2"
+{
+	SetFlag(GF_MP2306_KNOS, (FLAG[GF_MP2306_KNOS] | 0x02))
+	// マーカー解除＆壁撤去
+	CallFunc("mp2306:EV_DELKNOS")
+}
+
+// クノス発見⇒マーカー設定
+function "EV_FOUNDKNOS"
+{
+	// マーカー・フラグセット
+	SetFlag(GF_MP2306_FOUNDKNOS, 1)
+	SetMapMarker(SMI_HIVE, PAGE_MP230x, MARKER_HIVE_2306, 282, 29, 12, 282, 29, MARKER_HIVE_2306, MN_D_MP2306,0)
+
+	// イベントボックス撤去
+	SetEventParam("evb2_KNOS", -100000.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f)
+}
+
+// クノス01破壊⇒壁撤去＆マーカー解除
+function "EV_DELKNOS"
+{
+	MapDelProp("wall1", MNP_GROUND)
+	DelMapMarker(SMI_HIVE, PAGE_MP230x, MARKER_HIVE_2306, 282, 29)
+}
+

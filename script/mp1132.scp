@@ -1,0 +1,660 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 1132：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+//	MapHide( "@BG2_mp1102" , 0 )
+	MapHide( "@BG2_mp1201_3" , 0 )
+	MapHide( "BG2_mp1110" , 0 )
+	MapHide( "BG2_mp1110_alpha" , 0 )
+	MapHide( "@BG2_mp1113" , 0 )
+	MapHide( "@BG2_mp1132" , 0 )
+
+	MapHide( "BG2_groundfog_SW2" , 0 )	//遠景の板フォグを消す
+	MapHide( "skyfog1" , 0 )		//濃霧（薄）非表示
+
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog1" , 1 )		//濃霧（薄）表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			//SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.1f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			//SetFogBack(FOG_BOTH, 0x00939aa0, 200.0f, 1000.0f , 1.0f , 0.3f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.2f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f , 0.2f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.9f )
+		}
+		
+		//障害物制御（支援イベント）
+		SetChrWork( "LP_STOP_1132_SAND" , CWK_CHECKRADIUS , 3.5f )		// 範囲
+		SetChrWork( "CP_STOP_1132_SAND" , CWK_CHECKRADIUS , 3.5f )		// 範囲
+		if( FLAG[GF_SUBEV_1132_REMOVE_SAND] )
+		{
+			MapAnime( "mp1132_stop01" , "open" )
+			// 処理を軽くする為吹っ飛ばす
+			SetChrPos("LP_STOP_1132_SAND",  -100000.00f,0.00f,0.00f)
+			SetChrPos("CP_STOP_1132_SAND",  -100000.00f,0.00f,0.00f)
+		}
+		else if (FLAG[GF_SUBEV_1132_CHECKED_SAND])
+		{
+			// 初回チェック済み
+			SetChrWork("LP_STOP_1132_SAND", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1132_SAND", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		}
+		else
+		{
+			SetChrWork("LP_STOP_1132_SAND", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+			SetChrWork("CP_STOP_1132_SAND", CWK_CHECKOFF, 1)		// 協力イベントルックポイントをオフに
+		}
+	}
+
+	// イベント制御
+
+	EventAreaEnable( "ev2_EV_M02S075" , 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+		if ( !FLAG[GF_02MP1132_LOOK_LOCE] ) {	// ▽[M02S075][初めてロケーションポイントを発見]
+			EventAreaEnable( "ev2_EV_M02S075" , 1 )
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 100  ){	
+			//ワープ
+			VisualName("visual/mapname/mn_1132.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//白浜岬
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function "EV_M02S075"	//初めてロケーションポイントを発見
+{
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	SetStopFlag(STOPFLAG_EVENT)
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL", 226.74f, -1556.94f, 1.50f)
+	Turn("ADOL", -60.90f, 360.0f)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	ChangeAnimation( "ADOL", "ANI_WAIT", -1, 1 )	// 待機
+
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA", 226.06f, -1557.90f, 1.53f)
+	Turn("LAXIA", -60.90f, 360.0f)
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	ChangeAnimation( "LAXIA", "ANI_WAIT", -1, 1 )	// 待機
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI )
+	SetChrPos("SAHAD", 226.71f, -1555.67f, 1.48f)
+	Turn("SAHAD", -53.79f, 360.0f)
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_SMILE,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_SMILE,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	ChangeAnimation( "SAHAD", "ANI_WAIT", -1, 1 )	// 待機
+
+	// チュートリアルポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+	Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(2, "visual/help/hp_a25.itp" )	// help_a25：ロケーションポイント
+	Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+
+	Portrait_Load(4, "visual/mapname/lnmp1132.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , 237.537f , -1575.880f , 7.976f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 16.855f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -12.718f , 0 )	// 基本仰角
+	RotateCamera( 0 , 283.997f , 0 )				// 角度
+	ChangeCameraPers( 0 , 70.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.3f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 150.000 ,1.000 ,0.550 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	SetSkipScript("mp1132:EV_M02S075_ED")	
+
+
+//開始処理ここまで-----------------------------------------------
+
+	//　　碧の珊瑚礁のロケーションポイント付近で強制イベント。
+	//　　まずは通常のロケーション発見演出を行う。
+	//　　カメラ切り替えて周囲を眺めているアドルたち。
+	
+	// カット1 ----------------------------------------------------------------------------------------
+	
+	// 非表示・再表示
+	SetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("LAXIA", INFOFLAG_INVISIBLE)	// 非表示
+	SetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 非表示
+	
+	// 位置調整・表情・モーション
+	Look("ADOL", 0.0f, 25.0f)	// 見上げる
+	Look("LAXIA", 0.0f, 25.0f)	// 見上げる
+	Look("SAHAD", 0.0f, 25.0f)	// 見上げる
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,243.715f , -1564.010f , 14.694f, 400 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 23.153f , 400 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -0.054f, 400 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 214.117f, 400 )
+	
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	// カット2 ----------------------------------------------------------------------------------------
+	
+	// クロスフェード
+	CrossFade(FADE_NORMAL)
+	
+	// カメラ
+	MoveCameraAt( 0 , 226.742f , -1557.494f , 3.812f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.670f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -18.602f , 0 )	// 基本仰角
+	RotateCamera( 0 , 257.071f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	
+	// 非表示・再表示
+	ResetChrInfoFlag("ADOL", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("LAXIA", INFOFLAG_INVISIBLE)	// 再表示
+	ResetChrInfoFlag("SAHAD", INFOFLAG_INVISIBLE)	// 再表示
+	
+	// カメラ移動（垂直）
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 226.742f , -1557.494f , 3.372f, 50 )
+	
+	// フェード待ち
+	Wait(FADE_NORMAL)
+	
+	// カメラ待ち（垂直）
+	WaitThread(1000)
+	
+	ChangeAnimation( "LAXIA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+	
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0) {
+		"#000e#000mここは……ついつい"
+		"見とれてしまいそうな景色ですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1 )	// 両手腰
+
+	// サハド
+	TalkPopup("SAHAD", 0, 1, 0, 0, 0) {
+		"#000e#000mおお、変わった場所だし、"
+		"いい目印にもなりそうだな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookChr("LAXIA", "ADOL")
+
+	// ラクシャ
+	TalkPopup("LAXIA", 0, 1, 0, 0, 0){
+		"#000e#000m地図にもしっかりと"
+		"書き込んでおきましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//	//　　アドル頷いて暗転。
+//	LookChr("ADOL", "LAXIA")
+//	Wait(10)
+//	HeadYes("ADOL", 1, 25)	// キャラ, うなずき回数, 速さ
+//	Wait(30)
+	
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	
+	//　　[ロケーションポイント]チュートリアル画像を表示
+	//　　（１周目のみ）help_a25：ロケーションポイント
+	//　　チュートリアルを閉じたところで操作許可。
+
+	// チュートリアル =================================================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+		
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+		FadeIn(FADE_BLACK, 0)
+		WaitFade()
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+		Portrait_Close(1)
+		Portrait_Close(2)
+		
+		// 擬似フェードアウト削除
+		FadeOut(FADE_BLACK, 0)
+		WaitFade()
+		Portrait_Close(0)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	}
+	// ================================================================================================
+
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1132:EV_M02S075_ED")	
+}
+
+function "EV_M02S075_ED"
+{
+	SetSkipScript("")	
+
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	CallFunc("system:reset_chrmot_ADOL")
+	CallFunc("system:reset_chrmot_LAXIA")
+	CallFunc("system:reset_chrmot_SAHAD")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	//自動送り許可
+	SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	//フラグ処理
+	SetFlag( GF_02MP1132_LOOK_LOCE , 1 )	//初めてロケーションポイントを発見
+	SetFlag( GF_HELP_A25, 1 )	// チュートリアル：ロケーションポイント
+	SetFlag( GF_LOCATION02, 1)	//碧岩
+	CallFunc("mp1132:init")
+
+	//マップマーカー
+	DelMapMarker(SMI_SUBEVENT ,PAGE_F005, MARKER_EV_LC_MP1132, 0, 0)	//ロケ　：碧岩
+	SetMapMarker(SMI_LOCATION ,PAGE_F005, MARKER_EV_LC_MP1132, 248.87f, -1574.29f, 6.64f, 248.87f, -1574.29f,LOCATION_MP1132, MN_F_MP1132,0)	//ロケ　：碧岩
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_F005,0 ,239.24f, -1564.82f ,100 )
+
+	//イベント後の再配置
+	SetChrPos("LEADER", 218.22f, -1554.78f, 1.61f)
+	Turn("LEADER", -68.66f, 360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰 or 初期位置設定
+	MoveCameraAt( 0 , 218.220f , -1554.780f , 3.474f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -112.790f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function "SubEV_Sien12_open"
+{
+	if( !FLAG[GF_SUBEV_1132_CHECKED_SAND] )
+	{
+		// フラグセット
+		SetFlag(GF_SUBEV_1132_CHECKED_SAND, 1)
+		
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1132_SAND", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1132_SAND", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F005,REMOVE_OBJ_1132, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F005, REMOVE_OBJ_1132CE, 351.66f,-1543.02f,-0.41f, 351.66f,-1543.02f, COOPEVID_MP1132, MN_F_MP1132,0)
+	}
+}
+//──────────────────────────────
+//▼支援イベントNo.12		必要人数２０人		mp1132：碧の珊瑚礁
+//	泥砂を撤去				mp1133：碧の珊瑚礁・北側に水没エリアを用意し、宝箱入手
+//──────────────────────────────
+function "SubEV_Sien12"		//LP_STOP_1132_SAND
+{
+	//	泥砂を撤去				mp1133：碧の珊瑚礁・北側に水没エリアを用意し、宝箱入手
+	//　　※最速で「▼第五部②バハの塔に向かう」以降。
+	//　　　ＮＰＣを６／６人以上助けた後に撤去可能。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnTo( "LEADER", 351.66f,-1543.02f,-0.41f , 15.0f )
+
+	//	ナレーション
+	TalkPopup("UNDEF",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7Cぬかるんだ泥砂が"
+		"#7C道を塞いでしまっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	GetCoopEvPeopleNum(COOPEVID_MP1132, TF_MENU_SELECT2)	//支援要請で必要な人数を取得
+	
+	//──────────────────────
+	//	⇒人数が足りていない
+	if( FLAG[TF_MENU_SELECT2] > WORK[WK_NPCNUM] )	//必要な人数 ＞ 漂流村の人数
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cこの泥砂を撤去するには、"
+			"#7C漂流村の人数が足りないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_1132_CHECKED_SAND, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1132_SAND", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1132_SAND", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F005,REMOVE_OBJ_1132, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F005, REMOVE_OBJ_1132CE, 351.66f,-1543.02f,-0.41f, 351.66f,-1543.02f, COOPEVID_MP1132, MN_F_MP1132,0)
+/*
+		// 地図登録ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4C障害のある場所として地図に登録した。"
+			"#8S"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+*/
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//	⇒人数が足りている場合
+	else
+	{
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C支援要請を出しますか？",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+
+			//	  　以下の流れに接続
+			//──────────────────────
+			
+			//　　＞「▼支援イベント共通処理①」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common1")
+			
+			//　　障害物撤去ＳＥ
+			PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+			MapAnime( "mp1132_stop01" , "open" )
+
+			Wait(80)
+
+			CallFunc("system:party_remove")
+
+			MoveCameraAt( 0 , 354.881f , -1545.877f , 4.466f , 0 )	// 注視点
+			ChangeCameraDistance( 0 , 12.100f , 0 )		// 基本距離
+			ChangeCameraElevation( 0 , 20.770f , 0 )	// 基本仰角
+			RotateCamera( 0 , 298.037f , 0 )				// 角度
+			ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+			ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE ,  354.175f , -1543.126f , 1.738f , 180 )		// 注視点
+			ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 13.300f , 180 )		// 基本距離
+			ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 10.084f, 180 )		// 基本仰角
+			ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE ,232.291f , 180 )		// 角度
+			//ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,2.5f , 180 )		// ロール回転
+			//ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 50 )		// 視野角
+
+			//MoveCameraAt( 0 , 354.175f , -1543.126f , 1.738f , 0 )	// 注視点
+			//ChangeCameraDistance( 0 , 13.300f , 0 )		// 基本距離
+			//ChangeCameraElevation( 0 , 10.084f , 0 )	// 基本仰角
+			//RotateCamera( 0 , 232.291f , 0 )				// 角度
+			//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			
+			FadeIn(FADE_BLACK,FADE_FAST)
+			PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+			
+			//	ナレーション
+			TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+			{
+				"#7C全員の力を合わせて、泥砂を撤去した！"
+				"撤去2行目"
+			}
+			Wait(30)
+
+			//　　＞「▼支援イベント共通処理②」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common2")
+
+			WaitPrompt()
+			WaitCloseWindow()
+
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+
+			StopThread(1001)
+			StopThread(1002)
+			StopThread(1003)
+			StopThread(1004)
+			//　　イベント終了、操作許可。
+			
+			//障害物撤去処理
+			SetChrPos("LP_STOP_1132_SAND",  -100000.00f	0.00f	0.00f)
+			SetChrPos("CP_STOP_1132_SAND",  -100000.00f	0.00f	0.00f)
+			SetFlag(GF_SUBEV_1132_REMOVE_SAND, 1)			//【ＬＰ：1132⇒泥砂を撤去した】
+			SetFlag(GF_SUBEV_1132_CHECKED_SAND, 1)			//【ＬＰ：1132⇒泥砂を調べた】
+			SetDiaryFlag( DF_SUBEV_1132_REMOVE_SAND,1 )		// ★白浜岬にあった泥砂を撤去した。
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F005,REMOVE_OBJ_1132, 0, 0)
+			// 協力イベントのマーカーも削除
+			DelMapMarker( SMI_COOPEVENT, PAGE_F005, REMOVE_OBJ_1132CE, 0, 0)
+			
+			SetFlag( TF_MENU_SELECT, 1 )	//支援イベントとして終了
+		}
+		//	⇒やめる
+		else
+		{
+			//	  　そのまま操作許可。
+			
+			// マーカーの切り替え処理
+			
+			// 見たフラグセット
+			SetFlag(GF_SUBEV_1132_CHECKED_SAND, 1)
+			// ルックポイント切り替え
+			SetChrWork("LP_STOP_1132_SAND", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1132_SAND", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F005,REMOVE_OBJ_1132, 0, 0)
+			
+			// 協力イベントのマーカーもセット
+			SetMapMarker(SMI_COOPEVENT, PAGE_F005, REMOVE_OBJ_1132CE, 351.66f,-1543.02f,-0.41f, 351.66f,-1543.02f, COOPEVID_MP1132, MN_F_MP1132,0)
+
+			
+			SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+		}
+		//──────────────────────
+	}
+
+//終了処理ここから----------------------------------------------------
+
+	//ストッパーとして終了
+	if( FLAG[TF_MENU_SELECT] == 0 )
+	{
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	//支援イベントとして終了
+	else
+	{
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+		MoveCameraAt( 0 , 349.225f , -1542.354f , 1.480f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+		RotateCamera( 0 , -106.394f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		
+		ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		//イベント後の再配置位置
+		SetChrPos("LEADER", 349.23f,-1542.35f,-0.39f)
+		Turn("LEADER",-73.61f,360.0f)
+		
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+		
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+
+//終了処理ここまで----------------------------------------------------
+}

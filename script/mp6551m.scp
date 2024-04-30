@@ -1,0 +1,319 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+
+//-------------------------------------------
+// mp6551m：地下聖堂　５層
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_act_1807" , 0 )	//アクティブボイス
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		ChangeAnimation( "chkpt_dummy" , "ANI_STOP", -1 , 1 )
+
+		if(!FLAG[GF_SUBEV_PAST_GETTO_B5])
+		{
+			SetFlag( GF_MPxxxx_MAP_NAME_NO_DRAW, 1 )				// 地名表示した（テンポラリ）
+			EventCue("mp6551m:SubEV_Past_GetToB5")	//マップ演出
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_1807] && FLAG[GF_SUBEV_PAST_GETTO_B5] && !FLAG[GF_SUBEV_PAST_BOSS_B5]){
+			EventAreaEnable( "evb2_act_1807" , 1 )
+		}
+	}
+
+	// イベントエリア設定制御
+
+	//if( FLAG[SF_EVENT_ON] ){
+	
+		// 一般配置ファンクション呼び出し
+		CallFunc("mp6551m:NpcPosition")
+	//}
+	
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == -1 ){
+			VisualName("visual/mapname/mn_6551m.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//地下聖堂・灼熱の間
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_1807"
+{
+	if (!FLAG[GF_AVOICE_1807])
+	{
+		EventAreaEnable( "evb2_act_1807" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_1807, 1, 0)	//第五層の溶岩ゾーンに入ったら
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■配置制御セクション
+//////////////////////////////////////////////////////////////////////
+function "NpcPosition"
+{
+	//if( FLAG[GF_SPEEDRUN_SKILL_HUMMEL] &&	// やり込みスキル習得：⑤▼ヒュンメルＶＳマスターコングを勝利した
+	//	!FLAG[GF_SPEEDRUN_SKILL_ADOL] )		// やり込みスキル習得：⑥▼アドルＶＳマスターコングを勝利した
+	//{
+	//}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+
+function "SubEV_Past_GetToB5"
+{
+	//開始処理ここから-----------------------------------------------
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA",0.02f,41.49f,0.00f)
+	Turn("DANA",176.36f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+
+
+	//カメラ設定
+	MoveCameraAt( 0 , -97.967f , 231.078f , 71.016f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 81.198f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 10.437f , 0 )	// 基本仰角
+	RotateCamera( 0 , 341.446f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 170.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6551m:SubEV_Past_GetToB5_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -29.719f , 210.545f , 71.016f, 170 )
+	//ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 115.497f , 170 )
+	//ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE ,16.186f , 170 )
+	//ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 204.504f , 170 )
+	//ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE , 6.4f , 170 )
+
+	//MoveCameraAt( 0 , -29.719f , 210.545f , 71.016f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 81.198f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 10.437f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 341.446f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -25.192f , 189.430f , 48.170f, 240 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 115.497f ,  240 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE ,24.727f ,  240 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 201.656f ,  240 )
+	//ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE , 6.4f ,  240 )
+
+	//MoveCameraAt( 0 , -25.192f , 189.430f , 48.170f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 116.567f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 24.727f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 201.656f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(140)
+	VisualName("visual/mapname/mn_6551m.itp",VN_NAMEMAP,-1,-1,VN_MAPNAME_TIME)//地下聖堂・灼熱の間
+
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+	WaitThread(1004)
+	
+	Wait(45)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -30.335f , 182.944f , 50.624f, 190 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.297f ,  190 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 19.055f ,  190 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 192.121f  ,  190 )
+	//ExecuteCmd(1004, RollCamera, INTERPOLATE_SPHERE , 6.4f ,  190 )
+
+	//MoveCameraAt( 0 , -30.335f , 182.944f , 50.624f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.297f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 19.055f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 192.121f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(110)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, 45)
+	WaitFade()
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+	StopThread(1004)
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6551m:SubEV_Past_GetToB5_ED")
+}
+
+function "SubEV_Past_GetToB5_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag(GF_SUBEV_PAST_GETTO_B5, 1)	// 過去編Ⅲ：【サブイベント：地下聖堂フロア５に到達する】を見た	
+	SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+	SetFlag( GF_MPxxxx_MAP_NAME_NO_DRAW, 1 )				// 地名表示した（テンポラリ）
+
+	CallFunc("mp6551m:init")
+
+	CallFunc("system:SetMarkerDANA")
+	
+	//イベント後の再配置
+	SetChrPos("LEADER",0.02f,35.96f,0.00f)
+	Turn("LEADER",178.16f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 0.083f , 35.958f , 1.849f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 7.202f , 0 )	// 基本仰角
+	RotateCamera( 0 , 0.365f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+function "Relocate_B5"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",2.68f,35.31f,0.00f)
+	Turn("LEADER",-173.66f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 2.677f , 35.313f , 1.869f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , 0.000f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+//////////////////////////////////////////////////////////////////////
+

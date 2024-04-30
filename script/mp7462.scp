@@ -1,0 +1,161 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 7462：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	// イベント制御
+	EventAreaEnable( "ev2_EV_LOCATION017" , 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+		if ( !FLAG[GF_LOCATION17] ) {		// ロケーション017
+			EventAreaEnable( "ev2_EV_LOCATION017" , 1 )
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 100 ){
+			//VisualName("visual/mapname/mn_7451.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//水源の滝
+			VisualName("visual/mapname/mn_7461.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME) 	//地下水脈 2017.11.06 m.arai
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+
+//////////////////////////////////////////////
+// ロケーションポイント017:瑠璃色の鉱脈
+//////////////////////////////////////////////
+function "EV_LOCATION017"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+	Portrait_Load(4, "visual/mapname/lnmp7462.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , 65.988f , 101.615f , 13.369f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 23.100f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -21.635f , 0 )	// 基本仰角
+	RotateCamera( 0 , 331.866f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp7462:EV_LOCATION017_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt , INTERPOLATE_SPHERE , 63.200f , 103.974f , 13.369f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance , INTERPOLATE_SPHERE , 25.600f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation , INTERPOLATE_SPHERE , -25.552f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera , INTERPOLATE_SPHERE , 10.669f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp7462:EV_LOCATION017_ED")
+}
+function "EV_LOCATION017_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION17, 1)	//瑠璃色の鉱脈
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_MP746x, MARKER_EV_LC_MP7462, 0, 0)	//ロケ　：瑠璃色の鉱脈
+	SetMapMarker( SMI_LOCATION ,PAGE_MP746x, MARKER_EV_LC_MP7462, 63.881f , 105.550f , 8.446f, 63.881f , 105.550f,LOCATION_MP7462,MN_D_MP7462,0)		//ロケ　：瑠璃色の鉱脈
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_MP746x,0 ,63.29f, 96.27f ,100 )
+
+	CallFunc("mp7462:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , 46.636f , 81.365f , -1.018f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 0.578f , 0 )	// 基本仰角
+	RotateCamera( 0 , -50.656f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", 46.64f, 81.37f, -2.85f )
+	Turn("LEADER" ,-129.34f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}

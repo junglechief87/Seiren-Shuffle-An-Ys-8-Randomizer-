@@ -1,0 +1,363 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+
+#include "inc/temp/mp6561.h"
+
+//-------------------------------------------
+// mp6561：地下聖堂　最終層
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//PS4 Patch1.01 #3169
+	DelMapMarker( SMI_TBOX ,PAGE_MP65xx, MARKER_SUBEV_CRYPT2, 0 , -116 )
+	DelMapMarker( SMI_OPENED_TBOX ,PAGE_MP65xx, MARKER_SUBEV_CRYPT2, 0 , -116 )
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		SetChrWork( "SubEV_BackB5" , CWK_CHECKRADIUS , 7.0f )		// 範囲
+		SetChrPos("SubEV_BackB5",0.009f , 291.993f , -501.261f)
+	}
+	
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 ){
+			VisualName("visual/mapname/mn_6561.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//旧地下聖堂・最終層
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■配置制御セクション
+//////////////////////////////////////////////////////////////////////
+function "NpcPosition"
+{
+}
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+//////////////////////////////////////////////////////////////////////
+
+function "SubEV_OpenB6b"
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("LEADER", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("LEADER", INFOFLAG_NOCHRATARI)
+	SetChrPos("LEADER",-0.01f,292.10f,-476.05f)
+	Turn("LEADER",-0.61f,360.0f)
+	ChangeAnimation("LEADER", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LEADER", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LEADER", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LEADER", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	//カメラ設定
+	MoveCameraAt( 0 , 0.037f , 292.095f , -473.565f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 33.277f , 0 )	// 基本仰角
+	RotateCamera( 0 , 179.482f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	MapAnime("gim_elevator","down")
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 5.000, 150.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6561:SubEV_OpenB6b_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	PlaySE("SE_GIM_LIFT_SCFI", 100, 1,  0, 0, 1.0f, 0)	// gimse 動く音 loop
+
+	//MoveCameraAt( 0 , -0.010f , 292.100f , 1.837f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 2.984f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 180.000f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,  -0.010f , 292.100f , -498.173f, 115 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.000f , 115 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 0.802f, 115 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 180.0f , 115 )
+	Wait(10)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	EarthQuake(0.1f,0.1f,10)
+	StopSE("SE_GIM_LIFT_SCFI", 1000)	// gimse 動く音 stop loop
+	PlaySE("SE_GIM_LIFT_STOP", 60, 0,  100, 0, 1.0f, 0)	// gimse 動く音
+
+	Wait(35)
+	
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6561:SubEV_OpenB6b_ED")
+}
+
+function "SubEV_OpenB6b_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	MapAnime("gim_elevator","wait2")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag(GF_SUBEV_PAST_07_INTO_LAST, 1)	// 過去編Ⅶ：▼聖堂最下層に足を踏み入れる　を見た
+
+	CallFunc("system:SetMarkerDANA")
+
+	CallFunc("mp6561:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-0.04f,284.49f,-500.00f)
+	Turn("LEADER",-2.74f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -0.045f , 284.487f , -498.132f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 13.846f , 0 )	// 基本仰角
+	RotateCamera( 0 , 179.232f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+
+function "SubEV_BackB5"
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("LEADER", INFOFLAG_NOCHRATARI)
+	SetChrPos("LEADER",0.009f , 291.993f , -500.0f)
+	Turn("LEADER",0.0f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LEADER", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LEADER", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LEADER", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	//カメラ設定
+	MoveCameraAt( 0 , -0.010f , 292.100f , -498.163f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 2.984f , 0 )	// 基本仰角
+	RotateCamera( 0 , 180.000f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+	MapAnime("gim_elevator","wait2")
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 90.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6561:SubEV_BackB5_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+	Wait(15)
+
+	EarthQuake(0.1f,0.1f,10)
+	PlaySE("SE_GIM_LIFT_STOP", 60, 0,  100, 0, 1.0f, 0)	// gimse 動く音
+	Wait(15)
+	MapAnime("gim_elevator","up")
+
+//	MoveCameraAt( 0 , 0.037f , 292.095f , 26.435f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , 33.277f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 179.482f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 0.037f , 292.095f , -473.565f, 115 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.000f , 115 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 33.277f, 115 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 180.0f , 115 )
+
+	Wait(10)
+	PlaySE("SE_GIM_LIFT_SCFI", 100, 1,  0, 0, 1.0f, 0)	// gimse 動く音 loop
+
+	Wait(70)
+
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+
+//	CrossFade(FADE_FAST)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6561:SubEV_BackB5_ED")
+}
+
+function "SubEV_BackB5_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	LoadArg("map/mp6559/mp6559.arg")
+	EventCue("mp6559:SubEV_BackB5b")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+// 最後のトラップ宝箱
+function "EvOpenTBox"
+{
+	if (!FLAG[TF_MP6561_OPENTBOX])
+	{
+		SetFlag(TF_MP6561_OPENTBOX, 1)
+		
+		SetChrPos("tb_mons00",	-8.05f,	132.27f,	-484.00f)
+		SetChrPos("tb_mons01",	7.99f,	132.01f,	-484.00f)
+		SetChrPos("tb_mons02",	3.36f,	117.53f,	-480.52f)
+		SetChrPos("tb_mons03",	0.05f,	144.03f,	-484.00f)
+		SetChrPos("tb_mons04",	-2.79f,	117.88f,	-480.70f)
+
+		TurnToChr("tb_mons00", PLAYER1, 360.0f)
+		TurnToChr("tb_mons01", PLAYER1, 360.0f)
+		TurnToChr("tb_mons02", PLAYER1, 360.0f)
+		TurnToChr("tb_mons03", PLAYER1, 360.0f)
+		TurnToChr("tb_mons04", PLAYER1, 360.0f)
+
+		ChangeAnimation("tb_mons00", "ANI_UNI1", -1, 1)
+		ChangeAnimation("tb_mons01", "ANI_UNI1", -1, 1)
+		ChangeAnimation("tb_mons02", "ANI_UNI1", -1, 1)
+		ChangeAnimation("tb_mons03", "ANI_UNI1", -1, 1)
+		ChangeAnimation("tb_mons04", "ANI_UNI1", -1, 1)
+	}
+}
+

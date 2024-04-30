@@ -1,0 +1,237 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 水没寺院                                                                   //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+
+function "init"
+{
+	CallFunc("rng:expMult")
+	// イベント制御
+	EventAreaEnable( "ev2_EV_LOCATION033" , 0 )
+	EventAreaEnable( "evb2_act_0807" , 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+		if ( !FLAG[GF_LOCATION33] ) {		// ロケーション033
+			EventAreaEnable( "ev2_EV_LOCATION033" , 1 )
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0807]){
+			EventAreaEnable( "evb2_act_0807" , 1 )
+		}
+	}
+
+	if(FLAG[GF_MP7481_SWITCH_00] ){
+		//ショートカット１を開通状態に
+		MapAnime( "switch0" , "wait2" )
+		MapAnime( "door0" , "wait2" )
+		SetChrWork("lookp01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	} else {
+		MapAnime( "switch0" , "wait1" )
+		MapAnime( "door0" , "wait1" )
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_7481.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//水没墓地
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//-------------------------------------------
+// スイッチ 01
+function "shortcut01"
+{
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	// マップのアニメ設定
+	SetFlag(GF_MP7481_SWITCH_00,1)		// mp7481 ショートカット
+	EventAreaEnable("lookp01",0)
+	SetChrWork("lookp01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	MapAnime( "switch0" , "open" )
+	PlaySE(SE_GIM_SW_3, 100, 0,  0, 0, 1.0f, 0)	// gimse レバー
+	Wait(60)
+
+	PlaySE(SE_GIM_DOOR_CHAIN, 100, 1,  0, 0, 1.0f, 0)	// 動く音 loop
+	MapAnime( "door0" , "open" )
+	Wait(60)
+	StopSE(SE_GIM_DOOR_CHAIN,1000)	// stop loop
+	PlaySE(SE_GIM_DOOR_CHAIN_STOP, 100, 0,  0, 0, 1.0f, 0)	// 停止音
+	EarthQuake(0.1f,0.1f,10)
+	Wait(30)
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0807"
+{
+	if (!FLAG[GF_AVOICE_0807])
+	{
+		EventAreaEnable( "evb2_act_0807" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0807, 1, 0)	//中間の水没していない部屋に出る
+	}
+}
+
+//////////////////////////////////////////////
+// ロケーションポイント033:静寂の間
+//////////////////////////////////////////////
+function "EV_LOCATION033"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+	Portrait_Load(4, "visual/mapname/lnmp7481.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , 77.437f , 23.408f , -25.403f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 11.900f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.912f , 0 )	// 基本仰角
+	RotateCamera( 0 , 298.195f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp7481:EV_LOCATION033_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 79.083f , 32.084f , -24.659f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 20.700f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -5.199f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 252.510f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp7481:EV_LOCATION033_ED")
+}
+function "EV_LOCATION033_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION33, 1)	//静寂の間
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_MP748x, MARKER_EV_LC_MP7481, 0, 0)	//ロケ　：静寂の間
+	SetMapMarker( SMI_LOCATION ,PAGE_MP748x, MARKER_EV_LC_MP7481, 78.00f, 32.01f, -29.00f, 78.00f, 32.01f,LOCATION_MP7481,MN_D_MP7481,0)		//ロケ　：静寂の間
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_MP748x,0 ,68.17f, 32.01f ,100 )
+
+	CallFunc("mp7481:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , 49.272f , 32.180f , -28.188f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 9.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.869f , 0 )	// 基本仰角
+	RotateCamera( 0 , -89.000f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", 49.27f, 32.18f, -30.00f )
+	Turn("LEADER" ,-91.00f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////

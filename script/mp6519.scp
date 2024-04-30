@@ -1,0 +1,389 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+#include "inc/music.h"
+
+#include "inc/temp/mp6519.h"
+#include "inc/temp/mp65xx.h"
+
+//-------------------------------------------
+// mp6519：地下聖堂　階層１
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	// ボス部屋open
+	MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+	MapAnime("CT_EVENT_boss","open")
+	MapAnime("EVENT_monorisgate","open")
+
+	//if( FLAG[SF_EVENT_ON] ){
+	
+		//障壁02
+		if(FLAG[GF_MP6511_WALL_02]){
+			MapAnime( "gim_barrier12" , "open" )
+			SetChrWork("look_wall01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		} else {
+			MapAnime( "gim_barrier12" , "close" )
+		}
+	//}
+
+	///////////////////////////////////////////
+	// ボス戦関連
+	if( FLAG[TF_MP6519_DEFEATBOSS])
+	{
+		// ボス戦終了済み
+		EventAreaEnable("Ev_Boss", 0)
+
+		MapAnime("EVENT_bossgate","open")
+		MapAnime("CT_EVENT_boss","open")
+		MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+	}
+	else
+	{
+		MapAnime("EVENT_bossgate","close")
+	}
+	if( FLAG[SF_BOSS_BATTLE] )
+	{
+		// ボス戦リトライ
+		EventAreaEnable("Ev_Boss", 0)
+		EventCue("mp6519:EvBossRetry")
+	}
+	///////////////////////////////////////////
+	
+	///////////////////////////////////////////
+	// 宝箱ザコ
+	if (FLAG[TF_MP6519_OPENTBOX])
+	{
+		SetChrPos("mons68", 4.21f,  384.64f, 9.00f)
+		SetChrPos("mons69", 8.41f,  375.68f, 8.00f)
+		SetChrPos("mons70", -3.95f, 384.52f, 9.00f)
+		SetChrPos("mons71", -8.02f, 375.93f, 8.00f)
+	}
+
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■配置制御セクション
+//////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+//////////////////////////////////////////////////////////////////////
+
+function "talk_wall01"
+{
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)		// LP操作、ストッパーなどのシンプルイベント
+	SetStopFlag(STOPFLAG_SKIPOK)		// ×ボタンスキップを許可する
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	TurnToChr("LEADER", "this", 60.0f)
+	ExecuteCmd( 1 , TurnToChr("PLAYER2","PLAYER1",60.0f) )
+	ExecuteCmd( 1 , TurnToChr("PLAYER3","PLAYER1",60.0f) )
+	SetChrInfoFlag( "PLAYER1" , INFOFLAG_FIXED )
+	SetChrInfoFlag( "PLAYER2" , INFOFLAG_FIXED )
+	SetChrInfoFlag( "PLAYER3" , INFOFLAG_FIXED )
+	SetChrInfoFlag( "PLAYER1" , INFOFLAG_NOATARI )
+	SetChrInfoFlag( "PLAYER2" , INFOFLAG_NOATARI )
+	SetChrInfoFlag( "PLAYER3" , INFOFLAG_NOATARI )
+	//Wait(15)
+
+	if( ALLITEMWORK[ICON3D_RELEASESTONE]==0 )
+	{
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cどこからか湧きだした理力が"
+			"#7C障壁を作り出している。\p"
+			"#7Cこのままでは通れないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else
+	{
+		Portrait_Load( 0 , "system/white.itp" )		//擬似フェードアウト用
+		Portrait_Create(0 , 0 , 0 ,
+						0 , 0 , 1920, 1080 ,
+						0.0f,0x00bfffff,0x00000000)
+		Portrait_Anime(  0 , PR_ANIME_COLOR, 0.75f, 1.0f, 1.0f, 0.5f, 15)
+		Wait(5)
+		PlaySE(SE_GIM_MAGWALL_KEY, 100, 0, 0, 0, 1.0f, 0)
+		Wait(10)
+		Portrait_Anime(  0 , PR_ANIME_COLOR, 0.75f, 1.0f, 1.0f, 0.0f, 15)
+		Wait(20)
+		
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7C手元にある『解理石』が"
+			"#7C強い反応を示している。\p"
+			"#7C障壁に向けて掲げますか？"
+			"#7C(所持数 #703N )\p"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		//選択肢
+		SetFlag(TF_MENU_SELECT,0)
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(0,"『解理石』を使う")
+		MenuAdd(1,"やめる")
+		MenuOpen( TF_MENU_SELECT , -1 , SYSTEM_PPOSY , -2 , -2 , 10 , 1)
+		WaitMenu(0)
+		MenuClose(10,0)
+		
+		// 使う
+		if( 0==FLAG[TF_MENU_SELECT] ){
+			//開始処理ここから----------------------------------------------------
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+			
+		//イベント開始前情報の保存
+		SaveEventState()
+		SaveCamera()
+
+		//パーティ状態のリセット
+		CallFunc("system:party_reset")
+
+		//カメラ設定
+		MoveCameraAt( 0 , 21.293f , 224.052f , 9.869f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 17.400f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 5.887f , 0 )	// 基本仰角
+		RotateCamera( 0 , 270.0f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		// 被写界深度の設定
+		SetDoF(0, LERP_LINEAR, 2.000, 60.000, 1.000, 0.700, 0.500)
+		// グレアの設定
+		SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+		
+			MapAnime("gim_barrier12", "close-open" )	
+			MapAnimeLast( "gim_barrier12","open")
+			
+			ExecuteCmd(1000, ChangeCameraDistance, INTERPOLATE_SPHERE , 18.000f , 90 )
+			FadeIn(FADE_BLACK,FADE_FAST)
+			WaitFade()
+			PlaySE(SE_GIM_MAGWALL_OPEN, 100, 0, 0, 0, 1.0f, 0)
+			WaitThread(1000)
+			Wait(30)
+		
+			FadeOut(FADE_BLACK, FADE_FAST)
+			WaitFade()
+			
+			//　　操作許可を戻す。
+
+			//終了処理ここから----------------------------------------------------
+			//イベント前のキャラ情報を復帰
+			RestoreEventState()
+
+			//キャラモーション初期化
+			CallFunc("system:reset_chrmot_ALL")
+
+			//パーティキャラを解放
+			ReleaseEventPartyChr()
+
+			//マップパラメーターリセット
+			ResetMapParam(-1)
+
+			//エフェクトの停止
+			StopEffect(-1, ALL, 1)
+
+			//フラグ処理
+			SetFlag(GF_MP6511_WALL_02, 1)
+			SetChrWork("look_wall01", CWK_CHECKOFF, 1)
+			DeleteItem( ICON3D_RELEASESTONE, 1 )	// 解理石
+
+			//イベント後の再配置
+
+			//カメラ位置復帰
+			RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+			CallFunc("system:camera_reset")
+
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+			FadeIn(FADE_BLACK,FADE_FAST)
+			//WaitFade()
+		}
+
+		Portrait_Close(  0 )
+		Portrait_Unload( 0 )
+	}
+
+	ResetChrInfoFlag( "PLAYER1" , INFOFLAG_FIXED )
+	ResetChrInfoFlag( "PLAYER2" , INFOFLAG_FIXED )
+	ResetChrInfoFlag( "PLAYER3" , INFOFLAG_FIXED )
+	ResetChrInfoFlag( "PLAYER1" , INFOFLAG_NOATARI )
+	ResetChrInfoFlag( "PLAYER2" , INFOFLAG_NOATARI )
+	ResetChrInfoFlag( "PLAYER3" , INFOFLAG_NOATARI )
+	ResetStopFlag(STOPFLAG_SKIPOK)
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}
+
+//////////////////////////////////////////////////
+// ボス出現
+function "EvBossAppear"
+{
+	// 登場
+	ChrAlpha("boss", 0.0f, 0)
+	ChrAlpha("boss", 1.0f, 30)
+	SetChrPos("boss", 0.0f, 336.0f, 12.0f)
+	TurnToChr("boss","PLAYER1",360.0f)
+	ChangeAnimation("boss", "ANI_EV_FALL_START", -1, 1)
+	PlaySE(SE_SUB_30, 80, 0, 0, 0, 1.0f, 0)
+
+	//BGM控え
+	SetFlag(TF_MP6519_BGMBACKUP, (WORK[WK_BGM]))
+	
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start_noheal")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_001, 0)
+	MapAnime("EVENT_bossgate","close")
+	MapAnime("CT_EVENT_boss","close")
+	MapAnime("CA_EVENT_boss", "close")	//逃げられないストッパー起動
+
+	EventAreaEnable("Ev_Boss", 0)
+}
+
+//////////////////////////////////////////////////
+// ボスリトライ
+function "EvBossRetry"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("boss", 0.0f, 336.0f, 8.0f)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos(PLAYER1,0.0f,	312.0f,	8.00f)
+
+	TurnToChr("boss","PLAYER1",360.0f)
+	TurnToChr("PLAYER1","boss",360.0f)
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	ResetYs8Camera()
+	ResetCameraObserver(0)
+	FixCamera()
+
+	SetStopFlag(STOPFLAG_EVENT)
+
+	//BGM控え
+	SetFlag(TF_MP6519_BGMBACKUP, (WORK[WK_BGM]))
+	
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start_noheal")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_001, 0)
+	MapAnime("EVENT_bossgate","close")
+	MapAnime("CT_EVENT_boss","close")
+	MapAnime("CA_EVENT_boss", "close")	//逃げられないストッパー起動
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+}
+
+//////////////////////////////////////////////////
+// ボス倒した
+function "EvBossDead"
+{
+	//無敵ON・色々終了させる---------------------------
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+
+	Wait(30)
+	StopBGM(120)
+	Wait(90)
+	FadeOut(FADE_WHITE,FADE_SLOW)
+	WaitFade()
+
+	// イベントオン
+	ResetYs8Camera()
+	ResetCameraObserver(0)
+	FixCamera()
+
+	SetStopFlag(STOPFLAG_EVENT)
+
+	// フラグ設定
+	SetFlag(SF_CANTSAVE,0)			//セーブ不可
+	SetFlag(SF_CAMP_CANT_FORMATION, 0)	// キャンプメニュー：編成禁止解除
+	SetFlag(SF_REDENTRYLINE, 0)	// エントリー表示を赤色に
+	SetFlag(SF_SETRAMSAVE,1)		//リトライセーブ
+	SetFlag(SF_BOSS_BATTLE, 0)
+	
+	SetFlag(TF_MP6519_DEFEATBOSS, 1)
+
+	//封鎖解除・ボス消去-------------------------------
+	PlaySE(SE_GIM_PAST_DOOR, 100, 0, 0, 0, 1.0f, 0)
+	MapAnime("EVENT_bossgate","close-open")
+	MapAnimeLast("EVENT_bossgate","open")
+	MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+	MapAnime("CT_EVENT_boss","open")
+	SetChrPos("boss", -100000.0f, 0.0f, 0.0f)
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	EarthQuake( 0 , 0 , 0 )		//揺れ止める
+	Blur(BLUR_TYPE_AFTERIMAGE,0,0)	//ブラー止める
+	
+	// 余韻
+	Wait(30)
+
+	// BGM戻す
+	PlayBGM((FLAG[TF_MP6519_BGMBACKUP]), 30)
+
+	FadeIn(FADE_WHITE,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+
+//////////////////////////////////////////////////
+// モノリス前宝箱開けた
+function "EvOpenTBox"
+{
+	if (!FLAG[TF_MP6519_OPENTBOX])
+	{
+		SetFlag(TF_MP6519_OPENTBOX, 1)
+		
+		SetChrPos("mons68", 4.21f,  384.64f, 13.00f)
+		SetChrPos("mons69", 8.41f,  375.68f, 12.00f)
+		SetChrPos("mons70", -3.95f, 384.52f, 13.00f)
+		SetChrPos("mons71", -8.02f, 375.93f, 12.00f)
+		
+		ChangeAnimation("mons68", "ANI_JUMP", -1, 1)
+		ChangeAnimation("mons69", "ANI_JUMP", -1, 1)
+		ChangeAnimation("mons70", "ANI_JUMP", -1, 1)
+		ChangeAnimation("mons71", "ANI_JUMP", -1, 1)
+		
+		TurnToChr("mons68", PLAYER1, 360.0f)
+		TurnToChr("mons69", PLAYER1, 360.0f)
+		TurnToChr("mons70", PLAYER1, 360.0f)
+		TurnToChr("mons71", PLAYER1, 360.0f)
+	}
+}

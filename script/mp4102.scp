@@ -1,0 +1,153 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/music.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 4102：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp4102" , 0 )
+	MapHide( "@BG2_mp1108" , 0 )
+	MapHide( "@BG2_mp1109" , 0 )
+	MapHide( "BG2_groundfog_main" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SW2" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SE1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SE2" , 0 )	//遠景の板フォグを消す
+
+	MapHide( "camp_fire1" , 0 )		//火消し
+	MapHide( "camp_fire2" , 0 )		//火消し
+	MapHide( "camp_smoke1" , 0 )		//煙消し
+
+//	if( FLAG[SF_EVENT_ON] ){
+//	// イベント発生制御
+//		if( !FLAG[GF_02MP4102_MAKE_CAMP] && !FLAG[GF_02MP1201_BEFORE_INTERCEPT2] ){			// mp4102で野営していない		//◆期限フラグは仮
+//			MapAnime( "camp_all" , off )	//キャンプ未設置
+//			EventCue("mp4102:EV_M02S330")
+//
+//		}
+//	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_1108.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//獣たちの丘
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+}
+function "LP_tent"
+{
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"テントで休む")
+	MenuAdd(4,"やめる")	
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , -1)
+	WaitMenu(0)
+	MenuClose(10,0)
+	
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		SetWork(WK_BGMLIMIT, 1)
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		SaveCamera()
+
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+		PlaySE(SE_ENV_FOREST_4, 20, 1, 1000, 0, 1.0f, 0)	//夜の虫
+		PlaySE(SE_ENV_WATERFALL_4, 20, 1, 1000, 0, 1.0f, 0)
+		PlaySE(SE_ENV_RIVER_1, 20, 1, 1000, 0, 1.0f, 0)
+
+		CallFunc("system:TentVoice_Sleep")
+	
+		PlaySE( SE_HOTEL_JINGLE , 100 , 0,  0, 0, 1.0f, 0)	//ジングル
+		StopSE(SE_ENV_FOREST_4, 2000)		//虫の音止める
+		StopSE(SE_ENV_WATERFALL_4, 2000)
+		StopSE(SE_ENV_RIVER_1, 2000)
+
+		Wait(120)
+	
+		//テント回復処理・リトライセーブ
+		CallFunc("system:camp_rest")
+
+		PlaySE(SE_HEAL, 100, 0, 0, 0, 1.0f, 0)
+	
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4C全員のＨＰ、ＳＰとＥＸＴＲＡゲージが全快した！#10W" 
+			"#8S"
+		}
+		Wait(10)
+		WaitPrompt()
+		WaitCloseWindow()
+	
+		Wait(15)
+
+		SetChrPos("LEADER",482.72f,-36.15f,96.64f)
+		Turn("LEADER",-147.23f,360.0f)
+	
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+	
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+	
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+		SetEnvSEPlayState(-1, 1)	//環境SE復帰
+
+		SetWork(WK_BGMLIMIT, 0) 	
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+
+	} else {
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	}
+
+}
+
+function "LP_cook"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	TurnToChr( PLAYER1 , this , 7.5f )
+	Wait(10)
+
+	ShopOpen( SHOP_ID_COOK, -1 )		//◆料理作成テスト
+
+	ResetStopFlag(STOPFLAG_TALK)
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+

@@ -1,0 +1,223 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+#include "inc/music.h"
+
+#include "inc/temp/mp6549.h"
+#include "inc/temp/mp65xx.h"
+
+//-------------------------------------------
+// mp6549：地下聖堂　階層４
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	// ボス部屋open
+	MapAnime("CT_EVENT_boss","open")
+	MapAnime("CA_EVENT_boss","open")
+	MapAnime("EVENT_monorisgate","open")
+
+//	if( FLAG[SF_EVENT_ON] )
+//	{
+//
+//	}
+	
+	///////////////////////////////////////////
+	// ボス戦関連
+	if( FLAG[TF_MP6549_DEFEATBOSS])
+	{
+		// ボス戦終了済み
+		EventAreaEnable("Ev_Boss", 0)
+
+		MapAnime("EVENT_bossgate","open")
+		MapAnime("CT_EVENT_boss","open")
+		MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+	}
+	else
+	{
+		MapAnime("EVENT_bossgate","close")
+	}
+	if( FLAG[SF_BOSS_BATTLE] )
+	{
+		// ボス戦リトライ
+		EventAreaEnable("Ev_Boss", 0)
+		EventCue("mp6549:EvBossRetry")
+	}
+	///////////////////////////////////////////
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■配置制御セクション
+//////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+//////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////
+// ボス出現
+function "EvBossAppear"
+{
+	// 登場
+	ChrAlpha("boss", 0.0f, 0)
+	ChrAlpha("boss", 1.0f, 30)
+	SetChrPos("boss", 0.0f, 380.0f, -288.0f)
+	SetChrPos("boss_zako1", -6.0f, 372.0f, -288.0f)
+	SetChrPos("boss_zako2", 6.0f, 372.0f, -288.0f)
+	TurnToChr("boss","PLAYER1",360.0f)
+	TurnToChr("boss_zako1","PLAYER1",360.0f)
+	TurnToChr("boss_zako2","PLAYER1",360.0f)
+	ChangeAnimation("boss", "ANI_JUMP", -1, 1)
+	ChangeAnimation("boss_zako1", "ANI_JUMP", -1, 1)
+	ChangeAnimation("boss_zako2", "ANI_JUMP", -1, 1)
+
+	//BGM控え
+	SetFlag(TF_MP6549_BGMBACKUP, (WORK[WK_BGM]))
+	
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start_noheal")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_001, 0)
+	MapAnime("EVENT_bossgate","close")
+	MapAnime("CT_EVENT_boss","close")
+	MapAnime("CA_EVENT_boss", "close")	//逃げられないストッパー起動
+
+	EventAreaEnable("Ev_Boss", 0)
+}
+
+//////////////////////////////////////////////////
+// ボスリトライ
+function "EvBossRetry"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("boss", 0.0f, 380.0f, -292.0f)
+	SetChrPos("boss_zako1", -6.0f, 372.0f, -292.0f)
+	SetChrPos("boss_zako2", 6.0f, 372.0f, -292.0f)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos(PLAYER1,0.0f,	364.0f, -292.00f)
+
+	TurnToChr("boss","PLAYER1",360.0f)
+	TurnToChr("boss_zako1","PLAYER1",360.0f)
+	TurnToChr("boss_zako2","PLAYER1",360.0f)
+	TurnToChr("PLAYER1","boss",360.0f)
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	ResetYs8Camera()
+	ResetCameraObserver(0)
+	FixCamera()
+
+	SetStopFlag(STOPFLAG_EVENT)
+
+	//BGM控え
+	SetFlag(TF_MP6549_BGMBACKUP, (WORK[WK_BGM]))
+	
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start_noheal")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_001, 0)
+	MapAnime("EVENT_bossgate","close")
+	MapAnime("CT_EVENT_boss","close")
+	MapAnime("CA_EVENT_boss", "close")	//逃げられないストッパー起動
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+}
+
+//////////////////////////////////////////////////
+// ボス倒した
+function "EvBossDead"
+{
+	//無敵ON・色々終了させる---------------------------
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+
+	if (boss_zako1.CHRWORK[CWK_HP] >= 1.0f)
+	{
+		ChangeAnimation("boss_zako1", "ANI_DEAD", -1, 1)
+	}
+	if (boss_zako2.CHRWORK[CWK_HP] >= 1.0f)
+	{
+		ChangeAnimation("boss_zako2", "ANI_DEAD", -1, 1)
+	}
+	
+	Wait(20)
+
+	ChrAlpha("boss_zako1", 0.0f, 20)
+	ChrAlpha("boss_zako2", 0.0f, 20)
+
+	Wait(10)
+	StopBGM(120)
+	Wait(10)
+	SetChrPos("boss_zako1", -100000.0f, 0.0f, 0.0f)
+	SetChrPos("boss_zako2", -100000.0f, 0.0f, 0.0f)
+	Wait(80)
+	FadeOut(FADE_WHITE,FADE_SLOW)
+	WaitFade()
+
+	// イベントオン
+	ResetYs8Camera()
+	ResetCameraObserver(0)
+	FixCamera()
+
+	SetStopFlag(STOPFLAG_EVENT)
+
+	// フラグ設定
+	SetFlag(SF_CANTSAVE,0)			//セーブ不可
+	SetFlag(SF_CAMP_CANT_FORMATION, 0)	// キャンプメニュー：編成禁止解除
+	SetFlag(SF_REDENTRYLINE, 0)	// エントリー表示を赤色に
+	SetFlag(SF_SETRAMSAVE,1)		//リトライセーブ
+	SetFlag(SF_BOSS_BATTLE, 0)
+	
+	SetFlag(TF_MP6549_DEFEATBOSS, 1)
+
+	//封鎖解除・ボス消去-------------------------------
+	PlaySE(SE_GIM_PAST_DOOR, 100, 0, 0, 0, 1.0f, 0)
+	MapAnime("EVENT_bossgate","close-open")
+	MapAnimeLast("EVENT_bossgate","open")
+	MapAnime("CT_EVENT_boss","open")
+	MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+
+	SetChrPos("boss", -100000.0f, 0.0f, 0.0f)
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	EarthQuake( 0 , 0 , 0 )		//揺れ止める
+	Blur(BLUR_TYPE_AFTERIMAGE,0,0)	//ブラー止める
+	
+	// 余韻
+	Wait(30)
+
+	// BGM戻す
+	PlayBGM((FLAG[TF_MP6549_BGMBACKUP]), 30)
+
+	FadeIn(FADE_WHITE,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+

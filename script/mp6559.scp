@@ -1,0 +1,499 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+#include "inc/music.h"
+
+#include "inc/temp/mp6559.h"
+#include "inc/temp/mp65xx.h"
+
+//-------------------------------------------
+// mp6559m：地下聖堂　階層５　ボスマップ
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")				
+	// ボス部屋open
+	MapAnime("CT_EVENT_boss","open")
+	MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+	
+	if (FLAG[SF_EVENT_ON])
+	{
+		SetChrWork( "SubEV_OpenB6" , CWK_CHECKRADIUS , 7.0f )		// 範囲
+		SetChrPos("SubEV_OpenB6",0.03f,259.76f,-369.25f)
+
+		//マップアニメ
+		MapHide("outside_all",1)
+		MapAnime("EVENT_bossgate","open")
+	}
+
+	///////////////////////////////////////////
+	// ボス戦関連
+	if( FLAG[TF_MP6559_DEFEATBOSS])
+	{
+		// ボス戦終了済み
+		EventAreaEnable("Ev_Boss", 0)
+
+		MapAnime("EVENT_bossgate","open")
+		MapAnime("CT_EVENT_boss","open")
+		MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+
+	}
+	else
+	{
+		MapAnime("EVENT_bossgate","close")
+	}
+	if( FLAG[SF_BOSS_BATTLE] )
+	{
+		// ボス戦リトライ
+		EventAreaEnable("Ev_Boss", 0)
+		EventCue("mp6559:EvBossRetry")
+	}
+	///////////////////////////////////////////
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+//////////////////////////////////////////////////////////////////////
+
+function "SubEV_OpenB6"
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin")
+
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("LEADER", INFOFLAG_NOCHRATARI)
+	SetChrPos("LEADER",0.02f,260.85f,-368.10f)
+	Turn("LEADER",0.0f,360.0f)
+	ChangeAnimation("LEADER", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("LEADER", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("LEADER", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("LEADER", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	//カメラ設定
+	MoveCameraAt( 0 , 0.053f , 260.593f , -368.034f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 8.989f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 18.644f , 0 )	// 基本仰角
+	RotateCamera( 0 , 198.030f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+		// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6559:SubEV_OpenB6_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//MoveCameraAt( 0 , 0.053f , 260.593f , 31.792f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 8.278f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 45.732f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 180.173f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,  0.053f , 260.593f , -368.208f, 70 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 8.278f , 70 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE ,45.732f, 70 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 180.173f , 70 )
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+	
+	Wait(15)
+	WaitThread(1)
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	PlaySE("SE_GIM_LIFT_STOP", 60, 0,  100, 0, 1.0f, 0)	// gimse 動く音
+	EarthQuake(0.1f,0.1f,10)
+	Wait(10)
+	MapAnime("gim_elevator","down")
+	PlaySE("SE_GIM_LIFT_SCFI", 100, 1,  0, 0, 1.0f, 0)	// gimse 動く音 loop
+
+	Wait(80)
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6559:SubEV_OpenB6_ED")
+}
+
+function "SubEV_OpenB6_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	LoadArg("map/mp6561/mp6561.arg")
+	EventCue("mp6561:SubEV_OpenB6b")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+function "SubEV_BackB5b"
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA",-0.03f,266.01f,-368.10f)
+	Turn("DANA",-2.38f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+
+	//カメラ設定
+	MoveCameraAt( 0 , 0.037f , 292.095f , -373.565f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 33.277f , 0 )	// 基本仰角
+	RotateCamera( 0 , 179.482f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 90.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6559:SubEV_OpenB6b_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	PlaySE("SE_GIM_LIFT_SCFI", 100, 1,  0, 0, 1.0f, 0)	// gimse 動く音 loop
+
+	Wait(65)
+
+	StopSE("SE_GIM_LIFT_SCFI", 1000)	// gimse 動く音 stop loop
+	PlaySE("SE_GIM_LIFT_STOP", 60, 0,  100, 0, 1.0f, 0)	// gimse 動く音
+
+	Wait(15)
+
+	//MoveCameraAt( 0 , -0.010f , 292.100f , 1.837f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 2.984f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 180.000f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE ,  -0.010f , 292.100f , 1.827f, 115 )
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.000f , 115 )
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 1.802f, 115 )
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 180.0f , 115 )
+//
+//	FadeIn(FADE_BLACK, FADE_FAST)
+//	WaitFade()
+//
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+//
+//	EarthQuake(0.1f,0.1f,10)
+//	Wait(45)
+
+//	// フェードアウト
+//	FadeOut(FADE_BLACK, FADE_FAST)
+//	WaitFade()
+//
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6559:SubEV_BackB5b_ED")
+}
+
+function "SubEV_BackB5b_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	MapAnime("gim_elevator","wait1")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-0.07f,267.98f,-368.10f)
+	Turn("LEADER",177.36f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -0.072f , 267.982f , 33.731f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 0.970f , 0 )	// 基本仰角
+	RotateCamera( 0 , 17.462f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+//////////////////////////////////////////////////
+// ボス出現
+function "EvBossAppear"
+{
+	// 登場
+	ChrAlpha("boss", 0.0f, 0)
+	ChrAlpha("boss", 1.0f, 30)
+	SetChrPos("boss", 0.0f, 364.0f, -368.0f)
+	TurnToChr("boss","PLAYER1",360.0f)
+	ChangeAnimation("boss", "ANI_EV_APPEAR", -1, 1)
+
+	SetChrPos("m0901_01",-8.05f	376.30f	-368.00f)		// ボス子分１：mp0405.arg用(仮)
+	SetChrPos("m0901_02",-8.00f	392.17f	-368.00f)		// ボス子分２：mp0405.arg用(仮)
+	SetChrPos("m0901_03",17.96f	394.07f	-368.00f)		// ボス子分３：mp0405.arg用(仮)
+	SetChrPos("m0901_04",21.99f	382.00f	-368.00f)		// ボス子分４：mp0405.arg用(仮)
+	TurnToChr("m0901_01","PLAYER1",360.0f)
+	TurnToChr("m0901_02","PLAYER1",360.0f)
+	TurnToChr("m0901_03","PLAYER1",360.0f)
+	TurnToChr("m0901_04","PLAYER1",360.0f)
+
+	ChangeAnimation("m0901_01", "ANI_UNI2", -1, 1)	// 雑魚は仮死に登場
+	ChangeAnimation("m0901_02", "ANI_UNI2", -1, 1)
+	ChangeAnimation("m0901_03", "ANI_UNI2", -1, 1)
+	ChangeAnimation("m0901_04", "ANI_UNI2", -1, 1)
+
+	ChrAlpha("m0901_01", 0, 0)
+	ChrAlpha("m0901_02", 0, 0)
+	ChrAlpha("m0901_03", 0, 0)
+	ChrAlpha("m0901_04", 0, 0)
+	ChrAlpha("m0901_01", 1, 60)
+	ChrAlpha("m0901_02", 1, 60)
+	ChrAlpha("m0901_03", 1, 60)
+	ChrAlpha("m0901_04", 1, 60)
+
+	//BGM控え
+	SetFlag(TF_MP6559_BGMBACKUP, (WORK[WK_BGM]))
+	
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start_noheal")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_001, 0)
+	MapAnime("EVENT_bossgate","close")
+	MapAnime("CT_EVENT_boss","close")
+	MapAnime("CA_EVENT_boss", "close")	//逃げられないストッパー起動
+	EventAreaEnable("Ev_Boss", 0)
+}
+
+//////////////////////////////////////////////////
+// ボスリトライ
+function "EvBossRetry"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("boss", 0.0f, 364.0f, -368.0f)
+	SetChrPos("m0901_01",-8.05f	376.30f	-368.00f)		// ボス子分１：mp0405.arg用(仮)
+	SetChrPos("m0901_02",-8.00f	392.17f	-368.00f)		// ボス子分２：mp0405.arg用(仮)
+	SetChrPos("m0901_03",17.96f	394.07f	-368.00f)		// ボス子分３：mp0405.arg用(仮)
+	SetChrPos("m0901_04",21.99f	382.00f	-368.00f)		// ボス子分４：mp0405.arg用(仮)
+
+	ChangeAnimation("boss", "ANI_EV_APPEAR", -1, 1)
+	ChangeAnimation("m0901_01", "ANI_UNI2", -1, 1)	// 雑魚は仮死に登場
+	ChangeAnimation("m0901_02", "ANI_UNI2", -1, 1)
+	ChangeAnimation("m0901_03", "ANI_UNI2", -1, 1)
+	ChangeAnimation("m0901_04", "ANI_UNI2", -1, 1)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos(PLAYER1,0.0f,	418.0f,	-368.00f)
+
+	TurnToChr("boss","PLAYER1",360.0f)
+	TurnToChr("m0901_01","PLAYER1",360.0f)
+	TurnToChr("m0901_02","PLAYER1",360.0f)
+	TurnToChr("m0901_03","PLAYER1",360.0f)
+	TurnToChr("m0901_04","PLAYER1",360.0f)
+	TurnToChr("PLAYER1","boss",360.0f)
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	ResetYs8Camera()
+	ResetCameraObserver(0)
+	FixCamera()
+
+	SetStopFlag(STOPFLAG_EVENT)
+
+	//BGM控え
+	SetFlag(TF_MP6559_BGMBACKUP, (WORK[WK_BGM]))
+	
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start_noheal")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_001, 0)
+	MapAnime("EVENT_bossgate","close")
+	MapAnime("CT_EVENT_boss","close")
+	MapAnime("CA_EVENT_boss", "close")	//逃げられないストッパー起動
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+}
+
+//////////////////////////////////////////////////
+// ボス倒した
+function "EvBossDead"
+{
+	//無敵ON・色々終了させる---------------------------
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+
+	Wait(30)
+	StopBGM(120)
+	Wait(90)
+	FadeOut(FADE_WHITE,FADE_SLOW)
+	WaitFade()
+
+	// イベントオン
+	ResetYs8Camera()
+	ResetCameraObserver(0)
+	FixCamera()
+
+	SetStopFlag(STOPFLAG_EVENT)
+
+	// フラグ設定
+	SetFlag(SF_CANTSAVE,0)			//セーブ不可
+	SetFlag(SF_CAMP_CANT_FORMATION, 0)	// キャンプメニュー：編成禁止解除
+	SetFlag(SF_REDENTRYLINE, 0)	// エントリー表示を赤色に
+	SetFlag(SF_SETRAMSAVE,1)		//リトライセーブ
+	SetFlag(SF_BOSS_BATTLE, 0)
+	
+	SetFlag(TF_MP6559_DEFEATBOSS, 1)
+
+	//封鎖解除・ボス消去-------------------------------
+	PlaySE(SE_GIM_PAST_DOOR, 100, 0, 0, 0, 1.0f, 0)
+	MapAnime("EVENT_bossgate","close-open")
+	MapAnimeLast("EVENT_bossgate","open")
+
+	MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+	MapAnime("CT_EVENT_boss","open")
+
+	SetChrPos("boss", -100000.0f, 0.0f, 0.0f)
+	SetChrPos("m0901_01", -100000.0f, 0.0f, 0.0f)
+	SetChrPos("m0901_02", -100000.0f, 0.0f, 0.0f)
+	SetChrPos("m0901_03", -100000.0f, 0.0f, 0.0f)
+	SetChrPos("m0901_04", -100000.0f, 0.0f, 0.0f)
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	EarthQuake( 0 , 0 , 0 )		//揺れ止める
+	Blur(BLUR_TYPE_AFTERIMAGE,0,0)	//ブラー止める
+	
+	// 余韻
+	Wait(30)
+
+	// BGM戻す
+	PlayBGM((FLAG[TF_MP6559_BGMBACKUP]), 30)
+
+	FadeIn(FADE_WHITE,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_EVENT)
+}
+

@@ -1,0 +1,198 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 4303：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	// イベント制御
+	EventAreaEnable( "ev2_EV_LOCATION009" , 0 )
+	EventAreaEnable( "evb2_act_0219_1" , 0 )	//アクティブボイス
+	EventAreaEnable( "evb2_act_0219_2" , 0 )	//アクティブボイス
+	EventAreaEnable( "evb2_act_0219_3" , 0 )	//アクティブボイス
+
+	if( FLAG[SF_EVENT_ON] ){
+		if ( !FLAG[GF_LOCATION09] ) {		// ロケーション009
+			EventAreaEnable( "ev2_EV_LOCATION009" , 1 )
+		}
+
+		// アクティブボイス
+		if((!FLAG[GF_AVOICE_0219] &&!FLAG[GF_AVOICE_0219B]) && FLAG[GF_02MP4102_MAKE_CAMP] && !FLAG[GF_02MP1119_LOOK_DINA]){
+			EventAreaEnable( "evb2_act_0219_1" , 1 )
+			EventAreaEnable( "evb2_act_0219_2" , 1 )
+			EventAreaEnable( "evb2_act_0219_3" , 1 )
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_4301.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//浸食谷
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0219"
+{
+	if (!FLAG[GF_AVOICE_0219] && !FLAG[GF_AVOICE_0219B])
+	{
+		//ウシガエルに誰が攻撃したかを判定する
+		if (FLAG[TF_0001_4EV] ==2 )	// 2=ラクシャ
+		{
+			EventAreaEnable( "evb2_act_0219_1" , 0 )
+			EventAreaEnable( "evb2_act_0219_2" , 0 )
+			EventAreaEnable( "evb2_act_0219_3" , 0 )
+			ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+			ActiveVoiceStart(EACT_EVID_0219B, 1, 0)	//カエルを怒らせて退却した（※第二部中のみ）	ラクシャ版
+		}
+		else if (FLAG[TF_0001_4EV] ==1 )		// 1=それ以外の人
+		{
+			EventAreaEnable( "evb2_act_0219_1" , 0 )
+			EventAreaEnable( "evb2_act_0219_2" , 0 )
+			EventAreaEnable( "evb2_act_0219_3" , 0 )
+			ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+			ActiveVoiceStart(EACT_EVID_0219, 1, 0)	//カエルを怒らせて退却した（※第二部中のみ）	ラクシャ以外
+		}
+	}
+}
+
+
+//////////////////////////////////////////////
+// ロケーションポイント009:藍色の鉱脈
+//////////////////////////////////////////////
+function "EV_LOCATION009"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+	SetStopFlag(STOPFLAG_PC)
+	SetStopFlag(STOPFLAG_EVENT)
+	SaveCamera()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+
+	//モーションが終了するまで待機
+	WaitAnimation2( "LEADER" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	// ロケーション用
+	Portrait_Load(3, "visual/mapname/lnbase00.itp" )
+	Portrait_Load(4, "visual/mapname/lnmp4303.itp" )
+
+	Portrait_Create(3 , LOCATEFIND_START_POSX , LOCATEFIND_START_POSY , 0 , 0 , LOCATEFIND_START_SIZEX , LOCATEFIND_START_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+	Portrait_Create(4 , LOCATENAME_POSX , LOCATENAME_POSY , 0 , 0 , LOCATENAME_SIZEX , LOCATENAME_SIZEY , 0.0f , 0x00ffffff , 0x00000000 )
+
+	// カメラ
+	MoveCameraAt( 0 , -93.433f , -306.074f , 11.039f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.900f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.154f , 0 )	// 基本仰角
+	RotateCamera( 0 , 298.966f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//スキップ許可
+	SetSkipScript("mp4303:EV_LOCATION009_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//-- カット ----------------------------------------------------------
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -93.433f , -306.074f , 11.039f , 400 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 8.300f , 400 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 26.220f , 400 )	// 基本仰角
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 245.419f , 400 )				// 角度
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+
+	CallFunc("system:LocateName_Anime")
+
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp4303:EV_LOCATION009_ED")
+}
+function "EV_LOCATION009_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//フラグ
+	SetFlag(GF_LOCATION09, 1)	//藍色の鉱脈
+
+	//マップマーカー
+	DelMapMarker( SMI_SUBEVENT ,PAGE_MP4301, MARKER_EV_LC_MP4303, 0, 0)	//ロケ　：藍色の鉱脈
+	SetMapMarker( SMI_LOCATION ,PAGE_MP4301, MARKER_EV_LC_MP4303, -95.07f,-305.72f,7.17f, -95.07f,-305.72f,LOCATION_MP4303,MN_D_EROSIONVALLEY_MP4303,0)		//ロケ　：藍色の鉱脈
+
+	//ミニマップ開封
+	OpenMinimap(PAGE_MP4301,0 ,-95.28f, -305.82f ,100 )
+
+	CallFunc("mp4303:init")
+
+	//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+	MoveCameraAt( 0 , -102.449f , -309.335f , 10.990f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -79.599f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//イベント後の再配置位置
+	SetChrPos("LEADER", -102.45f, -309.34f, 9.12f )
+	Turn("LEADER" ,-100.40f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//カメラ位置復帰or初期位置設定
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SetFlag(SF_ALLMUTEKI,0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+//終了処理ここまで----------------------------------------------------
+}

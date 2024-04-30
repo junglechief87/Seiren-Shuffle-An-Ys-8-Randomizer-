@@ -1,0 +1,559 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// mp5103m				    			                                      //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp5103m" , 0 )
+	MapHide( "@BG2_groundfog_forest" , 0 )
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		// ストッパー制御
+		if( FLAG[GF_PAST_EPISODE_1_GO_CAMP] )			//▼過去編Ⅰ：赤毛の剣士の元へ
+		{
+			if (FLAG[GF_SUBEV_PAST_01_GIMMICK_A]) {	// 過去編Ⅰ：【過去ギミック①：水路の修理】を見た
+				SetChrPos("LP_SubEV_Past_01_Gimmick_B",-71.099f , 688.450f , 109.683f)	// 過去編Ⅰ：【過去ギミック①：その後の水路ＬＰ】
+				SetChrWork( "LP_SubEV_Past_01_Gimmick_B" , CWK_CHECKRADIUS , 5.0f )	// 範囲
+			} else {
+				SetChrPos("LP_SubEV_Past_01_Gimmick_A",-71.099f , 688.450f , 109.683f)	// 過去編Ⅰ：【過去ギミック①：水路の修理】
+				SetChrWork( "LP_SubEV_Past_01_Gimmick_A" , CWK_CHECKRADIUS , 5.0f )	// 範囲
+			}
+		}
+		
+		// マップノード
+
+		if (FLAG[GF_SUBEV_PAST_01_GIMMICK_A]) {	// 過去編Ⅰ：【過去ギミック①：水路の修理】を見た
+			MapAnime("mp5103m_gim01", "open")
+			SetEnvSEPlayState(5103802,1)	// 水路
+		} else {
+			MapAnime("mp5103m_gim01", "close")
+		}
+		
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 1 ){
+			VisualName("visual/mapname/mn_5103m.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//ティティス参道
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+//──────────────────────────────
+//	【過去ギミック①：現代編への反映】
+//──────────────────────────────
+function "SubEV_Past_01_Gimmick_A"
+{
+
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA",-69.98f, 694.60f, 110.23f)
+	Turn("DANA",-26.08f,360.0f)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "DANA" )
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	// 回想ポートレート
+	Portrait_Load( 1 , "visual/portrait/p_20014.itp" )		// 回想：現代編でアドルたちが出現した滝を眺めている
+	Portrait_Create(1 , 0 , 0 , 
+					0 , 0 , 3840,2160 , 
+					0.0f , 0x00ffffff , 0x00000000 )
+					
+	Portrait_Load( 2 , "visual/portrait/p_20015.itp" )		// 回想：現代編でアドルたちが出現した滝を眺めている（ダーナがいる）
+	Portrait_Create(2 , 0 , 0 , 
+					0 , 0 , 3840,2160 , 
+					0.0f , 0x00ffffff , 0x00000000 )
+
+	Portrait_Anime( 1 , PR_ANIME_SCALE ,0.5 , 0.5 ,-1,-1 ,0 )
+	Portrait_Anime( 2 , PR_ANIME_SCALE ,0.5 , 0.5 ,-1,-1 ,0 )
+
+//	//カメラ設定
+//	MoveCameraAt( 0 , -72.631f , 693.915f , 113.721f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 3.760f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -0.877f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 201.032f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+MoveCameraAt( 0 , -70.495f , 693.412f , 111.741f , 0 )	// 注視点
+ChangeCameraDistance( 0 , 3.040f , 0 )		// 基本距離
+ChangeCameraElevation( 0 , 4.566f , 0 )	// 基本仰角
+RotateCamera( 0 , 209.339f , 0 )				// 角度
+ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+RollCamera( 0 , 0.0f , 0 )				// ロール回転
+// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 40.000 ,1.000 ,0.700 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	SetFlag(TF_MENU_SELECT,0)
+
+	//スキップ許可
+	SetSkipScript("mp5103m:SubEV_Past_01_Gimmick_A_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//　　過去編Ⅰでmp5102mへ行くと、
+	//　　壊れた水路がある。
+	//　　ＬＰで調べると、イベントが起動する。
+	//　　壊れた水路の前に立つダーナを映す。
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+//	// カメラ移動
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -70.495f , 693.412f , 111.741f , 90 )
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.040f , 90 )
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 4.566f , 90)
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 209.339f , 90 )
+
+	// フェードイン
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//	// カメラ待ち
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#000e#000mこんな所に水路があったなんて……"
+		"随分と古い物みたいだね。\p"
+		"すっかり埋もれていて、"
+		"使われていないみたいだけど……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ここで予知演出が入り、
+	//　　現代編でアドルたちが出現した滝を眺めている
+	//　　キャプチャポートレートを表示する。
+
+	//フラッシュバック演出 ----------------------------------- ▼
+
+	PlaySE(SE_KAKO_1_01, 100, 0, 0, 0, 1.0f, 0)
+	Wait(10)
+
+	FadeBGM(30,15)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+	FadeIn(FADE_WHITE,FADE_NORMAL)
+	
+	if (!FLAG[GF_05MP1201_JOIN_DANA]) {		//[M05S021][ダーナがアドル班に加わる２]
+		Portrait_Anime(  1 , PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)	// ダーナがいないポートレート
+	} else {
+		Portrait_Anime(  2 , PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)	// ダーナがいるポートレート
+	}
+	
+	Wait(60)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_CLOSE, 1)	// 目
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)	// 口
+	Wait(5)
+
+	FadeBGM(100,60)
+	SetEnvSEPlayState(5103901, 1)	//環境SE復帰
+	SetEnvSEPlayState(5103902, 1)
+	SetEnvSEPlayState(5103903, 1)
+	FadeIn(FADE_WHITE,45)
+	
+	if (!FLAG[GF_05MP1201_JOIN_DANA]) {
+		Portrait_Close(  1 )
+		Portrait_Unload( 1 )
+	} else {
+		Portrait_Close(  2 )
+		Portrait_Unload( 2 )
+	}
+
+	WaitFade()
+	// --------------------------------------------------------- ▲
+
+	//　　ポートレートを閉じてダーナに！エモーション。
+	EmotionEx("DANA", 0.00f, EMO_EX, 0, 5, 1, 1, 1.0f )	// 「！」
+	Wait(40)
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#071e#000mい、今のは……？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Look("DANA", 0.0f, -10.0f)	// うつむく
+
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#010e#000m#0L（あの剣士の姿が視えたような……）"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Look("DANA", 0.0f, 0.0f)	// うつむく
+	
+	// ダーナ
+	TalkPopup("DANA",0,1,0,0,0) {
+		"#012e#000mうーん…………"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(5)
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"水路を直してみる")
+	MenuAdd(2,"この場を立ち去る")
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	//────────────────────
+	//	⇒水路を直してみる
+	//　　下のイベントに接続
+	if (FLAG[TF_MENU_SELECT] == 1 ) {
+
+		ChangeAnimation( "DANA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+
+		// ダーナ
+		TalkPopup("DANA",0,1,0,0,0) {
+			"#000e#000mちょっと時間が掛かるけど……"
+			"何となく気になるし直してみよう。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		FadeBGM(70,30)
+
+		//　　暗転。
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		ExecuteFunc(98 , "mp5103m:SE_Past_01_Gimmick_A")
+		Wait(10)
+		
+		//	ナレーション
+		TalkPopup(UNDEF, 0, 3, SYSTEM_PPOSX, SYSTEM_PPOSY, 0) {
+			"#7Cダーナは理力で岩や土砂を持ち上げ、"
+			"#7C水路を直していった。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		WaitThread(98)
+
+		// カット2 ------------------------------------------------------------------------------------
+
+		//　　暗転が開けると
+		//　　水路が直り、水が流れている様子を見せる。
+
+		// カメラ
+		MoveCameraAt( 0 , -74.872f , 690.752f , 114.201f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 3.920f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 1.987f , 0 )	// 基本仰角
+		RotateCamera( 0 , 223.661f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		SetChrPos("DANA",-71.54f, 693.83f, 110.38f)
+		Turn("DANA",-50.95f,360.0f)
+		ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	
+		MapAnime("mp5103m_gim01", "open")
+		SetEnvSEPlayState(5103802,1)	// 水路
+
+		// カメラ移動
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -72.604f , 692.256f , 112.141f , 90 )
+		ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 3.920f , 90 )
+		ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 8.863f , 90 )
+		ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 230.250f , 90 )
+
+		FadeBGM(100,30)
+
+		// フェードイン
+		FadeIn(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		// カメラ待ち
+		WaitThread(1000)
+		WaitThread(1001)
+		WaitThread(1002)
+		WaitThread(1003)
+		
+		Wait(20)
+
+		// カット3 ------------------------------------------------------------------------------------
+
+		// クロスフェード
+		CrossFade(FADE_FAST)
+		
+		// カメラ
+		MoveCameraAt( 0 , -71.390f , 693.526f , 111.881f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 1.040f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , -2.309f , 0 )	// 基本仰角
+		RotateCamera( 0 , 93.408f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		// フェード待ち
+		Wait(FADE_FAST)
+
+		ChangeAnimation( "DANA", "ANI_EV_TEMUNE_S", -1, 1 )	// 手胸当て
+
+		// ダーナ
+		TalkPopup("DANA",0,2,0,0,0) {
+			"#000e#080mこれでよしっと。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//　　ダーナにＰＡエモーション
+		EmotionEx("DANA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f )	// 「PA」
+		ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_CLOSE_E, 1)	// 目
+		LookReset("DANA")
+		Wait(35)
+		
+		ChangeAnimation( "DANA", "ANI_EV_TEMUNE_E", -1, 1 )	// 手胸当て
+		
+		// ダーナ
+		TalkPopup("DANA",0,2,0,0,0) {
+			"#000e#000mそうだ、こうしちゃいられない……"
+			"そろそろ行かないと。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		PlaySE(SE_QUEST_END, 100, 0, 0, 0, 1.0f, 0)		// クエスト達成	
+
+		//	システムテキスト
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S "
+			"#-1W#4Cエタニアクエスト#8C【忘れ去られた水路】#4Cを達成した！#10W" 
+			"達成2行目"
+			"#8S"
+		}
+		Wait(10)
+		CallFunc("system:QuestVoice_Success")
+		WaitPrompt()
+		WaitCloseWindow()
+
+		//　　暗転明けで操作許可を戻す。
+		//　　※また、現代編に戻ると変化地点に
+		//　　　サブイベントのマーカーがついている状態になる。
+	
+	} else {
+	//	⇒この場を立ち去る
+	//　　イベント終了、操作許可。
+		FadeOut(FADE_BLACK,FADE_FAST)
+		WaitFade()
+	}
+	//────────────────────
+
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp5103m:SubEV_Past_01_Gimmick_A_ED")
+}
+function "SubEV_Past_01_Gimmick_A_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+//	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	if (FLAG[TF_MENU_SELECT] == 1) {
+		// イベントを進行させた場合 ------------------------------ /
+		
+		//フラグ立て
+		SetFlag(GF_SUBEV_PAST_01_GIMMICK_L, 1)	// 過去編Ⅰ：【過去ギミック①：水路の修理】を見た
+		SetFlag( GF_SUBEV_PAST_01_GIMMICK_A, 1 )	// 過去編Ⅰ：【過去ギミック①：水路の修理】を達成
+
+		SetFlag(GF_VIRTURE_POINT,(FLAG[GF_VIRTURE_POINT] + 5 ))			//徳ポイント加算
+
+		SetFlag(GF_DANASIDE_VIRTURE,1)		//		//レコード：徳が１以上ならダーナ再度の徳表記名をON
+
+		//EventCue("system:EV_FloorOpen")			//扉が開く予知を視る キューを入れる （過去編Ⅰでは予知を見ない）
+
+		SetChrPos("LP_SubEV_Past_01_Gimmick_A", -100000.00f  , 0.00f ,0.00f )		// ＬＰを消去
+		//マーカー設置
+		//DelMapMarker( SMI_DANA_SUBEVENT, PAGE_MF001, MARKER_SUBEV_PAST_1_Q2, 0, 0)	// 過去編Ⅰ：水路の修理
+		SetMapMarker( SMI_SUBEVENT, PAGE_F033, MARKER_SUBEV_PAST01,	145.955f,743.754f,116.141f, 	145.955f,743.754f,	MARKER_SUBEV_PAST01, MN_F_MP5102,	0)	// 過去編Ⅰ：「【過去ギミック①：現代編への反映】」の場所用
+
+	} else {
+		// 選択肢前にスキップした場合 --------------------------- /
+
+		SetFlag(GF_SUBEV_PAST_01_GIMMICK_L, 1)	// 過去編Ⅰ：【過去ギミック①：水路の修理】を見た
+	}
+
+	CallFunc("system:SetMarkerDANA")
+	
+	CallFunc("mp5103m:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-69.84f, 695.91f, 110.27f)
+	Turn("LEADER",-174.10f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	//MoveCameraAt( 0 , 0.0f , 0.0f , 0.0f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 0.0f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 0.0f , 0 )		// 基本仰角
+	//RotateCamera( 0 , 0.0f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 0.0f , 0 )			// 視野角
+	//SetCameraZPlane( 0 , 0.0f )					// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )					// ロール回転
+
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+
+//終了処理ここまで----------------------------------------------------
+}
+
+function "SE_Past_01_Gimmick_A"
+{
+	PlaySE(SE_KAKO_1_02, 70, 0, 0, 0, 1.0f, 0)
+	Wait(30)
+	PlaySE(SE_KAKO_1_03, 100, 0, 0, 0, 1.0f, 0)
+	Wait(80)
+}
+
+//──────────────────────────────
+//	【過去ギミック①：その後の水路ＬＰ】
+//──────────────────────────────
+function "SubEV_Past_01_Gimmick_B"
+{
+	//　　※エピソードに関わらず、過去編では常時しかける。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	//	ナレーション
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C水路には綺麗な水が流れている。"
+		"水路2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+//	SetChrPos("LEADER",26.33f,2.00f,0.30f)
+//	Turn("LEADER",-90.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
