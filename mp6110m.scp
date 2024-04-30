@@ -1,0 +1,1283 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// トワル街道（過去）  			                                              //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp6110m" , 0 )
+	MapHide( "BG2_groundfog_towaruroad" , 0 )
+	MapHide( "BG2_groundfog_main_2" , 0 )
+
+	//ノード制御
+	MapAnime("gim_himorogi" , "off")	//苗木なし
+
+	//大樹の色制御
+	MapAnime(gim_taiju , normal )
+
+	// イベントエリア設定制御
+	EventAreaEnable("evb2_M05S080", 0)
+	EventAreaEnable( "evb2_act_0504" , 0 )	//アクティブボイス
+	EventAreaEnable( "Stopper_Past_03_06A" , 0 )			// 過去編Ⅲ：【ストッパー：東街道のストッパー】Ａ
+	
+	if( FLAG[SF_EVENT_ON] ){		
+		
+		// イベントエリア制御
+		if( FLAG[GF_05MP6201M_GOTO_BAHA] && !FLAG[GF_05MP6110_OUT_CAMP] ){
+			EventAreaEnable( "evb2_M05S080" , 1 )
+		}
+		
+		// ＬＰ制御
+		if( FLAG[GF_05MP6110_OUT_CAMP] ){
+			MapAnime("gim_himorogi" , "on")	//苗木あり
+			if( FLAG[GF_PAST_EPISODE_3_GO_BAHA] )			//▼過去編Ⅲバハの塔へ向かう
+			{
+				SetChrPos("LP_SubEV_Past_03_Return",-79.46f,1376.76f,65.92f)		// 過去編Ⅲ：【過去編Ⅲ：現代に戻るイベント】
+				SetChrWork( "LP_SubEV_Past_03_Return" , CWK_CHECKRADIUS , 2.5f )	// 範囲
+			}
+		}
+		
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0504] && FLAG[GF_05MP6201M_GOTO_BAHA] && !FLAG[GF_SUBEV_PAST_03_GIMMICK_L]){
+			EventAreaEnable( "evb2_act_0504" , 1 )
+		}
+		
+		// ストッパー制御
+		if( FLAG[GF_PAST_EPISODE_3_GO_BAHA] )			//▼過去編Ⅲバハの塔へ向かう
+		{
+			EventAreaEnable( "Stopper_Past_03_06A" , 1 )			// 過去編Ⅲ：【ストッパー：東街道のストッパー】Ａ
+		}
+		
+		// NPC
+		if( FLAG[GF_PAST_EPISODE_3_GO_BAHA] )
+		{
+			// 動物（鹿）	 過去編Ⅲ：【過去ギミック③：動物を助ける】
+			SetChrPos("Sika",21.41f,1316.90f,66.94f)
+			Turn("Sika",129.63f,360.0f)
+		}
+		
+		
+	}
+
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0504"
+{
+	if (!FLAG[GF_AVOICE_0504])
+	{
+		EventAreaEnable( "evb2_act_0504" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0504, 1, 0)	//動物を助ける分岐道にきたら
+	}
+}
+//////////////////////////////////////////////////////////////////////
+//■一般配置
+//////////////////////////////////////////////////////////////////////
+
+function "Talk_Sika"
+{
+
+	if( FLAG[GF_SUBEV_PAST_03_GIMMICK_A] < 2 )	// 過去編Ⅲ：【過去ギミック③：動物を助ける】を見た（1:見た、2:竜樹の宝果をあげた）
+	{
+		
+		SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+		EventCue("mp6110m:SubEV_Past_03_Gimmick_A")		//【過去ギミック③：動物を助ける】
+		ResetStopFlag(STOPFLAG_TALK)
+	}
+	else
+	{
+		//【過去ギミック③：動物を助ける】
+		//　　※イベント後、動物に話しかけると以下の一般メッセージ。
+	
+		SetStopFlag(STOPFLAG_TALK)
+		CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+	
+		//　　動物は首をダーナに向け、懐いたような鳴き声がする。
+		LookChr("Sika", "LEADER")
+		
+		PlaySE(SE_KAKO_3_07, 100, 0, 0, 0, 1.0f, 0)		//
+		Wait(30)
+
+		TalkPopup("LEADER",0,0,0,0,0)
+		{
+			"#000e#000mうん、怪我は大丈夫そうかな。\p"
+			"また様子を見に来るね。"
+			"あなたに大樹の恵みがあらん事を。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+		ResetStopFlag(STOPFLAG_TALK)
+	}
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+function "EV_M05S080"			//過去Ⅲ　ダーナが塔に到着する
+{
+	//開始処理ここから-----------------------------------------------
+	CallFunc("system:event_begin")
+
+//	SetStopFlag(STOPFLAG_EVENT)
+//	FadeOut(FADE_BLACK, 0)
+//	WaitFade()
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA",-69.49f,1376.69f,65.27f)
+	TurnTo("DANA", -70.61f, 1378.20f, 65.44f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	LookReset("DANA")
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	// ポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -66.601f , 1368.875f , 124.076f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 23.319f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -28.878f , 0 )	// 基本仰角
+	RotateCamera( 0 , 353.799f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 0.000, 10.000, 0.000, 0.550, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6110m:EV_M05S080_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	//　　塔の前にたどり着いたところでイベント開始。
+	//　　画面スクロールして、傾いていない塔の姿を見せ、
+	//　　入口前に巨岩(隕石)がないのを見せる。
+	//　　カメラ切り替えて水晶石前まで歩いてくるダーナ。
+
+	// カット1 ----------------------------------------------------------------------------------------
+
+
+//	// 非表示・再表示
+//	SetChrInfoFlag("DANA", INFOFLAG_INVISIBLE)	// 非表示
+//
+//	// フェードイン
+//	FadeIn(FADE_BLACK, FADE_NORMAL)
+//	Wait(FADE_NORMAL)
+//
+//	// カメラ移動
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -61.124f , 1353.523f , 74.916f , 125 )
+//	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 12.281f , 125)
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -5.100f , 125 )
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 9.261f , 125 )
+//
+//	// カメラ待ち
+//	WaitThread(1000)
+//	WaitThread(1001)
+//	WaitThread(1002)
+//	WaitThread(1003)
+//	
+//	Wait(10)
+	
+	// カット2 ----------------------------------------------------------------------------------------
+
+	// クロスフェード
+//	CrossFade(FADE_FAST)
+
+	// カメラ
+//	MoveCameraAt( 0 , -69.992f , 1377.841f , 66.418f , 0 )	// 注視点
+//	ChangeCameraDistance( 0 , 4.841f , 0 )		// 基本距離
+//	ChangeCameraElevation( 0 , -5.101f , 0 )	// 基本仰角
+//	RotateCamera( 0 , 92.631f , 0 )				// 角度
+//	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+//	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+//	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+//	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	MoveCameraAt( 0 , -70.029f , 1378.650f , 66.418f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.141f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.101f , 0 )	// 基本仰角
+	RotateCamera( 0 , 89.473f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 非表示・再表示
+	ResetChrInfoFlag("DANA", INFOFLAG_INVISIBLE)	// 再表示
+
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -72.174f , 1379.948f , 66.998f , 60 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 4.841f , 60 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -2.809f , 60 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 62.832f , 60 )
+
+	//MoveCameraAt( 0 , -72.174f , 1379.948f , 66.998f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 4.841f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -2.809f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 62.832f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	
+	// 移動
+	ExecuteCmd(1, MoveTo, "DANA", -70.61f, 1378.20f, 65.44f, 0.1f, 0.21f)
+
+	// フェードイン
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	Wait(FADE_NORMAL)
+
+	// 移動待ち
+	WaitThread(1)
+
+	// カメラ待ち
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	// ダーナ
+	TalkPopup("DANA",0,1,60,190,0) {
+		"#000e#000mこの水晶石だね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Look("DANA", -10.0f, 20.0f)	// （＾＾）上→
+	ChangeAnimation( "DANA", "ANI_EV_RYOTEMAE_S", -1, 1 )	// 両手 前組み
+	
+	// ダーナ
+	TalkPopup("DANA",0,1,60,190,0) {
+		"それにしても、アドルさんの時代に"
+		"道を塞いでいた大岩……\p"
+		"あんな岩はこの辺りに"
+		"全くなさそうだけどなあ……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	LookReset("DANA")
+	ChangeAnimation( "DANA", "ANI_EV_RYOTEMAE_E", -1, 1 )	// 両手 前組み
+
+	// ダーナ
+	TalkPopup("DANA",0,1,60,190,0) {
+		"……とにかく苗木を植えちゃおう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　画面一旦ブラックアウトして苗木を植えるＳＥ。
+	
+	// フェードアウト
+	FadeBGM(50,30)
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	
+	PlaySE(SE_M05S080_01, 100, 0, 0, 0, 1.0f, 0)
+	
+	// カット3 ---------------------------------------------------------------------------------------
+	
+	//　　フェードインすると水晶石近くに苗木が植えられている状態。
+	
+	// カメラ
+	MoveCameraAt( 0 , -79.358f , 1376.651f , 67.238f , 0 )	// 注視点
+
+	ChangeCameraDistance( 0 , 1.881f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 1.799f , 0 )	// 基本仰角
+	RotateCamera( 0 , 305.812f , 0 )				// 角度
+	ChangeCameraPers( 0 , 50.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	MapAnime("gim_himorogi" , "on")	//苗木あり
+	
+	// 位置調整・表情・モーション
+	SetChrPos("DANA", -78.48f, 1376.65f, 65.94f)
+	Turn("DANA", 83.24f, 360.0f)
+	LookTo("DANA", -79.764f , 1376.717f , 67.298f)	// 座標：ヒモロギ苗
+
+	Wait(45)
+
+	// カメラ移動
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -79.221f , 1376.478f , 67.378f , 300 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.161f , 300 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -1.639f , 300 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 315.261f , 300 )
+
+	// フェードイン
+	FadeBGM(100,30)
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+	
+	ChangeAnimation( "DANA", "ANI_EV_UDEGUMI_S", -1, 1 )	// 腕組
+	
+	// ダーナ
+	TalkPopup("DANA",0,2,0,0,0) {
+		"#000e#080mこれでよしと……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(15)
+
+	//　　ここで画面フェードアウト。
+	PlaySE(SE_M05S080_02, 100, 0, 0, 0, 1.0f, 0)
+	StopBGM(120)
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	FadeOut(FADE_WHITE, FADE_SLOW)
+	WaitFade()
+	
+	Wait(30)
+
+	// 擬似フェードアウト表示
+	Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+	Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+
+	// フェードイン（白）
+	FadeIn(FADE_WHITE, FADE_NORMAL)
+	WaitFade()
+
+	// フェードアウト（黒）
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6110m:EV_M05S080_ED")
+}
+
+function "EV_M05S080_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//マップマーカー
+	DelMapMarker( SMI_DANA_SYMBOL ,PAGE_MF003, MARKER_EV_M05S080, 0,0)		// 過去編Ⅲ：出現したモンスターの居場所用
+
+
+	//過去Ⅲ　終了処理呼び出し
+	CallFunc("system:ReturnFrom_EPISODE_3")
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//パーティキャラを解放
+	//ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	//ResetMapParam(-1)
+
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+	LoadArg("map/mp6110t1/mp6110t1.arg")
+	EventCue("mp6110:EV_M05S090")
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+//──────────────────────────────
+//	【過去ギミック③：動物を助ける】
+//──────────────────────────────
+function "SubEV_Past_03_Gimmick_A"
+{
+
+	//　　mp6109m　21.41f	1316.90f	66.94f	-59.83f付近に行くと
+	//　　動物がうずくまっている。（鹿を想定）
+	//　　近づくとイベント起動。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	LookReset( "DANA" )
+	if( FLAG[GF_SUBEV_PAST_03_GIMMICK_L] == 0 )		// 過去編Ⅲ：【過去ギミック③：動物を助ける】を見た（1:見た、2:竜樹の宝果をあげた）
+	{
+		SetChrPos("DANA",18.67f, 1319.29f, 66.39f)
+		Turn("DANA",-56.69f,360.0f)
+		ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	}
+	else
+	{
+		SetChrPos("DANA",19.96f,1317.79f,66.74f)
+		Turn("DANA",-56.69f,360.0f)
+		ChangeAnimation( "DANA", "ANI_EV_SHAGAMI", -1, 1 )
+	}
+
+	SetChrWork("Sika", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("Sika",21.41f,1316.90f,66.94f)
+	Turn("Sika",129.63f,360.0f)
+	ChangeAnimation( "Sika" , "ANI_WAIT", -1 , 1 )
+//	ChangeSubAnimation("Sika",SUBMOT_EYE,ANI_E_WAIT,1)
+//	ChangeSubAnimation("Sika",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("Sika",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "Sika" )
+	SetChrInfoFlag( "Sika" , INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	if( FLAG[GF_SUBEV_PAST_03_GIMMICK_L] == 0 )		// 過去編Ⅲ：【過去ギミック③：動物を助ける】を見た（1:見た、2:竜樹の宝果をあげた）
+	{
+		MoveCameraAt( 0 , 19.801f , 1318.777f , 67.835f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 2.820f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 1.869f , 0 )	// 基本仰角
+		RotateCamera( 0 , 202.290f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	}
+	else
+	{
+		MoveCameraAt( 0 , 20.773f , 1317.524f , 67.235f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 3.400f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 19.513f , 0 )	// 基本仰角
+		RotateCamera( 0 , 188.172f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	}
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 4.000, 150.000, 1.000, 0.700, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	SetFlag(TF_MENU_SELECT,0)
+
+	//スキップ許可
+	SetSkipScript("mp6110m:SubEV_Past_03_Gimmick_A_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//初回
+	if( FLAG[GF_SUBEV_PAST_03_GIMMICK_L] == 0 )		// 過去編Ⅲ：【過去ギミック③：動物を助ける】を見た（1:見た、2:竜樹の宝果をあげた）
+	{
+		//フラグ立て
+		SetFlag( GF_SUBEV_PAST_03_GIMMICK_L, 1 )	// 過去編Ⅲ：【過去ギミック③：動物を助ける】を見た（1:見た、2:竜樹の宝果をあげた）
+
+		FadeIn(FADE_BLACK,FADE_FAST)
+		WaitFade()
+
+		//　　ダーナにＰＡエモーション
+		EmotionEx("DANA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f)	//パッ
+		Wait(35)
+	
+		//　　動物に近づいてひざまずくなど。
+		
+		// カメラ移動
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 20.508f , 1318.313f , 67.715f , 75 )
+		ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.680f , 75 )
+		ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 9.317f , 75 )
+		ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 197.708f , 75)
+		Wait(10)
+		
+		// 移動
+		ExecuteCmd(1, MoveTo, "DANA", 20.02f, 1318.10f, 66.73f, 0.1f, 0.18f)
+		
+		WaitThread(1)
+		
+		ChangeAnimation( "DANA", "ANI_EV_SHAGAMI_S", -1, 1 )
+		WaitAnimation2( "DANA" , -1, 1, "ANI_EV_SHAGAMI_S",  0)
+	
+		TalkPopup("DANA",0,2,0,0,0)
+		{
+			"#000e#000mあなた……どうしたの？"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+		//　　動物の弱々しい鳴き声がする。
+		PlaySE(SE_KAKO_3_05, 100, 0, 0, 0, 1.0f, 0)		//
+		Wait(30)
+		
+		TalkPopup("DANA",0,2,0,0,0)
+		{
+			"#000e#000mこの怪我で、エサが"
+			"うまく取れないのね……\p"
+			"何か食べられるものを"
+			"あげられればいいんだけど……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	
+		//　　ダーナにＰＡエモーション
+		EmotionEx("DANA", 0.00f, EMO_PA, 0, 5, 1, 1, 1.0f )	// 「PA」
+		Wait(35)
+
+		TalkPopup("DANA",0,2,0,0,0)
+		{
+			"#000e#000mそうだ、『竜樹の宝果』なら"
+			"栄養も豊富だし、怪我にもいいはず。\p"
+			"手持ちがあれば分けてあげようかな。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+	} else {
+
+		FadeIn(FADE_BLACK,FADE_FAST)
+		WaitFade()
+
+		//　　※再度話し掛けた場合はここから開始
+
+		TalkPopup("DANA",0,2,0,0,0)
+		{
+			"#000e#000m『竜樹の宝果』なら"
+			"栄養も豊富だし、怪我にもいいはず。\p"
+			"手持ちがあれば分けてあげようかな。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+	}
+
+	//　　※ここで統合。
+
+	//　　※竜樹の宝果を持っている場合は以下の選択肢が出る。
+	if( ALLITEMWORK[ICON3D_US_DRAGONFRUIT_S] )	//	竜樹の宝果
+	{
+		//選択肢
+		SetFlag(TF_MENU_SELECT,0)
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(1,"#246I竜樹の宝果をあげる")
+		MenuAdd(2,"やめておく")
+		MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 0)
+		WaitMenu(0)
+		MenuClose(10,0)
+		
+		//────────────────────
+		//	⇒竜樹の宝果をあげる
+		if (FLAG[TF_MENU_SELECT] == 1)
+		{
+			TalkPopup("DANA",0,0,0,0,0)
+			{
+				"#000e#000mほら、おたべ。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+			
+			//	  　ダーナは何かを差し出すモーション。
+			ChangeAnimation( "DANA", "ANI_EV_SHAGAMI_NAE_S", -1, 1 )
+			WaitAnimation2( "DANA" , -1, 1, "ANI_EV_SHAGAMI_NAE_S",  0)
+			
+			//	  　動物がそれを食べるＳＥがする。
+			PlaySE(SE_KAKO_3_06, 80, 0, 0, 0, 1.0f, 0)		//
+			
+			//	ナレーション
+			TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+			{
+				"#7Cダーナが竜樹の宝果を差し出すと、"
+				"#7C雌鹿はあっという間に平らげてしまった。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+			
+			//	  　動物は首をダーナに向け、懐いたような鳴き声がする。
+			LookChr( "Sika", "DANA" )
+			
+			PlaySE(SE_KAKO_3_07, 100, 0, 0, 0, 1.0f, 0)		//
+			Wait(30)
+
+			PlayVoice(Y8V_2997,"DANA",100)	//ふふ（微笑）
+		
+			TalkPopup("DANA",0,2,0,0,0)
+			{
+				"#000e#000mふふっ、よしよし。\p"
+				"いい子だから、はやく傷を治して"
+				"元気にならないとね。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+			
+			//	  　動物が懐いたような鳴き声がする。
+			PlaySE(SE_KAKO_3_07, 100, 0, 0, 0, 1.0f, 0)		//
+			Wait(30)
+			
+			//	  　暗転。
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+			
+			//	ナレーション
+			TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+			{
+				"#7Cそれからダーナは、簡単な手当てを施して"
+				"#7Cその場を立ち去る事にしたのだった。"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+			
+			Wait(5)
+			PlaySE(SE_QUEST_END, 100, 0, 0, 0, 1.0f, 0)		// クエスト達成	
+
+			//	システムテキスト
+			TalkPopup(UNDEF,0,5,0,0,0)
+			{
+				"#8S"
+				"#-1W#4Cエタニアクエスト#8C【巫女の施し】#4Cを達成した！#10W" 
+				"#8S"
+			}
+			Wait(10)
+			CallFunc("system:QuestVoice_Success")
+			WaitPrompt()
+			WaitCloseWindow()
+
+			PlaySE(SE_VIRTUE, 100, 0, 0, 0, 1.0f, 0)	//徳ポイントアップ
+
+			//	システムテキスト
+			TalkPopup(UNDEF,0,5,0,0,0)
+			{
+				"#8S"
+				"#-1W#4Cダーナの徳が上昇した。#10W"
+				"#8S"
+			}
+			Wait(10)
+			WaitPrompt()
+			WaitCloseWindow()
+
+			//	  　暗転明けで操作許可。
+			
+			//　　※また、現代編に戻ると変化地点に
+			//　　　サブイベントのマーカーがついている状態になる。
+
+		}
+		//	⇒やめておく
+		else if (FLAG[TF_MENU_SELECT] == 2)
+		{
+			//	  　そのままイベント終了、操作許可。
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+		}
+		//────────────────────
+	}
+	else
+	{
+		//　　　持っていなければ、イベント終了する。
+		FadeOut(FADE_BLACK,FADE_FAST)
+		WaitFade()
+	}
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp6110m:SubEV_Past_03_Gimmick_A_ED")
+}
+function "SubEV_Past_03_Gimmick_A_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+//	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//DelMapMarker( SMI_DANA_SUBEVENT, PAGE_MF003, MARKER_SUBEV_PAST_3_Q0, 0, 0)	// 過去編Ⅲ：巫女の施し（開封前）
+	//SetMapMarker( SMI_DANA_QUEST ,PAGE_MF003, MARKER_SUBEV_PAST_3_Q1, 21.41f, 1316.90f, 66.94f, 21.41f, 1316.90f,MARKER_SUBEV_PAST_3_Q1,MN_F_MP6103M,0)		// 過去編Ⅲ：巫女の施し（開封後）
+
+	//フラグ立て
+	if (FLAG[TF_MENU_SELECT] == 1) {
+		// 竜樹の宝果をあげる ---------------------- /
+		DeleteItem( ICON3D_US_DRAGONFRUIT_S, 1 )	// 『竜樹の宝果』
+		SetFlag( GF_SUBEV_PAST_03_GIMMICK_A, 2 )	// 過去編Ⅲ：【過去ギミック③：動物を助ける】を見た（1:見た、2:竜樹の宝果をあげた）
+		SetFlag(GF_VIRTURE_POINT,(FLAG[GF_VIRTURE_POINT] + 5 ))			//徳ポイント加算
+		EventCue("system:EV_FloorOpen")			//扉が開く予知を視る キューを入れる
+
+ 		//マーカー設置
+	
+		//DelMapMarker( SMI_DANA_QUEST, PAGE_MF003, MARKER_SUBEV_PAST_3_Q1, 0, 0)	// 過去編Ⅲ：巫女の施し（開封後）
+	 	SetMapMarker( SMI_SUBEVENT, PAGE_F034, MARKER_SUBEV_PAST03_2,45.95f, 1319.19f, 52.31f,45.95f, 1319.19f,MARKER_SUBEV_PAST03_2, MN_F_MP6116,	0)	// 過去編Ⅲ：「【過去ギミック③：現代編への反映】」の場所用
+ 	}
+
+	CallFunc("system:SetMarkerDANA")
+
+
+	CallFunc("mp6110m:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",17.02f,1320.51f,65.86f)
+	Turn("LEADER",130.75f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	//MoveCameraAt( 0 , 0.0f , 0.0f , 0.0f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 0.0f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 0.0f , 0 )		// 基本仰角
+	//RotateCamera( 0 , 0.0f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 0.0f , 0 )			// 視野角
+	//SetCameraZPlane( 0 , 0.0f )					// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )					// ロール回転
+
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+//──────────────────────────────
+//	【過去編Ⅲ：現代に戻るイベント】
+//──────────────────────────────
+function "SubEV_Past_03_Return"
+{
+
+	//　　再訪時にヒモロギを調べると起動。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	SetFlag( TF_MENU_SELECT, 0 )
+	YesNoMenu(TF_MENU_SELECT,"#7Cヒモロギの木に祈りを捧げますか？",1)
+	
+	//────────────────────
+	//	⇒はい
+	if( FLAG[TF_MENU_SELECT] )	// Yesを選んだ
+	{
+	//開始処理ここから-----------------------------------------------
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	
+		CallFunc("system:event_begin_fast")
+	
+		//イベント開始前情報の保存
+		SaveEventState()
+		SaveCamera()
+	
+		//パーティ状態のリセット
+		CallFunc("system:party_reset")
+	
+		//環境の初期化・不要なものを隠す
+		ClearDebris()
+		//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+		//ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+	
+		//キャラ初期状態の設定
+		SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+		SetChrPos("DANA",-78.39f,1377.38f,65.96f)
+		Turn("DANA",64.41f,360.0f)
+		ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+		ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+		ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+		ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+		LookReset("DANA")
+	
+		//BGM設定◆
+		//PlayBGM( BGM_FIELD_101 , XX )
+	
+		//カメラ設定
+		MoveCameraAt( 0 , -79.333f , 1376.858f , 66.750f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 1.499f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 7.764f , 0 )	// 基本仰角
+		RotateCamera( 0 , 319.106f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		// 被写界深度の設定
+		SetDoF(0, LERP_LINEAR, 2.000, 10.000, 2.000, 0.550, 0.500)					//イベント毎に調整
+		// グレアの設定
+		SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+	
+		// ポートレート読み込み
+		Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+		Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+	
+		//スキップ許可
+		SetSkipScript("mp6110m:SubEV_Past_03_Return_ED")
+	
+		//開始処理ここまで-----------------------------------------------
+	
+		// カメラ移動
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -79.069f , 1376.765f , 67.930f , 360 )
+		ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 1.498f , 360 )
+		ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 4.040f , 360 )
+		ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 338.011f , 360 )
+	
+		FadeIn(FADE_BLACK, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+	
+		//	  　ダーナがヒモロギに祈りを捧げ、
+		//	  　過去編の遷移エフェクト表示して画面アウト。
+	
+		ChangeAnimation( "DANA", "ANI_EV_PRAY_S", -1, 1 )	// 祈り開始
+		ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_CLOSE_S, 1)	// 目
+		ChrEffect2( "DANA" , 3900600 , "Bone_root", "", 0 , 0 , 0 , 0.0f,0.0f,0, 1.0f, 1.0f)	//オーラ（ループ）
+		
+//		Wait(80)
+	//◆	Effect2( 3900620, -933.959f , 674.442f , 49.244f, 90.00f, 0, 0, IMPACT_NONE, KNOCK_EFXPOS, 0, 1.0f, 1.0f)	// ヒモロギ苗エフェクト
+	
+		Effect2(3900570, -79.072f , 1376.741f , 67.370f, 0.0f, 0, 0, IMPACT_NONE, KNOCK_EFXPOS, 0, 1.7f, 1.0f)	// 過去に飛ぶ時の画面切り替えエフェクト
+		PlaySE(SE_GO_KAKO_1, 100, 1, 1500, 0, 1.0f, 0)	//水晶石と交信エフェクトループ	
+
+		//Wait(180)
+		Wait(90)
+		PlaySE(SE_GO_KAKO_2, 80, 0, 0, 0, 1.0f, 0)	//	発光（過去編ワープ）
+		Wait(60)
+		PlaySE(SE_GO_KAKO_2, 80, 0, 0, 0, 1.0f, 0)	//	発光（過去編ワープ）
+		Wait(30)
+
+		StopBGM(120)
+		PlaySE(SE_GO_KAKO_3, 100, 0, 0, 0, 1.0f, 0)	//	ホワイトアウト
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+		StopSE(SE_GO_KAKO_1, 2000)
+	
+		// フェードアウト
+		FadeOut(FADE_WHITE, FADE_SLOW)
+		Wait(30)
+		PlaySE(SE_GO_KAKO_2, 70, 0, 0, 0, 1.0f, 0)	//	発光（過去編ワープ）
+		WaitFade()
+
+		
+		Wait(60)
+		
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+	
+		// フェードイン
+		FadeIn(FADE_WHITE, FADE_NORMAL)
+		WaitFade()
+		
+		// フェードアウト
+		FadeOut(FADE_BLACK, 0)
+		WaitFade()
+	
+		//	  　※ここで、過去編で入手したアイテムの入手処理を行う。
+		//	  　現代編の水晶石の前に復帰して操作許可を戻す。	
+	
+	//終了処理ここから----------------------------------------------------
+		CallFunc("mp6110m:SubEV_Past_03_Return_ED")
+	}
+	//	⇒いいえ
+	else
+	{
+		//	  　そのまま操作許可を戻す
+	
+	//終了処理ここから----------------------------------------------------
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+	
+		//イベント後の再配置
+		//SetChrPos("LEADER",0.00f,0.00f,0.00f)
+		//Turn("LEADER",0.00f,360.0f)
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+	
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		//WaitFade()
+		Wait(FADE_CROSS)
+	
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	//終了処理ここまで----------------------------------------------------
+	}
+	//────────────────────
+}
+function "SubEV_Past_03_Return_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	// カメラ停止
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//過去Ⅲ　終了処理呼び出し
+	CallFunc("system:ReturnFrom_EPISODE_3")
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	//エフェクトリリース
+	ReleaseEffect("efx_ev04.ite")
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	CallFunc("system:camera_reset")
+
+	//NowLoading 時の Tips 表示をカット
+	SetFlag( TF_LOADING_TIPS_OFF, 1 )
+
+	LoadArg("map/mp6110/mp6110.arg")
+	EventCue("mp6110:SubEV_Past_03_Return_Relocate")
+
+	//終了処理ここまで----------------------------------------------------
+}
+
+//──────────────────────────────
+//【過去編Ⅲ：水晶石を調べて再訪する】（続き）
+//──────────────────────────────
+function "SubEV_Past_03_Rearrive2"
+{
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//過去Ⅲ　開始処理呼び出し
+	CallFunc("system:BackTo_EPISODE_3")
+
+	//キャラ初期状態の設定
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA",-78.39f,1377.38f,65.96f)
+	Turn("DANA",64.41f,360.0f)
+	ChangeAnimation( "DANA", "ANI_EV_PRAY", -1, 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_CLOSE_S,1)	
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset("DANA")
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+
+	//BGM設定◆
+	//PlayBGM( BGM_FIELD_101 , XX )
+
+	//カメラ設定
+	MoveCameraAt( 0 , -79.072f , 1376.741f , 67.370f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.499f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 8.048f , 0 )	// 基本仰角
+	RotateCamera( 0 , 328.572f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 1200.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 10.000 ,1.000 ,0.700 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp6110m:SubEV_Past_03_Rearrive2_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//　　対応する過去編の、終点にあるヒモロギ前にフェードイン。
+	//　　ダーナが祈りを捧げている状態。
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	ChangeAnimation( "DANA", "ANI_EV_PRAY_E", -1, 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+	Wait(30)
+
+	//　　暗転を挟んで過去編ダーナに操作許可を戻す。
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	if(!FLAG[GF_1ST_REARRIVE])
+	{
+		// チュートリアルポートレート読み込み
+		Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+		Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+		Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+		Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+		Portrait_Load(2, "visual/help/hp_a44b.itp" )	// help_a44b：意識交代
+		Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+
+		// チュートリアル =================================================================================
+		if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+			
+			//自動送り禁止
+			ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+			Wait(10)
+
+			// 擬似フェードアウト表示
+			Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+			Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+			FadeIn(FADE_BLACK, 0)
+			WaitFade()
+
+			// ポートレート表示
+				PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+			Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+			Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+			Wait(FADE_NORMAL)
+			Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+			WaitPrompt()
+			Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)	// チュートリアル背景
+			Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+			Wait(FADE_FAST)
+			Portrait_Close(1)
+			Portrait_Close(2)
+			
+			// 擬似フェードアウト削除
+			FadeOut(FADE_BLACK, 0)
+			WaitFade()
+			Portrait_Close(0)
+
+			//自動送り許可
+			SetStopFlag(STOPFLAG_AUTOMESSAGE)
+		
+		}
+		// ================================================================================================
+	}
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp6110m:SubEV_Past_03_Rearrive2_ED")
+}
+function "SubEV_Past_03_Rearrive2_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+//	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ立て
+	if(!FLAG[GF_1ST_REARRIVE])
+	{
+		// ポートレートリリース 	2018.04.25 m.arai
+		Portrait_Close(-1)
+		Portrait_Unload(-1)
+
+		SetFlag(GF_1ST_REARRIVE,1)		//始めて過去編再訪した
+	}
+	CallFunc("mp6110m:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-76.92f,1377.42f,65.99f)
+	Turn("LEADER",-102.08f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	//MoveCameraAt( 0 , 0.0f , 0.0f , 0.0f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 0.0f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 0.0f , 0 )		// 基本仰角
+	//RotateCamera( 0 , 0.0f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 0.0f , 0 )			// 視野角
+	//SetCameraZPlane( 0 , 0.0f )					// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )					// ロール回転
+
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	VisualName("visual/portrait/ep_0130.itp",VN_NAMEMAP,-1,-1,VN_MAPNAME_TIME)	//過去Ⅲ
+	
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー・ＬＰセクション
+
+////////////////////////////////////////////////////////////////////////////////
+//──────────────────────────────
+//	【ストッパー：東街道のストッパー】Ａ
+//──────────────────────────────
+function "Stopper_Past_03_06A"
+{
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	//　　東街道の端に来るとストッパー（２箇所）
+	
+	//▼過去編Ⅲバハの塔へ向かう
+	
+	TalkPopup("LEADER",0,0,0,0,0)
+	{
+		"#000e#000mバハの塔はこっちじゃないね……\p"
+		"あまり寄り道をするのもよくないし"
+		"道を確かめて向かおう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　再配置して操作許可。
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",-54.85f,1250.54f,43.66f)
+	Turn("LEADER",135.36f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
