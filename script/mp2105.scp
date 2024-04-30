@@ -1,0 +1,703 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/fish.h"
+#include "inc/temp/mp2105.h"
+
+//-------------------------------------------
+// 2105：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1108_2" , 0 )
+	MapHide( "@BG2_mp1109_1" , 0 )
+	MapHide( "@BG2_mp1109_2" , 0 )
+	MapHide( "@BG2_mp1109_1_2" , 0 )
+	MapHide( "@BG2_mp1109_alpha" , 0 )
+	MapHide( "@BG2_mp1114_2" , 0 )
+	MapHide( "@BG2_mp1115" , 0 )
+	MapHide( "@BG2_mp2104" , 0 )
+	MapHide( "@BG2_mp2105" , 0 )
+	MapHide( "@BG2_mp2106" , 0 )
+	MapHide( "BG2_groundfog_S1" , 0 )
+	MapHide( "BG2_groundfog_SE1" , 0 )
+	MapHide( "BG2_groundfog_SE2" , 0 )
+
+	//障害突破イベント（協力イベント）
+	//がれきLP設定
+	SetChrWork( "LP_STOP_2105_2106" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+	SetChrWork( "CP_STOP_2105_2106" , CWK_CHECKRADIUS , 5.5f )		// 範囲
+
+	SetFishingAreaState(FISH_AREA_QS_01, FISH_AREASTATE_DISABLED)	// QS漁場 off
+	EventAreaEnable( "evb2_act_0803" , 0 )	//アクティブボイス
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		//障害物制御
+		if( FLAG[GF_SUBEV_2105_REMOVE_ROCK] )
+		{
+			MapAnime( "mp2105_stop01" , "open" )
+			// 処理を軽くする為吹っ飛ばす
+			SetChrPos("LP_STOP_2105_2106",  -100000.00f,0.00f,0.00f)
+			SetChrPos("CP_STOP_2105_2106",  -100000.00f,0.00f,0.00f)
+		}
+		else if (FLAG[GF_SUBEV_2105_CHECKED_ROCK])
+		{
+			// 初回チェック済み
+			SetChrWork("LP_STOP_2105_2106", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_2105_2106", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		}
+		else
+		{
+			SetChrWork("LP_STOP_2105_2106", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+			SetChrWork("CP_STOP_2105_2106", CWK_CHECKOFF, 1)		// 協力イベントルックポイントをオフに
+		}
+
+		//釣り場制御
+		SetFishingAreaState(FISH_AREA_TBOX_02_R , FISH_AREASTATE_DISABLED )	// 再出現宝箱をOFF
+		if(FLAG[GF_FISH_FEATURE_T02] )	//初回宝箱を釣り上げている
+		{
+			SetFishingAreaState(FISH_AREA_TBOX_02 , FISH_AREASTATE_DISABLED )	// 初回宝箱をOFF
+			if(rand() % 100 <= 5 || FLAG[TF_MP2105_TBOX_FISHABLE] )		//再出現宝箱を5％の確率で復活
+			{
+				SetFlag(TF_MP2105_TBOX_FISHABLE, 1)
+				SetFishingAreaState(FISH_AREA_TBOX_02_R , FISH_AREASTATE_ENABLED )	// 再出現宝箱 ON
+			}
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0803]){
+			EventAreaEnable( "evb2_act_0803" , 1 )
+		}
+		if(!FLAG[GF_AVOICE_0803] && FLAG[SF_LASTENTRY_NO] == 1 ){
+			ActiveVoiceStart(EACT_EVID_0803, 1, 0)				//初めてエリアに入ったら
+			//SetEventDriven(EED_TYPE_TIMER,30,"mp2105:act_0803")		//アクティブボイスの再生タイミング調整する時はここの数値をいじってください
+		}
+
+		//アクティブボイス
+		if (!FLAG[GF_AVOICE_0804])
+		{
+			SetEventDriven(EED_TYPE_CHANGEFLAG,TF_0001_4EV, "mp2105:ev_act0804" )
+		}
+
+		if (FLAG[GF_QUEST_521] == QUEST_START){
+			SetFishingAreaState(FISH_AREA_QS_01, FISH_AREASTATE_ENABLED)	// QS漁場 on
+			SetEventDriven(EED_TYPE_LANDFISH, FISH_BIG_FISH02, "mp2105:QS_521_Get_Fish")		// 釣ったらイベント起動
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_2105.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//水と森の丘
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0803"
+{
+	if (!FLAG[GF_AVOICE_0803])
+	{
+		EventAreaEnable( "evb2_act_0803" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0803, 1, 0)	//初めてエリアに入ったら
+	}
+}
+
+function "ev_act0804"
+{
+	if(FLAG[TF_0001_4EV]){
+		if (!FLAG[GF_AVOICE_0804])
+		{
+			ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+			ActiveVoiceStart(EACT_EVID_0804, 1, 0)	//古代種が登場したら（※推奨Ｌｖ以下の場合）
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//	================================================
+//	【ＬＰ：2105⇒2106の倒木を調べる】
+//	================================================
+function "LP_STOP_2105_2106"
+{
+	//無条件で支援イベントへ分岐
+	
+	//▼支援イベントNo.06
+	EventCue("mp2105:SubEV_Sien06")
+}
+
+function "SubEV_Sien06_open"
+{
+	if( !FLAG[GF_SUBEV_2105_CHECKED_ROCK] )
+	{
+		// フラグセット
+		SetFlag(GF_SUBEV_2105_CHECKED_ROCK, 1)
+		
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_2105_2106", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_2105_2106", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F011,REMOVE_OBJ_2105, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F011, REMOVE_OBJ_2105CE, 1020.21f,-810.00f,53.07f, 1020.21f,-810.00f, COOPEVID_MP2105, MN_F_MP2105,0)
+	}
+}
+//──────────────────────────────
+//▼支援イベントNo.06		必要人数１１人		mp2105：濃霧の森
+//	巨大な倒木を撤去②		mp2106：濃霧の森の野営地に行けるようになり、ミラルダを回収できる
+//──────────────────────────────
+function "SubEV_Sien06"
+{
+	//	※実際に行けるのはディナを助けた後（クノスストッパーがあるため）
+	//　　※最速で「▼第二部⑪ディナを助けた」以降に撤去可能。
+	//　　　ＮＰＣを２／２人以上助けた後に撤去可能。
+	//　　ＬＰを調べると以下の処理。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnTo( "LEADER", 1020.21f,-810.00f,53.07f , 15.0f )
+
+	//	ナレーション
+	TalkPopup("UNDEF",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C巨大な倒木が道を塞いでしまっている。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	GetCoopEvPeopleNum(COOPEVID_MP2105, TF_MENU_SELECT2)	//支援要請で必要な人数を取得
+	
+	//──────────────────────
+	//	⇒人数が足りていない
+	if( FLAG[TF_MENU_SELECT2] > WORK[WK_NPCNUM] )	//必要な人数 ＞ 漂流村の人数
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cこの倒木を撤去するには、"
+			"#7C漂流村の人数が足りないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_2105_CHECKED_ROCK, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_2105_2106", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_2105_2106", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F011,REMOVE_OBJ_2105, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F011, REMOVE_OBJ_2105CE, 1020.21f,-810.00f,53.07f, 1020.21f,-810.00f, COOPEVID_MP2105, MN_F_MP2105,0)
+/*
+		// 地図登録ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4C障害のある場所として地図に登録した。"
+			"#8S"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+*/
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//	⇒人数が足りている場合
+	else
+	{
+
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C支援要請を出しますか？",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+
+			//	  　以下の流れに接続
+			//──────────────────────
+			
+			//　　＞「▼支援イベント共通処理①」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common1")
+			
+			//　　障害物撤去ＳＥ
+			PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+			Wait(100)
+			MapAnime( "mp2105_stop01" , "open" )
+
+			CallFunc("system:party_remove")
+			
+			MoveCameraAt( 0 , 1015.823f , -813.721f , 56.448f , 0 )	// 注視点
+			ChangeCameraDistance( 0 , 15.800f , 0 )		// 基本距離
+			ChangeCameraElevation( 0 , 7.705f , 0 )	// 基本仰角
+			RotateCamera( 0 , 273.856f , 0 )				// 角度
+			ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+			ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE ,1019.829f , -814.165f , 55.754f , 180 )		// 注視点
+			ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 15.800f, 180 )		// 基本距離
+			ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , -5.097f , 180 )		// 基本仰角
+			ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE ,  180.278f , 180 )		// 角度
+			//ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,2.5f , 180 )		// ロール回転
+			//ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 50 )		// 視野角
+
+			//MoveCameraAt( 0 , 1019.829f , -814.165f , 55.754f , 0 )	// 注視点
+			//ChangeCameraDistance( 0 , 15.800f , 0 )		// 基本距離
+			//ChangeCameraElevation( 0 , -5.097f , 0 )	// 基本仰角
+			//RotateCamera( 0 , 180.278f , 0 )				// 角度
+			//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+
+			FadeIn(FADE_BLACK,FADE_FAST)
+
+			PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+
+			//	ナレーション
+			TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+			{
+				"#7C全員の力を合わせて、巨大な倒木を撤去した！"
+				"撤去2行目"
+			}
+
+			Wait(30)
+			//　　＞「▼支援イベント共通処理②」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common2")
+
+			WaitPrompt()
+			WaitCloseWindow()
+
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+
+			StopThread(1001)
+			StopThread(1002)
+			StopThread(1003)
+			StopThread(1004)			
+
+			//　　イベント終了、操作許可。
+			
+			//障害物撤去処理
+			SetChrPos("LP_STOP_2105_2106",  -100000.00f	0.00f	0.00f)
+			SetChrPos("CP_STOP_2105_2106",  -100000.00f	0.00f	0.00f)
+			SetFlag(GF_SUBEV_2105_REMOVE_ROCK, 1)	// 【ＬＰ：2105⇒2106の岩を撤去した】
+			SetFlag(GF_SUBEV_2105_CHECKED_ROCK, 1)
+			SetDiaryFlag(DF_SUBEV_2105_REMOVE_WOOD, 1)		// ★水と森の丘にあった巨大な倒木を撤去した。
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F011,REMOVE_OBJ_2105, 0, 0)
+			// 協力イベントのマーカーも削除
+			DelMapMarker( SMI_COOPEVENT, PAGE_F011, REMOVE_OBJ_2105CE, 0, 0)
+			
+			SetFlag( TF_MENU_SELECT, 1 )	//支援イベントとして終了
+		}
+		//	⇒やめる
+		else
+		{
+			//	  　そのまま操作許可。
+			
+			// マーカーの切り替え処理
+			
+			// 見たフラグセット
+			SetFlag(GF_SUBEV_2105_CHECKED_ROCK, 1)
+			// ルックポイント切り替え
+			SetChrWork("LP_STOP_2105_2106", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_2105_2106", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F011,REMOVE_OBJ_2105, 0, 0)
+			
+			// 協力イベントのマーカーもセット
+			SetMapMarker(SMI_COOPEVENT, PAGE_F011, REMOVE_OBJ_2105CE, 1020.21f,-810.00f,53.07f, 1020.21f,-810.00f, COOPEVID_MP2105, MN_F_MP2105,0)
+			
+			SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+		}
+		//──────────────────────
+	}
+
+//終了処理ここから----------------------------------------------------
+
+	//ストッパーとして終了
+	if( FLAG[TF_MENU_SELECT] == 0 )
+	{
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1)
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	//支援イベントとして終了
+	else
+	{
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+		MoveCameraAt( 0 , 1020.283f , -809.076f , 54.879f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+		RotateCamera( 0 , 175.473f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		
+		ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		//イベント後の再配置位置
+		SetChrPos("LEADER", 1020.28f, -809.08f, 53.01f)
+		Turn("LEADER" ,4.53f , 360.0f)
+		
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+		
+	}
+
+//終了処理ここまで----------------------------------------------------
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■クエストセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//===============================================================
+//
+// 【QS521】巨大な怨敵（タナトス）
+// ▼巨大ピラルクを釣った時のイベント
+//
+function "QS_521_Get_Fish"
+{
+	//　　巨大ピラルクを釣り上げるとイベント開始。
+	//　　mp2105水と森の丘の、池の近くの地面で
+	//　　ピラルク５メライ版がぴちぴち跳ねている。
+	//　　その前に、アドル、ラクシャ、サハド、
+	//　　ヒュンメル、リコッタ、ダーナを再配置。
+
+//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ADOL",840.05f,-655.06f,27.72f)
+	Turn("ADOL",-178.10f,360.0f)
+	ChangeAnimation( "ADOL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI)
+	LookChr("ADOL", "ev_QS_521_Fish")
+
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("LAXIA",839.18f,-654.73f,27.70f)
+	Turn("LAXIA",-142.28f,360.0f)
+	ChangeAnimation( "LAXIA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI)
+	LookChr("LAXIA", "ev_QS_521_Fish")
+
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("SAHAD", 838.29f, -653.49f, 27.66f)
+	Turn("SAHAD", -98.00f, 360.0f)
+	ChangeAnimation( "SAHAD" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI)
+	LookChr("SAHAD", "ev_QS_521_Fish")
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("HUMMEL", 841.41f, -655.75f, 27.76f)
+	Turn("HUMMEL", 171.75f, 360.0f)
+	ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+	LookChr("HUMMEL", "ev_QS_521_Fish")
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("RICOTTA", 839.33f, -653.63f, 27.68f)
+	Turn("RICOTTA", -123.26f, 360.0f)
+
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_SUP, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_SUP, 1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	LookChr("RICOTTA", "ev_QS_521_Fish")
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("DANA", 840.78f, -655.13f, 27.74f)
+	Turn("DANA", 169.14f, 360.0f)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	LookChr("DANA", "ev_QS_521_Fish")
+
+	SetChrWork("ev_QS_521_Fish", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("ev_QS_521_Fish", 842.10f, -654.20f, 27.77f)
+	Turn("ev_QS_521_Fish", 133.13f, 360.0f)
+	ChangeAnimation( "ev_QS_521_Fish" , "ANI_WAIT", -1 , 1 )
+//	ChangeSubAnimation("ev_QS_521_Fish",SUBMOT_EYE,ANI_E_WAIT,1)
+//	ChangeSubAnimation("ev_QS_521_Fish",SUBMOT_MOUTH,ANI_M_WAIT,1)
+//	ChangeSubAnimation("ev_QS_521_Fish",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "ev_QS_521_Fish" , INFOFLAG_NOCHRATARI)
+
+	DestroyObj(845.252f , -653.724f , 28.003f  , 4.5f , 0, 0, 0 )
+	DestroyObj(843.020f , -653.536f , 27.611f  , 4.5f , 0, 0, 0 )
+
+	//カメラ設定
+	MoveCameraAt(0, 844.043f, -655.256f, 28.872f, 0)	// 注視点
+	ChangeCameraDistance(0, 2.829f, 0)		// 基本距離
+	ChangeCameraElevation(0, 60.457f, 0)	// 基本仰角
+	RotateCamera(0, 86.792f, 0)				// 角度
+	ChangeCameraPers(0, 41.001f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 300.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 80.000 ,1.000 ,0.700 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	//スキップ許可
+	SetSkipScript("mp2105:QS_521_Get_Fish_ED")
+
+//開始処理ここまで-----------------------------------------------
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 840.848f, -652.392f, 28.946f, 140)		// 注視点
+	ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE, 7.114f, 140)		// 基本仰角
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE, 154.082f, 140)		// 角度
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt( 0 , 840.329f , -654.873f , 28.182f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 5.861f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 19.295f , 0 )	// 基本仰角
+	RotateCamera( 0 , 207.231f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.001f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , -0.4f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_NORMAL)
+
+	ChangeAnimation("SAHAD", "ANI_EV_RYOTEKOSI_S", -1, 1)
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#000e#000mこいつがタナトス爺さんの"
+		"言ってたピラルー……\p"
+		"#080e#080mガハハ、確かにとんでもねえな！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeSubAnimation("RICOTTA", SUBMOT_EYE, ANI_E_SUP_E, 1)
+	ChangeSubAnimation("RICOTTA", SUBMOT_MOUTH, ANI_M_SUP_E, 1)
+	ChangeAnimation("RICOTTA", "ANI_EV_GUTSPOSE_S", -1, 1)
+
+	//LookChr("RICOTTA", "SAHAD")
+	TalkPopup("RICOTTA",0,1,0,0,0)
+	{
+		"#080e#080m父上喜ぶ、嬉しい！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("LAXIA", "ANI_EV_TEBURI", -1, 1)
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000m何があったらこんな大きさに……"
+		"興味深いですね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt(0, 840.635f, -655.065f, 29.194f, 0)	// 注視点
+	ChangeCameraDistance(0, 2.830f, 0)		// 基本距離
+	ChangeCameraElevation(0, -7.603f, 0)	// 基本仰角
+	RotateCamera(0, 170.708f, 0)				// 角度
+	ChangeCameraPers(0, 34.001f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 300.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+	Wait(FADE_CROSS)
+
+	ChangeAnimation("DANA", "ANI_EV_WAIT2_S", -1, 1)
+	TalkPopup("DANA",0,0,0,0,0)
+	{
+		"#080e#080mふふ、私もここまで"
+		"大きな魚は初めて見るかも。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation("HUMMEL", "ANI_EV_UDEGUMI_S", -1, 1)
+	TalkPopup("HUMMEL",0,0,0,0,0)
+	{
+		"#000e#000mフッ、早く帰って報せてやらないとな。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　アドルが頷く。
+	HeadYes("ADOL" , 1 , 25)
+	HeadYes("ADOL" , 1 , 25 )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_S,1)
+	Wait(15)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+	Wait(25)
+
+	//　　イベント終了、操作許可。
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp2105:QS_521_Get_Fish_ED")
+}
+function "QS_521_Get_Fish_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+	DestroyObj(845.252f , -653.724f , 28.003f  , 4.5f , 0, 0, 1 )
+	DestroyObj(843.020f , -653.536f , 27.611f  , 4.5f , 0, 0, 1 )
+
+	//フラグ立て
+	SetFlag( GF_QS521_GET_FISH, 1 )		// 【QS521】▼巨大ピラルクを釣った時のイベント を見た
+	SetDiaryFlag( DF_QS521_001, 1 )		// 【QS521】★魚を釣った。
+	//マーカー設置
+	DelMapMarker( SMI_QUEST, PAGE_F011, MARKER_QS_521_LP, 0, 0)	// 【QS521】巨大な怨敵（タナトス）　巨大ピラルクの釣り場用
+
+	CallFunc("mp2105:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",839.48f,-655.01f,27.71f)
+	Turn("LEADER",75.29f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	SetChrPos("ev_QS_521_Fish" , -100000.00f , 0.00f ,0.00f )		// 巨大ピラクルを画面外に移動
+	Wait(1)
+
+	//カメラ位置復帰
+	MoveCameraAt(0, 839.480f, -655.010f, 29.576f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+	RotateCamera(0, -119.836f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 300.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+//	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}

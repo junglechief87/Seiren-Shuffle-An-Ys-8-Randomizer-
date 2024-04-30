@@ -1,0 +1,410 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//-------------------------------------------
+// 1309t2：珊瑚の森野営地
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//◆マップエフェクト
+	//胞子
+	Set3DParticle(PARTICLE_TYPE_SPORE, 0.0f,0.0f,0.0f, 0.05f,0.05f,0.02f, 0.0f,0.0f,0.0f, 0.0f,0.0f,0.0f, 180.0f, 0.0f)
+
+	EventAreaEnable( "NightHunt_Stopper" , 0 )	//夜間探索用【ストッパー：1105t2⇒1104】
+
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+	}
+
+	if(FLAG[GF_NIGHTHUNT])		//夜間探索時
+	{		
+		EntryOn(00,0)	//【ストッパー：1105t2⇒1104】が有効の間はOFF
+
+		//野営地マップ制御
+		MapAnime( "camp_all" , on )	//キャンプ設置
+		MapHide( "camp_fire1" , 1)
+		MapHide( "camp_fire2" , 1)
+		MapHide( "camp_smoke" , 1)
+
+		EventAreaEnable( "NightHunt_Stopper" , 1 )	//夜間探索用【ストッパー：1105t2⇒1104】
+	}
+
+//	//マップ名表示
+//	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+//		if( FLAG[SF_LASTENTRY_NO] == 1 || FLAG[SF_LASTENTRY_NO] == 100  ){	
+//			//ダンジョン側／ワープ
+//			VisualName("visual/mapname/mn_1110.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//名知らず海岸
+//			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+//		}
+//	}
+	
+	// ダミー水晶石起動
+	ChangeAnimation("chkpt", "ANI_START", -1, 1)
+}
+
+function "LP_tent"
+{
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+//	//モーションが終了するまで待機
+//	WaitAnimation2( "PLAYER1" ,-1 ,-1 ,ANI_WAIT ,1 )
+
+	ResetMotion( "PARTYALL" , 0 )
+//	StopEffect(-1,PARTYALL,1)
+//	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+
+	//選択肢
+	SetFlag(TF_MENU_SELECT,0)
+	MenuReset()
+	MenuType(MENUTYPE_POPUP)
+	MenuAdd(1,"テントで休む")
+
+	if(FLAG[GF_OPEN_CORAL_T2])
+	{
+		if(!FLAG[GF_NIGHTHUNT])		//夜間探索を開始していない
+		{
+			MenuAdd(2,"夜間探索を行う")
+		}
+		else
+		{
+			MenuAdd(3,"夜間探索を終了する")
+		}
+	}
+	MenuAdd(4,"やめる")	
+	MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , -1)
+	WaitMenu(0)
+	MenuClose(10,0)
+
+	if (FLAG[TF_MENU_SELECT] == 1)
+	{
+		SetWork(WK_BGMLIMIT, 1)
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		SaveCamera()
+
+		SetEnvSEPlayState(1105001, 0)
+		PlaySE(SE_ENV_FOREST_4, 20, 1, 1000, 0, 1.0f, 0)	//夜の虫
+	
+		//寝言
+		CallFunc("system:TentVoice_Sleep")
+	
+		SetEnvSEPlayState(-1, 0)	//環境SE全停止
+		PlaySE( SE_HOTEL_JINGLE , 100 , 0,  0, 0, 1.0f, 0)	//ジングル
+		StopSE(SE_ENV_FOREST_4, 2000)	//虫の音止める
+		Wait(120)
+
+		//テント回復処理・リトライセーブ
+		CallFunc("system:camp_rest")
+	
+		PlaySE(SE_HEAL, 100, 0, 0, 0, 1.0f, 0)
+
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#-1W#4C全員のＨＰ、ＳＰとＥＸＴＲＡゲージが全快した！#10W" 
+			"#8S"
+		}
+		Wait(10)
+		WaitPrompt()
+		WaitCloseWindow()
+	
+		Wait(15)
+
+		SetChrPos("LEADER",50.79f,-395.79f,40.73f)
+		Turn("LEADER",167.52f,360.0f)
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+	
+		RestoreCamera(0,0)
+		CallFunc("system:camera_reset")
+	
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+		SetEnvSEPlayState(-1, 1)	//環境SE復帰
+
+		SetWork(WK_BGMLIMIT, 0) 	
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+
+	}
+	else if (FLAG[TF_MENU_SELECT] == 2)
+	{
+		FadeOut(FADE_BLACK,FADE_FAST)
+		WaitFade()
+
+		//テント回復処理・リトライセーブ
+		CallFunc("system:camp_rest")
+		
+		SetFlag(GF_NIGHTHUNT,1)		//夜間探索開始
+		SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+		LoadArg("map/mp1309t2/mp1309t2.arg")
+		EventCue("mp1309t2:NightHunt_Start")
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	}
+	else if (FLAG[TF_MENU_SELECT] == 3)
+	{
+		FadeOut(FADE_BLACK,FADE_FAST)
+		WaitFade()
+
+		//テント回復処理・リトライセーブ
+		CallFunc("system:camp_rest")
+		
+		SetFlag(GF_NIGHTHUNT,0)		//夜間探索終了
+		SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+		LoadArg("map/mp1105/mp1105.arg")
+		EventCue("mp1105:NightHunt_End")
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	}
+	else
+	{
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+
+	}
+
+}
+
+function "LP_cook"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	TurnToChr( PLAYER1 , this , 7.5f )
+	Wait(10)
+
+	ShopOpen( SHOP_ID_COOK, -1 )		//◆料理作成テスト
+
+	ResetStopFlag(STOPFLAG_TALK)
+
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ストッパー・ＬＰセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+//	================================================
+//	【ストッパー：1105t1⇒1104】
+//	================================================
+
+//	================================================
+function "NightHunt_Stopper"
+{
+
+//開始処理ここから----------------------------------------------------
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+//開始処理ここまで-----------------------------------------------
+
+	Wait(15)
+
+	SetFlag( TF_MENU_SELECT, 0 )
+	YesNoMenu(TF_MENU_SELECT,"#7C夜間探索を終了しますか？",1)
+
+	//────────────────────
+	//	⇒はい
+	
+	if(FLAG[TF_MENU_SELECT])
+	{			
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		//テント回復処理・リトライセーブ
+		CallFunc("system:camp_rest")
+		
+		SetFlag(GF_NIGHTHUNT,0)		//夜間探索終了
+		SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+		LoadArg("map/mp1105/mp1105.arg")
+		EventCue("mp1105:NightHunt_End")
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	else
+	{
+		//　　暗転後、鳥のさえずりSEにを再生しつつ
+		//　　朝の野営地で暗転明けて操作許可。
+		//	⇒いいえ
+
+
+		//　　その場で操作許可。
+		//────────────────────
+
+	//終了処理ここから----------------------------------------------------
+		CrossFade(FADE_CROSS)
+
+		SetChrPos("LEADER",60.78f,-479.46f,32.64f)
+		Turn("LEADER",167.87f,360.0f)
+
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		WaitFade()
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	//終了処理ここまで----------------------------------------------------
+	}
+}
+
+function "NightHunt_Start"
+{
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	SetChrPos("LEADER",50.79f,-395.79f,40.73f)
+	Turn("LEADER",167.52f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	MoveCameraAt( 0 , 50.790f , -395.793f , 42.592f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 12.338f , 0 )	// 基本仰角
+	RotateCamera( 0 , 15.211f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+
+	if(!FLAG[GF_HELP_A55])	//夜間探索
+	{
+		// チュートリアル =================================================================================
+		if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+
+			// チュートリアルポートレート読み込み
+			Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+			Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+			Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+			Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+			Portrait_Load(2, "visual/help/hp_a55.itp" )	// help_a55：夜間探索
+			Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+
+			//自動送り禁止
+			ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+			Wait(10)
+
+			// 擬似フェードアウト表示
+			Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+			Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+			FadeIn(FADE_BLACK, 0)
+			WaitFade()
+
+			// ポートレート表示
+			PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+			Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+			Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+			Wait(FADE_NORMAL)
+			Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+			WaitPrompt()
+			Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)	// チュートリアル背景
+			Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+			Wait(FADE_FAST)
+			Portrait_Close(1)
+			Portrait_Close(2)
+			
+			// 擬似フェードアウト削除
+			FadeOut(FADE_BLACK, 0)
+			WaitFade()
+			Portrait_Close(0)
+
+			//自動送り許可
+			SetStopFlag(STOPFLAG_AUTOMESSAGE)
+		
+		}
+		// ================================================================================================
+
+		SetFlag(GF_HELP_A55,1)		// help_a55：夜間探索
+
+		//PlaySE( SE_TUTORIAL , 100 , 0,  0, 0, 1.0f, 0)		//チュートリアル
+		////	ナレーション
+		//TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		//{
+		//	"#7C夜間探索では地図を使った移動が制限されます。\p"
+		//	"#7C夜間探索を終了する場合は野営地のテントを調べて、"
+		//	"#7C『夜間探索を終了する』を選択してください。"
+		//}
+		//WaitPrompt()
+		//WaitCloseWindow()
+	}
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	FadeIn(FADE_BLACK,FADE_FAST)
+}

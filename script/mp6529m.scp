@@ -1,0 +1,1251 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+#include "inc/enemy/b162.h"
+
+//#include "inc/temp/mp6529m.h"
+
+//-------------------------------------------
+// mp6529m：地下聖堂　階層２　ボスマップ
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")				
+	// ストッパー
+	MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+	MapAnime("CT_EVENT_boss", "open")	//逃げられないストッパー開ける
+//	MapAnime("syswall", "open")
+
+	EventAreaEnable( "SubEV_Past_BossB2" , 0 )
+	EventAreaEnable( "SubEV_Past_MonoLithB2" , 0 )
+
+	if (FLAG[SF_BOSS_BATTLE])
+	{
+		SetWork(WK_BGM, BGM_Nothing)
+		EventCue("mp6529m:EV_RetryBoss")
+	}
+	else if (FLAG[SF_EVENT_ON])
+	{
+		ChangeAnimation( "chkpt_dummy" , "ANI_STOP", -1 , 1 )
+
+		// イベント発生制御
+		if( !FLAG[GF_SUBEV_PAST_BOSS_B2] )							// 過去編Ⅲ：【サブイベント：地下聖堂フロア２・ボスが出現】を見た
+		{
+			SetWork( WK_BGM , BGM_Nothing )		//BGM消す
+			EventAreaEnable("SubEV_Past_BossB2" , 1)				// 過去編Ⅲ：【サブイベント：地下聖堂フロア２・ボスが出現】
+		}
+		if( !FLAG[GF_SUBEV_PAST_OPEN_B3] )							// 過去編Ⅳ：【サブイベント：地下聖堂フロア２の大扉を開く】を見た	
+		{
+			SetChrPos("SubEV_Past_OpenB3",-0.027f , 430.744f , 13.031f)		// 過去編Ⅳ：【サブイベント：地下聖堂フロア２の大扉を開く】
+		}
+		if( !FLAG[GF_SUBEV_PAST_MONOLITH_B2] )						// 過去編Ⅲ：【サブイベント：地下聖堂フロア２のモノリスを見る】を見た	
+		{
+			//SetChrPos("SubEV_Past_MonoLithB2",0.024f , 404.842f , 12.607f )
+			EventAreaEnable( "SubEV_Past_MonoLithB2" , 1 )
+		}
+		if( FLAG[GF_SUBEV_PAST_OPEN_B3] && !FLAG[GF_PAST_EPISODE_4_GO_CASTLE] && !FLAG[GF_PAST_EPISODE_5_GO_VALLAY] && !FLAG[GF_PAST_EPISODE_6_GO_GARDEN] && !FLAG[GF_PAST_EPISODE_7_ENDEPISODE])	// 過去編Ⅲ：【サブイベント：地下聖堂フロア２の大扉を開く】を見た
+		{
+			SetChrPos("SubEV_Past_OpenB3",-0.027f , 430.744f , 13.031f)		// 過去編Ⅳ：【サブイベント：地下聖堂フロア２の大扉を開く】
+		}
+
+		if(FLAG[GF_BOSSFLOOR_NUM] < 2 )		//転移装置アクティブ用
+		{
+			SetFlag(GF_BOSSFLOOR_NUM , 2)
+		}
+		
+		//マップアニメ
+		MapAnime("monoris_all" , "off_wait")	//モノリスOFF
+		MapAnime("EVENT_monorisgate","close_off")			//初期閉鎖
+
+		if( FLAG[GF_SUBEV_PAST_BOSS_B2] )							// 過去編Ⅲ：【サブイベント：地下聖堂フロア２・ボスが出現】を見た
+		{
+			MapAnime("EVENT_bossgate","open")
+			SetChrPos("TBOX01", 0.0f, 332.0f, 12.0f)
+		}
+		if(FLAG[GF_OPEN_FLOOR_03])									//第３階層が開く予知を見ている
+		{
+			MapAnime("EVENT_monorisgate","close_on_wait")			//点灯状態
+		}
+		if(FLAG[GF_SUBEV_PAST_OPEN_B3] && (FLAG[GF_PAST_EPISODE_4_GO_CASTLE] || FLAG[GF_PAST_EPISODE_5_GO_VALLAY] || FLAG[GF_PAST_EPISODE_6_GO_GARDEN] || FLAG[GF_PAST_EPISODE_7_ENDEPISODE]))	// 過去編Ⅵ：【サブイベント：地下聖堂フロア４の大扉を開く】を見た	且つ　過去編Ⅳ以降
+		{
+			MapAnime("EVENT_monorisgate","open")					//開放済
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■ボス戦処理
+
+////////////////////////////////////////////////////////////////////////////////
+
+// 中ボス戦
+function "EV_RetryBoss"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK, 0)
+	WaitFade()
+
+	//ボス配置・アニメ--------------------------------
+	SetChrPos("B162", 0.0f, 326.0f, 12.0f)
+	Turn("B162", 0.0f, 360.0f)
+
+	//PLAYER配置--------------------------------------
+	SetChrPos("LEADER", 0.0f, 306.0f, 12.0f)
+	Turn("LEADER", 180.0f, 360.0f)
+
+	//カメラ設定--------------------------------------
+	// argの設定を上書きする
+	SetYs8Camera(B162_CAMERA_NORMAL_DIST, B162_CAMERA_NORMAL_FOV, B162_CAMERA_NORMAL_DIP, B162_CAMERA_NORMAL_ADDZ, B162_CAMERA_NORMAL_ADDZ);
+
+	MoveCameraAt(0, 0.000f, 306.038f, 14.863f, 0)	// 注視点
+	ChangeCameraDistance(0, B162_CAMERA_NORMAL_DIST, 0)		// 基本距離
+	ChangeCameraElevation(0, B162_CAMERA_NORMAL_DIP, 0)	// 基本仰角
+	RotateCamera(0, 0.0f, 0)				// 角度
+	ChangeCameraPers(0, B162_CAMERA_NORMAL_FOV, 0)			// 視野角
+	SetCameraZPlane(0.100f, 600.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	//イベントバトル用CallFunc------------------------
+	CallFunc("system:boss_start")
+
+	//その他処理--------------------------------------
+	PlayBGM(BGM_BOSS_001, 0)
+
+	MapAnime("CA_EVENT_boss", "close")	//逃げられないストッパー起動
+	MapAnime("CT_EVENT_boss", "close")	//逃げられないストッパー起動
+//	MapAnime("syswall", "close")
+
+	EventAreaEnable("SubEV_Past_BossB2" , 0)				// 過去編Ⅲ：【サブイベント：地下聖堂フロア２・ボスが出現】
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+
+	if (FLAG[SF_TIMEATK])
+	{
+		// タイムアタックの場合はボス名出してあげる
+		VisualName("visual/bossname/bn_b162.itp", VN_NAMEBOSS2, VN_BOSSNAME_LT_X, VN_BOSSNAME_LT_Y, VN_BOSSNAME_TIME)
+	}
+
+	WaitFade()
+
+	ResetStopFlag(STOPFLAG_EVENT)
+	//------------------------------------------------
+}
+
+// ボス死亡：中ボス
+function "EV_Boss_Dead"
+{
+	//無敵ON・色々終了させる---------------------------
+
+	SetFlag(SF_ALLMUTEKI,1)		//無敵ＯＮ
+
+	Wait(180)
+	StopBGM(120)
+	Wait(60)
+
+	//イベントバトル用CallFunc-------------------------
+	// SF_BOSS_BATTLEのみイベント内で対処して下さい
+	CallFunc("system:boss_end")
+
+
+	//封鎖解除・ボス消去-------------------------------
+	MapAnime("CT_EVENT_boss","open")	//逃げられないストッパー開ける
+	MapAnime("CA_EVENT_boss", "open")	//逃げられないストッパー開ける
+
+//	MapAnime("syswall", "open")
+
+	SetChrPos("B162",-100000.00f,0.00f,0.00f)
+
+	//事後処理-----------------------------------------
+	// タイムアタック中
+	if (FLAG[SF_TIMEATK])
+	{
+		EndTimeAtk()		// タイムアタック終了（スクリプトから強制的に抜けていろいろ処理してくれる）
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else if (FLAG[SF_EVENT_ON])
+	{
+		EventCue("mp6529m:SubEV_Past_BossB2b")
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	else
+	{
+		// ボスラッシュ？
+		FadeIn(FADE_WHITE,FADE_FAST)
+		WaitFade()
+
+		ResetStopFlag(STOPFLAG_EVENT)
+	}
+	//------------------------------------------------
+}
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+
+function "SubEV_Past_BossB2"
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin")
+
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA",0.05f,304.08f,12.00f)
+	Turn("DANA",-177.98f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -0.00f , 324.001f , 13.504f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.400f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 24.323f , 0 )	// 基本仰角
+	RotateCamera( 0 , 0.760f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6529m:SubEV_Past_BossB2_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd( 1000, MoveCameraAt, INTERPOLATE_SPHERE ,-0.000f , 324.001f , 13.504f , 60 )	// 注視点
+	ExecuteCmd( 1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 5.500f , 60 )					// 基本距離
+	ExecuteCmd( 1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 24.322f , 60 )					// 基本仰角
+	ExecuteCmd( 1003, RotateCamera, INTERPOLATE_SPHERE , 0.0f , 60 )							// 角度
+
+	//MoveCameraAt( 0 , -0.000f , 324.001f , 13.504f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 5.500f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 24.322f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 0.760f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	SetChrPos("B162", 0.0f, 326.0f, 15.0f)
+	Turn("B162", 0.0f, 360.0f)
+	ChangeAnimation( "B162" , "ANI_EV_FALL_START", -1 , 1 )
+
+	PlaySE(SE_KAKO_3_10, 40, 0, 0, 0, 1.0f, 0)	//
+	Wait(40)
+	Blur(BLUR_TYPE_EXPAND, 0.4f, 15)	//ブラー
+	PlaySE(SE_KAKO_3_13, 90, 0, 0, 0, 1.0f, 0)	//
+	VibrationPad(1001, 5 )		//ボス着地汎用
+
+	Wait(20)
+
+	ExecuteCmd( 1000, MoveCameraAt, INTERPOLATE_SPHERE , -0.498f , 323.530f , 16.654f  , 50 )	// 注視点
+	ExecuteCmd( 1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 11.190f , 50 )					// 基本距離
+	ExecuteCmd( 1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -20.141f , 50 )					// 基本仰角
+	ExecuteCmd( 1003, RotateCamera, INTERPOLATE_SPHERE , 43.414f , 50 )							// 角度
+
+	//MoveCameraAt( 0 , -0.498f , 323.530f , 16.654f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 11.190f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -20.141f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 43.414f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(30)
+	PlayBGM(BGM_BOSS_001, 0)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	Wait(30)
+	VisualName("visual/bossname/bn_b162.itp", VN_NAMEBOSS, VN_BOSSNAME_LT_X, VN_BOSSNAME_LT_Y, VN_BOSSNAME_TIME)
+
+	Wait(30)
+	ChangeAnimation( "B162" , "ANI_EV_APPEAL", -1 , 1 )
+	PlaySE(SE_KAKO_3_12, 100, 0, 0, 0, 1.0f, 0)	//振りかぶり
+	Wait(10)
+	
+	ExecuteCmd( 1000, MoveCameraAt, INTERPOLATE_SPHERE , -0.736f , 324.780f , 18.614f , 200 )	// 注視点
+	ExecuteCmd( 1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 4.309f , 200)					// 基本距離
+	ExecuteCmd( 1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 14.807f , 200 )					// 基本仰角
+	ExecuteCmd( 1003, RotateCamera, INTERPOLATE_SPHERE , 312.397f , 200 )							// 角度
+
+	//MoveCameraAt( 0 , -0.736f , 324.780f , 18.614f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 4.309f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 14.807f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 312.397f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(20)
+	PlaySE(SE_KAKO_3_14, 100, 0, 0, 0, 1.0f, 0)	//振り下ろし
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	//　　→守護者ボスとの戦闘開始。
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6529m:SubEV_Past_BossB2_ED")
+}
+
+function "SubEV_Past_BossB2_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	EventCue("mp6529m:EV_RetryBoss")
+	
+	ResetStopFlag(STOPFLAG_EVENT)
+
+}
+
+function "SubEV_Past_BossB2b"
+{
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_WHITE,0)
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	ChrAlpha("TBOX01", 0.0f, 0)	// ID, 変化後のアルファ値, 変化にかかるフレーム数
+	SetChrPos("TBOX01", 0.0f, 332.0f, 12.0f)
+
+	MoveCameraAt( 0 , 0.010f , 331.978f , 12.000f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.920f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 30.753f , 0 )	// 基本仰角
+	RotateCamera( 0 , 32.278f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE, 15.569f, -1502.250f, 7.196f, 150)	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE, 5.120f, 150)		// 基本距離
+	//ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE, 19.516f, 150)	// 基本仰角
+	//ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE, 73.605f, 150)				// 角度
+
+	//MoveCameraAt( 0 , -0.029f , 312.025f , 8.064f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 5.120f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 30.752f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 32.278f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	FadeIn(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+
+	Wait(45)
+
+	ChrAlpha("TBOX01", 1.0f, 15)	// ID, 変化後のアルファ値, 変化にかかるフレーム数
+	ChrEffect2( "TBOX01" , 3901020 , "root", "root", 0 , IMPACT_NONE , KNOCK_EFXPOS , 0.0f,0.0f,0, 2.3f, 1.0f)
+	PlaySE(SE_M05S161_01, 100, 0, 0, 0, 1.0f, 0)
+	PlaySE(SE_M05S161_02, 100, 0, 0, 0, 1.0f, 0)
+
+	WaitThread(1001)
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	MoveCameraAt( 0 , -0.089f , 368.530f , 15.464f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 9.550f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -12.325f , 0 )	// 基本仰角
+	RotateCamera( 0 , 342.011f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	Wait(15)
+
+	PlaySE(SE_GIM_PAST_DOOR, 100, 1, 0, 0, 1.0f, 0)
+	MapAnime("EVENT_bossgate","close-open")
+	MapAnimeLast("EVENT_bossgate","open")
+
+	Wait(45)
+	EarthQuake(0.1f,0.1f,10)
+	PlaySE(SE_GIM_PAST_DOOR_STOP, 100, 0, 0, 0, 1.0f, 0)
+	StopSE(SE_GIM_PAST_DOOR, 200)
+
+	Wait(45)
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	SetFlag(GF_SUBEV_PAST_BOSS_B2, 1)	// 過去編Ⅱ：【サブイベント：地下聖堂フロア１・ボスが出現】を見た
+	SetFlag(SF_BOSS_BATTLE,0)	//ボスモード終了
+	CallFunc("mp6529m:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",0.02f,323.45f,12.00f)
+	Turn("LEADER",178.65f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 0.022f , 323.454f , 13.869f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 14.000f , 0 )	// 基本仰角
+	RotateCamera( 0 , -1.143f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	PlayBGM(BGM_6529_M, 0)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+function "SubEV_Past_MonoLithB2"
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin_impose")
+
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA",0.11f,401.69f,13.05f)
+	Turn("DANA",-173.13f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+
+	//カメラ設定
+	MoveCameraAt( 0 , 0.193f , 402.448f , 14.523f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.600f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -6.305f , 0 )	// 基本仰角
+	RotateCamera( 0 , 30.248f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Portrait_Close( -1 )
+	Portrait_Unload( -1 )
+
+
+	//ポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+
+	Portrait_Load( 1 , "visual/portrait/p_10220.itp" )	//モノリス２層目
+	Portrait_Create(1 , 0 , 0 ,
+					0 , 0 ,3840 , 1080 ,
+					0.0f,0x00ffffff,0x00000000)
+
+	Portrait_Load( 2 , "visual/portrait/p_10220.itp" )	//モノリス２層目
+	Portrait_Create(2 , 0 , 0 ,
+					0 , 0 ,3840 , 1080 ,
+					0.0f,0x00ffffff,0x00000000)
+
+	Portrait_Load( 3 , "visual/portrait/p_10220.itp" )	//モノリス２層目
+	Portrait_Create(3 , 0 , 0 ,
+					0 , 0 ,3840 , 1080 ,
+					0.0f,0x00ffffff,0x00000000)
+
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6529m:SubEV_Past_MonoLithB2_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd( 1000, MoveCameraAt, INTERPOLATE_SPHERE ,0.590f , 402.674f , 14.523f , 120 )	// 注視点
+	//ExecuteCmd( 1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 5.500f , 60 )					// 基本距離
+	//ExecuteCmd( 1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 24.322f , 60 )					// 基本仰角
+	//ExecuteCmd( 1003, RotateCamera, INTERPOLATE_SPHERE , 0.0f , 60 )							// 角度
+
+	//MoveCameraAt( 0 , 0.590f , 402.674f , 14.523f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 3.600f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -6.305f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 30.248f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SoundEfx( SEFX_EV_CAVE_L, 15 )
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//　　地下聖堂フロア２のモノリスを調べるとイベント起動。
+	//　　※このイベントは、過去編Ⅲ以外で起きる場合もある。
+	//　　　どの過去編でも、このモノリスを調べるとイベントが起こるようにする。
+
+	Wait(30)
+
+	ChangeAnimation( "DANA" , "ANI_EV_UDEGUMI_S", -1 , 1 )
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#011e#000mこれは上の階層にあった"
+		"モノリスと同じものだね。\p"
+		"ということは、もしかして……\p"
+		"よし、ちょっと動かしてみよう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ダーナがモノリスに触れ、モノリスが起動する演出。
+	//　　一旦暗転し、ポートレートイベントを開始する。
+	//　　（アドルの夢と同じく、１枚絵に重ねる形で
+	//　　　メッセージが出るイベント形式）
+
+	StopBGM(120)
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+
+	//◆理力を注入するようなSEを暗転中に再生して演出簡略を想定しています
+
+	PlaySE(SE_KAKO_3_20, 100, 0, 0, 0, 1.0f, 0)	//
+	Wait(60)
+
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	// 擬似フェードアウト（黒）表示
+	Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+	Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+
+	FadeIn(FADE_BLACK, 0)
+	WaitFade()
+
+	Wait(30)
+	PlayBGM(BGM_EVENT_002, 30)
+	FadeBGM(70,0)
+
+	//アニメ
+	Portrait_Anime( 2 , PR_ANIME_MOVE, -640 , 0 , -1,-1 , 0)	//初期位置変更
+	Portrait_Anime( 3 , PR_ANIME_MOVE, -1280 , 0 , -1,-1 , 0)	//初期位置変更
+
+	Portrait_Anime( 1 , PR_ANIME_MOVE, -640 , 0 , -1,-1 , 667)
+	Portrait_Anime(1 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 60)
+	Wait(60)
+	
+	SetStopFlag(STOPFLAG_CINEMA)
+	Wait(10)
+
+
+	//	name2()
+	TalkMes(UNDEF,"天敵の竜種を退け、荒ぶる大地を平定し、",
+		"国土は瞬く間に広がってゆく。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkMes(UNDEF,"やがてエタニア王国は大陸に",
+		"覇を唱える一大国家へと成長した。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkMes(UNDEF,"諸侯に封ぜられた有能な",
+		"忠臣たちが広大な国の統治を支え、",
+		"華の時代を謳歌するに至る。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Portrait_Anime(2 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 60)
+	Portrait_Anime( 2 , PR_ANIME_MOVE, -1280 , 0 , -1,-1 , 667)
+	Wait(60)
+
+	//	name2()
+	TalkMes(UNDEF,"これに伴い、光王アルキアは",
+		"《南方遷都の詔》を発布した。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	//	name2()
+	TalkMes(UNDEF,"王がかつて理力を見い出した、",
+		"あの大樹が佇む大地へ",
+		"王都を移す大国家事業であった。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	テキスト
+	TalkMes(UNDEF,"『新たな都は万年の礎とすべし』。",
+		"王の布告は大いに国を沸かせた。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	Portrait_Anime(3 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 60)
+	Portrait_Anime( 3 , PR_ANIME_MOVE, -1920 , 0 , -1,-1 , 667)
+	Wait(60)
+
+	//	name2()
+	TalkMes(UNDEF,"遷都する先は偉大なる王が",
+		"かつて理力を見い出した地──","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkMes(UNDEF,"そこにそびえる大樹こそが",
+		"王に大いなる知恵を授けたのだ。","")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkMes(UNDEF,"王と大樹に相応しい都を造営すべく",
+		"エタニア人たちは労を惜しまない。","労3行目")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkMes(UNDEF,"理力を増幅させる",
+		"巨大な水晶柱を象徴とした壮大な都が",
+		"地上に姿を現しつつあった。")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	name2()
+	TalkMes(UNDEF,"新王都は地脈の中心に位置するだけでなく、",
+		"大陸の均衡そのものであった。","均衡3行目")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(20)
+	ResetStopFlag(STOPFLAG_CINEMA)
+
+	Portrait_Anime(1 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, 0)
+	Portrait_Anime(2 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, 0)
+	Wait(20)
+
+	StopBGM(120)
+	Portrait_Anime(3 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, 60)
+	Wait(60)
+
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	Portrait_Close( -1 )
+	Portrait_Unload( -1 )
+
+	Wait(40)
+	//ポートレート処理
+	Portrait_Load(   1 , "visual/portrait/p_20100.itp" )
+	Portrait_Create(1 , 0 , 0 , 
+					0 , 0 , 3840,2160 , 
+					0.0f , 0x00ffffff , 0x00000000 )
+
+	Portrait_Anime( 1 , PR_ANIME_SCALE ,0.5 , 0.5 ,-1,-1 ,0 )
+
+	MoveCameraAt( 0 , 0.209f , 401.983f , 14.484f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.700f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -4.010f , 0 )	// 基本仰角
+	RotateCamera( 0 , 203.466f , 0 )				// 角度
+	ChangeCameraPers( 0 , 38.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	SetEnvSEPlayState(-1, 1)	//環境SE復帰
+	PlayBGM(BGM_6529_M, 0)
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	Wait(15)
+	
+	//　　ポートレートイベント終了。
+	//　　モノリスを読んでいるダーナのシーンに戻る。
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#012e#000mこれもやっぱりエタニアの"
+		"歴史が記録されてるんだね。\p"
+		"しかも私たちが知っている"
+		"伝承と所々違うみたいだけど……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	
+	//　　ここで下記イオのセリフがフラッシュバック。
+	//　　「でもま、真実は物語よりも奇なり
+	//　　　っていうじゃない？」
+
+	//フラッシュバック演出 ----------------------------------- ▼		//穏やかなフラッシュバック
+	SetEnvSEPlayState(-1, 0)	//環境SE全停止
+	FadeBGM(20, 60)
+	FadeOut(FADE_WHITE,FADE_FAST)
+	WaitFade()
+	Wait(15)
+	FadeIn(FADE_WHITE,FADE_FAST)
+	Portrait_Anime(  1 , PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+	Wait(45)
+
+	SetName("イオ")
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#6805V#7Cでもま、真実は物語よりも奇なり"
+		"#7Cっていうじゃない？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	SetName("")
+	Wait(40)
+
+	SetEnvSEPlayState(-1, 1)	//環境SE復帰
+	FadeBGM(100, 60)
+	FadeOut(FADE_WHITE,FADE_FAST)
+	WaitFade()
+
+
+	Portrait_Close(  1 )
+	Portrait_Unload( 1 )
+
+	FadeIn(FADE_WHITE,FADE_NORMAL)
+	WaitFade()
+	// --------------------------------------------------------- ▲
+
+	Wait(10)
+	ChangeAnimation( "DANA" , "ANI_EV_UDEGUMI_E", -1 , 1 )
+
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#011e#000mうーん……"
+		"イオちゃんの言う通りだったりして。\p"
+		"#012e#021lだとすると、この聖堂は"
+		"本当の歴史を保管するための場所？\p"
+		"それにしては大がかりだと思うけど……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ダーナにPAエモーション。
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_SUP_S,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKL_E,1)
+	EmotionEx("DANA", 0.00f,EMO_PA,0,5,1,1,1.0f )
+	Wait(45)
+
+	CrossFade(FADE_CROSS)
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_ANGER,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_ANGER,1)
+
+	MoveCameraAt( 0 , 0.306f , 401.713f , 14.484f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.900f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -5.843f , 0 )	// 基本仰角
+	RotateCamera( 0 , 6.983f , 0 )				// 角度
+	ChangeCameraPers( 0 , 46.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Turn("DANA",-66.54f,10.0f)
+	LookTo("DANA",-0.064f , 378.658f , 14.062f)
+
+	//　　不意に後ろを振り向くダーナ。
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000m誰っ！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	Wait(30)
+	
+	CrossFade(FADE_NORMAL)
+	MoveCameraAt( 0 , -0.000f , 384.691f , 14.930f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 19.762f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.250f , 0 )	// 基本仰角
+	RotateCamera( 0 , 182.858f , 0 )				// 角度
+	ChangeCameraPers( 0 , 55.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ExecuteCmd( 1000, MoveCameraAt, INTERPOLATE_SPHERE ,-0.000f , 384.691f , 14.930f , 1400 )	// 注視点
+	ExecuteCmd( 1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 19.762f , 1400 )					// 基本距離
+	ExecuteCmd( 1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -3.187f , 1400 )					// 基本仰角
+	ExecuteCmd( 1003, RotateCamera, INTERPOLATE_SPHERE , 175.718f , 1400 )							// 角度
+
+	//MoveCameraAt( 0 , -0.004f , 384.691f , 14.930f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 19.762f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -3.187f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 175.718f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 55.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	Wait(FADE_NORMAL)
+
+	Wait(40)
+
+	//　　無言のまま周囲を警戒するダーナ。
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000l#000e#000m……………………………………\p"
+		"おかしいなあ……"
+		"確かに誰かの気配がしたんだけど。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	Wait(20)
+
+	CrossFade(FADE_CROSS)
+	StopThread(1000)
+	StopThread(1001)
+	StopThread(1002)
+	StopThread(1003)
+
+	MoveCameraAt( 0 , 0.409f , 401.688f , 14.509f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.891f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.368f , 0 )	// 基本仰角
+	RotateCamera( 0 , 335.171f , 0 )				// 角度
+	ChangeCameraPers( 0 , 41.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	//　　一度カメラを切り替える。
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#011e#000m……ふう、色々気になるけど"
+		"そろそろ行こう。\p"
+		"失われたエタニアの歴史……"
+		"機会があれば続きも見たい所だけど。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+	Wait(10)
+	
+	//　　イベント終了、操作許可。
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6529m:SubEV_Past_MonoLithB2_ED")
+}
+
+function "SubEV_Past_MonoLithB2_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	Portrait_Close( -1 )
+	Portrait_Unload( -1 )
+
+	MapAnime("monoris_all" , "off_wait")
+
+	//フラグ処理
+	SetFlag(GF_SUBEV_PAST_MONOLITH_B2, 1)	//過去編Ⅲ：【サブイベント：地下聖堂フロア２のモノリスを読む】
+	SetFlag(GF_TROPHY_ETERNIADUNGEON_02,1)		//モノリスを見た（手帳、トロフィー用）
+	SetFlag(GF_GALL_EVIMG_25,1)		//イラストギャラリーモード開封
+
+	SetChrPos("SubEV_Past_MonoLithB2", -100000.00f, 0.00f, 0.00f)
+
+	CallFunc("system:SetMarkerDANA")
+
+	CallFunc("mp6529m:init")
+	
+	//イベント後の再配置
+	SetChrPos("LEADER",-0.03f,401.39f,13.05f)
+	Turn("LEADER",0.59f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , -0.030f , 401.392f , 14.890f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.127f , 0 )	// 基本仰角
+	RotateCamera( 0 , -16.760f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	PlayBGM(BGM_6529_M, 0)
+	SoundEfx( SEFX_CAVE_L, 15 )
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+function "SubEV_Past_OpenB3"
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin")
+
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA",0.01f,427.34f,12.05f)
+	Turn("DANA",-179.78f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+
+	//カメラ設定
+	MoveCameraAt( 0 , -0.003f , 428.871f , 14.116f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 6.810f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 6.304f , 0 )	// 基本仰角
+	RotateCamera( 0 , 0.174f , 0 )				// 角度
+	ChangeCameraPers( 0 , 57.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6529m:SubEV_Past_OpenB3_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//──────────────────────────────
+	//	【PS4】【サブイベント：地下聖堂フロア１の大扉を開く】
+	//──────────────────────────────
+	//　　地下聖堂フロア１の大扉を調べるとイベント。
+	//　　（なお、徳が規定値に達していると扉が光る等の変化が起きている想定）
+	//─────────────────────────
+
+	if(!FLAG[GF_OPEN_FLOOR_03] )	//３層開封の予知を見ている
+	{
+		//	⇒徳が規定値に達していない
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7C扉は固く閉ざされたまま"
+			"#7C開く気配はない……"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+	}
+	//	⇒徳が規定値に達している
+	else if(FLAG[GF_OPEN_FLOOR_03] && (FLAG[GF_PAST_EPISODE_4_GO_CASTLE] || FLAG[GF_PAST_EPISODE_5_GO_VALLAY] || FLAG[GF_PAST_EPISODE_6_GO_GARDEN] || FLAG[GF_PAST_EPISODE_7_ENDEPISODE]))	
+	{
+		//　　ダーナが触れると、
+		//　　扉が反応して開け放たれていく。
+		//　　驚くダーナ。
+
+		//MoveCameraAt( 0 , -0.003f , 428.871f , 15.604f , 0 )	// 注視点
+		//ChangeCameraDistance( 0 , 9.419f , 0 )		// 基本距離
+		//ChangeCameraElevation( 0 , -8.506f , 0 )	// 基本仰角
+		//RotateCamera( 0 , 0.590f , 0 )				// 角度
+		//ChangeCameraPers( 0 , 57.000f , 0 )			// 視野角
+		//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -0.003f , 428.871f , 15.604f, 135 )
+		ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 9.419f , 135 )
+		ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -8.506f, 135 )
+		ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 0.590f , 135 )
+
+		ChangeAnimation( "DANA" , "ANI_EV_PRAY_S", -1 , 1 )
+		WaitAnimation2( "DANA" , -1, 1, "ANI_EV_PRAY_S",  0)
+		
+		Wait(30)
+		
+		MapAnime("EVENT_monorisgate","close-open")
+		MapAnimeLast("EVENT_monorisgate","open")
+		PlaySE(SE_GIM_PAST_DOOR, 100, 1, 0, 0, 1.0f, 0)
+		Wait(45)
+		EarthQuake(0.1f,0.1f,10)
+		PlaySE(SE_GIM_PAST_DOOR_STOP, 100, 0, 0, 0, 1.0f, 0)
+		StopSE(SE_GIM_PAST_DOOR, 200)
+
+		WaitThread(1000)
+		WaitThread(1001)
+		WaitThread(1002)
+		WaitThread(1003)
+
+		ChangeAnimation( "DANA" , "ANI_EV_PRAY_E", -1 , 1 )
+		WaitAnimation2( "DANA" , -1, 1, "ANI_EV_PRAY_E",  0)
+
+		TalkPopup("DANA",0,0,0,0,0)
+		{
+			"#000e#000mよし、開いたね。\p"
+			"今までと同じなら、この先に"
+			"歴史を記録したモノリスがあるはず。\p"
+			"余裕があれば先へ進んでみよう。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else
+	{
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7C扉が開く気配は全くない。"
+			"#7C今開くことはできないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+
+	//─────────────────────────
+	//　　ここで操作許可。
+
+	// フェードアウト
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6529m:SubEV_Past_OpenB3_ED")
+}
+
+function "SubEV_Past_OpenB3_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//フラグ処理
+	if(FLAG[GF_OPEN_FLOOR_03] && (FLAG[GF_PAST_EPISODE_4_GO_CASTLE] || FLAG[GF_PAST_EPISODE_5_GO_VALLAY] || FLAG[GF_PAST_EPISODE_6_GO_GARDEN] || FLAG[GF_PAST_EPISODE_7_ENDEPISODE]))	
+	{
+		SetFlag(GF_SUBEV_PAST_OPEN_B3, 1)		// 過去編Ⅲ：【サブイベント：地下聖堂フロア２の大扉を開く】を見た	
+	}
+
+	SetChrPos("SubEV_Past_OpenB3", -100000.00f, 0.00f, 0.00f)
+
+	CallFunc("system:SetMarkerDANA")
+	
+	CallFunc("mp6529m:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER",0.01f,427.34f,12.05f)
+	Turn("LEADER",-179.78f,360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	RestoreCamera(0,0)
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+function "Relocate_B2b"
+{
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",3.40f,277.17f,12.00f)
+	Turn("LEADER",-177.64f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 3.400f , 277.166f , 13.844f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.368f , 0 )	// 基本仰角
+	RotateCamera( 0 , -1.135f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}

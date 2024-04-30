@@ -1,0 +1,109 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/music.h"
+#include "inc/efx.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 始生代の大穴                                                               //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+
+
+function "init"
+{
+	CallFunc("rng:expMult")
+
+	if(FLAG[GF_MP6369_SWITCH_00]){
+		//ショートカット１を開通状態に
+		MapAnime( "locator_sw00" , "sw_on_loop" )
+		MapAnime( "locator_door00" , "sw_on_loop" )
+		SetChrWork("lookp00", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrPos( "LP_6361_Door", -100000.00f  , 0.00f ,0.00f )	// 【ＬＰ：mp6361のショートカット扉】
+	} else {
+		MapAnime( "locator_sw00" , "sw_off" )
+		MapAnime( "locator_door00" , "sw_off" )
+	}
+
+//マップ名表示はメインイベントで表示してから（GF_05MP6362_SEE_FALLSが立った後）マップチェンジでも表示されるようになる。
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN] && FLAG[GF_05MP6362_SEE_FALLS]){
+		if( FLAG[SF_LASTENTRY_NO] == 2 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_6361.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//始生代の大穴
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+//■メインイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+//■ストッパー・ＬＰセクション
+////////////////////////////////////////////////////////////////////////////////
+
+//	================================================
+//	【ＬＰ：mp6361のショートカット扉】
+//	================================================
+function "LP_6361_Door"
+{
+	//▼扉がロックされている期間
+	//	mp6361　25.06f	-292.34f	111.43f	16.27f付近の扉に
+	//	ギミックを解除するまでＬＰを仕掛ける
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	TurnToChr( LEADER , this , 7.5f )
+	Wait(10)
+
+	//	テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C扉は何らかの仕掛けで閉ざされているようだ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+//	SetChrPos("LEADER",0.00f,0.00f,0.00f)
+//	Turn("LEADER",0.00f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}

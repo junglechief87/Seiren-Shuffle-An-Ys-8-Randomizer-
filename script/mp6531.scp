@@ -1,0 +1,379 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+
+//-------------------------------------------
+// mp6531：地下聖堂　階層３
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+
+	}
+	// イベントエリア設定制御
+	//if( FLAG[SF_EVENT_ON] ){
+	
+	//イベント発生制御
+		// 一般配置ファンクション呼び出し
+		CallFunc("mp6531:NpcPosition")
+
+		//障壁01
+		if(FLAG[GF_MP6531_WALL_01]){
+			MapAnime( "gim_barrier31" , "open" )
+			SetChrWork("look_wall01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		} else {
+			MapAnime( "gim_barrier31" , "close" )
+		}
+		
+		//障壁02
+		if(FLAG[GF_MP6531_WALL_02]){
+			MapAnime( "gim_barrier32" , "open" )
+			SetChrWork("look_wall02", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		} else {
+			MapAnime( "gim_barrier32" , "close" )
+		}
+		
+	//}
+	
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 ){
+			VisualName("visual/mapname/mn_6531.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//旧地下聖堂・第３層
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■配置制御セクション
+//////////////////////////////////////////////////////////////////////
+function "NpcPosition"
+{
+	//if( FLAG[GF_SPEEDRUN_SKILL_HUMMEL] &&	// やり込みスキル習得：⑤▼ヒュンメルＶＳマスターコングを勝利した
+	//	!FLAG[GF_SPEEDRUN_SKILL_ADOL] )		// やり込みスキル習得：⑥▼アドルＶＳマスターコングを勝利した
+	//{
+	//}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+
+
+//////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+//////////////////////////////////////////////////////////////////////
+
+function "talk_wall01"
+{
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)		// LP操作、ストッパーなどのシンプルイベント
+	SetStopFlag(STOPFLAG_SKIPOK)		// ×ボタンスキップを許可する
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	TurnToChr("LEADER", "this", 60.0f)
+	ExecuteCmd( 1 , TurnToChr("PLAYER2","PLAYER1",60.0f) )
+	ExecuteCmd( 1 , TurnToChr("PLAYER3","PLAYER1",60.0f) )
+	SetChrInfoFlag( "PLAYER1" , INFOFLAG_FIXED )
+	SetChrInfoFlag( "PLAYER2" , INFOFLAG_FIXED )
+	SetChrInfoFlag( "PLAYER3" , INFOFLAG_FIXED )
+	SetChrInfoFlag( "PLAYER1" , INFOFLAG_NOATARI )
+	SetChrInfoFlag( "PLAYER2" , INFOFLAG_NOATARI )
+	SetChrInfoFlag( "PLAYER3" , INFOFLAG_NOATARI )
+	//Wait(15)
+
+	if( ALLITEMWORK[ICON3D_RELEASESTONE]==0 )
+	{
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cどこからか湧きだした理力が"
+			"#7C障壁を作り出している。\p"
+			"#7Cこのままでは通れないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else
+	{
+		Portrait_Load( 0 , "system/white.itp" )		//擬似フェードアウト用
+		Portrait_Create(0 , 0 , 0 ,
+						0 , 0 , 1920, 1080 ,
+						0.0f,0x00bfffff,0x00000000)
+		Portrait_Anime(  0 , PR_ANIME_COLOR, 0.75f, 1.0f, 1.0f, 0.5f, 15)
+		Wait(5)
+		PlaySE(SE_GIM_MAGWALL_KEY, 100, 0, 0, 0, 1.0f, 0)
+		Wait(10)
+		Portrait_Anime(  0 , PR_ANIME_COLOR, 0.75f, 1.0f, 1.0f, 0.0f, 15)
+		Wait(20)
+		
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7C手元にある『解理石』が"
+			"#7C強い反応を示している。\p"
+			"#7C障壁に向けて掲げますか？"
+			"#7C(所持数 #703N )\p"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		//選択肢
+		SetFlag(TF_MENU_SELECT,0)
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(0,"『解理石』を使う")
+		MenuAdd(1,"やめる")
+		MenuOpen( TF_MENU_SELECT , -1 , SYSTEM_PPOSY , -2 , -2 , 10 , 1)
+		WaitMenu(0)
+		MenuClose(10,0)
+		
+		// 使う
+		if( 0==FLAG[TF_MENU_SELECT] ){
+			//開始処理ここから----------------------------------------------------
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+			
+		//イベント開始前情報の保存
+		SaveEventState()
+		SaveCamera()
+
+		//パーティ状態のリセット
+		CallFunc("system:party_reset")
+		
+		//カメラ設定
+		MoveCameraAt( 0 , -108.223f , 224.070f , -182.031f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 17.400f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 2.919f , 0 )	// 基本仰角
+		RotateCamera( 0 , 90.0f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		// 被写界深度の設定
+		SetDoF(0, LERP_LINEAR, 2.000, 60.000, 1.000, 0.700, 0.500)
+		// グレアの設定
+		SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+		
+			MapAnime("gim_barrier31", "close-open" )	
+			MapAnimeLast( "gim_barrier31","open")
+			
+			ExecuteCmd(1000, ChangeCameraDistance, INTERPOLATE_SPHERE , 18.000f , 90 )
+			FadeIn(FADE_BLACK,FADE_FAST)
+			WaitFade()
+			PlaySE(SE_GIM_MAGWALL_OPEN, 100, 0, 0, 0, 1.0f, 0)
+			WaitThread(1000)
+			Wait(30)
+		
+			FadeOut(FADE_BLACK, FADE_FAST)
+			WaitFade()
+			
+			//　　操作許可を戻す。
+
+			//終了処理ここから----------------------------------------------------
+			//イベント前のキャラ情報を復帰
+			RestoreEventState()
+
+			//キャラモーション初期化
+			CallFunc("system:reset_chrmot_ALL")
+
+			//パーティキャラを解放
+			ReleaseEventPartyChr()
+
+			//マップパラメーターリセット
+			ResetMapParam(-1)
+
+			//エフェクトの停止
+			StopEffect(-1, ALL, 1)
+
+			//フラグ処理
+			SetFlag(GF_MP6531_WALL_01, 1)
+			SetChrWork("look_wall01", CWK_CHECKOFF, 1)
+			DeleteItem( ICON3D_RELEASESTONE, 1 )	// 解理石
+
+			//イベント後の再配置
+
+			//カメラ位置復帰
+			RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+			CallFunc("system:camera_reset")
+
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+			FadeIn(FADE_BLACK,FADE_FAST)
+			//WaitFade()
+		}
+
+		Portrait_Close(  0 )
+		Portrait_Unload( 0 )
+	}
+
+	ResetChrInfoFlag( "PLAYER1" , INFOFLAG_FIXED )
+	ResetChrInfoFlag( "PLAYER2" , INFOFLAG_FIXED )
+	ResetChrInfoFlag( "PLAYER3" , INFOFLAG_FIXED )
+	ResetChrInfoFlag( "PLAYER1" , INFOFLAG_NOATARI )
+	ResetChrInfoFlag( "PLAYER2" , INFOFLAG_NOATARI )
+	ResetChrInfoFlag( "PLAYER3" , INFOFLAG_NOATARI )
+	ResetStopFlag(STOPFLAG_SKIPOK)
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}
+
+
+function "talk_wall02"
+{
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)		// LP操作、ストッパーなどのシンプルイベント
+	SetStopFlag(STOPFLAG_SKIPOK)		// ×ボタンスキップを許可する
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	TurnToChr("LEADER", "this", 60.0f)
+	ExecuteCmd( 1 , TurnToChr("PLAYER2","PLAYER1",60.0f) )
+	ExecuteCmd( 1 , TurnToChr("PLAYER3","PLAYER1",60.0f) )
+	SetChrInfoFlag( "PLAYER1" , INFOFLAG_FIXED )
+	SetChrInfoFlag( "PLAYER2" , INFOFLAG_FIXED )
+	SetChrInfoFlag( "PLAYER3" , INFOFLAG_FIXED )
+	SetChrInfoFlag( "PLAYER1" , INFOFLAG_NOATARI )
+	SetChrInfoFlag( "PLAYER2" , INFOFLAG_NOATARI )
+	SetChrInfoFlag( "PLAYER3" , INFOFLAG_NOATARI )
+	//Wait(15)
+
+	if( ALLITEMWORK[ICON3D_RELEASESTONE]==0 )
+	{
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cどこからか湧きだした理力が"
+			"#7C障壁を作り出している。\p"
+			"#7Cこのままでは通れないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+	}
+	else
+	{
+		Portrait_Load( 0 , "system/white.itp" )		//擬似フェードアウト用
+		Portrait_Create(0 , 0 , 0 ,
+						0 , 0 , 1920, 1080 ,
+						0.0f,0x00bfffff,0x00000000)
+		Portrait_Anime(  0 , PR_ANIME_COLOR, 0.75f, 1.0f, 1.0f, 0.5f, 15)
+		Wait(5)
+		PlaySE(SE_GIM_MAGWALL_KEY, 100, 0, 0, 0, 1.0f, 0)
+		Wait(10)
+		Portrait_Anime(  0 , PR_ANIME_COLOR, 0.75f, 1.0f, 1.0f, 0.0f, 15)
+		Wait(20)
+		
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7C手元にある『解理石』が"
+			"#7C強い反応を示している。\p"
+			"#7C障壁に向けて掲げますか？"
+			"#7C(所持数 #703N )\p"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+		
+		//選択肢
+		SetFlag(TF_MENU_SELECT,0)
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(0,"『解理石』を使う")
+		MenuAdd(1,"やめる")
+		MenuOpen( TF_MENU_SELECT , -1 , SYSTEM_PPOSY , -2 , -2 , 10 , 1)
+		WaitMenu(0)
+		MenuClose(10,0)
+		
+		// 使う
+		if( 0==FLAG[TF_MENU_SELECT] ){
+			//開始処理ここから----------------------------------------------------
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+			
+		//イベント開始前情報の保存
+		SaveEventState()
+		SaveCamera()
+
+		//パーティ状態のリセット
+		CallFunc("system:party_reset")
+		
+		//カメラ設定
+		MoveCameraAt( 0 , 108.223f , 224.070f , -182.031f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 17.400f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 2.919f , 0 )	// 基本仰角
+		RotateCamera( 0 , -90.0f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+		// 被写界深度の設定
+		SetDoF(0, LERP_LINEAR, 2.000, 60.000, 1.000, 0.700, 0.500)
+		// グレアの設定
+		SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+		
+			MapAnime("gim_barrier32", "close-open" )	
+			MapAnimeLast( "gim_barrier32","open")
+			
+			ExecuteCmd(1000, ChangeCameraDistance, INTERPOLATE_SPHERE , 18.000f , 90 )
+			FadeIn(FADE_BLACK,FADE_FAST)
+			WaitFade()
+			PlaySE(SE_GIM_MAGWALL_OPEN, 100, 0, 0, 0, 1.0f, 0)
+			WaitThread(1000)
+			Wait(30)
+		
+			FadeOut(FADE_BLACK, FADE_FAST)
+			WaitFade()
+			
+			//　　操作許可を戻す。
+
+			//終了処理ここから----------------------------------------------------
+			//イベント前のキャラ情報を復帰
+			RestoreEventState()
+
+			//キャラモーション初期化
+			CallFunc("system:reset_chrmot_ALL")
+
+			//パーティキャラを解放
+			ReleaseEventPartyChr()
+
+			//マップパラメーターリセット
+			ResetMapParam(-1)
+
+			//エフェクトの停止
+			StopEffect(-1, ALL, 1)
+
+			//フラグ処理
+			SetFlag(GF_MP6531_WALL_02, 1)
+			SetChrWork("look_wall02", CWK_CHECKOFF, 1)
+			DeleteItem( ICON3D_RELEASESTONE, 1 )	// 解理石
+
+			//イベント後の再配置
+
+			//カメラ位置復帰
+			RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+			CallFunc("system:camera_reset")
+
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+			FadeIn(FADE_BLACK,FADE_FAST)
+			//WaitFade()
+		}
+
+		Portrait_Close(  0 )
+		Portrait_Unload( 0 )
+	}
+
+	ResetChrInfoFlag( "PLAYER1" , INFOFLAG_FIXED )
+	ResetChrInfoFlag( "PLAYER2" , INFOFLAG_FIXED )
+	ResetChrInfoFlag( "PLAYER3" , INFOFLAG_FIXED )
+	ResetChrInfoFlag( "PLAYER1" , INFOFLAG_NOATARI )
+	ResetChrInfoFlag( "PLAYER2" , INFOFLAG_NOATARI )
+	ResetChrInfoFlag( "PLAYER3" , INFOFLAG_NOATARI )
+	ResetStopFlag(STOPFLAG_SKIPOK)
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+}

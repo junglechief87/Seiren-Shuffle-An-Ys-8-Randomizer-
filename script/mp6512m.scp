@@ -1,0 +1,1346 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+#include "inc/temp/mp6512m.h"
+
+//-------------------------------------------
+// mp6512m：地下聖堂　階層１　火の鳥部屋１
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	MapAnime("@gate_02","close")
+	MapAnime("gate02_lumi1","off")//像光21_OFF
+	MapAnime("gate02_lumi2","off")//像光22_OFF
+
+	EventAreaEnable( "Stopper_Past_02_08" , 0 )
+	EventAreaEnable( "evb2_act_1404" , 0 )	//アクティブボイス
+				
+	if( FLAG[SF_EVENT_ON] )
+	{
+		SetChrPos("SubEV_Past_02_SpiritB", -100000.00f, 0.00f, 0.00f)
+
+		//イベント発生制御
+		if( FLAG[GF_PAST_EPISODE_2_GO_SOUTHGATE] )						//▼過去編Ⅱ南門へ向かう
+		{
+			if( !FLAG[GF_SUBEV_PAST_02_SPIRITB] )						// 過去編Ⅱ：【精霊救出Ｂ：渦から精霊を救出する（必須）】を見た
+			{
+				SetChrPos("SubEV_Past_02_SpiritB",200.06f,88.04f,8.00f)	// 過去編Ⅱ：【精霊救出Ｂ：渦から精霊を救出する（必須）】
+			}
+		}
+		//ストッパー制御
+		if( FLAG[GF_PAST_EPISODE_2_GO_SOUTHGATE] )				//▼過去編Ⅱ南門へ向かう
+		{
+			if( !FLAG[GF_SUBEV_PAST_02_SPIRITB] )				// 過去編Ⅱ：【精霊救出Ｂ：渦から精霊を救出する（必須）】を見た
+			{
+				EventAreaEnable( "Stopper_Past_02_08" , 1 )
+			}
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_1404]){
+			EventAreaEnable( "evb2_act_1404" , 1 )
+		}
+	}
+
+	// イベントエリア設定制御
+	EventAreaEnable( "switch_02_tuto" , 0 )
+	EventAreaEnable( "gimic_start_02" , 0 )
+
+	//if( FLAG[SF_EVENT_ON] ){
+	
+		// 一般配置ファンクション呼び出し
+		CallFunc("mp6512m:NpcPosition")
+
+	//ギミック制御
+		// 灯火の扉_２番目のフロア
+		if( FLAG[GF_MP6511_SWITCH_02] ){
+			MapAnime( "@gate_02" , "open" )
+			SetChrPos("bird02_01", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+			SetChrPos("bird02_02", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+			
+			SetChrWork("statue02_02_1", CWK_TEMP_INT2, 0)//像1_OFF
+			ChangeAnimation( "statue02_02_1" , "ANI_DEAD2", -1 , 1 )
+			SetChrWork("statue02_02_2", CWK_TEMP_INT2, 0)//像1_OFF
+			ChangeAnimation( "statue02_02_2" , "ANI_DEAD2", -1 , 1 )
+				
+		} else {
+			SetChrWork("bird02_01", CWK_TEMP_FLOAT9, 1.0f)//ゾーン別の速度倍率
+			SetChrWork("bird02_02", CWK_TEMP_FLOAT9, 1.0f)//ゾーン別の速度倍率
+			
+			// スイッチ02・初回
+			if( !FLAG[GF_MP6511_TUTO_02] ){
+				SetChrPos("bird02_01", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+				SetChrPos("bird02_02", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+			
+				MapAnime( "@gate_02" , "open" )
+				EventAreaEnable( "switch_02_tuto" , 1 )
+				//コア浮遊状態
+				ChangeAnimation( "bird02_01" , "ANI_UNI2", -1 , 1 )
+				ChangeAnimation( "bird02_02" , "ANI_UNI2", -1 , 1 )
+				MapAnime("gate02_lumi1","off")// 像光21_OFF
+				MapAnime("gate02_lumi2","off")// 像光22_OFF
+				
+				SetChrWork("statue02_02_1", CWK_TEMP_INT2, 0)//像1_OFF
+				ChangeAnimation( "statue02_02_1" , "ANI_DEAD2", -1 , 1 )
+				SetChrWork("statue02_02_2", CWK_TEMP_INT2, 0)//像1_OFF
+				ChangeAnimation( "statue02_02_2" , "ANI_DEAD2", -1 , 1 )
+				
+			}
+			else{
+				MapAnime( "@gate_02" , "close" )
+				EventAreaEnable( "gimic_start_02" , 1 )
+				// 鳥状態
+				ChangeAnimation( "bird02_01" , "ANI_UNI3", -1 , 1 )
+				ChangeAnimation( "bird02_02" , "ANI_UNI3", -1 , 1 )
+
+				ChangeAnimation( "statue02_02_1" , "ANI_WAIT", -1 , 1 )
+				SetChrWork("statue02_02_1", CWK_TEMP_INT2, 1)//像21_ON
+				ChangeAnimation( "statue02_02_2" , "ANI_WAIT", -1 , 1 )
+				SetChrWork("statue02_02_2", CWK_TEMP_INT2, 1)//像22_ON
+			}
+		}
+
+	//}
+	
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_1404"
+{
+	if (!FLAG[GF_AVOICE_1404])
+	{
+		EventAreaEnable( "evb2_act_1404" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_1404, 1, 0)	//地下聖堂で精霊救出ポイント手前にきたら
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■配置制御セクション
+//////////////////////////////////////////////////////////////////////
+function "NpcPosition"
+{
+	if(FLAG[GF_SUBEV_PAST_02_SPIRITB] && !FLAG[GF_SUBEV_PAST_02_BOSSMAE])
+	{
+		//精霊エイミー
+		SetChrPos("Eimy",200.06f,88.04f,8.00f)	
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■エイミーの会話
+//////////////////////////////////////////////////////////////////////
+
+function "Talk_Eimy"
+{
+	SetStopFlag(STOPFLAG_TALK)
+	CallFunc("system:talk_begin_zoom")		//TALK_ZOOM
+
+	//　　話しかけると以下の選択肢。
+	//選択肢
+	
+	SetFlag(TF_MENU_SELECT,0)
+	while( FLAG[TF_MENU_SELECT] >= 0 )	//選択肢ループ
+	{
+		MenuReset()
+		MenuType(MENUTYPE_POPUP)
+		MenuAdd(1,"話をする")
+		MenuAdd(2,"精霊の品を求める")
+		MenuAdd(-1,"やめる")
+		MenuOpen( TF_MENU_SELECT , -1 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+		WaitMenu(0)
+		MenuClose(10,0)
+	
+		if(FLAG[TF_MENU_SELECT] == 1)
+		{
+			//　　※すぐにショップが使えるように救出場所の近くに置く。
+			//	つくもの精霊エイミー
+			TalkPopup("Eimy",0,0,0,0,0)
+			{
+				"私のアイテムは"
+				"とっても、とーっても貴重なんです。\p"
+				"い、いいですか？"
+				"ビタ一文、まけませんからね！"
+			}
+			WaitPrompt()
+			WaitCloseWindow()
+		}
+		else if(FLAG[TF_MENU_SELECT] == 2)
+		{
+			ShopOpen(SHOP_ID_PAST1,-1)
+		}
+	}
+	ResetStopFlag(STOPFLAG_TALK)
+}
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+function "SubEV_Past_02_SpiritB"
+{
+	//開始処理ここから-----------------------------------------------
+
+	CallFunc("system:event_begin")
+
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	//キャラ初期状態の設定				
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrInfoFlag("DANA", INFOFLAG_NOCHRATARI)
+	SetChrPos("DANA",199.94f,85.63f,8.00f)
+	Turn("DANA",-179.51f,360.0f)
+	ChangeAnimation("DANA", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("DANA", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT2,ANI_SIGN_HIDE,1)
+
+	// チュートリアルポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+	Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(2, "visual/help/hp_a52.itp" )	// help_a52：エイミーのショップ
+	Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+
+		//カメラ設定
+	MoveCameraAt( 0 , 200.091f , 86.899f , 9.178f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 4.020f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -3.202f , 0 )	// 基本仰角
+	RotateCamera( 0 , 26.965f , 0 )				// 角度
+	ChangeCameraPers( 0 , 42.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 3.000, 70.000, 2.000, 0.950, 0.500)					//イベント毎に調整
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)	//イベント毎に調整
+
+	//スキップ許可
+	SetSkipScript("mp6512m:SubEV_Past_02_SpiritB_ED")
+
+	//開始処理ここまで-----------------------------------------------
+
+	FadeBGM(70,30)
+	PlaySE(SE_SPIRIT_SAVE_01, 80, 1, 500, 0, 1.0f, 0)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//──────────────────────────────
+	//	【PS4】【精霊救出Ｂ：渦から精霊を救出する（必須）】
+	//──────────────────────────────
+	//　　渦を調べるとイベント起動。
+	//　　ダーナは指先に理力を纏わせて、光る渦にそっと触れる。
+	//　　すると光る渦ははじけて消滅し、
+	//　　中から小さな精霊が現れる。
+
+	ChangeAnimation( "DANA" , "ANI_EV_SPIRIT_S", -1 , 1 )
+	Wait(15)
+	PlaySE(SE_SPIRIT_SAVE_02, 60, 1, 500, 0, 1.0f, 0)
+	WaitAnimation2( "DANA" , -1, 1, "ANI_EV_SPIRIT_S",  0)
+
+	ChangeAnimation( "DANA" , "ANI_EV_SPIRIT_E", -1 , 1 )
+	StopEffect(106720,ALL,1)
+	StopSE(SE_SPIRIT_SAVE_02, 3000)
+
+	CrossFade(15)
+	ChangeAnimation( "SubEV_Past_02_SpiritB" , "ANI_RELEASE", -1 , 1 )
+	Wait(90)
+	StopSE(SE_SPIRIT_SAVE_01, 1000)
+	PlaySE(SE_SPIRIT_SAVE_03, 100, 0, 0, 0, 1.0f, 0)
+	WaitAnimation2( "SubEV_Past_02_SpiritB" , -1, 1, "ANI_RELEASE",  0)
+
+	Wait(15)
+	SetChrPos("Eimy",200.06f,88.04f,8.00f)
+	ChangeAnimation( "Eimy" , "ANI_EV_ESCAPE", -1 , 1 )
+	Blur(BLUR_TYPE_EXPAND, 0.4f , 10)
+	EarthQuake(0.15, 0.15 , 10)
+	PlaySE(SE_SPIRIT_SAVE_04, 80, 0, 0, 0, 1.0f, 0)
+	Wait(7)
+	ChangeAnimation( "DANA" , "ANI_EV_SUP_S", -1 , 1 )
+	Wait(50)
+
+	//	精霊
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"はぁ、はぁ……"
+		"やっと抜け出せたぁ。\p"
+		"どこのどなたか存じませんが、"
+		"どうもありがとう……\p"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "Eimy" , "ANI_EV_YES", -1 , 1 )
+
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"ってえええええ！？"
+		"あなたエタニア人～！？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "DANA" , "ANI_EV_SUP_E", -1 , 1 )
+
+	//　　精霊は大慌てする。
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000e#000mあははは……"
+		"（なんだか賑やかな精霊だなぁ。）\p"
+		"私はダーナ。"
+		"よかった、無事みたいで。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	精霊
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"その、わたしはエイミー。"
+		"“つくも”の精霊エイミーって言います。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"ごめんなさい、そのぅ、"
+		"昔からヒトはちょっと苦手で……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , 200.006f , 85.913f , 9.476f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 1.620f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -0.265f , 0 )	// 基本仰角
+	RotateCamera( 0 , 146.201f , 0 )				// 角度
+	ChangeCameraPers( 0 , 42.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	//	"DANA"
+	TalkPopup("DANA",0,2,0,0,0)
+	{
+		"#091e#080mあはは、気にしないで。\p"
+		"#0L（“付喪#4Rつくも#R”……確かアイテムや"
+		"  理法具につく精霊だったっけ。）\p"
+		"#0L（人と関わる事が多いから"
+		"  色々あったのかもしれないね……）"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　ダーナにＰＡエモーション。
+	EmotionEx("DANA", 0.00f,EMO_PA,0,5,1,1,1.0f )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_CLOSE_E,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	Wait(35)
+	
+	TalkPopup("DANA",0,2,0,0,0)
+	{
+		"#000mそうだ、１つ聞いてもいいかな。\p"
+		"小さな女の子を見かけなかった？"
+		"ここを通ったかもしれないんだけど……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , 200.161f , 86.235f , 9.426f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.170f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 5.901f , 0 )	// 基本仰角
+	RotateCamera( 0 , 18.196f , 0 )				// 角度
+	ChangeCameraPers( 0 , 42.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	Wait(FADE_CROSS)
+
+
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"女の子ですか？　うーん……\p"
+		"わたし、アイテム拾いに夢中で"
+		"全然気づきませんでした。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	ChangeAnimation( "DANA" , "ANI_EV_UDEGUMI_S", -1 , 1 )
+
+	//	"DANA"
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000e#000mそ、そうなんだ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"今日も何か落ちてないかと"
+		"ここを回っていたんですけれど……\p"
+		"まさかキレイなガラス玉の前に"
+		"あんな恐ろしい罠があるだなんて！\p"
+		"あなたが来てくれなかったら"
+		"危うく消えてしまうところでした……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　精霊エイミーにＰＡエモーション
+	EmotionEx("Eimy", 0.00f,EMO_PA,0,5,1,1,1.0f )
+	Wait(35)
+
+	ChangeAnimation( "Eimy" , "ANI_EV_YES", -1 , 1 )
+
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"そうだ！\p"
+		"わたしは物を拾い集めるだけの"
+		"しがない精霊です。\p"
+		"でも……あなたには恩返ししたいから"
+		"特別にわたしのアイテムを譲ってあげます。\p"
+		"これはとってもとっても"
+		"珍しいことなんですからね！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "DANA" , "ANI_EV_UDEGUMI_E", -1 , 1 )
+
+	//	"DANA"
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000e#000mアイテム……そういえば精霊は"
+		"強力な秘宝を持っているって言うけど。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"えっへん！"
+		"まあそういう品もあります。\p"
+		"ええっと、今日の手持ちで"
+		"よさそうなのは……"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+
+	ChangeAnimation( "DANA" , "ANI_EV_TEWATASI_S", -1 , 1 )
+	WaitAnimation2( "DANA" , -1, 1, "ANI_EV_TEWATASI_S",  0)
+
+	PlaySE(SE_SPIRIT_SAVE_06, 50, 0, 1000, 0, 1.0f, 0)
+	ChangeAnimation( "Eimy" , "ANI_EV_JUMP", -1 , 1 )
+	WaitAnimation2( "Eimy" , -1, 1, "ANI_EV_JUMP",  0)
+	Wait(35)
+	
+	GetItemMessageExPlus(ICON3D_US_OLD_HEAL02, 1 , ITEMMSG_SE_JINGLE, "を手に入れた！", 0, 0)
+	WaitPrompt()
+	WaitCloseWindow()
+
+	FadeBGM(70,20)
+
+	//　　※アイテムは変更されるかも。
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000e#000mわあ、凄い……"
+		"理力を溶かし込んだ秘薬みたいだね。\p"
+		"本当に貰ってしまっていいの？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "DANA" , "ANI_EV_TEWATASI_E", -1 , 1 )
+
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"はい……あなたは恩人ですから。\p"
+		"で、でもこれ以上は有料ですよ？\p"
+		"有料2行目"
+		"精霊の間では、『理力の欠片』と"
+		"呼ばれる宝石が重宝されるんです。\p"
+		"あなたもお持ちなら、他のアイテムも"
+		"譲ってあげなくもないですよ。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	"DANA"
+	TalkPopup("DANA",0,1,0,0,0)
+	{
+		"#000e#000mあはは、ありがとう。\p"
+		"（女の子は見つからなかったけど、"
+		"  今後力になってくれそうかな。）"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//	つくもの精霊エイミー
+	TalkPopup("Eimy",0,2,0,0,0)
+	{
+		"わたしは毎日"
+		"遺跡めぐりをしていますから。\p"
+		"なにかあれば、ダーナ。"
+		"あなたも声を掛けてくださいね。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	//　　画面暗転。
+	PlaySE(SE_QUEST_END, 100, 0, 0, 0, 1.0f, 0)		// クエスト達成	
+
+	//	システムテキスト
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#8S"
+		"#-1W#4Cつくもの精霊エイミーを救出した！#10W" 
+		"#8S"
+	}
+	Wait(10)
+	CallFunc("system:QuestVoice_Success")
+	WaitPrompt()
+	WaitCloseWindow()
+
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#-1W#4Cつくもの精霊エイミーの店が"
+		"#4C利用できるようになった。#10W"
+	}
+	Wait(10)
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	PlaySE(SE_VIRTUE, 100, 0, 0, 0, 1.0f, 0)	//徳ポイントアップ
+	
+	//	システムテキスト
+	TalkPopup(UNDEF,0,5,0,0,0)
+	{
+		"#8S"
+		"#-1W#4Cダーナの徳が上昇した。#10W"
+		"#8S"
+	}
+	Wait(10)
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// チュートリアル =======================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+	
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+		
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+		
+		FadeIn(FADE_BLACK, 0)
+		WaitFade()
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+
+		FadeOut(FADE_BLACK, 0)
+		WaitFade()
+		
+		// ポートレート閉じる
+		Portrait_Close(0)
+		Portrait_Close(1)
+		Portrait_Close(2)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+		
+	}
+	// =====================================================================
+
+	//　　徳ポイントを+5する。
+	//　　◆チュートリアル：精霊ショップ
+	//　　精霊はこれ以降、付近に一般配置して
+	//　　話しかけるとショップメニューが出るようにする。
+//
+//	// フェードアウト
+//	FadeOut(FADE_BLACK, FADE_FAST)
+//	WaitFade()
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6512m:SubEV_Past_02_SpiritB_ED")
+}
+
+function "SubEV_Past_02_SpiritB_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_DANA")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	SetChrPos("SubEV_Past_02_SpiritB",-100000.00f,0.00f,0.00f)	
+	SetChrPos("Eimy",-100000.00f,0.00f,0.00f)
+
+	//フラグ処理
+	SetFlag(GF_SUBEV_PAST_02_SPIRITB, 1)	//過去編Ⅱ：【精霊救出Ｂ：渦から精霊を救出する（必須）】
+	SetFlag(GF_TROPHY_ETERNIASPIRIT_02,1)		//精霊救出率カウント
+	SetFlag(GF_HELP_A52,1)		//エイミーのショップ
+
+	SetDiaryShopFlag(SHOP_ID_PAST1,1)				// 精霊エイミーのショップ・雑貨
+	SetDiaryShopFlag(SHOP_ID_PAST2,1)				// 精霊エイミーのショップ・薬
+
+	GetItem(ICON3D_US_OLD_HEAL02,1)		//全快薬
+
+	SetFlag(GF_VIRTURE_POINT,(FLAG[GF_VIRTURE_POINT] + 5 ))			//徳ポイント加算
+	EventCue("system:EV_FloorOpen")			//扉が開く予知を視る キューを入れる
+
+	CallFunc("system:Get_DanaSpirit")		//「全てのエタニアの精霊を救出した。」トロフィー判定用
+
+	CallFunc("mp6512m:init")
+
+	ActiveVoiceStop(ACTIVEVOICESTOP_FORCE)		//アクティブボイス強制終了
+	
+	//イベント後の再配置
+	SetChrPos("LEADER",202.02f,78.67f,8.00f)
+	Turn("LEADER",-30.20f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 202.015f , 78.672f , 9.881f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 18.408f , 0 )	// 基本仰角
+	RotateCamera( 0 , -157.585f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	//WaitFade()
+
+	//終了処理ここまで----------------------------------------------------
+
+}
+
+//──────────────────────────────
+//	【ストッパー：エイミー救出前に進めない】
+//──────────────────────────────
+function "Stopper_Past_02_08"
+{
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+	//　　この精霊を助けずに次のエリアへ進もうとすると
+	//　　ストッパーが掛かる。
+	
+	TalkPopup("LEADER",0,0,0,0,0)
+	{
+		"#000e#000mさっきの声、"
+		"こっちの方じゃない気がする……\p"
+		"やっぱり見過ごせないよね。"
+		"戻って探してみよう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+//	TalkPopup("LEADER",0,0,0,0,0)
+//	{
+//		"#000e#000mやっぱり見過ごせないよね。"
+//		"精霊を助けてあげなくちゃ。"
+//	}
+//	WaitPrompt()
+//	WaitCloseWindow()
+
+	//　　再配置して操作許可。
+
+//終了処理ここから----------------------------------------------------
+	CrossFade(FADE_CROSS)
+	SetStopFlag(STOPFLAG_NOCHARACLIP)
+
+	//イベント後の再配置
+	SetChrPos("LEADER",152.08f,171.96f,0.00f)
+	Turn("LEADER",0.96f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	RestoreCamera(0,0)
+	ResetCameraObserver(0)
+	ResetCameraZPlane()
+	Wait(FADE_CROSS)
+
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+//終了処理ここまで----------------------------------------------------
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■サブイベントセクション
+//////////////////////////////////////////////////////////////////////
+
+//-------------------------------------------
+function "switch_02_01"
+{
+	if (statue02_02_1.CHRWORK[CWK_TEMP_INT2]) {
+		// 灯火が消える
+		SetChrWork("statue02_02_1", CWK_TEMP_INT2, 0)//像1_OFF
+		MapAnime( "gate02_lumi1" , "off-on" )//像光1_ON
+		MapAnimeLast("gate02_lumi1", "on" )
+		
+		PlaySE( SE_GIM_PAST_STATUE_OFF , 100 , 0,  0, 0, 1.0f, 0)
+		
+		CallFunc("mp6512m:switch_02_check")// 像をチェック
+	}
+}
+function "switch_02_02"
+{
+	if (statue02_02_2.CHRWORK[CWK_TEMP_INT2]) {
+		// 灯火が消える
+		SetChrWork("statue02_02_2", CWK_TEMP_INT2, 0)//像1_OFF
+		MapAnime( "gate02_lumi2" , "off-on" )//像光1_ON
+		MapAnimeLast("gate02_lumi2", "on" )
+		
+		PlaySE( SE_GIM_PAST_STATUE_OFF , 100 , 0,  0, 0, 1.0f, 0)
+		
+		CallFunc("mp6512m:switch_02_check")// 像をチェック
+	}
+}
+
+function "switch_02_check"
+{
+	SetFlag(TF_MP6511_NO_FIRE_COUNT, 0)	// 鎮火カウント　リセット
+	if (statue02_02_1.CHRWORK[CWK_TEMP_INT2]==0) {
+		SetFlag(TF_MP6511_NO_FIRE_COUNT, (FLAG[TF_MP6511_NO_FIRE_COUNT] + 1))	// 鎮火カウント
+	}
+	if (statue02_02_2.CHRWORK[CWK_TEMP_INT2]==0) {
+		SetFlag(TF_MP6511_NO_FIRE_COUNT, (FLAG[TF_MP6511_NO_FIRE_COUNT] + 1))	// 鎮火カウント
+	}
+	if (FLAG[TF_MP6511_NO_FIRE_COUNT] >= 2) {
+		// 扉を開く
+		EventCue("mp6512m:switch_02_open")
+	}
+}
+
+
+function "switch_02_open"
+{
+	//短いものはイベントスキップ不要とのこと
+
+	//叩いた直後のウエイト----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)		// LP操作、ストッパーなどのシンプルイベント
+	SetStopFlag(STOPFLAG_SKIPOK)		// ×ボタンスキップを許可する
+
+	// 一時的にプレイヤー無敵
+	SetChrWork(PLAYER1, CWK_MUTEKITIME, 90)
+	SetChrWork(PLAYER2, CWK_MUTEKITIME, 90)
+	SetChrWork(PLAYER3, CWK_MUTEKITIME, 90)
+	SetChrWork(PLAYER4, CWK_MUTEKITIME, 90)
+	if( LEADER.CHRWORK[CWK_YUKA] ) {
+		ChangeAnimation( "LEADER" , "ANI_WAIT", -1 , 1 )
+	}
+	Wait(10)
+
+	//開始処理ここから----------------------------------------------------
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+	MapAnime( "gate02_lumi1" , "on" )
+	MapAnime( "gate02_lumi2" , "on" )
+
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset_nopos")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+	SetChrWork("bird02_01", CWK_TEMP_INT5, 0)
+	SetChrWork("bird02_02", CWK_TEMP_INT5, 0)
+
+	//カメラ設定
+MoveCameraAt( 0 , 107.379f , 72.601f , 2.438f , 0 )	// 注視点
+ChangeCameraDistance( 0 , 25.300f , 0 )		// 基本距離
+ChangeCameraElevation( 0 , 4.678f , 0 )	// 基本仰角
+RotateCamera( 0 , 252.474f , 0 )				// 角度
+ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+RollCamera( 0 , 0.0f , 0 )				// ロール回転
+// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 50.000, 1.000, 0.700, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	// 扉見せる
+	PlaySE(SE_GIM_PAST_DOOR_PRE, 100, 0, 0, 0, 1.0f, 0)
+	MapAnime( "gate02_lumi1" , "on-off" )
+	MapAnimeLast("gate02_lumi1"       , "off" )
+	MapAnime( "gate02_lumi2" , "on-off" )
+	MapAnimeLast("gate02_lumi2"       , "off" )
+	Wait(40)
+
+	// 扉開く
+	PlaySE(SE_GIM_PAST_DOOR, 100, 1, 0, 0, 1.0f, 0)
+	MapAnime( "@gate_02" , "close-open" )
+	MapAnimeLast("@gate_02"       , "open" )
+	Wait(45)
+	EarthQuake(0.1f,0.1f,10)
+	PlaySE(SE_GIM_PAST_DOOR_STOP, 100, 0, 0, 0, 1.0f, 0)
+	StopSE(SE_GIM_PAST_DOOR, 200)
+	Wait(30)
+
+	//---------------------------------------------------
+	// 鳥が死亡
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+	MoveCameraAt( 0 , 80.549f , 74.666f , 5.478f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 9.700f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -18.621f , 0 )	// 基本仰角
+	RotateCamera( 0 , 207.115f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 死亡
+//	ChangeAnimation( "bird02_01" , "ANI_UNI3", -1 , 1 )
+	ChangeAnimation( "bird02_01" , "ANI_UNI7", -1 , 1 )
+
+	SetChrInfoFlag("bird02_01", INFOFLAG_FLING)
+	SetChrInfoFlag("bird02_01", INFOFLAG_NOGRAVITY)
+
+	SetChrPos("bird02_01",80.549f , 74.666f , 5.478f )
+	Turn("bird02_01",25.54f,360.0f)
+	Wait(10)
+		
+	FadeIn(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	Wait(120)
+
+	FadeOut(FADE_BLACK, FADE_FAST)
+	WaitFade()
+
+	//　　操作許可を戻す。
+
+	//終了処理ここから----------------------------------------------------
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+	SetChrWork("bird02_01", CWK_TEMP_INT5, 0)
+	SetChrWork("bird02_02", CWK_TEMP_INT5, 0)
+	SetChrPos("bird02_01", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+	SetChrPos("bird02_02", -100000.00f, 0.00f, 0.00f)	// 彼方へ
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL_nopos")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//エフェクトの停止
+	StopEffect(-1, ALL, 1)
+
+	//フラグ処理
+	SetFlag(GF_MP6511_SWITCH_02, 1)
+
+	//イベント後の再配置
+
+	//カメラ位置復帰
+	RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_SKIPOK)
+	ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+}
+
+
+// 初回チュートリアル：火の鳥を見せる
+function "switch_02_tuto"
+{
+	//開始処理ここから----------------------------------------------------
+
+	CallFunc("system:event_begin")
+	MapAnime("gate02_lumi1","off")// 像光21_OFF
+	MapAnime("gate02_lumi2","off")// 像光22_OFF
+	SetChrWork("statue02_02_1", CWK_TEMP_INT2, 0)//像21_OFF
+	SetChrWork("statue02_02_2", CWK_TEMP_INT2, 0)//像22_OFF
+	
+	//イベント開始前情報の保存
+	SaveEventState()
+	SaveCamera()
+
+	//パーティ状態のリセット
+	//CallFunc("system:party_remove")
+	CallFunc("system:party_reset")
+
+	//環境の初期化・不要なものを隠す
+	ClearDebris()
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+//	ResetChrPos((CHRTYPE_NPC | REMOVE_POS))
+
+	// チュートリアルポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+	Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(2, "visual/help/hp_b22.itp" )	// help_b22：地下聖堂『灯火台』
+	Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+
+	//キャラ初期状態の設定
+	SetChrWork("PLAYER1", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrPos("PLAYER1",75.0f,72.0f,0.00f)
+	Turn("PLAYER1",-88.08f,360.0f)
+	ChangeAnimation("PLAYER1", "ANI_WAIT", -1, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_EYE, ANI_E_WAIT, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_MOUTH, ANI_M_WAIT, 1)
+	ChangeSubAnimation("PLAYER1", SUBMOT_EXT1, ANI_E_LOOKC, 1)
+	SetChrInfoFlag("PLAYER1", INFOFLAG_NOCHRATARI)
+
+	//鳥モードの常駐エフェクトを消す(170307大草追加)
+	ChangeSubAnimation(bird02_01,SUBMOT_EXT1,ANI_CORE_FIRE_OFF,1)
+	ChangeSubAnimation(bird02_02,SUBMOT_EXT1,ANI_CORE_FIRE_OFF,1)
+	//鳥モードの常駐エフェクトを消す(170307大草追加)
+	
+	SetChrInfoFlag( "bird02_01" , INFOFLAG_NOGRAVITY )
+	SetChrPos("bird02_01",72.00f,55.99f,5.00f)
+	Turn("bird02_01",-119,360.0f)
+	ExecuteCmd(1, MoveTo, "bird02_01", 87.860f , 71.904f , 4.682f, 2.5f, 0.65f)
+//	ExecuteCmd(1, MoveTo, "bird02_01", 86.391f , 70.684f , 4.101f, 1.0f, 0.65f)
+//	ExecuteCmd(1, MoveTo, "bird02_01", 86.51f,70.43f,3.00f, 0.5f, 0.7f)
+	ExecuteCmd(2, MoveZ , "bird02_01" , 3.00f , 0 , INTERPOLATE_SPHERE  , 90 )
+
+	SetChrInfoFlag( "bird02_02" , INFOFLAG_NOGRAVITY )
+	SetChrPos("bird02_02",71.81f,87.84f,5.00f)
+	Turn("bird02_02",-60.00f,360.0f)
+	ExecuteCmd(3, MoveTo, "bird02_02", 87.860f , 71.904f , 4.682f, 2.5f, 0.65f)
+//	ExecuteCmd(3, MoveTo, "bird02_02", 86.233f , 73.480f , 4.101f, 1.0f, 0.65f)
+//	ExecuteCmd(3, MoveTo, "bird02_02", 86.54f,73.51f,3.01f, 0.5f, 0.7f)
+	ExecuteCmd(4, MoveZ , "bird02_02" , 3.00f , 0 , INTERPOLATE_SPHERE  , 90 )
+
+		//カメラ設定
+	MoveCameraAt( 0 , 77.924f , 72.010f , 2.117f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 10.100f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.477f , 0 )	// 基本仰角
+	RotateCamera( 0 , 269.991f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 0.000, 10.000, 1.000, 0.700, 0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300, 1.000, 1.000, 0.600, 0.000, 1.000)
+
+	//スキップ許可
+	SetSkipScript("mp6512m:switch_02_tuto_ED")
+
+	FadeIn(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 87.924f , 72.050f , 4.597f , 90 )	// 注視点
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 10.100f , 90 )		// 基本距離
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -8.629f , 90 )	// 基本仰角
+
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(3)
+	WaitThread(4)
+	WaitThread(5)
+	WaitThread(6)
+	
+	Wait(20)
+	
+	ChangeAnimation( "bird02_01" , "ANI_UNI5", -1 , 1 )
+	ChangeAnimation( "bird02_02" , "ANI_UNI5", -1 , 1 )
+	ChrNodeHide("bird02_01", "polySurface1", 1, 1)//スクリプトでモーション指定するとhide状態が解除されたフレームが見える対策
+	ChrNodeHide("bird02_02", "polySurface1", 1, 1)
+	Wait(3)
+	ChrNodeHide("bird02_01", "polySurface1", 0, 1)
+	ChrNodeHide("bird02_02", "polySurface1", 0, 1)
+	Wait(15)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 87.924f , 72.050f , 3.109f , 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.100f , 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 23.751f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 306.733f , 100 )
+
+	//MoveCameraAt( 0 , 87.924f , 72.050f , 3.109f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 10.100f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 23.751f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 306.733f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1004)
+
+	Wait(30)
+	
+	//---------------------------------------------------
+	// 像に火が点く
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , 88.408f , 71.957f , 2.960f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 16.700f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 33.044f , 0 )	// 基本仰角
+	RotateCamera( 0 , 89.519f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	//SetChrPos("bird02_01",65.61f,82.11f,9.71f	)
+	//Turn("bird02_01",103.64f,360.0f)
+	//SetChrPos("bird02_02",64.93f,61.86f,9.71f	)
+	//Turn("bird02_02",78.52f,360.0f)
+
+	SetChrPos("bird02_01",85.03f,68.21f,3.28f)
+	Turn("bird02_01",68.00f,360.0f)
+
+	SetChrPos("bird02_02",83.98f,75.81f,3.28f)
+	Turn("bird02_02",112.0f,360.0f)
+
+	ExecuteCmd(1, MoveTo, "bird02_01", 59.70f, 61.57f, 9.71f, 0.1f, 1.1f)
+	ExecuteCmd( 10, MoveZ , "bird02_01" , 9.71f , 0 , INTERPOLATE_LINEAR, 55 )
+
+	ExecuteCmd(2, MoveTo, "bird02_02", 59.72f, 82.71f, 9.71f , 0.1f, 1.1f)
+	ExecuteCmd( 20, MoveZ , "bird02_02" , 9.71f , 0 , INTERPOLATE_LINEAR, 55 )
+
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 66.997f , 71.939f , 10.153f, 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 19.200f , 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 10.576f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 89.698f , 100 )
+
+	//MoveCameraAt( 0 , 66.997f , 71.939f , 10.153f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 19.200f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 10.576f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 89.698f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(FADE_CROSS)
+
+	WaitThread(1)
+	WaitThread(2)
+	WaitThread(10)
+	WaitThread(20)
+	
+	ChangeAnimation( "bird02_02" , "ANI_UNI8", -1 , 1 )
+	Wait(20)
+	ChangeAnimation( "bird02_01" , "ANI_UNI8", -1 , 1 )
+	Wait(20)
+	ChangeAnimation( "statue02_02_2" , "ANI_RESURRECT", -1 , 1 )
+	Wait(20)
+	ChangeAnimation( "statue02_02_1" , "ANI_RESURRECT", -1 , 1 )
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1004)
+
+	CrossFade(FADE_NORMAL)
+
+	MoveCameraAt( 0 , 61.783f , 71.936f , 10.897f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 18.790f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -2.696f , 0 )	// 基本仰角
+	RotateCamera( 0 , 205.840f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	CrossFade(FADE_NORMAL)
+
+	Wait(100)
+
+	//---------------------------------------------------
+	// 扉が閉まる
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 61.783f , 71.936f , 11.765f, 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.430f , 100 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 13.030f , 100 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 270.141f , 100 )
+
+	//MoveCameraAt( 0 , 61.783f , 71.936f , 11.765f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 14.430f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , 13.030f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 270.141f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(60)
+	//PlaySE(SE_GIM_PAST_DOOR_PRE, 100, 0, 0, 0, 1.0f, 0)
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 56.488f , 83.232f , 14.841f, 100 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 4.430f , 100 )
+//	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , 10.131f , 100 )
+//	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE , 260.046f , 100 )
+//
+//	//MoveCameraAt( 0 , 56.488f , 83.232f , 14.841f , 0 )	// 注視点
+//	//ChangeCameraDistance( 0 , 0.270f , 0 )		// 基本距離
+//	//ChangeCameraElevation( 0 , 10.131f , 0 )	// 基本仰角
+//	//RotateCamera( 0 , 260.046f , 0 )				// 角度
+//	//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+//	//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+//	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+//	//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Wait(10)
+	PlaySE(SE_GIM_PAST_DOOR, 100, 1, 0, 0, 1.0f, 0)
+	MapAnime( "@gate_02" , "open-close" )
+	MapAnimeLast("@gate_02", "close" )
+	Wait(50)
+	EarthQuake(0.1f,0.1f,10)
+	PlaySE(SE_GIM_PAST_DOOR_STOP, 100, 0, 0, 0, 1.0f, 0)
+	StopSE(SE_GIM_PAST_DOOR, 200)
+	Wait(60)
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	FadeOut(FADE_BLACK, FADE_NORMAL)
+	WaitFade()
+
+	// チュートリアル =======================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+	
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+		
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+		
+		FadeIn(FADE_BLACK, 0)
+		WaitFade()
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+
+		FadeOut(FADE_BLACK, 0)
+		WaitFade()
+		
+		// ポートレート閉じる
+		Portrait_Close(0)
+		Portrait_Close(1)
+		Portrait_Close(2)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+		
+	}
+	// =====================================================================
+
+	//　　操作許可を戻す。
+
+	//終了処理ここから----------------------------------------------------
+	CallFunc("mp6512m:switch_02_tuto_ED")
+}
+function "switch_02_tuto_ED"
+{
+	//終了処理はスキップ禁止
+	SetSkipScript("")
+
+	//イベント前のキャラ情報を復帰
+	RestoreEventState()
+
+	//隠したものを復帰。
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	// ポートレートリリース
+	Portrait_Close(-1)
+	Portrait_Unload(-1)
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//エフェクトの停止
+	StopEffect(-1, ALL, 1)
+
+	//フラグ処理
+	SetFlag(GF_MP6511_TUTO_02, 1)			// スイッチ02・初回
+	SetFlag(GF_HELP_B22,1)				//地下聖堂『灯火台』
+
+	EventAreaEnable( "switch_02_tuto" , 0 )
+
+	StopThread(100)
+	
+	CallFunc("mp6512m:init")
+
+	ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+	ActiveVoiceStart(EACT_EVID_1801, 1, 0)	//はじめての灯火エリアで、火の鳥に灯火を再点灯されたら
+
+	//イベント後の再配置
+	SetChrPos("LEADER",75.0f,72.0f,0.00f)
+	Turn("LEADER",-88.08f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	SetChrPos("bird02_01",58.00f,84.00f,8.00f)
+	Turn("bird02_01",-90.00f,360.0f)
+	SetChrPos("bird02_02",58.00f,60.00f,8.00f)
+	Turn("bird02_02",-90.00f,360.0f)
+	// 鳥状態
+	SetChrWork("bird02_01", CWK_TEMP_INT5, 1)
+	SetChrWork("bird02_02", CWK_TEMP_INT5, 1)
+	ChrNodeHide("bird02_01", "polySurface1", 0, 1)
+	ChrNodeHide("bird02_02", "polySurface1", 0, 1)
+
+	//イベントスキップすると鳥がエフェクトを纏わない不具合を修正(17/04/26大草)
+	ChangeSubAnimation(bird02_01,SUBMOT_EXT1,ANI_CORE_FIRE_ON,1)
+	ChangeSubAnimation(bird02_02,SUBMOT_EXT1,ANI_CORE_FIRE_ON,1)
+
+	//カメラ位置復帰
+	MoveCameraAt( 0 , 75.163f , 72.050f , 1.850f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 7.632f , 0 )	// 基本仰角
+	RotateCamera( 0 , -90.140f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+	//RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+	//終了処理ここまで----------------------------------------------------
+}
+
+// ギミック起動
+function "gimic_start_02"
+{
+	if( FLAG[GF_MP6511_TUTO_02] ){
+		SetChrWork("bird02_01", CWK_TEMP_INT5, 1)
+		SetChrWork("bird02_02", CWK_TEMP_INT5, 1)
+
+		EventAreaEnable( "gimic_start_02" , 0 )
+	}
+}
+
