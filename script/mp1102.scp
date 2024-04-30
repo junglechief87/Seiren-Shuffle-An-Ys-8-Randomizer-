@@ -1,0 +1,403 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/efx.h"
+
+//-------------------------------------------
+// 1102：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1101" , 0 )
+	MapHide( "@BG2_mp1102" , 0 )
+	MapHide( "@BG2_mp1110" , 0 )
+	MapHide( "@BG2_mp1111" , 0 )
+	MapHide( "@BG2_mp1113" , 0 )
+	MapHide( "@BG2_mp1131" , 0 )
+	MapHide( "@BG2_mp1201" , 0 )
+
+	MapHide( "norosi" , 0 )	//狼煙OFF
+	
+	// イベントエリア設定制御
+	EventAreaEnable( "evb2_M01S020" , 0 )
+	EventAreaEnable( "evb2_act_0200" , 0 )	//アクティブボイス
+
+	MapHide( "skyfog2" , 0 )		//濃霧非表示
+
+	if( FLAG[SF_EVENT_ON] ){
+	// イベント発生制御
+
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog2" , 1 )		//濃霧表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 120.0f , 2.0f, 0.3f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00939aa0, 200.0f, 1000.0f , 1.0f , 0.7f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.8f )
+		}
+
+		if( FLAG[GF_01MP1110_GET_SWORD] && !FLAG[GF_01MP1102_DRINK_WATER] ){
+			ResetChrPos((CHRTYPE_MONS | REMOVE_POS))	// モンスター消す
+			EventAreaEnable( "evb2_M01S020" , 1 )
+		}
+
+		// アクティブボイス
+		if(!FLAG[GF_AVOICE_0200] && FLAG[GF_02MP1101_START_EXPLORE] && !FLAG[GF_02MP1110_REMOVE_OBSTACLE]){
+			EventAreaEnable( "evb2_act_0200" , 1 )
+		}
+
+		//-----------------------------------------------------------------
+		//隣接マップ共同解除ストッパー
+		//-----------------------------------------------------------------
+		if( FLAG[GF_SUBEV_1111_REMOVE_ROCK] )
+		{
+			//open状態のときは　mp1111_stop01　を子に影響でHide設定にして下さい。
+			MapAnime( "mp1111_stop01" , "open" )	//岩トンネルの大岩
+			MapHide( "mp1111_stop01", 0 )
+		}
+		else
+		{
+			MapAnime( "mp1111_stop01" , "close" )	//岩トンネルの大岩
+		}
+		//-----------------------------------------------------------------
+		//【QS221】隣接マップ小舟
+		//-----------------------------------------------------------------
+		if( !FLAG[GF_NPC_6_02_GOTO_GEND] )	// ▼第六部②ジャンダルム頂上へ向かう
+		{
+			MapAnime("boat_all" , off )		//ボートOFF
+		}
+		else
+		{
+			if( !FLAG[GF_SUBEV_06_1111_LOOK_BOAT] )	//【小舟を発見する】
+			{
+				MapAnime("boat_all" , off )		//ボートOFF
+			}
+			else
+			{
+				MapAnime("boat_all" , on )		//ボートON
+			}
+		}
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+function "act_0200"
+{
+	if (!FLAG[GF_AVOICE_0200])
+	{
+		EventAreaEnable( "evb2_act_0200" , 0 )
+		ActiveVoiceStop(ACTIVEVOICESTOP_WINDOWOFF)
+		ActiveVoiceStart(EACT_EVID_0200, 1, 0)	//1102の橋に差し掛かると
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+//■メインイベント
+//////////////////////////////////////////////////////////////////////
+function "EV_M01S020"		//小川を見つける
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+	SaveEventState()
+	SaveCamera()
+
+	ClearDebris()
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+
+	MoveCameraAt( 0 , 152.577f , -1433.933f , 11.641f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 3.501f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 11.221f , 0 )	// 基本仰角
+	RotateCamera( 0 , 57.891f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	SetChrPos("ADOL",154.908f , -1435.540f , 9.186f)
+	Turn("ADOL",84.61f,360.0f)
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	//Look( "ADOL" , -20.0f , -10.0f )
+
+	// チュートリアルポートレート読み込み
+	Portrait_Load(0, "system/black.itp" )		//擬似フェードアウト用
+	Portrait_Create(0, 0, 0, 0, 0, 64,64, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(1, "visual/help/hp_00.itp" )	// 背景用
+	Portrait_Create(1, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+	Portrait_Load(2, "visual/help/hp_b14.itp" )	// help_b14：フィールドでの休息
+	Portrait_Create(2, HELP_POS_X, HELP_POS_Y, 0, 0, HELP_SCALE_X, HELP_SCALE_Y, 0.0f, 0x00ffffff, 0x00000000)
+
+//しゃがみ：開始			ANI_EV_SHAGAMI_S
+//しゃがみ：継続			ANI_EV_SHAGAMI
+//しゃがみ：終了			ANI_EV_SHAGAMI_E
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 2.000, 50.000 ,0.000 ,0.150 ,0.500)
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	SetSkipScript("mp1102:EV_M01S020_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	//　　小川のあるマップまで来るとイベント開始。
+	//　　川岸まで歩いていき、ひざまずいて喉を潤すアドル。
+	//　　画面暗転。
+	ExecuteCmd( 1, MoveTo, "ADOL", 152.577f , -1433.933f , 9.228f, 0.1f, 0.25f )
+
+//	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 136.067f , -1427.990f , 9.959f , 100 )
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 152.577f , -1433.933f , 10.641f , 60 )
+
+//	FadeBGM(50, 30)	//σ
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	// 小川に気付く
+	WaitThread(1)
+	EmotionEx("ADOL", 0.00f,EMO_EX,0,5,1,1,1.35f )
+	Wait(20)
+	//Turn("ADOL",155.71f,10.0f)
+	Look( "ADOL" , 20.0f , 0.0f )
+
+	Wait(15)
+	WaitThread(1000)
+
+	// ※川を見る
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 147.746f , -1418.552f , 11.534f , 80 )
+	//ExecuteCmd(1001, ChangeCameraElevation, INTERPOLATE_SPHERE , 22.815f , 80 )
+	ExecuteCmd(1002, RotateCamera, INTERPOLATE_SPHERE , 33.556f , 80 )
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	Wait(20)
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+	//CrossFade(FADE_NORMAL)
+
+	MoveCameraAt( 0 , 144.139f , -1414.979f , 5.651f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 19.520f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 19.316f , 0 )	// 基本仰角
+	RotateCamera( 0 , 40.406f , 0 )				// 角度
+	ChangeCameraPers( 0 , 48.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 146.769f , -1416.406f , 5.155f , 80 )
+
+	SetChrPos("ADOL",147.863f , -1418.159f , 6.235f)
+	Turn("ADOL",-96.02f,360.0f)
+
+	ExecuteCmd( 1, MoveTo, "ADOL", 150.246f , -1418.560f , 5.797f, 0.1f, 0.2f )
+	Look( "ADOL" , 0.0f , -10.0f )
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	WaitThread(1)
+	WaitThread(1000)
+
+	CrossFade(FADE_FAST)
+	MoveCameraAt( 0 , 150.654f , -1418.645f , 6.370f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 2.508f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 10.102f , 0 )	// 基本仰角
+	RotateCamera( 0 , 294.358f , 0 )				// 角度
+	ChangeCameraPers( 0 , 38.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+
+	ChangeAnimation( "ADOL" , "ANI_EV_SHAGAMI_S", -1 , 1 )
+	WaitAnimation2( "ADOL" , -1, 1, "ANI_EV_SHAGAMI_S",  0)
+
+	Wait(15)
+
+	FadeBGM(50,15)
+	FadeOut(FADE_BLACK,FADE_FAST)
+	ChangeAnimation( "ADOL" , "ANI_EV_SHAGAMI_NOMU_S", -1 , 1 )
+	WaitFade()
+
+	Wait(15)
+
+	PlaySE(SE_M01S020_01, 70, 0, 0, 0, 1.0f, 0)
+	ChangeAnimation( "ADOL" , "ANI_EV_SHAGAMI_NONDA_L", -1 , 1 )
+	Wait(45)
+
+	//	テキスト
+
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7Cアドルは澄んだ小川の水で喉を潤した。\p"
+		"小川2行目"
+		"#7C体中に水分が浸み渡っていくのを感じる……"
+		"#7C生き返った心地がした。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	// チュートリアル =================================================================================
+	if ( !FLAG[SF_2NDSTART] ) {		// 2周目判定
+		
+		//自動送り禁止
+		ResetStopFlag(STOPFLAG_AUTOMESSAGE)
+		Wait(10)
+
+		// 擬似フェードアウト表示
+		Portrait_Anime(0 ,PR_ANIME_SCALE, 30.0f, 17.0f, 0, 0, 0)
+		Portrait_Anime(0 ,PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, 0)
+		FadeIn(FADE_BLACK, 0)
+		WaitFade()
+
+		// ポートレート表示
+		PlaySE(SE_TUTORIAL, 100, 0, 0, 0, 1.0f, 0)		//チュートリアル
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 1.0f, FADE_NORMAL)
+		Wait(FADE_NORMAL)
+		Message2(1, TOPIC_BUTTUN_X, TOPIC_BUTTUN_Y, "", "", "", "", "", "", "", "", "", "")		//ボタン入力可能を提示
+		WaitPrompt()
+		Portrait_Anime(1, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)	// チュートリアル背景
+		Portrait_Anime(2, PR_ANIME_COLOR, 1.0f, 1.0f, 1.0f, 0.0f, FADE_FAST)
+		Wait(FADE_FAST)
+		Portrait_Close(1)
+		Portrait_Close(2)
+		
+		// 擬似フェードアウト削除
+		FadeOut(FADE_BLACK, 0)
+		WaitFade()
+		Portrait_Close(0)
+
+		//自動送り許可
+		SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	}
+	// ================================================================================================
+
+	Wait(20)
+	ChangeAnimation( "ADOL" , "ANI_EV_SHAGAMI_NONDA_E", -1 , 1 )
+
+	FadeBGM(100,30)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+	Wait(15)
+
+	LookReset( "ADOL" )
+	ChangeAnimation( "ADOL" , "ANI_EV_SHAGAMI_E", 0 , 1 )
+	WaitAnimation( "ADOL" , -1, 1 )
+
+	//　　画面フェードイン＋スクロールして川の上流方面を見せる
+	CrossFade(FADE_CROSS)
+	MoveCameraAt( 0 , 145.139f , -1416.944f , 6.003f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 9.980f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 13.994f , 0 )	// 基本仰角
+	RotateCamera( 0 , 105.563f , 0 )				// 角度
+	//RotateCamera( 0 , 95.563f , 0 )				// 角度
+	ChangeCameraPers( 0 , 54.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	Turn("ADOL",150.00f,10.0f)
+	Look( "ADOL" , -30.0f , 3.0f )
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , 145.139f , -1416.944f , 16.173f , 100 )
+	ExecuteCmd(1001, RotateCamera, INTERPOLATE_SPHERE , 115.195f , 100 )
+	//WaitFade()
+
+	WaitThread(1000)
+	WaitThread(1001)
+
+	//	テキスト
+	TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+	{
+		"#7C……このまま先へ進んでみようか。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	FadeOut(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp1102:EV_M01S020_ED")
+}
+
+function "EV_M01S020_ED"
+{
+	SetSkipScript("")	
+
+	RestoreEventState()
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	CallFunc("system:reset_chrmot_ADOL")
+
+	// ポートレートリリース
+	Portrait_Close(  -1 )
+	Portrait_Unload( -1 )
+	
+	//自動送り許可
+	SetStopFlag(STOPFLAG_AUTOMESSAGE)
+	
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	//エフェクトの停止
+	StopEffect(-1,ALL,1)
+
+	// フラグ処理
+	SetFlag( SF_SETRAMSAVE , 1)
+	SetFlag( GF_01MP1102_DRINK_WATER, 1 )			// 水を飲んだ
+	SetFlag( GF_HELP_B14, 1 )		// チュートリアル：フィールドでの休息
+
+	CallFunc("mp1102:init" )
+
+	SetChrPos("PLAYER1",149.15f,-1418.35f,5.97f)
+	Turn("PLAYER1",84.88f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+
+	MoveCameraAt( 0 , 149.150f , -1418.350f , 7.813f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 4.907f , 0 )	// 基本仰角
+	RotateCamera( 0 , 101.141f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
+// チュートリアル
+////////////////////////////////////////////////////////////////////////////////
+

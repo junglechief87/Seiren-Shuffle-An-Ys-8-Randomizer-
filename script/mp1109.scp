@@ -1,0 +1,371 @@
+#include "inc/flag.h"
+#include "inc/def.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/music.h"
+#include "inc/se.h"
+#include "inc/efx.h"
+#include "inc/mons.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+#include "inc/fish.h"
+#include "inc/temp/mp1109.h"
+
+//-------------------------------------------
+// 1109：
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	//遠景不必要ノード削除◆マップ作業者用
+	MapHide( "@BG2_mp1108" , 0 )
+	MapHide( "@BG2_mp1109" , 0 )
+	MapHide( "@BG2_mp1114_2" , 0 )
+	MapHide( "@BG2_mp2105" , 0 )
+	MapHide( "BG2_groundfog_main" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_S1" , 0 )	//遠景の板フォグを消す
+	MapHide( "BG2_groundfog_SE1" , 0 )	//遠景の板フォグを消す
+
+	MapHide( "skyfog1" , 0 )		//濃霧（薄）非表示
+
+	MapAnime( "mp1109_stop01" , "close" )
+
+	if( FLAG[SF_EVENT_ON] ){
+		if( FLAG[GF_05MP6330_LOOK_MONOLITH] && !FLAG[GF_NPC_5_03_GOTO_GHOSTHIP] ){
+			MapHide( "skyfog1" , 1 )		//濃霧（薄）表示する
+			MapHide( "BG2_sky1" , 0 )		//元の空非表示
+			MapHide( "BG2_sky2" , 0 )		//元の空非表示
+
+			//SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.1f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			//SetFogBack(FOG_BOTH, 0x00939aa0, 0.0f, 500.0f , 1.0f , 0.5f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+
+			SetFog(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f, 0.2f, 0.9f, FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0)
+			SetFogBack(FOG_BOTH, 0x00828c9e, 0.0f, 160.0f , 1.0f , 0.2f , 0.9f , FOGPARAM_MAP_DEFAULT, FOGPARAM_MAP_DEFAULT, 0 )
+
+			SetMapLightColor( 1.0f, 1.0f, 1.0f, 1.0f, 0.9f )
+		}
+
+		//釣り場制御
+		SetFishingAreaState(FISH_AREA_TBOX_01_R , FISH_AREASTATE_DISABLED )	// 再出現宝箱をOFF
+		if(FLAG[GF_FISH_FEATURE_T01] )	//初回宝箱を釣り上げている
+		{
+			SetFishingAreaState(FISH_AREA_TBOX_01 , FISH_AREASTATE_DISABLED )	// 初回宝箱をOFF
+			if(rand() % 100 <= 5 || FLAG[TF_MP1109_TBOX_FISHABLE] )		//再出現宝箱を5％の確率で復活
+			{
+				SetFlag(TF_MP1109_TBOX_FISHABLE, 1)
+				SetFishingAreaState(FISH_AREA_TBOX_01_R , FISH_AREASTATE_ENABLED )	// 再出現宝箱 ON
+			}
+		}
+
+		//障害物制御（支援イベント）
+		if( FLAG[GF_SUBEV_1109_REMOVE_ROCK] )
+		{
+			MapAnime( "mp1109_stop01" , "open" )
+			// 処理を軽くする為吹っ飛ばす
+			SetChrPos("LP_STOP_1109_ROCK",  -100000.00f,0.00f,0.00f)
+			SetChrPos("CP_STOP_1109_ROCK",  -100000.00f,0.00f,0.00f)
+		}
+		else if (FLAG[GF_SUBEV_1109_CHECKED_ROCK])
+		{
+			// 初回チェック済み
+			SetChrWork("LP_STOP_1109_ROCK", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1109_ROCK", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		}
+		else
+		{
+			SetChrWork("LP_STOP_1109_ROCK", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+			SetChrWork("CP_STOP_1109_ROCK", CWK_CHECKOFF, 1)		// 協力イベントルックポイントをオフに
+		}
+
+		//-----------------------------------------------------------------
+		//隣接マップ共同解除ストッパー
+		//-----------------------------------------------------------------
+		if( FLAG[GF_SUBEV_1120_REMOVE_ROCK] )
+		{
+			//open状態のときは　mp1120_stop01　を子に影響でHide設定にして下さい。
+			//※隣のマップの外観変化です。
+			MapAnime( "mp1120_stop01" , "open" )	//がけ崩れ
+			MapHide( "mp1120_stop01", 0 )
+		}
+		else
+		{
+			MapAnime( "mp1120_stop01" , "close" )	//がけ崩れ
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 3 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_1108.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//獣たちの丘
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//■サブイベントセクション
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+function "SubEV_Sien09_open"
+{
+	if( !FLAG[GF_SUBEV_1109_CHECKED_ROCK] )
+	{
+		// フラグセット
+		SetFlag(GF_SUBEV_1109_CHECKED_ROCK, 1)
+		
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1109_ROCK", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1109_ROCK", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F003,REMOVE_OBJ_1109, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F003, REMOVE_OBJ_1109CE, 458.66f,-634.03f,18.30f, 458.66f,-634.03f, COOPEVID_MP1109, MN_F_MP1109,0)
+	}
+}
+//──────────────────────────────
+//▼支援イベントNo.09		必要人数１５人		mp1109：霞の丘陵
+//	がけ崩れを補強			mp1109：霞の丘陵・奥に行けるようになり、宝箱入手
+//──────────────────────────────
+function "SubEV_Sien09"		//LP_STOP_1109_ROCK
+{
+	//　　※最速で「▼第三部⑤再びジャンダルムに向かう」以降。
+	//　　　ＮＰＣを４／４人以上助けた後に撤去可能。
+	//　　＞「▼支援イベント共通処理」に接続。
+	//　　ＬＰを調べると以下の処理。
+
+//開始処理ここから----------------------------------------------------
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	ResetStopFlag(STOPFLAG_NOCHARACLIP)
+	SaveCamera()
+	
+	ResetMotion( "PARTYALL" , 0 )
+	StopEffect(-1,PARTYALL,1)
+	StopEmotion( "PARTYALL" )
+	ResetMoveVec("PARTYALL")
+//開始処理ここまで-----------------------------------------------
+
+//	TurnTo( "LEADER", 458.66f,-634.03f,18.30f , 7.5f )
+	TurnToChr( LEADER , this , 15.0f )
+
+	//	ナレーション
+	TalkPopup("UNDEF",0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+	{
+		"#7C崖が崩れていて、進むのは危険そうだ。"
+		"危険2行目"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+	
+	GetCoopEvPeopleNum(COOPEVID_MP1109, TF_MENU_SELECT2)	//支援要請で必要な人数を取得
+	
+	//──────────────────────
+	//	⇒人数が足りていない
+	if( FLAG[TF_MENU_SELECT2] > WORK[WK_NPCNUM] )	//必要な人数 ＞ 漂流村の人数
+	{
+		//	ナレーション
+		TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#7Cここを渡れるようにするには、"
+			"#7C漂流村の人数が足りないようだ。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		// マーカーの切り替え処理
+		
+		// 見たフラグセット
+		SetFlag(GF_SUBEV_1109_CHECKED_ROCK, 1)
+		// ルックポイント切り替え
+		SetChrWork("LP_STOP_1109_ROCK", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+		SetChrWork("CP_STOP_1109_ROCK", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+		
+		//マップマーカー
+		DelMapMarker( SMI_SUBEVENT,PAGE_F003,REMOVE_OBJ_1109, 0, 0)
+		
+		// 協力イベントのマーカーもセット
+		SetMapMarker(SMI_COOPEVENT, PAGE_F003, REMOVE_OBJ_1109CE, 458.66f,-634.03f,18.30f, 458.66f,-634.03f, COOPEVID_MP1109, MN_F_MP1109,0)
+/*
+		// 地図登録ナレーション
+		TalkPopup(UNDEF,0,5,0,0,0)
+		{
+			"#8S"
+			"#4C障害のある場所として地図に登録した。"
+			"#8S"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+*/
+		SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+	}
+	//	⇒人数が足りている場合
+	else
+	{
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C支援要請を出しますか？",1)
+
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+			//	  　以下の流れに接続
+			//──────────────────────
+			
+			//　　＞「▼支援イベント共通処理①」を呼び出す。
+			CallFunc("system:SubEV_Sien_Common1")
+			
+			//　　障害物撤去ＳＥ
+			PlaySE(SE_OBSTACLE_REMOVE, 100, 0, 0, 0, 1.0f, 0)		//障害物撤去
+			Wait(80)
+			MapAnime( "mp1109_stop01" , "open" )
+
+			CallFunc("system:party_remove")
+
+			MoveCameraAt( 0 , 459.342f , -634.611f , 21.253f , 0 )	// 注視点
+			ChangeCameraDistance( 0 , 9.300f , 0 )		// 基本距離
+			ChangeCameraElevation( 0 , 6.223f , 0 )	// 基本仰角
+			RotateCamera( 0 , 84.895f , 0 )				// 角度
+			ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+			ExecuteCmd(1001, MoveCameraAt, INTERPOLATE_SPHERE , 456.952f , -635.122f , 21.997f , 180 )		// 注視点
+			ExecuteCmd(1002, ChangeCameraDistance, INTERPOLATE_SPHERE , 9.300f , 180 )		// 基本距離
+			ExecuteCmd(1003, ChangeCameraElevation, INTERPOLATE_SPHERE , 18.588f , 180 )		// 基本仰角
+			ExecuteCmd(1004, RotateCamera, INTERPOLATE_SPHERE ,355.315f, 180 )		// 角度
+			//ExecuteCmd(1005, RollCamera, INTERPOLATE_SPHERE ,2.5f , 180 )		// ロール回転
+			//ExecuteCmd(1006, ChangeCameraPers, INTERPOLATE_SPHERE ,39.000f, 50 )		// 視野角
+
+			//MoveCameraAt( 0 , 456.952f , -635.122f , 21.997f , 0 )	// 注視点
+			//ChangeCameraDistance( 0 , 9.300f , 0 )		// 基本距離
+			//ChangeCameraElevation( 0 , 18.588f , 0 )	// 基本仰角
+			//RotateCamera( 0 , 355.315f , 0 )				// 角度
+			//ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+			//SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+			//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+			//// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+			
+			FadeIn(FADE_BLACK,FADE_FAST)
+			//WaitFade()
+						
+			PlaySE(SE_OBSTACLE_REMOVE_02, 100, 0, 0, 0, 1.0f, 0)
+
+			//	ナレーション
+			TalkPopup(UNDEF,0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+			{
+				"#7C全員の力を合わせて、崖崩れを撤去した！"
+				"崖崩れ2行目"
+			}
+			//　　＞「▼支援イベント共通処理②」を呼び出す。
+			Wait(30)
+			CallFunc("system:SubEV_Sien_Common2")
+			WaitPrompt()
+			WaitCloseWindow()
+
+			FadeOut(FADE_BLACK,FADE_FAST)
+			WaitFade()
+
+			StopThread(1001)
+			StopThread(1002)
+			StopThread(1003)
+			StopThread(1004)
+			//　　イベント終了、操作許可。
+			
+			//障害物撤去処理
+			SetChrPos("LP_STOP_1109_ROCK",  -100000.00f	0.00f	0.00f)
+			SetChrPos("CP_STOP_1109_ROCK",  -100000.00f	0.00f	0.00f)
+			SetFlag(GF_SUBEV_1109_REMOVE_ROCK, 1)			//【ＬＰ：1109⇒がけ崩れを補強去した】
+			SetFlag(GF_SUBEV_1109_CHECKED_ROCK, 1)			//【ＬＰ：1109⇒がけ崩れを調べた】
+			SetDiaryFlag( DF_SUBEV_1109_REPAIR_CLIFF,1 )	// ★獣たちの丘にあった崩れた崖を補強した。
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F003,REMOVE_OBJ_1109, 0, 0)
+			// 協力イベントのマーカーも削除
+			DelMapMarker( SMI_COOPEVENT, PAGE_F003, REMOVE_OBJ_1109CE, 0, 0)
+			
+			SetFlag( TF_MENU_SELECT, 1 )	//支援イベントとして終了
+		}
+		//	⇒やめる
+		else
+		{
+			//	  　そのまま操作許可。
+			
+			// マーカーの切り替え処理
+			
+			// 見たフラグセット
+			SetFlag(GF_SUBEV_1109_CHECKED_ROCK, 1)
+			// ルックポイント切り替え
+			SetChrWork("LP_STOP_1109_ROCK", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+			SetChrWork("CP_STOP_1109_ROCK", CWK_CHECKOFF, 0)		// 協力イベントルックポイントをオンに
+			
+			//マップマーカー
+			DelMapMarker( SMI_SUBEVENT,PAGE_F003,REMOVE_OBJ_1109, 0, 0)
+			
+			// 協力イベントのマーカーもセット
+			SetMapMarker(SMI_COOPEVENT, PAGE_F003, REMOVE_OBJ_1109CE, 458.66f,-634.03f,18.30f, 458.66f,-634.03f, COOPEVID_MP1109, MN_F_MP1109,0)
+
+			SetFlag( TF_MENU_SELECT, 0 )	//ストッパーとして終了
+		}
+		//──────────────────────
+	}
+
+//終了処理ここから----------------------------------------------------
+
+	//ストッパーとして終了
+	if( FLAG[TF_MENU_SELECT] == 0 )
+	{
+		CrossFade(FADE_CROSS)
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//イベント後の再配置
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		Wait(FADE_CROSS)
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	//支援イベントとして終了
+	else
+	{
+		SetStopFlag(STOPFLAG_NOCHARACLIP)
+		
+		//キャラ再配置と、モンスター初期位置に戻す、カメラもリセット
+		MoveCameraAt( 0 , 460.550f , -634.530f , 21.914f , 0 )	// 注視点
+		ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+		ChangeCameraElevation( 0 , 20.187f , 0 )	// 基本仰角
+		RotateCamera( 0 , 72.807f , 0 )				// 角度
+		ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+		SetCameraZPlane( 0.100f , 600.000f )			// ZPlane
+		RollCamera( 0 , 0.0f , 0 )				// ロール回転
+		
+		ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+		
+		//イベント後の再配置位置
+		SetChrPos("LEADER", 460.55f,-634.53f,20.03f)
+		Turn("LEADER",107.19f,360.0f)
+		
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+		
+		//カメラ位置復帰or初期位置設定
+		CallFunc("system:camera_reset")
+		
+		FadeIn(FADE_BLACK,FADE_FAST)
+		//WaitFade()
+		
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+
+//終了処理ここまで----------------------------------------------------
+}

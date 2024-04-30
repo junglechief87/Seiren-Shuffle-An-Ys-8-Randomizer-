@@ -1,0 +1,342 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// 浸食谷                                                                       //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+// init
+
+function "init"
+{
+	CallFunc("rng:expMult")
+	if(FLAG[GF_MP433x_GIM_01] ){	// mp4331 ショートカット_入り口正面の倒木
+		//ショートカット１を開通状態に
+		MapAnime( "gim00" , "wait2" )
+		SetChrPos("lookp01",-100000.0f, 0.0f, 0.0f)
+	} else {
+		MapAnime( "gim00" , "wait1" )
+		SetChrWork("lookp01", CWK_CHECKOFF, 0)		// 普通のルックポイントをオンに
+	}
+
+	if( FLAG[SF_EVENT_ON] )
+	{
+		// イベント発生制御
+		if((FLAG[GF_QUEST_505] == QUEST_START) && FLAG[GF_NIGHTHUNT] && !FLAG[GF_QS505_EVENT_1])
+		{
+			EventCue("mp4331:QS_505_Event_1")
+		}
+	}
+
+	//マップ名表示
+	if(!FLAG[SF_LOADINIT] && !FLAG[GF_MPxxxx_MAP_NAME_NO_DRAW] && !FLAG[TF_MAPNAME_SHOWN]){
+		if( FLAG[SF_LASTENTRY_NO] == 0 || FLAG[SF_LASTENTRY_NO] == 100 ){
+			VisualName("visual/mapname/mn_4331.itp",VN_NAMEMAP2,-1,-1,VN_MAPNAME_TIME)//ジャンダルム
+			SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+		}
+	}
+}
+
+function "shortcut01"
+{
+	// マップのアニメ設定
+	SetFlag(GF_MP433x_GIM_01,1)		// mp4331 ショートカット_入り口正面の倒木
+	SetChrWork("lookp01", CWK_CHECKOFF, 1)		// 普通のルックポイントをオフに
+	EventAreaEnable("lookp01",0)
+	MapAnime( "gim00" , "open" )
+	PlaySE("SE_GIM_STOP_WOOD_1", 100, 0,  0, 0, 1.0f, 0)	//gimse
+	Wait(50)
+	PlaySE("SE_GIM_STOP_WOOD_2", 100, 0,  0, 0, 1.0f, 0)	//gimse
+	EarthQuake(0.1f,0.1f,10)
+	Wait(30)
+}
+
+//===============================================================
+//
+// サブイベント 【エリアカメラ演出：ジャンダルム】
+// ▼クエスト達成イベント　後の再配置
+//
+function "SubEV_AreaName_3105_Relocate"
+{
+	//演出終了後、ジャンダルム１マップ目から操作許可を戻す。
+
+	CallFunc("system:event_begin")
+
+	//パーティ状態のリセット
+	CallFunc("system:party_reset")
+
+	//キャラモーション初期化
+	CallFunc("system:reset_chrmot_ALL")
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	//マップパラメーターリセット
+	ResetMapParam(-1)
+
+	//CallFunc("mp4331:init")
+
+	//イベント後の再配置
+	SetChrPos("LEADER", -21.24f, -134.64f, 310.70f)
+	Turn("LEADER", -168.00f, 360.0f)
+
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	//カメラ位置復帰
+	MoveCameraAt(0, -21.240f, -134.640f, 312.571f, 0)	// 注視点
+	ChangeCameraDistance(0, 7.000f, 0)		// 基本距離
+	ChangeCameraElevation(0, 14.000f, 0)	// 基本仰角
+	RotateCamera(0, -20.440f, 0)				// 角度
+	ChangeCameraPers(0, 60.000f, 0)			// 視野角
+	SetCameraZPlane(0.100f, 300.000f)			// ZPlane
+	RollCamera(0, 0.0f, 0)				// ロール回転
+
+	//RestoreCamera(0, 0)		//※上記カメラ位置を指定する場合は不要
+	CallFunc("system:camera_reset")
+
+	SetFlag(SF_ALLMUTEKI, 0)		//無敵ＯＦＦ
+	ResetStopFlag(STOPFLAG_PC)
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+}
+
+
+
+function "QS_505_Event_1"
+{
+//開始処理ここから----------------------------------------------------
+
+	SetStopFlag(STOPFLAG_EVENT)
+	FadeOut(FADE_BLACK,0)
+	WaitFade()
+
+	SaveEventState()
+	SaveCamera()
+
+	ClearDebris()
+	ResetMotion( "ALL" , 1 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	//ResetChrPos((CHRTYPE_MONS | REMOVE_POS))
+
+	SetChrWork("ADOL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrWork("SAHAD", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	SetChrWork("LAXIA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+
+	SetChrInfoFlag( "ADOL" , INFOFLAG_NOCHRATARI )
+	ChangeSubAnimation("ADOL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("ADOL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "ADOL")
+
+	SetChrInfoFlag( "LAXIA" , INFOFLAG_NOCHRATARI )
+	ChangeSubAnimation("LAXIA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("LAXIA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "LAXIA")
+
+	SetChrInfoFlag( "SAHAD" , INFOFLAG_NOCHRATARI )
+	ChangeSubAnimation("SAHAD",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("SAHAD",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	LookReset( "SAHAD")
+
+	SetChrWork("RICOTTA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation( "RICOTTA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("RICOTTA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("RICOTTA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "RICOTTA" , INFOFLAG_NOCHRATARI)
+	LookReset( "RICOTTA")
+
+	SetChrWork("DANA", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation( "DANA" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("DANA",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("DANA",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "DANA" , INFOFLAG_NOCHRATARI)
+	LookReset( "DANA")
+
+	SetChrWork("HUMMEL", CWK_DEFAULT_SKIPNODE_OFF, 1)
+	ChangeAnimation( "HUMMEL" , "ANI_WAIT", -1 , 1 )
+	ChangeSubAnimation("HUMMEL",SUBMOT_EYE,ANI_E_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_MOUTH,ANI_M_WAIT,1)
+	ChangeSubAnimation("HUMMEL",SUBMOT_EXT1,ANI_E_LOOKC,1)
+	SetChrInfoFlag( "HUMMEL" , INFOFLAG_NOCHRATARI)
+	LookReset( "HUMMEL")
+
+	SetChrPos("ADOL",-17.69f,-118.83f,310.04f)
+	Turn("ADOL",172.84f,360.0f)
+	Look("ADOL" , 0 , 15 )
+
+	SetChrPos("SAHAD",-18.53f,-119.73f,310.10f)
+	Turn("SAHAD",172.84f,360.0f)
+
+	SetChrPos("LAXIA",-16.70f,-119.00f,310.04f)
+	Turn("LAXIA",-176.50f,360.0f)
+
+	SetChrPos("RICOTTA",-17.05f,-120.43f,310.11f)
+	Turn("RICOTTA",176.04f,360.0f)
+
+	SetChrPos("DANA",-15.93f,-119.79f,310.11f)
+	Turn("DANA",173.20f,360.0f)
+
+	SetChrPos("HUMMEL",-19.23f,-120.84f,310.15f)
+	Turn("HUMMEL",-177.92f,360.0f)
+
+	MoveCameraAt( 0 , -17.736f , -118.329f , 323.568f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.800f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , -4.942f , 0 )	// 基本仰角
+	RotateCamera( 0 , 307.239f , 0 )				// 角度
+	ChangeCameraPers( 0 , 59.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	// 被写界深度の設定
+	SetDoF(0, LERP_LINEAR, 6.000, 240.000 ,2.000 ,0.500 ,0.800)
+
+	// グレアの設定
+	SetGlare(0, LERP_LINEAR, 0.700, 1.300 ,1.000 ,1.000 ,0.600 ,0.000 ,1.000)
+
+	SetShadowBound(256.0f , 256.0f )
+
+	SetSkipScript("mp4331:QS_505_Event_1_ED")
+
+//開始処理ここまで-----------------------------------------------
+
+	ExecuteCmd(1000, MoveCameraAt, INTERPOLATE_SPHERE , -17.736f , -118.329f , 311.786f , 180 )
+	ExecuteCmd(1001, ChangeCameraDistance, INTERPOLATE_SPHERE , 7.800f , 180 )
+	ExecuteCmd(1002, ChangeCameraElevation, INTERPOLATE_SPHERE , -3.491f , 180 )
+	ExecuteCmd(1003, RotateCamera, INTERPOLATE_SPHERE ,28.695f , 180 )
+
+	//MoveCameraAt( 0 , -17.736f , -118.329f , 311.786f , 0 )	// 注視点
+	//ChangeCameraDistance( 0 , 7.800f , 0 )		// 基本距離
+	//ChangeCameraElevation( 0 , -3.491f , 0 )	// 基本仰角
+	//RotateCamera( 0 , 28.695f , 0 )				// 角度
+	//ChangeCameraPers( 0 , 59.000f , 0 )			// 視野角
+	//SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	//RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	// ResetCameraZPlane()	// イベント終了時に呼び出して下さい。マップ側の設定に戻します。
+
+	FadeIn(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+	WaitThread(1000)
+	WaitThread(1001)
+	WaitThread(1002)
+	WaitThread(1003)
+
+	//　　夜の野営地から、ジャンダルム内部mp4331t2へ
+	//　　進入したところでイベント。
+	//　　アドルたちが入口から洞窟内に進んでくる。
+
+	ChangeAnimation( "SAHAD" , "ANI_EV_RYOTEKOSI_S", -1 , 1 )
+
+	TalkPopup("SAHAD",0,2,0,0,0)
+	{
+		"#000e#000mさて、月光草を５つだったか。"
+		"どうやって探せばいいんだ？"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "LAXIA" , "ANI_EV_SIAN_S", -1 , 1 )
+
+	//	"LAXIA"
+	TalkPopup("LAXIA",0,2,0,0,0)
+	{
+		"#000e#000mリヒトさんが言うには"
+		"仄かに発光している薬草、との事ですね。\p"
+		"草むらの中に発光しているものがないか"
+		"よく探してみましょう。"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	ChangeAnimation( "RICOTTA" , "ANI_EV_GUTSPOSE_S", -1 , 1 )
+
+	//	"RICOTTA"
+	TalkPopup("RICOTTA",0,0,0,0,0)
+	{
+		"#000e#000m御意っ！"
+	}
+	WaitPrompt()
+	WaitCloseWindow()
+
+	//　　イベント終了、その場で操作許可。
+
+	FadeOut(FADE_BLACK,FADE_NORMAL)
+	WaitFade()
+
+
+//終了処理ここから----------------------------------------------------
+	CallFunc("mp4331:QS_505_Event_1_ED")
+}
+
+function "QS_505_Event_1_ED"
+{
+	SetSkipScript("")
+	RestoreEventState()
+
+	ResetChrPos((CHRTYPE_MONS | RESET_POS | RESET_AISTATE))
+
+	CallFunc("system:reset_chrmot_ALL")
+
+	//マップパラメーターリセット
+	ResetMapParam( -1 )
+
+	//パーティキャラを解放
+	ReleaseEventPartyChr()
+
+	SetFlag( GF_QS505_EVENT_1 , 1 )			
+	SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+
+	CallFunc("mp4331:init" )
+
+	//マップマーカー
+	SetMapMarker( SMI_NIGHT_QUEST ,PAGE_MP433xt2, MARKER_QS_505_1, 472.591f,	-42.932f,	721.529f,	472.591f,	-42.932f,	MARKER_QS_505_1,MN_D_MP4340T2,4)	// 【QS505】月光草の採取（採取ＬＰ）		// mp4340t2
+	SetMapMarker( SMI_NIGHT_QUEST ,PAGE_MP433xt2, MARKER_QS_505_2, 269.770f,	-69.652f,	544.800f,	269.770f ,	-69.652f,	MARKER_QS_505_2,MN_D_MP4338T2,2)	// 【QS505】月光草の採取（採取ＬＰ）		// mp4338t2
+	SetMapMarker( SMI_NIGHT_QUEST ,PAGE_MP433xt2, MARKER_QS_505_3, -82.250f,	-84.985f,	430.017f,	-82.250f ,	-84.985f,	MARKER_QS_505_3,MN_D_MP4336T2,1)	// 【QS505】月光草の採取（採取ＬＰ）		// mp4336t2
+	SetMapMarker( SMI_NIGHT_QUEST ,PAGE_MP433xt2, MARKER_QS_505_4, 189.909f,	-146.840f,	405.912f,	189.909f ,	-146.840f,	MARKER_QS_505_4,MN_D_MP4334T2,1)	// 【QS505】月光草の採取（採取ＬＰ）		// mp4334t2
+	SetMapMarker( SMI_NIGHT_QUEST ,PAGE_MP433xt2, MARKER_QS_505_5, 89.897f ,	-176.513f,	357.781f,	89.897f ,	-176.513f,	MARKER_QS_505_5,MN_D_MP4333T2,1)	// 【QS505】月光草の採取（採取ＬＰ）		// mp4333t2
+
+	SetChrPos("LEADER",-17.69f,-118.83f,310.04f)
+	Turn("LEADER",172.84f,360.0f)
+	ResetPartyPos()
+	ResetFollowPoint()
+	//Wait(1) //処理待ち用
+
+	MoveCameraAt( 0 , -17.685f , -118.828f , 311.882f , 0 )	// 注視点
+	ChangeCameraDistance( 0 , 7.000f , 0 )		// 基本距離
+	ChangeCameraElevation( 0 , 3.167f , 0 )	// 基本仰角
+	RotateCamera( 0 , 9.393f , 0 )				// 角度
+	ChangeCameraPers( 0 , 60.000f , 0 )			// 視野角
+	SetCameraZPlane( 0.100f , 300.000f )			// ZPlane
+	RollCamera( 0 , 0.0f , 0 )				// ロール回転
+	CallFunc("system:camera_reset")
+
+	ResetStopFlag(STOPFLAG_EVENT)
+
+	FadeIn(FADE_BLACK,FADE_FAST)
+	//WaitFade()
+
+//終了処理ここまで----------------------------------------------------
+}

@@ -1,0 +1,162 @@
+#include "inc/mons.h"
+#include "inc/def.h"
+#include "inc/flag.h"
+#include "inc/se.h"
+#include "inc/scr_inc.h"
+#include "inc/3dicon.h"
+#include "inc/skilldef.h"
+#include "inc/vo.h"
+
+//----------------------------------------------------------------------------//
+//                                                                            //
+// ジャンダルム                                                               //
+//                                                                            //
+//----------------------------------------------------------------------------//
+///////////////////////////////////////////////////////////////////////////////
+// 初期化スクリプト
+///////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------
+// initスクリプト
+function "init"
+{
+	CallFunc("rng:expMult")
+	// イベントエリア設定制御
+	EventAreaEnable( "NightHunt_Stopper" , 0 )
+
+	if( FLAG[SF_EVENT_ON] ){
+	// イベント発生制御
+
+		//if(FLAG[GF_NIGHTHUNT])		//夜間探索時
+		//{		
+		//	EventAreaEnable( "NightHunt_Stopper" , 1 )
+		//}
+	}
+
+	// ダミー水晶石起動
+	ChangeAnimation("chkpt", "ANI_START", -1, 1)
+}
+
+
+//////////////////////////////////////////////////////////////////////
+//■アクティブボイス
+//////////////////////////////////////////////////////////////////////
+
+
+function "NightHunt_Stopper"
+{
+
+//開始処理ここから----------------------------------------------------
+	// PLAYER2とPLAYER3のどちらかがPLAYER1から一定距離離れていたら
+	// PLAYER1のそばにワープする
+	SetFlag( TF_CHECK_DISTANCE, 1 )
+	SetFlag( TF_CHECK_DISTANCE2, 1 )
+	if( WORK[WK_ISEXIST_PLAYER2] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE, "PLAYER1", "PLAYER2", 0, STOPPER_WARPDIS )
+	}
+	if( WORK[WK_ISEXIST_PLAYER3] )
+	{
+		CheckChrDistance( TF_CHECK_DISTANCE2, "PLAYER1", "PLAYER3", 0, STOPPER_WARPDIS )
+	}
+
+	SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	SaveCamera()
+
+	ResetMotion( "ALL" , 0 )
+	StopEffect(-1,ALL,1)
+	StopEmotion( "ALL" )
+	ResetMoveVec("PARTYALL")
+
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ChrAlpha( "PLAYER2" , 0.0f , 0 )
+		ChrAlpha( "PLAYER3" , 0.0f , 0 )
+		ResetPartyPos()
+	}
+	ExecuteCmd(1, TurnToChr, "PLAYER2" , "PLAYER1" , 10.0f )
+	ExecuteCmd(2, TurnToChr, "PLAYER3" , "PLAYER1" , 10.0f )
+	if( FLAG[TF_CHECK_DISTANCE]==0 || FLAG[TF_CHECK_DISTANCE2]==0)
+	{
+		ExecuteCmd(3, ChrAlpha, "PLAYER2" , 1.0f , 10 )
+		ExecuteCmd(4, ChrAlpha, "PLAYER3" , 1.0f , 10 )
+		WaitThread(3)
+		WaitThread(4)
+	}
+	WaitThread(1)
+	WaitThread(2)
+//開始処理ここまで-----------------------------------------------
+
+	Wait(15)
+
+	if(FLAG[GF_QS505_GET_HERB_ALL] && !FLAG[GF_QS505_EVENT_2] )
+	{
+		//　　月光草を５つ手に入れている状態で
+		//　　ジャンダルム入口、ジャンダルム下山ルート出口から
+		//　　ダンジョンの外へ出ようとするとストッパーが変化する。
+
+		TalkPopup("LAXIA",0,3,SYSTEM_PPOSX,SYSTEM_PPOSY,0)
+		{
+			"#000e#000mアドル、今夜は"
+			"リコッタちゃんのお家で休みましょう。\p"
+			"ジャンダルムの中腹にあったはずです。"
+		}
+		WaitPrompt()
+		WaitCloseWindow()
+
+		SetFlag( TF_MENU_SELECT, 0 )
+	}
+	else
+	{
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7C夜間探索を終了しますか？",1)
+	}
+	
+	//────────────────────
+	//	⇒はい
+	
+	if(FLAG[TF_MENU_SELECT] == 1)
+	{
+			
+		FadeOut(FADE_BLACK,FADE_NORMAL)
+		WaitFade()
+
+		//テント回復処理・リトライセーブ
+		CallFunc("system:camp_rest")
+		
+		SetFlag(GF_NIGHTHUNT,0)		//夜間探索終了
+		SetFlag( TF_LOADING_TIPS_OFF, 1 )	//NowLoading 時の Tips 表示をカット
+
+		LoadArg("map/mp3105/mp3105.arg")
+		EventCue("mp3105:NightHunt_End")
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	}
+	else
+	{
+		//　　暗転後、鳥のさえずりSEにを再生しつつ
+		//　　朝の野営地で暗転明けて操作許可。
+		//	⇒いいえ
+
+
+		//　　その場で操作許可。
+		//────────────────────
+
+	//終了処理ここから----------------------------------------------------
+		CrossFade(FADE_CROSS)
+
+		SetChrPos("LEADER",438.80f,-9.94f,759.58f)
+		Turn("LEADER",-90.03f,360.0f)
+
+		ResetPartyPos()
+		ResetFollowPoint()
+		//Wait(1) //処理待ち用
+
+		RestoreCamera(0,0)
+		ResetCameraObserver(0)
+		ResetCameraZPlane()
+		WaitFade()
+
+		ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+	//終了処理ここまで----------------------------------------------------
+	}
+}
