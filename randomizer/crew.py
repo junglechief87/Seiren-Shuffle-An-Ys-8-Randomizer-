@@ -1,3 +1,5 @@
+from shared.functions import getCharacterJoinLv 
+
 def getCrewFlags(location):
     flags = ''
     match location.itemName:
@@ -16,89 +18,15 @@ def getCrewFlags(location):
     }
     if( FLAG[GF_TBOX_DUMMY071])
     {
+        SetFlag(GF_ADOLWEAPON_BACKUP,(ADOL.CHRWORK[CWK_WEAPON]))
         GetItem(ICON3D_WP_ADOL_008, 1)		
 	    EquipWeapon(ADOL, ICON3D_WP_ADOL_008)
-	    SetFlag(GF_ADOLWEAPON_BACKUP,(ADOL.CHRWORK[CWK_WEAPON]))
     }
     
     JoinParty(PARTY_ADOL)
-    if(LEADER.CHRWORK[CWK_LV] > 90)
-    {
-                            SetLevel(ADOL, 95)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 85)
-    {
-                            SetLevel(ADOL, 90)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 80)
-    {
-                            SetLevel(ADOL, 85)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 75)
-    {
-                            SetLevel(ADOL, 80)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 70)
-    {
-                            SetLevel(ADOL, 75)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 65)
-    {
-                            SetLevel(ADOL, 70)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 60)
-    {
-                            SetLevel(ADOL, 65)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 55)
-    {
-                            SetLevel(ADOL, 60)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 50)
-    {
-                            SetLevel(ADOL, 55)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 45)
-    {
-                            SetLevel(ADOL, 50)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 40)
-    {
-                            SetLevel(ADOL, 45)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 35)
-    {
-                            SetLevel(ADOL, 40)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 30)
-    {
-                            SetLevel(ADOL, 35)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 25)
-    {
-                            SetLevel(ADOL, 30)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 20)
-    {
-                            SetLevel(ADOL, 25)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 15)
-    {
-                            SetLevel(ADOL, 20)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 10)
-    {
-                            SetLevel(ADOL, 15)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 5)
-    {
-                            SetLevel(ADOL, 10)
-    }
-    else
-    {
-                            SetLevel(ADOL, 5)
-    }
-"""
+"""         
+            flag = flag + getCharacterJoinLv("ADOL")
+
         case "Laxia": #vanilla function call on mp1101 script rng:0401
             flag = """
     SetFlag(SF_LAXIA_JOINED, 1)
@@ -120,83 +48,9 @@ def getCrewFlags(location):
     }
 
     JoinParty(PARTY_LAXIA)
-    if(LEADER.CHRWORK[CWK_LV] > 90)
-    {
-                            SetLevel(LAXIA, 95)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 85)
-    {
-                            SetLevel(LAXIA, 90)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 80)
-    {
-                            SetLevel(LAXIA, 85)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 75)
-    {
-                            SetLevel(LAXIA, 80)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 70)
-    {
-                            SetLevel(LAXIA, 75)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 65)
-    {
-                            SetLevel(LAXIA, 70)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 60)
-    {
-                            SetLevel(LAXIA, 65)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 55)
-    {
-                            SetLevel(LAXIA, 60)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 50)
-    {
-                            SetLevel(LAXIA, 55)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 45)
-    {
-                            SetLevel(LAXIA, 50)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 40)
-    {
-                            SetLevel(LAXIA, 45)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 35)
-    {
-                            SetLevel(LAXIA, 40)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 30)
-    {
-                            SetLevel(LAXIA, 35)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 25)
-    {
-                            SetLevel(LAXIA, 30)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 20)
-    {
-                            SetLevel(LAXIA, 25)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 15)
-    {
-                            SetLevel(LAXIA, 20)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 10)
-    {
-                            SetLevel(LAXIA, 15)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 5)
-    {
-                            SetLevel(LAXIA, 10)
-    }
-    else
-    {
-                            SetLevel(LAXIA, 5)
-    }
 """
+            flag = flag + getCharacterJoinLv("LAXIA")
+
         case "Captain Barbaros": #vanilla function call on mp1201 script rng:0402
             flag = """
     SetDiaryFlag( DF_JOIN_BARBAROSS, 1 )	//Footprint memo: Reunited with Captain Barbaros.
@@ -242,83 +96,9 @@ def getCrewFlags(location):
     }
 
     JoinParty(PARTY_SAHAD)
-    if(LEADER.CHRWORK[CWK_LV] > 90)
-    {
-                            SetLevel(SAHAD, 95)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 85)
-    {
-                            SetLevel(SAHAD, 90)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 80)
-    {
-                            SetLevel(SAHAD, 85)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 75)
-    {
-                            SetLevel(SAHAD, 80)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 70)
-    {
-                            SetLevel(SAHAD, 75)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 65)
-    {
-                            SetLevel(SAHAD, 70)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 60)
-    {
-                            SetLevel(SAHAD, 65)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 55)
-    {
-                            SetLevel(SAHAD, 60)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 50)
-    {
-                            SetLevel(SAHAD, 55)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 45)
-    {
-                            SetLevel(SAHAD, 50)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 40)
-    {
-                            SetLevel(SAHAD, 45)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 35)
-    {
-                            SetLevel(SAHAD, 40)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 30)
-    {
-                            SetLevel(SAHAD, 35)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 25)
-    {
-                            SetLevel(SAHAD, 30)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 20)
-    {
-                            SetLevel(SAHAD, 25)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 15)
-    {
-                            SetLevel(SAHAD, 20)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 10)
-    {
-                            SetLevel(SAHAD, 15)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 5)
-    {
-                            SetLevel(SAHAD, 10)
-    }
-    else
-    {
-                            SetLevel(SAHAD, 5)
-    }
 """
+            flag = flag + getCharacterJoinLv("SAHAD")
+
         case "Dogi": #vanilla function call on mp1201 script rng:0405
             flag = """
     SetDiaryFlag( DF_JOIN_DOGI, 1 ) //Footprint memo: Reunited with Dogi.
@@ -505,85 +285,9 @@ def getCrewFlags(location):
     SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO1, 1 ) 
     SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO2, 1 ) 
     SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO3, 1 )
-
-    if(LEADER.CHRWORK[CWK_LV] > 90)
-    {
-                            SetLevel(RICOTTA, 95)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 85)
-    {
-                            SetLevel(RICOTTA, 90)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 80)
-    {
-                            SetLevel(RICOTTA, 85)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 75)
-    {
-                            SetLevel(RICOTTA, 80)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 70)
-    {
-                            SetLevel(RICOTTA, 75)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 65)
-    {
-                            SetLevel(RICOTTA, 70)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 60)
-    {
-                            SetLevel(RICOTTA, 65)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 55)
-    {
-                            SetLevel(RICOTTA, 60)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 50)
-    {
-                            SetLevel(RICOTTA, 55)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 45)
-    {
-                            SetLevel(RICOTTA, 50)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 40)
-    {
-                            SetLevel(RICOTTA, 45)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 35)
-    {
-                            SetLevel(RICOTTA, 40)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 30)
-    {
-                            SetLevel(RICOTTA, 35)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 25)
-    {
-                            SetLevel(RICOTTA, 30)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 20)
-    {
-                            SetLevel(RICOTTA, 25)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 15)
-    {
-                            SetLevel(RICOTTA, 20)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 10)
-    {
-                            SetLevel(RICOTTA, 15)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 5)
-    {
-                            SetLevel(RICOTTA, 10)
-    }
-    else
-    {
-                            SetLevel(RICOTTA, 5)
-    }
-    
 """
+            flag = flag + getCharacterJoinLv("RICOTTA")
+
         case "Austin": #vanilla function call on mp3107 script rng:0418
             flag = """ 
     SetFlag( GF_SUBEV_JOIN_AUSTEN, 1 ) // Joined with Austin
@@ -642,83 +346,9 @@ def getCrewFlags(location):
     }
     
     JoinParty(PARTY_HUMMEL)
-    if(LEADER.CHRWORK[CWK_LV] > 90)
-    {
-                            SetLevel(HUMMEL, 95)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 85)
-    {
-                            SetLevel(HUMMEL, 90)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 80)
-    {
-                            SetLevel(HUMMEL, 85)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 75)
-    {
-                            SetLevel(HUMMEL, 80)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 70)
-    {
-                            SetLevel(HUMMEL, 75)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 65)
-    {
-                            SetLevel(HUMMEL, 70)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 60)
-    {
-                            SetLevel(HUMMEL, 65)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 55)
-    {
-                            SetLevel(HUMMEL, 60)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 50)
-    {
-                            SetLevel(HUMMEL, 55)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 45)
-    {
-                            SetLevel(HUMMEL, 50)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 40)
-    {
-                            SetLevel(HUMMEL, 45)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 35)
-    {
-                            SetLevel(HUMMEL, 40)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 30)
-    {
-                            SetLevel(HUMMEL, 35)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 25)
-    {
-                            SetLevel(HUMMEL, 30)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 20)
-    {
-                            SetLevel(HUMMEL, 25)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 15)
-    {
-                            SetLevel(HUMMEL, 20)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 10)
-    {
-                            SetLevel(HUMMEL, 15)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 5)
-    {
-                            SetLevel(HUMMEL, 10)
-    }
-    else
-    {
-                            SetLevel(HUMMEL, 5)
-    }
 """
+            flag = flag + getCharacterJoinLv("HUMMEL")
+
         case "Silvia": #vanilla function call on mp6116 script rng:0421
             flag = """
     SetDiaryFlag( DF_JOIN_SILVIA, 1 ) //Footprint memo: Sylvia has joined the Drifting Village.
@@ -746,87 +376,12 @@ def getCrewFlags(location):
     
     JoinParty(PARTY_DANA)
     
-    if(LEADER.CHRWORK[CWK_LV] > 90)
-    {
-                SetLevel(DANA, 95)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 85)
-    {
-                SetLevel(DANA, 90)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 80)
-    {
-                SetLevel(DANA, 85)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 75)
-    {
-                SetLevel(DANA, 80)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 70)
-    {
-                SetLevel(DANA, 75)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 65)
-    {
-                SetLevel(DANA, 70)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 60)
-    {
-                SetLevel(DANA, 65)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 55)
-    {
-                SetLevel(DANA, 60)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 50)
-    {
-                SetLevel(DANA, 55)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 45)
-    {
-                SetLevel(DANA, 50)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 40)
-    {
-                SetLevel(DANA, 45)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 35)
-    {
-                SetLevel(DANA, 40)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 30)
-    {
-                SetLevel(DANA, 35)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 25)
-    {
-                SetLevel(DANA, 30)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 20)
-    {
-                SetLevel(DANA, 25)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 15)
-    {
-                SetLevel(DANA, 20)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 10)
-    {
-                SetLevel(DANA, 15)
-    }
-    else if(LEADER.CHRWORK[CWK_LV] > 5)
-    {
-                SetLevel(DANA, 10)
-    }
-    else
-    {
-                SetLevel(DANA, 5)
-    }
-
     GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Essence doors can be unlocked.",0,0)
     WaitPrompt()
     WaitCloseWindow()
 """
+            flag = flag + getCharacterJoinLv("DANA")
+
         case "Katthew": #vanilla function call on mp6104 script rng:0423
             flag = """
     SetDiaryFlag( DF_JOIN_KASHU, 1 ) //Footprint memo: Rescued Cashu.

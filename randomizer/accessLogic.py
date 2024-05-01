@@ -13,7 +13,7 @@ def canAccess(inventory,location,parameters):
     elif location.locRegion == 'Waterdrop Cave': return True
     elif location.locRegion == 'Calm Inlet': 
         if location.locName ==  'Intercept':
-            if (location.mapCheckID == 'Stage 2' or location.mapCheckID == 'Stage 3' or location.mapCheckID == 'Stage 5') and access.memoCheck(1): return True
+            if location.mapCheckID in ['Stage 2','Stage 3','Stage 5'] and access.memoCheck(1): return True
             elif location.mapCheckID == 'Stage 7' and access.memoCheck(1) and access.canAncient() and access.canSmith(): return True
             elif location.mapCheckID == 'Stage 9' and access.memoCheck(3) and access.canAncient() and access.canSmith(): return True
             else: return False
@@ -35,11 +35,15 @@ def canAccess(inventory,location,parameters):
             else: return False
         elif location.locName == 'Discovery Rewards':
             if location.mapCheckID == 'Half' and canDiscover(access,12) and access.canShowDiscoveries(): return True
-            elif location.mapCheckID == 'All' and canDiscover(access,24) and access.canShowDiscoveries(): return False
+            elif location.mapCheckID == 'All' and canDiscover(access,24) and access.canShowDiscoveries(): return True
             else: return False
-        elif location.locName == 'Fish Trade' and access.canFish(): return True
+        elif location.locName == 'Fish Trade' and access.canFish(): 
+            if location.mapCheckID in ['Fish 4', 'Fish 8', 'Fish 12', 'Fish 16']: return True
+            elif location.mapCheckID == 'Fish 20' and (access.canMove(6) or access.canClimb()): return True
+            elif location.mapCheckID == 'Fish 24' and (access.canMove(8) or access.canClimb() or (access.canMove(6) and access.canSeeDark())): return True
+            else: return False
         elif location.locName == 'Ricotta and Shoebill Reunite' and access.ricotta(): return True
-        elif location.locName not in ['Fish Trade','Map Completion','Jewel Trade','Intercept','Discovery Rewards','Ricotta Bonus']: return True
+        elif location.locName not in ['Fish Trade','Map Completion','Jewel Trade','Intercept','Discovery Rewards','Ricotta and Shoebill Reunite']: return True
         else: return False
     elif location.locRegion == 'Nameless Coast':
         if location.locName == 'Shoreline North of Boulder' and (access.canMove(6) or access.canClimb()): return True
@@ -56,12 +60,12 @@ def canAccess(inventory,location,parameters):
         else: return False
     elif location.locRegion == 'Towering Coral Forest' and (access.canMove(6) or access.canClimb()):
         if location.locName == 'Walkways':
-            if (location.mapCheckID == 'TBOX03' or location.mapCheckID == 'TBOX06') and (access.canClimb() or access.canDoubleJump()): return True
-            elif location.mapCheckID == 'TBOX04' or location.mapCheckID == 'TBOX05': return True
+            if location.mapCheckID in ['TBOX03','TBOX06'] and (access.canClimb() or access.canDoubleJump()): return True
+            elif location.mapCheckID in ['TBOX4','TBOX05']: return True
             else: return False
         elif location.locName == 'Entrance': return True
         elif location.locName == 'Midpoint': return True
-        elif (location.locName == 'Rainbow Falls' or location.locName == 'End') and access.canClimb(): return True
+        elif location.locName in ['Rainbow Falls','End'] and access.canClimb(): return True
         elif location.locName == 'After Mid-Boss':
             if location.mapCheckID == 'Corpse': return True
             elif location.mapCheckID != 'Corpse' and access.canClimb(): return True
@@ -76,8 +80,8 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'TBOX02': return True
             else: return False
         elif location.locName == 'Falls':
-            if (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX02') and access.canSwampWalk(): return True
-            elif location.mapCheckID != 'TBOX01' or location.mapCheckID != 'TBOX02': return True
+            if location.mapCheckID in ['TBOX01','TBOX02'] and access.canSwampWalk(): return True
+            elif location.mapCheckID not in ['TBOX01','TBOX02']: return True
             else: return False
         elif location.locName == 'Lookout Tower' and access.canInsect(): return True
         elif location.locName == 'Large Shoreline':
@@ -126,8 +130,8 @@ def canAccess(inventory,location,parameters):
     elif location.locRegion == 'Underground Water Vein' and access.canUnderwater() and access.canMove(11) and access.canClimb(): return True
     elif location.locRegion == 'Longhorn Coast' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())) and access.canInsect():
         if location.locName == 'Reja Shore':
-            if (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX03') and access.canInsect(): return True
-            elif location.mapCheckID == 'Reja Join' or location.mapCheckID == 'Pirate Treasure': return True
+            if location.mapCheckID in ['TBOX01','TBOX03'] and access.canInsect(): return True
+            elif location.mapCheckID in ['Reja Join','Pirate Treasure']: return True
             else: return False
         elif location.locName == 'Eastern Shore': return True
         else: return False
@@ -224,14 +228,14 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Crew Quarters': return True
         elif location.locName == 'Deck': return True
         elif location.locName == 'Stairwell': return True
-        else: return True
+        else: return False
     elif location.locRegion == 'Balado Monastery':
         if location.locName == 'Basement' and access.canSeeDark():
-            if (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX02' or location.mapCheckID == 'TBOX03') and access.canClimb() and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
-            elif (location.mapCheckID == 'TBOX04' or location.mapCheckID == 'TBOX05') and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and (access.past2() or (access.past3() and access.dana())) and access.past5(): return True
+            if location.mapCheckID in ['TBOX01','TBOX02','TBOX03'] and access.canClimb() and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
+            elif location.mapCheckID in ['TBOX04','TBOX05'] and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and (access.past2() or (access.past3() and access.dana())) and access.past5(): return True
             else: return False
         elif location.locName == 'Entrance' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and (access.past2() or (access.past3() and access.dana())) and access.past5():
-            if (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX02' or location.mapCheckID == 'TBOX03') and access.canSeeDark(): return True
+            if location.mapCheckID in ['TBOX01','TBOX02','TBOX03'] and access.canSeeDark(): return True
             elif location.mapCheckID not in ['TBOX01','TBOX02','TBOX03']: return True
             else: return False
         else: return False
@@ -277,8 +281,8 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Mid-Boss Arena' and access.canUndead(): return True
         elif location.locName == 'Stairway (Statue Doors)' and access.canUndead(): return True
         elif location.locName == 'End' and access.canUndead():
-            if (location.mapCheckID == 'TBOX01' or location.mapCheckID == 'TBOX02') and access.canDoubleJump(): return True
-            elif location.mapCheckID == 'TBOX03' or location.mapCheckID == 'TBOX04': return True
+            if location.mapCheckID in ['TBOX01','TBOX02'] and access.canDoubleJump(): return True
+            elif location.mapCheckID in ['TBOX03','TBOX04']: return True
             else: return False
         elif location.locName == 'Boss Arena' and access.canUndead(): return True
         elif location.locName == 'Seren Garden' and access.canUndead(): return True
@@ -287,7 +291,7 @@ def canAccess(inventory,location,parameters):
     elif location.locRegion == 'Solitude Island' and access.hasBoat(): return True
     elif location.locRegion == 'Eternal Hill'and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()) and access.past6() and access.past7(): return True
     elif location.locRegion == 'Octus Overlook' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canAncient() and access.canSmith() and ((access.past2() and access.past3()) or access.dana()):
-        if (location.locName == 'Path of the Frozen Era' or location.locName == 'Path of the Ocean Era' or location.locName == 'Path of the Sky Era'): return True
+        if location.locName in ['Path of the Frozen Era','Path of the Ocean Era','Path of the Sky Era']: return True
         elif location.locName == 'Path of the Insectoid Era': 
             if location.mapCheckID == 'TBOX02' and access.canDoubleJump(): return True
             elif location.mapCheckID != 'TBOX02': return True
@@ -295,6 +299,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Selection Sphere':
             if parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal): return True
             elif parameters.goal == 'Seiren Escape' and access.hasBoat() and access.hasMistilteinn() and access.hasChart(): return True
+            else: return False
         else: return False
     else: return False
 

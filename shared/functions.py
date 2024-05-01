@@ -151,4 +151,17 @@ def getIntRewards():
             
     rewardDB.close()
     return intRewards
+
+def getCharacterJoinLv(character):
+    lvScript = ''
+    for lv in range(1,100):
+        if lv == 1:
+            lvScript = lvScript + "\tif(LEADER.CHRWORK[CWK_LV] ==" + str(lv) + "){SetLevel(" + character + "," + str(lv) + ")} \n"
+        elif lv == 99:
+            lvScript = lvScript + "\telse{SetLevel(" + character + "," + str(lv) + ")} \n"
+        else:
+            lvScript = lvScript + "\telse if(LEADER.CHRWORK[CWK_LV] ==" + str(lv) + "){SetLevel(" + character + "," + str(lv) + ")} \n"
+
+    return lvScript
+
             
