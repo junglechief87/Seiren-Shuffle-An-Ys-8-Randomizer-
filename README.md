@@ -109,6 +109,8 @@ I don't know why but the close method that appJar uses seems kinda sloppy, so th
 
 This project is open source and I accept all who would like to help or add to the rando.
 
+I've been diligently working on the next iteration so any issues found in this release version will likely end up in it. I have many more features in the works. 
+
 Please use the issue tracker built into github for reporting issues as it's much easier to track stuff that way, if you reach out to me directly I might forget. 
 
 As always... **Good Luck! Have Fun!**
