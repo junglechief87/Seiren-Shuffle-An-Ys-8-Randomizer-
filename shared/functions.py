@@ -28,8 +28,9 @@ def getLocations():
             crew = bool(int(row['crew']))
             item = bool(int(row['item']))
             script = row['script']
+            skill = bool(int(row['skill']))
      
-            locationObject = classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script)
+            locationObject = classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill)
             locations.append(locationObject)
             
     locDB.close()
@@ -46,6 +47,16 @@ def getIcon(itemID):
                 itemDB.close
                 return icon
 
+def getSkillInfo(itemName):
+    with open(current_directory + "/database/skillTable.csv",encoding = encode) as skillDB:
+        skillRows = csv.DictReader(skillDB) 
+        for skillRow in skillRows:
+            if skillRow['skillID'] == itemName:
+                character = skillRow['character']
+                skillName = skillRow['skillName']
+                skillDB.close
+                return character,skillName
+            
 def getLocFile(mapID,fileType):
     #The top versoin of the loop is used for running the randomizer from source, the bottom version of the loop is for the executable compile, comment and uncomment accordingly.
     if fileType == 'script':
@@ -106,8 +117,9 @@ def combineShuffledLocAndItem(shuffledLocation,inventory):
     crew = inventory.crew
     item = inventory.item
     script = shuffledLocation.script
+    skill = inventory.skill
 
-    return classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script)
+    return classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill)
 
 def copyLocationToNewLoc(location):
     locID = location.locID
@@ -125,8 +137,9 @@ def copyLocationToNewLoc(location):
     crew = location.crew
     item = location.item
     script = location.script
+    skill = location.skill
 
-    return classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script)
+    return classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill)
 
 def getIntRewards():
     with open(current_directory + "/database/interceptionRewards.csv",encoding = encode) as rewardDB:

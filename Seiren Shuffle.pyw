@@ -19,9 +19,11 @@ def buttons(inpt):
     elif inpt == 'Generate Seed':
         parameters.getSeed(app.getEntry("Seed#: "))
         parameters.getGoal(app.getOptionBox("goal"),app.getScale("goalCount"))
-        parameters.getShuffleLocations(True,app.getCheckBox("party"),app.getCheckBox("crew"))
+        parameters.getShuffleLocations(app.getCheckBox("party"),app.getCheckBox("crew"),app.getCheckBox("skills"))
         parameters.getProgressionMods(app.getOptionBox("Jewel Trade Items: "),app.getOptionBox("Fish Trades: "),app.getOptionBox("Discoveries: "),app.getOptionBox("Map Completion: "),app.getOptionBox("Food Trades: "),app.getCheckBox("dogiIntercept"))
         parameters.getIntRewards(app.getCheckBox("intRewards"))
+        parameters.getBattleLogic(app.getCheckBox("battleLogic"))
+        parameters.getProgressiveSuperWeapons(app.getCheckBox("superWeapons"))
         parameters.getExpMult(float(app.getScale("XP Multiplier: ")))
         rngPatcherMain(parameters) 
         app.okBox("Task Complete", "Seed Generation Complete!")
@@ -31,13 +33,17 @@ def buttons(inpt):
         parameters.getSeed(seed)
         app.setEntry("Seed#: ",parameters.seed)
 
-def changeScale():
+def goalChange():
     if app.getOptionBox("goal") == "Find Crew":
         app.setScaleState("goalCount","active")
         app.setScaleRange("goalCount",1,28,24)
+        app.setCheckBox("superWeapons", ticked=True)
+        app.setCheckBoxState("superWeapons","active")
     elif app.getOptionBox("goal") == "Seiren Escape":
         app.setScaleState("goalCount","disabled")
         app.setScaleRange("goalCount",0,0,0)
+        app.setCheckBox("superWeapons", ticked=False)
+        app.setCheckBoxState("superWeapons","disabled")
 
 def close():
     return app.yesNoBox("Exit", "Close Application?")
@@ -64,7 +70,7 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '625x500',font = {'size':12}) as app:
     app.showScaleIntervals("goalCount",5)
     app.setScaleLength("goalCount", 10)
     app.setScaleRange("goalCount",1,28,24)
-    app.setOptionBoxChangeFunction("goal", changeScale)
+    app.setOptionBoxChangeFunction("goal", goalChange)
     app.stopLabelFrame()
 
     app.startLabelFrame("Shuffle Locations",2,0,0)
@@ -73,6 +79,8 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '625x500',font = {'size':12}) as app:
     app.setCheckBox("crew", ticked=True)
     app.addNamedCheckBox("Shuffle Party", "party",1,2)
     app.setCheckBox("party", ticked=True)
+    app.addNamedCheckBox("Boss Skill Bonuses", "skills",1,3)
+    app.setCheckBox("skills", ticked=False)
     app.stopLabelFrame()
 
     app.startLabelFrame("Progression Placement Modifiers")
@@ -96,16 +104,20 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '625x500',font = {'size':12}) as app:
     app.stopFrame()
     app.stopLabelFrame()
     
-    app.startLabelFrame("Speed Hacks",5,0)
+    app.startLabelFrame("Other Modifiers",5,0)
     app.setSticky("ew")
-    app.addLabelScale("XP Multiplier: ",1,1)
+    app.addLabelScale("XP Multiplier: ",1,0,3)
     app.setScaleIncrement("XP Multiplier: ",1)
     app.showScaleValue("XP Multiplier: ",True)
     app.showScaleIntervals("XP Multiplier: ",5)
     app.setScaleLength("XP Multiplier: ", 10)
     app.setScaleRange("XP Multiplier: ",0,10,3) 
-    app.addNamedCheckBox("Additional Intercept Rewards", "intRewards",1,2)
+    app.addNamedCheckBox("Additional Intercept Rewards", "intRewards",3,0)
     app.setCheckBox("intRewards", ticked=True)
+    app.addNamedCheckBox("Battle Logic", "battleLogic",3,1)
+    app.setCheckBox("battleLogic", ticked=True)
+    app.addNamedCheckBox("Progressive Super Weapons", "superWeapons",3,3)
+    app.setCheckBox("superWeapons", ticked=True)
     app.stopLabelFrame()
 
     app.startFrame("commands",6,0)

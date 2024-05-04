@@ -2607,7 +2607,7 @@ enum {
 	GF_TBOX_DUMMY069, //Used to isolate the ED event
 	GF_TBOX_DUMMY070, //Isolates first prayer tree spawn
 	GF_TBOX_DUMMY071, //Use this for getting Mistilteinn before Adol joins, he will then get it if he joins after
-	//The next few are for controlling shop ranks better, the shop ranks flag will now be more logically tied to flame stones and me progressive, initial shops still come from crew.
+	//The next few are for controlling shop ranks better, the shop ranks flag will now be more logically tied to flame stones and me progressive, initial shops still come from crew(other than Kathleen).
 	GF_TBOX_DUMMY072, //replaces flag for getting kuina, GF_SHOP_RANK_2_11
 	GF_TBOX_DUMMY073, //replaces flag for returning to gendarme, GF_SHOP_RANK_3_05
 	GF_TBOX_DUMMY074, //replaces flag for killing spider boss, Forge level 2
@@ -2645,10 +2645,10 @@ enum {
 	GF_TBOX_DUMMY105, //replaces flag for MISTILTEINN
 	GF_TBOX_DUMMY106, //flag for ship blueprints
 	GF_TBOX_DUMMY107, //new flag for second carlan join check
-	GF_TBOX_DUMMY108,
-	GF_TBOX_DUMMY109,
-	GF_TBOX_DUMMY110,
-	GF_TBOX_DUMMY111,
+	GF_TBOX_DUMMY108, //flag for spirit ring Celesdia
+	GF_TBOX_DUMMY109, //flag for progressive super weapons
+	GF_TBOX_DUMMY110, //Silvia fight
+	GF_TBOX_DUMMY111, //flag for skill shuffle
 	GF_TBOX_DUMMY112,
 	GF_TBOX_DUMMY113,
 	GF_TBOX_DUMMY114,

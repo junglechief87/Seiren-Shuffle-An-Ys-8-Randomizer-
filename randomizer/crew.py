@@ -1,8 +1,8 @@
 from shared.functions import getCharacterJoinLv 
 
-def getCrewFlags(location):
-    flags = ''
-    match location.itemName:
+def getCrewFlags(name):
+    flag = ''
+    match name:
         case "Adol":
             flag = """
     SetFlag(SF_ADOL_JOINED, 1)
@@ -16,7 +16,7 @@ def getCrewFlags(location):
         GetItem(ICON3D_WP_ADOL_003, 1)		
 	    EquipWeapon(ADOL, ICON3D_WP_ADOL_003)
     }
-    if( FLAG[GF_TBOX_DUMMY071])
+    if( FLAG[GF_TBOX_DUMMY071] && !FLAG[GF_TBOX_DUMMY109])
     {
         SetFlag(GF_ADOLWEAPON_BACKUP,(ADOL.CHRWORK[CWK_WEAPON]))
         GetItem(ICON3D_WP_ADOL_008, 1)		
@@ -24,6 +24,12 @@ def getCrewFlags(location):
     }
     
     JoinParty(PARTY_ADOL)
+
+    if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
+    {
+        CallFunc("rng:0520")
+        CallFunc("rng:0521")
+    }
 """         
             flag = flag + getCharacterJoinLv("ADOL")
 
@@ -48,6 +54,12 @@ def getCrewFlags(location):
     }
 
     JoinParty(PARTY_LAXIA)
+
+    if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
+    {
+        CallFunc("rng:0522")
+        CallFunc("rng:0523")
+    }
 """
             flag = flag + getCharacterJoinLv("LAXIA")
 
@@ -96,6 +108,12 @@ def getCrewFlags(location):
     }
 
     JoinParty(PARTY_SAHAD)
+
+    if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
+    {
+        CallFunc("rng:0524")
+        CallFunc("rng:0525")
+    }
 """
             flag = flag + getCharacterJoinLv("SAHAD")
 
@@ -150,7 +168,6 @@ def getCrewFlags(location):
 """
         case "Kathleen": #vanilla function call on mp1201 script rng:0409
             flag = """
-    //SetFlag( SF_WARP_DISABLED, 1 ) //Warp disabled
     SetDiaryFlag( DF_JOIN_KATRIN, 1 ) //Footprint memo: Rescued Katrin.
     SetDiaryCharaFlag( DRCHA_KATRIN, DRCHA_FLAG_OPEN, 1 ) //Person memo: Register when joining (Katrin)
     SetDiaryCharaFlag( DRCHA_KATRIN, DRCHA_FLAG_INFO1, 1 ) 
@@ -267,10 +284,12 @@ def getCrewFlags(location):
             flag = """
     SetFlag(SF_RICOTTA_JOINED, 1)
     SetFlag(SF_RICOTTA_JOINOK, 1)
-    
-    GetItem(ICON3D_WP_RICOTTA_000, 1)
-    GetItem(ICON3D_AM_022, 1)
-    EquipWeapon(RICOTTA,ICON3D_WP_RICOTTA_000)
+    SetDiaryFlag( DF_JOIN_RICOTTA, 1 )
+    SetFlag( GF_QUEST_400, QUEST_START )
+    SetDiaryFlag( DF_QS400_START, 1 )
+    SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO1, 1 ) 
+    SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO2, 1 ) 
+    SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO3, 1 )
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
 
     if( FLAG[GF_03MP1201_ALARM_INTERCEPT])
@@ -280,11 +299,13 @@ def getCrewFlags(location):
     }
     
     JoinParty(PARTY_RICOTTA)
-    SetFlag( GF_QUEST_400, QUEST_START )
-    SetDiaryFlag( DF_QS400_START, 1 )
-    SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO1, 1 ) 
-    SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO2, 1 ) 
-    SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO3, 1 )
+
+    if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
+    {
+        CallFunc("rng:0528")
+        CallFunc("rng:0529")
+    }
+
 """
             flag = flag + getCharacterJoinLv("RICOTTA")
 
@@ -329,10 +350,8 @@ def getCrewFlags(location):
             flag = """
     SetFlag(SF_HUMMEL_JOINED, 1)
     SetFlag(SF_HUMMEL_JOINOK, 1)
- 
-    GetItem(ICON3D_WP_HUMMEL_000, 1)
-    GetItem(ICON3D_AM_021, 1)
-    EquipWeapon(HUMMEL,ICON3D_WP_HUMMEL_000)
+
+    SetDiaryFlag( DF_JOIN_HUMMEL, 1 )
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
     SetDiaryCharaFlag( DRCHA_HUMMEL, DRCHA_FLAG_OPEN, 1 ) 
     SetDiaryCharaFlag( DRCHA_HUMMEL, DRCHA_FLAG_INFO1, 1 ) 
@@ -346,6 +365,12 @@ def getCrewFlags(location):
     }
     
     JoinParty(PARTY_HUMMEL)
+
+    if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
+    {
+        CallFunc("rng:0526")
+        CallFunc("rng:0527")
+    }
 """
             flag = flag + getCharacterJoinLv("HUMMEL")
 
@@ -365,17 +390,26 @@ def getCrewFlags(location):
     SetFlag(SF_DANA_JOINOK, 1)
 
     SetDiaryFlag( DF_JOIN_DANA, 1 )
-    GetItem(ICON3D_WP_DANA_000, 1)
-    GetItem(ICON3D_AM_023, 1)
     SetDiaryCharaFlag( DRCHA_DANA2, DRCHA_FLAG_OPEN, 1 ) 
     SetDiaryCharaFlag( DRCHA_DANA2, DRCHA_FLAG_INFO1, 1 ) 
     SetDiaryCharaFlag( DRCHA_DANA2, DRCHA_FLAG_INFO2, 1 ) 
     SetDiaryCharaFlag( DRCHA_DANA2, DRCHA_FLAG_INFO3, 1 )
-    EquipWeapon(DANA,ICON3D_WP_DANA_000)
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
+
+    if( FLAG[GF_TBOX_DUMMY108] && !FLAG[GF_TBOX_DUMMY109])
+    {
+        GetItem(ICON3D_WP_DANA_005,1)
+	    EquipWeapon(DANA,ICON3D_WP_DANA_005)
+    }
     
     JoinParty(PARTY_DANA)
     
+    if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
+    {
+        CallFunc("rng:0530")
+        CallFunc("rng:0531")
+    }
+
     GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Essence doors can be unlocked.",0,0)
     WaitPrompt()
     WaitCloseWindow()

@@ -2,7 +2,7 @@ from shared.functions import *
 from randomizer.accessLogic import *
 
 class location:
-  def __init__(self,locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script):
+  def __init__(self,locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill):
     self.locID = locID
     self.mapID = mapID
     self.locRegion = locRegion
@@ -18,12 +18,19 @@ class location:
     self.crew = crew
     self.item = item
     self.script = script
+    self.skill = skill
 
   def printSpoiler(self):
     print("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '(' + str(self.itemID) + ')x' + str(self.quantity))
 
   def writeSpoiler(self,file):
-    file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + ' x ' + str(self.quantity) + '\n')
+    if self.skill:
+      skillName = getSkillInfo(self.itemName)
+      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + skillName[0] + ':' + skillName[1] + '\n')
+    elif self.quantity == 1:
+      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '\n')
+    else:
+      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + ' x ' + str(self.quantity) + '\n')
 
 class shuffledLocation(location):
   def __init__(self,location):
@@ -34,7 +41,7 @@ class shuffledLocation(location):
     self.mapCheckID = location.mapCheckID
     self.event = location.event
     self.script = location.script
-     
+
 class inventory(location):
   def __init__(self,location):
     self.itemID = location.itemID
@@ -45,6 +52,7 @@ class inventory(location):
     self.party = location.party
     self.crew = location.crew
     self.item = location.item
+    self.skill = location.skill
 
 class access:
   def __init__(self, inventoryObjects):
@@ -82,6 +90,12 @@ class access:
 
   def canMove(self,requiredCrew):
     count = 0
+    #since Kathleen is now progressive with the flame stones she needs to be counted as the first flame stone here.
+    for item in self.inventoryObjects:
+      if item.itemID == 778: #flame stones
+        count+=1
+        break
+
     for item in self.inventoryObjects:
       if item.crew and item.itemName != 'Little Paro': #I used the curran2 and austen2 NPC allocated space to make kong and shoebill count towards village totals, there wasn't another free one for paro but paro is a small bird anyway so it's logical he doesn't count for moving obstacles
         count+=1
@@ -91,7 +105,7 @@ class access:
     else:
       return False
 
-  def canInsect(self):
+  def hasDina(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Dina':
         return True
@@ -135,7 +149,7 @@ class access:
       
   def past6(self):
     for item in self.inventoryObjects:
-      if item.itemID == 769: #Treasure Chest Key
+      if item.itemID == 796: #Treasure Chest Key
         return True
     return False
       
@@ -145,15 +159,39 @@ class access:
         return True
     return False
 
-  def dana(self):
+  def hasDana(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Dana':
         return True
     return False
   
-  def ricotta(self):
+  def hasRicotta(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Ricotta':
+        return True
+    return False
+  
+  def hasAdol(self):
+    for item in self.inventoryObjects:
+      if item.itemName == 'Adol':
+        return True
+    return False
+  
+  def hasHummel(self):
+    for item in self.inventoryObjects:
+      if item.itemName == 'Hummel':
+        return True
+    return False
+  
+  def hasSahad(self):
+    for item in self.inventoryObjects:
+      if item.itemName == 'Sahad':
+        return True
+    return False
+  
+  def hasLaxia(self):
+    for item in self.inventoryObjects:
+      if item.itemName == 'Laxia':
         return True
     return False
   
@@ -162,32 +200,26 @@ class access:
       if item.itemName == 'Austin':
         return True
     return False
-
-  def canSmith(self):
-    for item in self.inventoryObjects:
-      if item.itemName == 'Kathleen':
-        return True
-    return False
   
-  def canShowMap(self):
+  def hasEuron(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Euron':
         return True
     return False
   
-  def canAncient(self):
+  def hasSilvia(self):
     for item in self.inventoryObjects:
-      if item.itemID == 775: #Orichalcum Ore
+      if item.itemName == 'Silvia':
         return True
     return False
-
-  def fullParty(self):
+  
+  def hasFlameStones(self,requiredAmount):
     count = 0
     for item in self.inventoryObjects:
-      if item.party:
+      if item.itemID == 778: #flame stones
         count+=1
 
-    if count >= 6:
+    if count >= requiredAmount:
       return True
     else:
       return False
@@ -251,21 +283,108 @@ class access:
       if item.itemID == 9: #Mistilteinn
         return True
     return False
-      
+  
+  def hasSpiritRing(self):
+    for item in self.inventoryObjects: 
+      if item.itemID == 13: #Spirit Ring Celesdia
+        return True
+    return False
+  
   def hasChart(self):
     for item in self.inventoryObjects:
       if item.itemID == 795: #seiren chart
         return True
     return False
-      
+  
+  def armletStr(self):
+    #check for the two armlets that are in the shuffle not bound by shops, if you hit on the warrior wrist set strength to 20 but keep searching, if you hit on battle armlet kill the search since it's the most powerful anyway.
+    strength = 0
+    for item in self.inventoryObjects:
+      if item.itemID == 271: #warrior wrist
+        strength = 20
+      if item.itemID == 720: #battle armlet
+        strength = 30
+        break
+    return strength
+  
+  def accessoryStr(self):
+    strength = 0
+    accStrList = []
+    #we have to loop through the inventory multiple times to find the strongest of each group of items that can't be equipped together.
+    ringStr = 0
+    for item in self.inventoryObjects:
+      if item.itemID == 155 and ringStr < 10: #Blade Ring
+        ringStr = 10
+      elif item.itemID == 156: #Blade Ring 2
+        ringStr = 20
+      elif item.itemID == 157: #Blade Ring 3,  Break on blade ring 3 it's the most powerful that can be found.
+        ringStr = 30
+        break
+    
+    ancientStr = 0
+    for item in self.inventoryObjects:
+      if item.itemID in [548,209]: #Stone of Anitquity or Ocean Hogeki, these are the most powerful so we're done if we find them.
+        ancientStr = 40 
+        break
+      elif item.itemID == 727: #maiden amulate
+        for item in self.inventoryObjects:
+          if item.itemName in ['Laxia','Dana','Ricotta']: #need to confirm a female party member so the player can equip it
+            ancientStr = 15
+            break
+    
+    pyriosStr = 0
+    for item in self.inventoryObjects:
+      if item.itemID == 171: #pyrios charm
+        pyriosStr = 5
+      elif item.itemID == 172: #pyrios stone
+        pyriosStr = 15
+        break
+    
+    for item in self.inventoryObjects:
+      if item.itemID == 542: #hope stone
+        accStrList.append(20)
+      elif item.itemID == 169: #fenrir charm
+        accStrList.append(5)
+    
+    accStrList.append(ringStr)
+    accStrList.append(ancientStr)
+    accStrList.append(pyriosStr)
+
+    accStrList.sort(reverse=True)
+    strength = accStrList[0] + accStrList[1]
+    return strength
+  
+  def hasAlison(self):
+    for item in self.inventoryObjects:
+      if item.itemName == 'Alison':
+        return True
+    return False
+  
+  def hasPearls(self,requiredPearls):
+    count = 0
+    for item in self.inventoryObjects:
+      if item.itemID == 436: #Large Pearls
+        count+=item.quantity
+        
+    if count >= requiredPearls:
+      return True
+    return False
+   
+  def canDefeat(self,boss):
+    boss = boss + ' Defeated'
+    for item in self.inventoryObjects:
+      if item.itemName == boss:
+        return True
+    return False
+  
 class guiInput:
   def __init__(self):
      self.seed = None
      self.goal = None
      self.numGoal = None
-     self.shuffleCrew = None
-     self.shuffleItems = None
      self.shuffleParty = None
+     self.shuffleCrew = None
+     self.shuffleSkills = None
      self.jewelTrades = None
      self.fishTrades = None
      self.discoveries = None
@@ -274,6 +393,8 @@ class guiInput:
      self.dogiRewards = None
      self.intRewards = None
      self.expMult = None
+     self.battleLogic = None
+     self.progressiveSuperWeapons = None
   
   def getSeed(seed):
     guiInput.seed = seed
@@ -282,10 +403,10 @@ class guiInput:
     guiInput.goal = option
     guiInput.numGoal = int(num)
   
-  def getShuffleLocations(item,party,crew):
-    guiInput.shuffleItems = item
+  def getShuffleLocations(party,crew,skills):
     guiInput.shuffleParty = party
     guiInput.shuffleCrew = crew
+    guiInput.shuffleSkills = skills
   
   def getProgressionMods(jewels,fish,disc,map,food,dogiRewards):
     guiInput.jewelTrades = jewels
@@ -301,6 +422,12 @@ class guiInput:
   def getExpMult(expMult):
     guiInput.expMult = expMult
 
+  def getBattleLogic(battleLogic):
+    guiInput.battleLogic = battleLogic
+
+  def getProgressiveSuperWeapons(superWeapons):
+    guiInput.progressiveSuperWeapons = superWeapons
+    
 class interceptReward:
   def __init__(self,stage,rewards):
     self.stage = stage

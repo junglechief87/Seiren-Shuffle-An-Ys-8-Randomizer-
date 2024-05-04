@@ -2,8 +2,18 @@ from randomizer.crew import *
 
 #This functions was getting too big with so many flags so I split it into it's own file
 #I also included the stuff for the starting character functions because they seemed logical to group together
-def buildStartParameters(location):
-    startingCharacter = getCrewFlags(location) 
+def buildStartParameters(location,parameters):
+    gameSettingFlags = ''
+    startingCharacter = getCrewFlags(location.itemName) 
+    if parameters.progressiveSuperWeapons:
+        gameSettingFlags = gameSettingFlags + """
+    SetFlag(GF_TBOX_DUMMY109,1)
+    """
+    if parameters.shuffleSkills:
+        gameSettingFlags = gameSettingFlags + """
+    SetFlag(SF_CANTLEARN_SKILL,1)
+    SetFlag(GF_TBOX_DUMMY111,1)
+    """
     startParams = """
 function "startParameters"
 {{
@@ -417,12 +427,18 @@ function "startParameters"
     SetFlag(GF_SUBEV_LOOK_SILVIA2,1)
     EquipCostume(ADOL, ICON3D_COS_ADOL_01, EQC_MAIN, EQC_MODE_EVDEFAULT)
     EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EQUIP)
-    EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EVFORCE)	
+    EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EVFORCE)
+    {1}
+    //We add strength to put the character's power in line with the rest of the cast for later joining characters and leave them without weapons until they hit the shop tier for their weapon.
+    //Characters without weapons animate with their base weapons still.
+    SetChrWork(HUMMEL,CWK_SUP_STR,(HUMMEL.CHRWORK[CWK_SUP_STR] + 18))
+    SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 8))
+    SetChrWork(RICOTTA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] + 22))
     LoadArg("map/mp1201/mp1201.arg")
     EventCue("mp1201:EV_M01S070_ED")
 }}
 """
-    return startParams.format(startingCharacter)
+    return startParams.format(startingCharacter,gameSettingFlags)
 
 def manageEarlyGameParty(location):
     match location.itemName:

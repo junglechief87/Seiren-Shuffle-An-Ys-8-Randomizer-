@@ -16,6 +16,7 @@ scpIncludeList = ['#include "inc/mons.h"','#include "inc/def.h"','#include "inc/
 genericMessage = " Obtained."
 crewMessage = " Joined the Village."
 partyMessage = " Joined the Party."
+skillMessage = " Learned."
 rngScriptFile = getLocFile('rng','script')
 
 
@@ -39,15 +40,18 @@ def rngPatcherMain(parameters):
                 script = ""
                 
             if location.locID == 429: #location ID 429 opening cutscene
-                patchFile = patchFile + buildStartParameters(location) 
+                patchFile = patchFile + buildStartParameters(location,parameters) 
                 patchFile = patchFile + manageEarlyGameParty(location)
                 patchFile = patchFile + soloStartingCharacterEvent(location) 
 
-            if location.item: 
-                patchFile = patchFile + genericItemMessage(location,script,parameters)
-                  
+            if location.itemID == 778:#flame stone: moving this here as we're now mixing items and crew into the shop upgrade chain and it makes the most sense to have the upgrade function do any calling of necessary item/crew scripts
+                patchFile = patchFile + shopUpgrades(location.event)
+            elif location.item: 
+                patchFile = patchFile + genericItemMessage(location,script,parameters)      
             elif location.crew:
                 patchFile = patchFile + buildCrewLocation(location,script)
+            elif location.skill:
+                patchFile = patchFile + buildSkillLocation(location,script)
 
     patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
@@ -59,6 +63,7 @@ def rngPatcherMain(parameters):
         fileToPatch.write(patchFile)
         fileToPatch.close()
 
+#function used for all non-person item function generation
 def genericItemMessage(location,vanillaScript,parameters):    
     scriptName = buildLocScripts(location.locID,False)
     itemIcon = getIcon(location.itemID)
@@ -78,20 +83,23 @@ def genericItemMessage(location,vanillaScript,parameters):
         script = script + makeGlowStoneUseful()
     elif location.itemID in danaPastEventsItems:
         script = script + danaPastEvents(location.itemID)
-    elif location.itemID == 775: #oricalcum
-        script = script + oriOre()
-        script = script + shopUpgrades()
-    elif location.itemID == 9: #mistlltein (probably mispelled that)
-        script = script + sopEvent()
-    elif location.itemID == 778:#flame stone
-        script = script + shopUpgrades()
+    elif location.itemID == 9: #mistilteinn
+        script = script + sopEvent(parameters)
+        if parameters.progressiveSuperWeapons:
+            location.itemName = 'Broken Mistilteinn'
+            location.itemID = 10 #Rusty Sword
+    elif location.itemID == 13: #Spirit Ring Celesdia
+        script = script + spiritRingEvent(parameters)
+        if parameters.progressiveSuperWeapons:
+            location.itemName = 'Broken Spirit Ring'
+            location.itemID = 10 #Rusty Sword
     elif location.itemID == 770: #logbook from east coast cave
         script = script + pirateShipDocks()
-    elif location.itemID == 760 or location.itemID == 761 or location.itemID == 762 or location.itemID == 763: #T memos
+    elif location.itemID in [760,761,762,763]: #T memos
         script = script + interceptUnlock()
     elif location.itemID == 629: #fishing rod
         startingBait = """
-    GetItem(ICON3D_FISHBAIT_WORM,10)
+    GetItem(ICON3D_FISHBAIT_WORM,30)
     """
         script = script + startingBait
     
@@ -135,6 +143,7 @@ function "{0}"
 """          
     return getItemFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,script)
 
+#function used for all people function generations
 def buildCrewLocation(location,script):
     scriptName = buildLocScripts(location.locID,False)
     itemIcon = -1
@@ -146,7 +155,7 @@ def buildCrewLocation(location,script):
     elif location.crew:
         message = location.itemName + crewMessage
         
-    crewFlags = getCrewFlags(location)
+    crewFlags = getCrewFlags(location.itemName)
 
      #if the location is not inside an event we want to freeze the player while they receive the item. This prevents some awkwardness, it's strictly for polish.
      #setting the talk flags and then unsetting them during events can break many events though, so we don't want to do it there. Many events already have these flags set at their starts and ends.    
@@ -181,6 +190,54 @@ function "{0}"
 }}
 """   
     return getCrewFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,crewFlags,script)
+
+def buildSkillLocation(location,script):
+    scriptName = buildLocScripts(location.locID,False)
+    itemIcon = -1
+    itemQuantity = 1
+    itemSE = 'ITEMMSG_SE_NORMAL'
+    skillInfo = getSkillInfo(location.itemName) #retuns tuple: character,skill name
+    message = skillInfo[1] + skillMessage
+    character = skillInfo[0]
+
+    if location.locRegion == 'startingSkill': #for starting skills just go ahead and give the skill, don't bombard the player with messages each time they get a character.
+        getSkillFunction = """
+function "{0}"
+{{
+    GetSkill({6},{7},1)
+}}
+"""
+    elif location.event:
+        getSkillFunction = """
+function "{0}"
+{{
+
+    GetSkill({6},{7},1)
+    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
+    WaitPrompt()
+    WaitCloseWindow()
+    
+    {5}
+}}
+"""
+    else: 
+         getSkillFunction = """
+function "{0}"
+{{
+    SetStopFlag(STOPFLAG_TALK)
+    
+    GetSkill({6},{7},1)
+    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
+    WaitPrompt()
+    WaitCloseWindow()
+    
+    {5}
+    ResetStopFlag(STOPFLAG_TALK)
+    
+    
+}}
+"""  
+    return getSkillFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,script,character,location.itemName)
 
 #The glow stone will now trigger this script from the chest that has it. This unlocks night explorations.
 def makeGlowStoneUseful():
@@ -306,20 +363,14 @@ def danaPastEvents(pastItem):
     """
     return script
 
-#This is the orichalcum, the flag here is the trigger for speaking with Kathleen about the orichalcum and having new weapons made.
-#That event then trips the flag for being able to kill enemies flagged as Saurians.
-def oriOre():
-    script = """
-        SetFlag(GF_03MP7401_GET_MATERIAL, 1)
-        GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Turn this into Kathleen.",0,0)
-        WaitPrompt()
-        WaitCloseWindow()
-    """
-    return script
-
 #Sword of Psyches event. Adol gets Mistletein(probably mispelled that)
-def sopEvent():
-    script = """
+def sopEvent(parameters):
+    if parameters.progressiveSuperWeapons:
+        script = """
+    SetFlag(GF_TBOX_DUMMY071,1)
+    """
+    else:
+        script = """
 	SetFlag(GF_ADOLWEAPON_BACKUP,(ADOL.CHRWORK[CWK_WEAPON]))
 	GetItem(ICON3D_WP_ADOL_008,1)
 	EquipWeapon(ADOL,ICON3D_WP_ADOL_008)
@@ -327,76 +378,149 @@ def sopEvent():
 	"""
     return script
 
+def spiritRingEvent(parameters):
+    if parameters.progressiveSuperWeapons:
+        script = """
+    SetFlag(GF_TBOX_DUMMY108,1)
+    """
+    else:
+        script = """
+	GetItem(ICON3D_WP_DANA_005,1)
+	EquipWeapon(DANA,ICON3D_WP_DANA_005)
+	SetFlag(GF_TBOX_DUMMY108,1)
+	"""
+    return script
+
 #This makes shop upgrades progressive and is also what makes the flame stones actually do something.
 #In vanilla all they did was act as a signpost for flags that were already set. 
-def shopUpgrades():
+#Kathleen has also been added the the to the shop upgrade chain as the first step. This is to help with combat balancing. 
+#The idea being that weapons are the most important factor for combat balancing so making sure that Kathleen is found first before the reforge chains are unlocked will help with the game flow.
+#Also to improve character balance in the rando late joining characters come without weapons equipped and are supplemented with stat bonuses equal to what stats that would be expected of a weapon at that tier for that character.
+#Character with no weapon animate with their default weapons still, with the exception of Adol who starts with his tier 1 weapon anyway.
+def shopUpgrades(event):
+    stopFlag = ''
+    stopFlagEnd = ''
+
+    if event:
+        stopFlag = 'SetStopFlag(STOPFLAG_TALK)'
+        stopFlagEnd = 'ResetStopFlag(STOPFLAG_TALK)'
+
     script = """
-    if (!FLAG[GF_TBOX_DUMMY081])
-    {
+    {3}
+    if (!FLAG[GF_02MP1201_JOIN_KATRIN])
+    {{
+        GetItemMessageExPlus(-1,1,ITEMMSG_SE_BETTER,"Kathleen {1}",0,0)
+        WaitPrompt()
+        WaitCloseWindow()        
+        {0}
+        
+        SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 41))
+        SetChrWork(RICOTTA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] + 33))
+        SetChrWork(HUMMEL,CWK_SUP_STR,(HUMMEL.CHRWORK[CWK_SUP_STR] - 18))
+        GetItem(ICON3D_WP_HUMMEL_000, 1)
+        GetItem(ICON3D_AM_021, 1)
+        EquipWeapon(HUMMEL,ICON3D_WP_HUMMEL_000)
+    }}
+    else if (!FLAG[GF_TBOX_DUMMY081])
+    {{
         SetFlag(GF_SHOP_RANK_3_02,1)
         SetFlag(GF_02MP4309_KILL_SPIDER,1)
         SetFlag(GF_QS201_SHOP_ADD,1)
         SetFlag(GF_TBOX_DUMMY081,1)
-        GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 2.",0,0)
+        GetItem(ICON3D_FIRESTONE,1)
+        GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
         WaitPrompt()
         WaitCloseWindow()
-        
-    }
+        GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 2.",0,0)
+        WaitPrompt()
+        WaitCloseWindow()  
+
+        SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 34))
+        SetChrWork(RICOTTA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] - 55))
+        GetItem(ICON3D_WP_RICOTTA_000, 1)
+        GetItem(ICON3D_AM_022, 1)
+        EquipWeapon(RICOTTA,ICON3D_WP_RICOTTA_000)
+    }}
     else if (!FLAG[GF_TBOX_DUMMY082])
-    {
+    {{
         SetFlag(GF_SHOP_RANK_3_05,1)
         SetFlag(GF_SHOP_RANK_4_01,1)
-        //Hummel has no shop upgarde to get him this weapon tier and therefore cannot upgrade to it. So we'll give it to him when we hit this level so Hummel isn't stuck with a  tier 2 weapon all game.
+        //The flag here is the trigger for speaking with Kathleen about the orichalcum and having new weapons made.
+        //That event then trips the flag for being able to kill enemies flagged as Saurians.
+        SetFlag(GF_03MP7401_GET_MATERIAL, 1)
+        //Hummel has no shop upgarde to get him this weapon tier and therefore cannot upgrade to it. So we'll give it to him when we hit this level so Hummel isn't stuck with a tier 2 weapon all game.
         GetItem(ICON3D_WP_HUMMEL_002,1)
 	    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_002)
         SetFlag(GF_TBOX_DUMMY082,1)
+        GetItem(ICON3D_HIIROKANE,1)
+        GetItemMessageExPlus(ICON3D_HIIROKANE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+        WaitPrompt()
+        GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Turn this into Kathleen.",0,0)
+        WaitPrompt()
+        WaitCloseWindow()
         GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 3.",0,0)
         WaitPrompt()
         WaitCloseWindow()
-    }
+
+        SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 47))
+    }}
     else if (!FLAG[GF_TBOX_DUMMY083])
-    {
+    {{
         SetFlag(GF_SHOP_RANK_5_02,1)
         SetFlag(GF_TBOX_DUMMY083,1)
+        GetItem(ICON3D_FIRESTONE,1)
+        GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
         GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 4.",0,0)
         WaitPrompt()
         WaitCloseWindow()
-    }
+
+        SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] - 130))
+        GetItem(ICON3D_AM_023, 1)
+        GetItem(ICON3D_WP_DANA_000, 1)
+        EquipWeapon(DANA,ICON3D_WP_DANA_000)
+    }}
     else if (!FLAG[GF_TBOX_DUMMY084])
-    {
+    {{
         SetFlag(GF_SHOP_RANK_5_04,1)
         SetFlag(GF_QS222_SHOP_ADD,1)
         SetFlag(GF_QS310_GET_ITEM,1)
         SetFlag(GF_QS310_GET_ITEM2,1)
         SetFlag(GF_QS310_GET_ITEM3,1)
         SetFlag(GF_TBOX_DUMMY084,1)
+        GetItem(ICON3D_FIRESTONE,1)
+        GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
         GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 5.",0,0)
         WaitPrompt()
         WaitCloseWindow()
-    }
+    }}
     else if (!FLAG[GF_TBOX_DUMMY085])
-    {
+    {{
         SetFlag(GF_SHOP_RANK_5_07,1)
         SetFlag(GF_TBOX_DUMMY085,1)
+        GetItem(ICON3D_FIRESTONE,1)
+        GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
         GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 6.",0,0)
         WaitPrompt()
         WaitCloseWindow()
-    }
+    }}
     else if (!FLAG[GF_TBOX_DUMMY086])
-    {
+    {{
         SetFlag(GF_SHOP_RANK_6_01,1)
         SetFlag(GF_05MP6349_KILL_BOSS,1)
         SetFlag(GF_QS600_SHOP_ADD,1)
         SetFlag(GF_TBOX_DUMMY086,1)
         SetFlag(GF_NPC_6_03_AFTER_INTERCEPT12,1)
         SetFlag(GF_06MP1201_GOTO_GEND,1)
+        GetItem(ICON3D_FIRESTONE,1)
+        GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
         GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank MAX.",0,0)
         WaitPrompt()
         WaitCloseWindow()
-    }
+    }}
+    {4}
     """
 
-    return script
+    return script.format(getCrewFlags("Kathleen"),crewMessage,genericMessage,stopFlag,stopFlagEnd)
 
 def goal(parameters):
     if parameters.goal == 'Find Crew':

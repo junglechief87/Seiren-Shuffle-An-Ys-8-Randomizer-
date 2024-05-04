@@ -23,11 +23,13 @@ def shuffleLocations(parameters):
     while len(vanillaLocations) != 0:
         if vanillaLocations[0].locID in duplicateChests: #pop out duplicated locations, we'll copy these from the normal version of great river valley and valley of kings after we're done.
             chestsToCopy.append(vanillaLocations.pop(0))
-        elif not parameters.shuffleItems and vanillaLocations[0].item: #if we're not shuffling items then add them to the final list
-            shuffledLocations.append(vanillaLocations.pop(0))
         elif not parameters.shuffleCrew and vanillaLocations[0].crew and not vanillaLocations[0].party: #if we're not shuffling crew then add them to the final list
             shuffledLocations.append(vanillaLocations.pop(0))
         elif not parameters.shuffleParty and vanillaLocations[0].party: #if we're not shuffling party then add them to the final list
+            shuffledLocations.append(vanillaLocations.pop(0))
+        elif not parameters.shuffleSkills and vanillaLocations[0].skill: #if we're not shuffling skills then add them to the final list
+            shuffledLocations.append(vanillaLocations.pop(0))
+        elif not vanillaLocations[0].crew and not vanillaLocations[0].party and not vanillaLocations[0].item and not vanillaLocations[0].skill: #if the location has no randomizable property don't randomize it, mostly used for bosses
             shuffledLocations.append(vanillaLocations.pop(0))
         elif vanillaLocations[0].locRegion.find(blacklistRegion) == -1 and vanillaLocations[0].mapCheckID != 'Goal':
             locToBeShuffled = vanillaLocations.pop(0)
@@ -47,7 +49,20 @@ def shuffleLocations(parameters):
 
     return shuffledLocations
 
-def fillShuffledLocations(inventory, fillLocations, shuffledLocations, parameters):
+#these functions take locations and item lists and find the index of the specified characters skills and starting skills for locations.
+def findStartSkillSlot(fillLocations,character):
+    characterRegion = character.lower() + 'Skill'
+    for index,location in enumerate(fillLocations):
+        if location.mapID == 'startingSkill' and location.locRegion == characterRegion:
+            return index
+
+def findSkill(niceItem,character):
+        characterSkill = character.upper()
+        for index,item in enumerate(niceItem):
+            if item.itemName.find(characterSkill) > -1:
+                return index
+                
+def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     progressionInventory = [] #progression items only
     niceItems = [] #nice to have items that will always exist in the world but don't contain logic
     junkItems = [] #filler items, not all will be placed. Some new progression items, like the Dana past event trigger items, will take their place in the pool of vanilla items.
@@ -58,7 +73,13 @@ def fillShuffledLocations(inventory, fillLocations, shuffledLocations, parameter
     #if we're doing seiren escape then make Mistilteinn and the Seiren Area Map progression items
     if parameters.goal == 'Seiren Escape':
         for index,item in enumerate(inventory):
-            if item.itemID == 9 or item.itemID == 795:
+            if item.itemID in [9,795]:
+                inventory[index].progression = True
+
+    #if battle logic is on we have a number of items to make progression
+    if parameters.battleLogic:
+        for index,item in enumerate(inventory):
+            if item.itemID in [155,171,156,542,157,169,172,271,727,548,209,436,720]:
                 inventory[index].progression = True
 
     #pull out progression items to place first for easier processing
@@ -73,8 +94,22 @@ def fillShuffledLocations(inventory, fillLocations, shuffledLocations, parameter
             junk = inventory.pop(0)
             junkItems.append(junk)
 
+    #if skill shuffle is turned on we go ahead and pull the skill starting locations and find a skill for the corresponding character to place there. 
+    #we do these before the main shuffle to avoid things being placed there that aren't skills
+    if parameters.shuffleSkills:
+        startingSkills = 2
+        for character in ['adol','laxia','sahad','hummel','ricotta','dana']:
+            for startingSkill in range(0,startingSkills):
+                locationIndex = findStartSkillSlot(fillLocations,character)
+                skillIndex = findSkill(niceItems,character)
+                skillLocToFill = fillLocations.pop(locationIndex)
+                skillToPlace = niceItems.pop(skillIndex)
+                filledLocation = combineShuffledLocAndItem(skillLocToFill,skillToPlace)
+                shuffledLocations.append(filledLocation)
+
     #let's shuffle the inventory just to randomize the party order then run through the intventory until we find the first party member, store it, then pop it from inventory.
     #this will be our starting character.
+    #this needs to be done before the main shuffle to avoid things that aren't character being placed here.
     random.shuffle(progressionInventory) 
     index = 0
     for partyMember in progressionInventory:
@@ -117,7 +152,6 @@ def fillShuffledLocations(inventory, fillLocations, shuffledLocations, parameter
                     accessibleInventory.append(accessibleItem)
                     itemFound+=1
 
-                
             if itemFound == 0: break
 
         #loop through locations and test if the player can access them. If they can access them then queue the location to be filled and remove from pool
