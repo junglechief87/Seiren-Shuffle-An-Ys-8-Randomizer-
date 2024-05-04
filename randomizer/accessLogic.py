@@ -72,7 +72,10 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID != 'Corpse' and access.canClimb(): return True
             else: return False
         elif location.locName in ['Rainbow Falls','End'] and access.canClimb(): return True
-        elif location.locName == 'Boss Arena' and battleLogic(20,access,parameters): return True
+        elif location.locName == 'Boss Arena' and battleLogic(20,access,parameters): 
+            if location.mapCheckID != 'Psyches': return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Clareon'): return True
+            else: return False
         else: return False
     elif location.locRegion == 'Roaring Seashore' and access.canClimb() and access.canDefeat('Clareon'):
         if location.locName == 'Metavolicalis': return True
@@ -116,7 +119,10 @@ def canAccess(inventory,location,parameters):
             if location.mapCheckID == 'TBOX03' and access.canSeeDark(): return True
             elif location.mapCheckID != 'TBOX03': return True
         elif location.locName == 'End'  and access.canSeeDark() and access.canDefeat('Lonbrigius'): return True
-        elif location.locName == 'Boss Arena' and battleLogic(60,access,parameters): return True
+        elif location.locName == 'Boss Arena' and battleLogic(60,access,parameters): 
+            if location.mapCheckID != 'Psyches': return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Gargantula'): return True
+            else: return False
         else: return False
     elif location.locRegion == 'Sunrise Beach' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())) and access.canSeeDark() and access.canDefeat('Gargantula'): 
         if location.mapCheckID in ['Master Kong Skill Sahad','Master Kong Sahad'] and battleLogic(165,access,parameters) and access.hasSahad() and access.canDefeat('Master Kong Ricotta'): return True
@@ -166,7 +172,10 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'TBOX01' and access.canSwampWalk() and access.canClimb(): return True
             else: return False
         elif location.locName == 'End' and access.canSwampWalk() and access.canDefeat('Magamandra'): return True
-        elif location.locName == 'Boss Arena' and battleLogic(100,access,parameters): return True
+        elif location.locName == 'Boss Arena' and battleLogic(100,access,parameters): 
+            if location.mapCheckID != 'Psyches': return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Laspisus'): return True
+            else: return False
         else: return False
     elif location.locRegion == 'Odd Rock Coast' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())) and access.hasDina() and access.canSwampWalk() and access.canDefeat('Laspisus'): 
         if location.mapCheckID in ['Master Kong Skill Dana','Master Kong Dana'] and battleLogic(175,access,parameters) and access.hasDana() and access.canDefeat('Master Kong Sahad'): return True
@@ -187,6 +196,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Boss Arena': 
             if location.mapCheckID in ['Giasburn Skill 1','Giasburn Skill 2','Giasburn'] and battleLogic(165,access,parameters): return True
             elif location.mapCheckID in ['Master Kong Skill Laxia','Master Kong Laxia'] and battleLogic(185,access,parameters) and access.hasLaxia() and access.canDefeat('Master Kong Dana'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Giasburn'): return True
             else: return False
         elif location.locName not in ['Mid-Boss Arena','Upper Cliffs 1','Upper Cliffs 2','Mishy Rewards','Boss Arena']: return True
         else: return False
@@ -215,7 +225,13 @@ def canAccess(inventory,location,parameters):
             else: return False
         elif location.locName == 'Palace Ruins': return True
         else: return False
-    elif location.locRegion == 'Temple of the Great Tree' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'): return True
+    elif location.locRegion == 'Temple of the Great Tree' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'):
+        if location.locName == 'Temple Boss Arena':
+            if location.mapCheckID != 'Psyches': return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Brachion'): return True
+            else: return False
+        elif location.locName != 'Temple Boss Arena': return True
+        else: return False
     elif location.locRegion == 'Mont Gendarme (Night)'and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canSeeDark(): return True
     elif location.locRegion == 'Pangaia Plains (Night)' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and access.canSeeDark() and access.canDefeat('Giasburn'): return True
     elif location.locRegion == 'Water and Wood Hills' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())) and access.hasDina():
@@ -226,7 +242,8 @@ def canAccess(inventory,location,parameters):
     elif location.locRegion == 'Silent Tower' and access.canDoubleJump() and access.hasDina() and access.canMove(24):
         if location.locName == 'Second Basement':
             if location.mapCheckID in ['Maphorash','Maphorash Skill 1','Maphorash Skill 2','TBOX04'] and battleLogic(270,access,parameters): return True
-            elif location.mapCheckID not in ['Maphorash','Maphorash Skill 1','Maphorash Skill 2','TBOX04']: return True
+            elif location.mapCheckID in ['TBOX01','TBOX02','TBOX03']: return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Maphorash'): return True
             else: return False
         elif location.locName != 'Second Basement': return True
         else: return False
@@ -244,7 +261,10 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Mid-Boss Arena' and battleLogic(180,access,parameters): return True
         elif location.locName == 'Fifth Floor' and access.canDoubleJump(): return True
         elif location.locName == 'Sixth Floor' and access.canDoubleJump(): return True
-        elif location.locName == 'Boss Arena' and battleLogic(200,access,parameters): return True
+        elif location.locName == 'Boss Arena' and battleLogic(200,access,parameters): 
+            if location.mapCheckID != 'Psyches': return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Carveros'): return True
+            else: return False
         elif location.locName == 'Top Floor' and access.canDoubleJump() and access.canDefeat('Carveros'): return True
         else: return False
     elif location.locRegion == 'Nostalgia Cape' and (access.canMove(6) or access.canClimb()) and access.canDoubleJump() and access.hasDina():
@@ -262,7 +282,10 @@ def canAccess(inventory,location,parameters):
             else: return False
         elif location.locName == 'Accessway': return True
         elif location.locName == 'Crew Quarters': return True
-        elif location.locName == 'Deck' and battleLogic(180,access,parameters): return True
+        elif location.locName == 'Deck' and battleLogic(180,access,parameters): 
+            if location.mapCheckID != 'Psyches': return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Pirate Revenant'): return True
+            else: return False
         elif location.locName == 'Stairwell': return True
         else: return False
     elif location.locRegion == 'Balado Monastery' and access.canDefeat('Giasburn'):
@@ -290,7 +313,10 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Water Vents' and access.canUnderwater(): return True
         elif location.locName == 'Sunken Eternia Ruins West' and access.canUnderwater(): return True
         elif location.locName == 'Sunken Eternia Ruins East' and access.canUnderwater(): return True
-        elif location.locName == 'Boss Arena' and access.canUnderwater() and battleLogic(240,access,parameters): return True
+        elif location.locName == 'Boss Arena' and access.canUnderwater() and battleLogic(240,access,parameters):
+            if location.mapCheckID != 'Psyches': return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Oceanus'): return True
+            else: return False
         else: return False
     elif location.locRegion == 'Vista Ridge' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'): 
         if location.locName == 'Vista Ridge Upper' and access.canMove(21) and access.canDoubleJump(): return True
@@ -321,8 +347,11 @@ def canAccess(inventory,location,parameters):
             if location.mapCheckID in ['TBOX01','TBOX02'] and access.canDoubleJump(): return True
             elif location.mapCheckID in ['TBOX03','TBOX04']: return True
             else: return False
-        elif location.locName == 'Boss Arena' and access.canUndead() and battleLogic(250,access,parameters): return True
-        elif location.locName == 'Seren Garden' and access.canUndead() and access.canDefeat('Psyche-Ura'): return True
+        elif location.locName == 'Boss Arena' and access.canUndead() and battleLogic(250,access,parameters):
+            if location.mapCheckID != 'Psyches': return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Basileus'): return True
+            else: return False
+        elif location.locName == 'Seren Garden' and access.canUndead() and ((parameters.goal != 'Release the Psyches' and access.canDefeat('Psyche-Ura')) or (parameters.goal == 'Release the Psyches' and access.hasSkyPsyches())): return True
         else: return False
     elif location.locRegion == 'The Submerged Cemetery' and access.canSeeDark() and access.canClimb() and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater() and battleLogic(165,access,parameters): return True
     elif location.locRegion == 'Solitude Island' and access.hasBoat(): return True
@@ -336,6 +365,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Selection Sphere' and battleLogic(320,access,parameters):
             if parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal): return True
             elif parameters.goal == 'Seiren Escape' and access.hasBoat() and access.hasMistilteinn() and access.hasChart(): return True
+            elif parameters.goal == 'Release the Psyches' and access.hasAllPsyches(): return True
             else: return False
         else: return False
     else: return False

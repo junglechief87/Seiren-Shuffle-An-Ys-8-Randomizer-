@@ -377,6 +377,22 @@ class access:
         return True
     return False
   
+  def hasSkyPsyches(self):
+    for item in self.inventoryObjects:
+      if item.itemName == 'Psyches of the Sky Era':
+        return True
+    return False
+  
+  def hasAllPsyches(self):
+    count = 0
+    for item in self.inventoryObjects:
+      if item.itemName in ['Psyches of the Sky Era','Psyches of the Insectoid Era','Psyches of the Frozen Era','Psyches of the Ocean Era']:
+        count+=1
+        
+    if count >= 4:
+      return True
+    return False
+  
 class guiInput:
   def __init__(self):
      self.seed = None
@@ -391,10 +407,16 @@ class guiInput:
      self.mapCompletion = None
      self.foodTrades = None
      self.dogiRewards = None
+     self.mkRewards = None
+     self.maphorash = None
      self.intRewards = None
      self.expMult = None
      self.battleLogic = None
      self.progressiveSuperWeapons = None
+     self.openOctusPaths = None
+     self.finalBoss = None
+     self.theosPhase = None
+     self.originPhase = None
   
   def getSeed(seed):
     guiInput.seed = seed
@@ -408,25 +430,29 @@ class guiInput:
     guiInput.shuffleCrew = crew
     guiInput.shuffleSkills = skills
   
-  def getProgressionMods(jewels,fish,disc,map,food,dogiRewards):
+  def getProgressionMods(jewels,fish,disc,map,food,dogiRewards,mkRewards,maphorash):
     guiInput.jewelTrades = jewels
     guiInput.fishTrades = fish
     guiInput.discoveries = disc
     guiInput.mapCompletion = map
     guiInput.foodTrades = food
     guiInput.dogiRewards = dogiRewards
+    guiInput.mkRewards = mkRewards
+    guiInput.maphorash = maphorash
 
-  def getIntRewards(intRewards):
+  def getOtherToggles(intRewards,battleLogic,superWeapons,openPaths):
     guiInput.intRewards = intRewards
+    guiInput.battleLogic = battleLogic
+    guiInput.progressiveSuperWeapons = superWeapons
+    guiInput.openOctusPaths = openPaths
 
   def getExpMult(expMult):
     guiInput.expMult = expMult
 
-  def getBattleLogic(battleLogic):
-    guiInput.battleLogic = battleLogic
-
-  def getProgressiveSuperWeapons(superWeapons):
-    guiInput.progressiveSuperWeapons = superWeapons
+  def getFinalBoss(finalBoss,theosPhase,originPhase):
+    guiInput.finalBoss = finalBoss
+    guiInput.theosPhase = theosPhase
+    guiInput.originPhase = originPhase
     
 class interceptReward:
   def __init__(self,stage,rewards):

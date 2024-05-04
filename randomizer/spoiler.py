@@ -45,8 +45,6 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         while True:
             itemFound = 0
             for index,location in enumerate(accessibleLocation):
-                if sphere > 10:
-                    print(location.locRegion + location.locName)
                 if canAccess(progressionInventory,location,parameters) or location.locRegion.find(blacklistRegion) >= 0:
                     newLocation = accessibleLocation.pop(index)
                     accessibleItem = classr.inventory(newLocation)

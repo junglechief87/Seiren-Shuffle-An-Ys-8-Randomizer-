@@ -52,6 +52,8 @@ def rngPatcherMain(parameters):
                 patchFile = patchFile + buildCrewLocation(location,script)
             elif location.skill:
                 patchFile = patchFile + buildSkillLocation(location,script)
+            elif location.mapCheckID == 'Psyches':
+                patchFile = patchFile + buildPsyches(location)
 
     patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
@@ -549,20 +551,92 @@ function "goal"
     }
 }
 """
-        return selectionSphereAccess
-
-    
-
-def endingHandler(parameters):
-    script = """
-function "ending"
+    elif parameters.goal == 'Release the Psyches':
+        selectionSphereAccess ="""
+function "goal"
 {
-    LoadArg("map/mp0021/mp0021.arg")
-    EventCue("mp0021:EV_M07S130")
+    if(FLAG[GF_06MP6305_TALK_HYDRA] && FLAG[GF_06MP6306_TALK_MINOS] && FLAG[GF_06MP6307_TALK_NESTOR] && FLAG[GF_06MP6308_TALK_SARAI] && !FLAG[GF_06MP6301_GOTO_BOSSROOM])
+    {
+        SetFlag( GF_06MP6301_OPEN_STAIRS , 1 )
+	    SetFlag( GF_06MP6301_GOTO_BOSSROOM , 1 )
+        CallFunc("mp6301:init")
+    }
 }
 """
+    
+    return selectionSphereAccess
 
-    return script
+#This sorts out our final boss settings.
+#First we figure out what phases we're doing then we run through our script that's called to start the final boss and what's used to call the ending cutscenes.
+#if we're only doing theos then the theos start script calls theos and the ending script calls the ending cutscene.
+#if we're doing both then the ending cutscene script instead calls origin.
+#if we're only doing origin then the theos start script calls the origin boss fight.
+def endingHandler(parameters):
+    if parameters.theosPhase == 'First':
+        theosPhase = ''
+    elif parameters.theosPhase == 'Second':
+        theosPhase = 'SetFlag(GF_MP6310B_ENDROGRAM_STEP,1)'
+    elif parameters.theosPhase == 'Final':
+        theosPhase = 'SetFlag(GF_MP6310B_ENDROGRAM_STEP,2)'
+    
+    if parameters.originPhase == 'First':
+        originPhase = ''
+    elif parameters.originPhase == 'Final':
+        originPhase = 'SetFlag(GF_MP8323_2NDBATTLE,1)'
+
+    if parameters.finalBoss == 'Theos de Endogram' or parameters.finalBoss == 'Both':
+        theosStartScript = """
+    function "finalBoss"
+    {{
+        {0}
+        LoadArg("map/mp6310b/mp6310b.arg")
+	    EventCue("mp6310b:EV_M06S240")
+    }}
+    """
+        theosStartScript = theosStartScript.format(theosPhase)
+    elif parameters.finalBoss == 'Origin of Life':
+        theosStartScript = """
+    function "finalBoss"
+    {{
+        {0}
+        LoadArg("map/mp8323/mp8323.arg")
+		EventCue("mp8323:init")
+    }}
+    """
+        theosStartScript = theosStartScript.format(originPhase)
+
+    if parameters.finalBoss == 'Theos de Endogram' or parameters.finalBoss == 'Origin of Life':
+        ending1 = """
+    function "ending"
+    {
+        LoadArg("map/mp0021/mp0021.arg")
+        EventCue("mp0021:EV_M07S130")
+    }
+    
+    function "ending2"
+    {
+        LoadArg("map/mp0021/mp0021.arg")
+        EventCue("mp0021:EV_M07S130")
+    }
+    """
+    if parameters.finalBoss == 'Both':
+        ending1 = """
+    function "ending"
+    {{
+        {0}
+        LoadArg("map/mp8323/mp8323.arg")
+		EventCue("mp8323:init")
+    }}
+
+    function "ending2"
+    {{
+        LoadArg("map/mp0021/mp0021.arg")
+        EventCue("mp0021:EV_M07S130")
+    }}
+    """
+        ending1 = ending1.format(originPhase)
+
+    return theosStartScript + ending1
 
 #This flag was original tripped by the chest event from the chest on the Docks of East Coast Cave. Now it has been moved to the note that was originally in that chest.
 def pirateShipDocks():
@@ -837,6 +911,270 @@ def interceptUnlock():
         WaitCloseWindow()
         SetFlag(GF_TBOX_DUMMY103,1)
     }
+"""
+    return script
+
+#we're going to build our scripts for every location where psches could appear. If the boss isn't there then we build a function that does nothing. 
+#The hooks will work like any other: rng + locID
+#GF_TBOX_DUMMY112 is our flag for release the psyches so these won't get called outside this game mode.
+#Therefore we don't need to worry about these not being built outside that flag being on.
+#The calls will be an EventCue which could be a little awkward in larger environments when it triggers but this is the best way to make these work logically.
+def buildPsyches(location):
+    scriptName = buildLocScripts(location.locID,False)
+    callPrompt = ''
+    promptFight = ''
+    if location.itemName == 'Psyches of the Sky Era':
+        callPrompt = 'CallFunc("rng:uraFight")'
+        promptFight = uraFight()
+    elif location.itemName == 'Psyches of the Insectoid Era':
+        callPrompt = 'CallFunc("rng:nestorFight")'
+        promptFight = nestorFight()
+    elif location.itemName == 'Psyches of the Frozen Era':
+        callPrompt = 'CallFunc("rng:minosFight")'
+        promptFight = minosFight()
+    elif location.itemName == 'Psyches of the Ocean Era':
+        callPrompt = 'CallFunc("rng:hydraFight")'
+        promptFight = hydraFight()
+    elif location.itemName == 'Empty Psyches':
+        callPrompt = """
+    SetStopFlag(STOPFLAG_TALK)
+    Message("No presence felt.")
+    WaitPrompt()
+    WaitCloseWindow()
+    ResetStopFlag(STOPFLAG_TALK)
+    """
+    psycheFunction = """
+function "{0}"
+{{
+    WaitFade()
+	Wait(20)
+    {1}
+}}
+{2}
+"""
+    return psycheFunction.format(scriptName,callPrompt,promptFight)
+  
+def hydraFight():
+    script = """
+    function "hydraFight"
+    {
+        SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+        Message("The presence of the Ocean Warden Can be felt.")
+        WaitPrompt()
+        WaitCloseWindow()
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+			SetEnvSEPlayState(-1, 0)
+			FadeOut(FADE_BLACK,FADE_NORMAL)
+			WaitFade()
+			
+			SetFlag( TF_MENU_SELECT, 1 )	
+		}
+		//	⇒やめる
+		else
+		{
+			
+			SetFlag( TF_MENU_SELECT, 0 )
+		}
+		//──────────────────────
+
+		if( FLAG[TF_MENU_SELECT] == 0 )
+		{
+			CrossFade(FADE_CROSS)
+			SetStopFlag(STOPFLAG_NOCHARACLIP)
+			
+			ResetPartyPos()
+			ResetFollowPoint()
+			
+			RestoreCamera(0,0)
+			ResetCameraObserver(0)
+			ResetCameraZPlane()
+			Wait(FADE_CROSS)
+			
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		}
+		else
+		{
+			LoadArg("map/mp6305b/mp6305b.arg")
+	        EventCue("mp6305b:EV_RetryBoss")
+			//FadeIn(FADE_BLACK,FADE_NORMAL)
+			WaitFade()
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		}
+	}
+"""
+    return script
+
+def minosFight():
+    script = """
+    function "minosFight"
+    {
+        Message("The presence of the Frozen Warden Can be felt.")
+        WaitPrompt()
+        WaitCloseWindow()
+		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+			SetEnvSEPlayState(-1, 0)
+			FadeOut(FADE_BLACK,FADE_NORMAL)
+			WaitFade()
+			
+			SetFlag( TF_MENU_SELECT, 1 )	
+		}
+		//	⇒やめる
+		else
+		{
+			
+			SetFlag( TF_MENU_SELECT, 0 )
+		}
+		//──────────────────────
+
+		if( FLAG[TF_MENU_SELECT] == 0 )
+		{
+			CrossFade(FADE_CROSS)
+			SetStopFlag(STOPFLAG_NOCHARACLIP)
+			
+			ResetPartyPos()
+			ResetFollowPoint()
+			
+			RestoreCamera(0,0)
+			ResetCameraObserver(0)
+			ResetCameraZPlane()
+			Wait(FADE_CROSS)
+			
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		}
+		else
+		{
+			LoadArg("map/mp6306b/mp6306b.arg")
+	        EventCue("mp6306b:EV_RetryBoss")
+			//FadeIn(FADE_BLACK,FADE_NORMAL)
+			WaitFade()
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		}
+	}
+"""
+    return script
+
+def nestorFight():
+    script = """
+    function "nestorFight"
+    {
+        Message("The presence of the Insect Warden Can be felt.")
+        WaitPrompt()
+        WaitCloseWindow()
+		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+			SetEnvSEPlayState(-1, 0)
+			FadeOut(FADE_BLACK,FADE_NORMAL)
+			WaitFade()
+			
+			SetFlag( TF_MENU_SELECT, 1 )	
+		}
+		//	⇒やめる
+		else
+		{
+			
+			SetFlag( TF_MENU_SELECT, 0 )
+		}
+		//──────────────────────
+
+		if( FLAG[TF_MENU_SELECT] == 0 )
+		{
+			CrossFade(FADE_CROSS)
+			SetStopFlag(STOPFLAG_NOCHARACLIP)
+			
+			ResetPartyPos()
+			ResetFollowPoint()
+			
+			RestoreCamera(0,0)
+			ResetCameraObserver(0)
+			ResetCameraZPlane()
+			Wait(FADE_CROSS)
+			
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		}
+		else
+		{
+			LoadArg("map/mp6307b/mp6307b.arg")
+	        EventCue("mp6307b:EV_RetryBoss")
+			//FadeIn(FADE_BLACK,FADE_NORMAL)
+			WaitFade()
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		}
+	}
+"""
+    return script
+
+def uraFight():
+    script = """
+    function "uraFight"
+    {
+        Message("The presence of the Sky Warden Can be felt.")
+        WaitPrompt()
+        WaitCloseWindow()
+		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		SetFlag( TF_MENU_SELECT, 0 )
+		YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+		
+		//──────────────────────
+		//　⇒支援要請を出す
+		if( FLAG[TF_MENU_SELECT] )
+		{
+			SetEnvSEPlayState(-1, 0)
+			FadeOut(FADE_BLACK,FADE_NORMAL)
+			WaitFade()
+			
+			SetFlag( TF_MENU_SELECT, 1 )	
+		}
+		//	⇒やめる
+		else
+		{
+			
+			SetFlag( TF_MENU_SELECT, 0 )
+		}
+		//──────────────────────
+
+		if( FLAG[TF_MENU_SELECT] == 0 )
+		{
+			CrossFade(FADE_CROSS)
+			SetStopFlag(STOPFLAG_NOCHARACLIP)
+			
+			ResetPartyPos()
+			ResetFollowPoint()
+			
+			RestoreCamera(0,0)
+			ResetCameraObserver(0)
+			ResetCameraZPlane()
+			Wait(FADE_CROSS)
+			
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		}
+		else
+		{
+			LoadArg("map/mp6308b/mp6308b.arg")
+	        EventCue("mp6308b:EV_RetryBoss")
+			//FadeIn(FADE_BLACK,FADE_NORMAL)
+			WaitFade()
+			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+		}
+	}
 """
     return script
 

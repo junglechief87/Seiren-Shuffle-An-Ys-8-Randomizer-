@@ -2649,8 +2649,8 @@ enum {
 	GF_TBOX_DUMMY109, //flag for progressive super weapons
 	GF_TBOX_DUMMY110, //Silvia fight
 	GF_TBOX_DUMMY111, //flag for skill shuffle
-	GF_TBOX_DUMMY112,
-	GF_TBOX_DUMMY113,
+	GF_TBOX_DUMMY112, //flag for release the psyches
+	GF_TBOX_DUMMY113, //open octus paths
 	GF_TBOX_DUMMY114,
 	GF_TBOX_DUMMY115,
 	GF_TBOX_DUMMY116,

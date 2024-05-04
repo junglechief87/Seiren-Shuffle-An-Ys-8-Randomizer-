@@ -14,6 +14,17 @@ def buildStartParameters(location,parameters):
     SetFlag(SF_CANTLEARN_SKILL,1)
     SetFlag(GF_TBOX_DUMMY111,1)
     """
+    if parameters.goal == 'Release the Psyches':
+        gameSettingFlags = gameSettingFlags + """
+    SetFlag(GF_TBOX_DUMMY112,1)
+    SetFlag (GF_06MP6301_RETURN_CENTER,1)
+    SetFlag (GF_06MP6301_OPEN_INSECT,1)
+    SetFlag (GF_06MP6301_OPEN_HEAVENS,1)
+    """  
+    if parameters.openOctusPaths:
+        gameSettingFlags = gameSettingFlags + """
+    SetFlag(GF_TBOX_DUMMY113,1)
+    """
     startParams = """
 function "startParameters"
 {{

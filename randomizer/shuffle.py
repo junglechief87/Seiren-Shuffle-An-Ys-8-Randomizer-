@@ -27,11 +27,15 @@ def shuffleLocations(parameters):
             shuffledLocations.append(vanillaLocations.pop(0))
         elif not parameters.shuffleParty and vanillaLocations[0].party: #if we're not shuffling party then add them to the final list
             shuffledLocations.append(vanillaLocations.pop(0))
-        elif not parameters.shuffleSkills and vanillaLocations[0].skill: #if we're not shuffling skills then add them to the final list
+        elif not parameters.shuffleSkills and vanillaLocations[0].skill: #if we're not shuffling skills then discard them
+            vanillaLocations.pop(0)
+        elif (vanillaLocations[0].mapCheckID == 'Psyches' and parameters.goal != 'Release the Psyches') or vanillaLocations[0].locRegion.find(blacklistRegion) != -1: #if goal isn't release the psyches and location is a psyche or the location we're looking at is blacklisted just discard it completely
+            vanillaLocations.pop(0)
+        elif parameters.goal == 'Release the Psyches' and vanillaLocations[0].mapCheckID in ['Psyche-Ura','Psyche-Nestor','Psyche-Minos','Psyche-Hydra']: #if goal is release the psyches discard warden bosses, their defeats will be tracked with the psyches
+            vanillaLocations.pop(0)
+        elif not vanillaLocations[0].crew and not vanillaLocations[0].party and not vanillaLocations[0].item and not vanillaLocations[0].skill and vanillaLocations[0].mapCheckID != 'Psyches': #if the location has no randomizable property don't randomize it, mostly used for bosses
             shuffledLocations.append(vanillaLocations.pop(0))
-        elif not vanillaLocations[0].crew and not vanillaLocations[0].party and not vanillaLocations[0].item and not vanillaLocations[0].skill: #if the location has no randomizable property don't randomize it, mostly used for bosses
-            shuffledLocations.append(vanillaLocations.pop(0))
-        elif vanillaLocations[0].locRegion.find(blacklistRegion) == -1 and vanillaLocations[0].mapCheckID != 'Goal':
+        elif vanillaLocations[0].mapCheckID != 'Goal':
             locToBeShuffled = vanillaLocations.pop(0)
             inventoryObject = classr.inventory(locToBeShuffled)
 
@@ -66,6 +70,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     progressionInventory = [] #progression items only
     niceItems = [] #nice to have items that will always exist in the world but don't contain logic
     junkItems = [] #filler items, not all will be placed. Some new progression items, like the Dana past event trigger items, will take their place in the pool of vanilla items.
+    psycheItems = [] #currently only used for filling in release the psyche goal mode
     accessibleInventory = []
     accessibleLocation = []
     progressionBanList = progressionBans(parameters)
@@ -83,8 +88,12 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
                 inventory[index].progression = True
 
     #pull out progression items to place first for easier processing
+    #for release the psyches goal we need to pull those into their own list too
     while len(inventory) != 0:
-        if inventory[0].progression:    
+        if inventory[0].itemName in ['Empty Psyches','Psyches of the Sky Era','Psyches of the Insectoid Era','Psyches of the Frozen Era','Psyches of the Ocean Era']:
+            psycheItem = inventory.pop(0)
+            psycheItems.append(psycheItem)
+        elif inventory[0].progression:    
             progressionItem = inventory.pop(0)
             progressionInventory.append(progressionItem)
         elif inventory[0].nice:
@@ -107,30 +116,33 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
                 filledLocation = combineShuffledLocAndItem(skillLocToFill,skillToPlace)
                 shuffledLocations.append(filledLocation)
 
+    #for release the psyches game goal we'll build our list here.
+    if parameters.goal == 'Release the Psyches':
+        while len(psycheItems) != 0:
+            psycheToPlace = psycheItems.pop(0)
+            for locIndex,location in enumerate(fillLocations):
+                if location.mapCheckID == 'Psyches' and not (psycheToPlace.progression and location.locID in progressionBanList):
+                    psycheToFill = fillLocations.pop(locIndex)
+                    filledLocation = combineShuffledLocAndItem(psycheToFill,psycheToPlace)
+                    shuffledLocations.append(filledLocation)
+                    break
+                
     #let's shuffle the inventory just to randomize the party order then run through the intventory until we find the first party member, store it, then pop it from inventory.
     #this will be our starting character.
     #this needs to be done before the main shuffle to avoid things that aren't character being placed here.
     random.shuffle(progressionInventory) 
-    index = 0
-    for partyMember in progressionInventory:
-        if partyMember.party:
-            startingPartyMember = partyMember
-            progressionInventory.pop(index)
-            break
-        index+=1
-
-    #let's find the opening cutscene real quick and make sure we fill is with a playable character
     if parameters.shuffleParty:
-        locNum = 0
-        for location in fillLocations:
-            if location.locName == 'Opening Cutscene':
-                fillLocation = location
-                fillLocations.pop(locNum)
-                break
-            locNum+=1
-
-        filledLocation = combineShuffledLocAndItem(fillLocation,startingPartyMember)
-        shuffledLocations.append(filledLocation)
+        for index,partyMember in enumerate(progressionInventory):
+            if partyMember.party:
+                startingPartyMember = progressionInventory.pop(index)
+                #let's find the opening cutscene real quick and make sure we fill is with a playable character
+                for locNum,location in enumerate(fillLocations):
+                    if location.locName == 'Opening Cutscene':
+                        partyFillLocation = fillLocations.pop(locNum)
+                        filledLocation = combineShuffledLocAndItem(partyFillLocation,startingPartyMember)
+                        shuffledLocations.append(filledLocation)
+                        break 
+                break      
              
     #loop through progression items and place them by first pulling out the item at index 0
     #this fill algorithim is based in large part of the fill algorithim used by most modern randos
@@ -176,6 +188,8 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     placedItems = 0
     for fillLocation in fillLocations:
         if len(junkItems) <= 0:
+            for fillLocation in fillLocations:
+                print(fillLocation.locName + fillLocation.locRegion)
             raise Exception("Whoops! Ran out of items. Locations left to fill: " + str(len(fillLocations)-placedItems))
                             
         itemToPlace = junkItems.pop(0)
@@ -274,6 +288,16 @@ def progressionBans(parameters):
 
     if not parameters.dogiRewards:
         locationsToAdd = [446,447,448,449,450]
+
+    locationBans = addLocations(locationsToAdd,locationBans)
+
+    if not parameters.maphorash:
+        locationsToAdd = [532,533,617,268]
+
+    locationBans = addLocations(locationsToAdd,locationBans)
+
+    if not parameters.mkRewards:
+        locationsToAdd = [428,580,581,582,583,584,585]
 
     locationBans = addLocations(locationsToAdd,locationBans)
 
