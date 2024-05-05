@@ -4,6 +4,7 @@ from randomizer.accessLogic import *
 def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests):
     sphere = 0
     newInventory = []
+    progressionLocations = []
     foundLocations = []
     accessibleLocation = []
     progressionInventory = []
@@ -11,13 +12,30 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog = open('Ys_8_' + str(parameters.seed) + '.txt', 'w')
 
     spoilerLog.write("Seed# " + str(parameters.seed) + '\n')
-    spoilerLog.write('\n')
     spoilerLog.write('Goal: ' + parameters.goal + '\t Number: ' + str(parameters.numGoal))
-    spoilerLog.write('\n \n \n')
-    
+    spoilerLog.write('\n \n')
+    spoilerLog.write("Settings:\n")
+    spoilerLog.write("Shuffle Party: " + str(parameters.shuffleParty) + "\n")
+    spoilerLog.write("Shuffle Crew: " + str(parameters.shuffleCrew) + "\n")
+    spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
+    spoilerLog.write("Jewel Trades: " + str(parameters.jewelTrades) + "\n")
+    spoilerLog.write("Discoveries: " + str(parameters.discoveries) + "\n")
+    spoilerLog.write("Map Completion: " + str(parameters.mapCompletion) + "\n")
+    spoilerLog.write("Food Trades: " + str(parameters.foodTrades) + "\n")
+    spoilerLog.write("Fish Trades: " + str(parameters.fishTrades) + "\n")
+    spoilerLog.write("Doggi Intercept Rewards: " + str(parameters.dogiRewards) + "\n")
+    spoilerLog.write("Master Kong: " + str(parameters.mkRewards) + "\n")
+    spoilerLog.write("Maphorash: " + str(parameters.maphorash) + "\n")
+    spoilerLog.write("Additional Intercept Rewards: " + str(parameters.intRewards) + "\n")
+    spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
+    spoilerLog.write("Experience Multiplier: " + str(parameters.expMult) + "\n")
+    spoilerLog.write("Battle Logic: " + str(parameters.battleLogic) + "\n")
+    spoilerLog.write("Progressive Super Weapons: " + str(parameters.progressiveSuperWeapons) + "\n")
+    spoilerLog.write("Open Octus Paths: " + str(parameters.openOctusPaths) + "\n")
+    spoilerLog.write("Doggi Intercept Rewards: " + str(parameters.finalBoss) + "\n")
+    spoilerLog.write("Master Kong: " + str(parameters.theosPhase) + "\n")
+    spoilerLog.write("Master Kong: " + str(parameters.originPhase) + "\n")
     spoilerLog.write("Locations:\n")
-    spoilerLog.write('\n')
-    spoilerLog.write('\n')
 
     for location in shuffledLocations:
         location.writeSpoiler(spoilerLog)
@@ -28,20 +46,12 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
             progressionInventory.append(location)
         else:
             accessibleLocation.append(location)
-            
+        
     spoilerLog.write('\n \n \n')
     spoilerLog.write("Playthrough:\n")
-    spoilerLog.write('\n')
     
+    #We build an initial list of progression items on the way to the goal
     while len(accessibleLocation) != 0 and not win:
-        itemFound = 0
-        spoilerLog.write(str(sphere) + ': \n')
-        spoilerLog.write('\n')
-        spoilerLog.write('{ \n')
-        if sphere == 0:
-            openingCutscene.writeSpoiler(spoilerLog)
-
-        itemFound = False
         while True:
             itemFound = 0
             for index,location in enumerate(accessibleLocation):
@@ -50,7 +60,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
                     accessibleItem = classr.inventory(newLocation)
                     if accessibleItem.progression and newLocation.locID not in duplicateChests:
                         newInventory.append(accessibleItem)
-                        foundLocations.append(newLocation)
+                        progressionLocations.append(newLocation)
                         itemFound+=1
                         
                         if accessibleItem.itemName == 'End the Lacrimosa':
@@ -58,14 +68,82 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
                             break
                         
             if itemFound == 0 or win: break
-                           
+        
+        while len(newInventory) != 0:
+            progressionInventory.append(newInventory.pop(0))
+
+    #We trim down the list by removing each progression location one at a time and seeing if the seed is still beatable, if it is then we remove the location completely
+    progressionLocations.append(openingCutscene)
+    while True:
+        removed = False
+        locIndex = 0
+        for locIndex,location in enumerate(progressionLocations):
+            itemToTest = progressionLocations.pop(locIndex)
+            beatable = testSeed(progressionLocations,parameters)
+            if not beatable:
+                progressionLocations.append(itemToTest)
+            else:
+                removed = True
+                break
+        if not removed: break
+
+    #We take the final list and do our playthrough using only the minimum required items
+    win = False
+    progressionInventory = []
+    for location in progressionLocations:
+        if location.locName == 'Opening Cutscene':
+            openingCutscene = location
+            progressionInventory.append(openingCutscene)
+
+    while len(progressionLocations) != 0 and not win:
+        itemFound = 0
+        spoilerLog.write(str(sphere) + ': \n')
+        spoilerLog.write('{ \n')
+        if sphere == 0:
+            openingCutscene.writeSpoiler(spoilerLog)
+
+        while True:
+            itemFound = 0
+            for index,location in enumerate(progressionLocations):
+                if canAccess(progressionInventory,location,parameters):
+                    newLocation = progressionLocations.pop(index)
+                    accessibleItem = classr.inventory(newLocation)
+                    newInventory.append(accessibleItem)
+                    foundLocations.append(newLocation)
+                    itemFound+=1
+                        
+                    if accessibleItem.itemName == 'End the Lacrimosa':
+                        win = True
+                        break
+                        
+            if itemFound == 0 or win: break
+
         while len(foundLocations) != 0:
             location = foundLocations.pop(0)
             location.writeSpoiler(spoilerLog)
         spoilerLog.write('} \n')
-        
+
         while len(newInventory) != 0:
             progressionInventory.append(newInventory.pop(0))
         sphere+=1
-    
+        
     spoilerLog.close()
+
+def testSeed(progressionLocations,parameters):
+    progressionInventory = []
+    progressionLocationsToTest = []
+    for location in progressionLocations:
+        progressionLocationsToTest.append(location)
+
+    while True:
+        itemFound = 0
+        for index,location in enumerate(progressionLocationsToTest):
+            if canAccess(progressionInventory,location,parameters) or location.locName == 'Opening Cutscene':
+                newLocation = progressionLocationsToTest.pop(index)
+                accessibleItem = classr.inventory(newLocation)
+                progressionInventory.append(accessibleItem)
+                itemFound+=1
+                if accessibleItem.itemName == 'End the Lacrimosa':
+                    return True   
+        if itemFound == 0:
+            return False

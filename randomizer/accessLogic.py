@@ -72,15 +72,15 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID != 'Corpse' and access.canClimb(): return True
             else: return False
         elif location.locName in ['Rainbow Falls','End'] and access.canClimb(): return True
-        elif location.locName == 'Boss Arena' and battleLogic(20,access,parameters): 
+        elif location.locName == 'Boss Arena' and battleLogic(30,access,parameters): 
             if location.mapCheckID != 'Psyches': return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Clareon'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Clareon'): return True
             else: return False
         else: return False
     elif location.locRegion == 'Roaring Seashore' and access.canClimb() and access.canDefeat('Clareon'):
         if location.locName == 'Metavolicalis': return True
         elif location.locName == 'Parasequoia' and access.canMove(14) and access.canDefeat('Clareon'): 
-            if location.mapCheckID in ['Master Kong Skill Ricotta','Master Kong Ricotta'] and access.hasRicotta() and battleLogic(165,access,parameters): return True
+            if location.mapCheckID in ['Master Kong Skill Ricotta','Master Kong Ricotta'] and access.hasRicotta() and battleLogic(220,access,parameters): return True
             elif location.mapCheckID not in ['Master Kong Skill Ricotta','Master Kong Ricotta']: return True
             else: return False
         else: return False
@@ -113,19 +113,19 @@ def canAccess(inventory,location,parameters):
         else: return False
     elif location.locRegion == 'Eroded Valley' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())):
         if location.locName in ['Entrance','Cave']: return True
-        elif location.locName == 'Dark Passage' and access.canSeeDark() and battleLogic(100,access,parameters): return True
-        elif location.locName == 'Mid-Boss Arena' and battleLogic(50,access,parameters): return True
+        elif location.locName == 'Dark Passage' and access.canSeeDark() and battleLogic(155,access,parameters): return True
+        elif location.locName == 'Mid-Boss Arena' and battleLogic(60,access,parameters): return True
         elif location.locName == 'Webbed Walkways' and access.canDefeat('Lonbrigius'):
             if location.mapCheckID == 'TBOX03' and access.canSeeDark(): return True
             elif location.mapCheckID != 'TBOX03': return True
         elif location.locName == 'End'  and access.canSeeDark() and access.canDefeat('Lonbrigius'): return True
-        elif location.locName == 'Boss Arena' and battleLogic(60,access,parameters): 
+        elif location.locName == 'Boss Arena' and battleLogic(75,access,parameters): 
             if location.mapCheckID != 'Psyches': return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Gargantula'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Gargantula'): return True
             else: return False
         else: return False
     elif location.locRegion == 'Sunrise Beach' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())) and access.canSeeDark() and access.canDefeat('Gargantula'): 
-        if location.mapCheckID in ['Master Kong Skill Sahad','Master Kong Sahad'] and battleLogic(165,access,parameters) and access.hasSahad() and access.canDefeat('Master Kong Ricotta'): return True
+        if location.mapCheckID in ['Master Kong Skill Sahad','Master Kong Sahad'] and battleLogic(200,access,parameters) and access.hasSahad() and access.canDefeat('Master Kong Ricotta'): return True
         elif location.mapCheckID not in ['Master Kong Skill Sahad','Master Kong Sahad']: return True
     elif location.locRegion == 'Towering Coral Forest (Night)' and (access.canClimb() or access.canMove(6)) and access.canSeeDark():
         if location.locName == 'Walkways':
@@ -174,16 +174,16 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'End' and access.canSwampWalk() and access.canDefeat('Magamandra'): return True
         elif location.locName == 'Boss Arena' and battleLogic(100,access,parameters): 
             if location.mapCheckID != 'Psyches': return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Laspisus'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Laspisus'): return True
             else: return False
         else: return False
     elif location.locRegion == 'Odd Rock Coast' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())) and access.hasDina() and access.canSwampWalk() and access.canDefeat('Laspisus'): 
-        if location.mapCheckID in ['Master Kong Skill Dana','Master Kong Dana'] and battleLogic(175,access,parameters) and access.hasDana() and access.canDefeat('Master Kong Sahad'): return True
-        elif location.mapCheckID in ['Kiergaard Weissman','Kiergaard Weissman Skill 1','Kiergaard Weissman Skill 1','Quina Join','Licht Join'] and battleLogic(100,access,parameters): return True
+        if location.mapCheckID in ['Master Kong Skill Dana','Master Kong Dana'] and battleLogic(200,access,parameters) and access.hasDana() and access.canDefeat('Master Kong Sahad'): return True
+        elif location.mapCheckID in ['Kiergaard Weissman','Kiergaard Weissman Skill 1','Kiergaard Weissman Skill 1','Quina Join','Licht Join'] and battleLogic(120,access,parameters): return True
         else: return False
     elif location.locRegion == 'The Primordial Passage' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1(): return True
     elif location.locRegion == 'Mont Gendarme' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1(): 
-        if location.locName == 'Mishy Rewards' and battleLogic(100,access,parameters):
+        if location.locName == 'Mishy Rewards' and access.canDefeat('Avalodragil 2'):
             if location.mapCheckID == 'Food 2' and access.canCook(1): return True
             elif location.mapCheckID == 'Food 4' and access.canCook(2): return True
             elif location.mapCheckID == 'Food 4' and access.canCook(3): return True
@@ -191,12 +191,12 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'Food 4' and access.canCook(5): return True
             elif location.mapCheckID == 'Food 4' and access.canCook(6): return True
             else: return False
-        elif location.locName == 'Mid-Boss Arena' and battleLogic(100,access,parameters): return True
+        elif location.locName == 'Mid-Boss Arena' and battleLogic(140,access,parameters): return True
         elif location.locName in ['Upper Cliffs 1','Upper Cliffs 2'] and access.canDefeat('Avalodragil 2'): return True
         elif location.locName == 'Boss Arena': 
-            if location.mapCheckID in ['Giasburn Skill 1','Giasburn Skill 2','Giasburn'] and battleLogic(165,access,parameters): return True
-            elif location.mapCheckID in ['Master Kong Skill Laxia','Master Kong Laxia'] and battleLogic(185,access,parameters) and access.hasLaxia() and access.canDefeat('Master Kong Dana'): return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Giasburn'): return True
+            if location.mapCheckID in ['Giasburn Skill 1','Giasburn Skill 2','Giasburn'] and battleLogic(230,access,parameters): return True
+            elif location.mapCheckID in ['Master Kong Skill Laxia','Master Kong Laxia'] and battleLogic(220,access,parameters) and access.hasLaxia() and access.canDefeat('Master Kong Dana'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Giasburn'): return True
             else: return False
         elif location.locName not in ['Mid-Boss Arena','Upper Cliffs 1','Upper Cliffs 2','Mishy Rewards','Boss Arena']: return True
         else: return False
@@ -212,7 +212,7 @@ def canAccess(inventory,location,parameters):
         else: return False
     elif location.locRegion == 'Pangaia Plains' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and access.canDefeat('Giasburn'): 
         if location.locName == 'Ancient Tree':
-            if location.mapCheckID in ['Master Kong Skill Hummel','Master Kong Hummel'] and battleLogic(200,access,parameters) and access.hasHummel() and access.canDefeat('Master Kong Laxia'): return True
+            if location.mapCheckID in ['Master Kong Skill Hummel','Master Kong Hummel'] and battleLogic(220,access,parameters) and access.hasHummel() and access.canDefeat('Master Kong Laxia'): return True
             elif location.mapCheckID not in ['Master Kong Skill Hummel','Master Kong Hummel']: return True
             else: return False
         else: return False
@@ -228,7 +228,7 @@ def canAccess(inventory,location,parameters):
     elif location.locRegion == 'Temple of the Great Tree' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'):
         if location.locName == 'Temple Boss Arena':
             if location.mapCheckID != 'Psyches': return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Brachion'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Brachion'): return True
             else: return False
         elif location.locName != 'Temple Boss Arena': return True
         else: return False
@@ -241,9 +241,9 @@ def canAccess(inventory,location,parameters):
         else: return False
     elif location.locRegion == 'Silent Tower' and access.canDoubleJump() and access.hasDina() and access.canMove(24):
         if location.locName == 'Second Basement':
-            if location.mapCheckID in ['Maphorash','Maphorash Skill 1','Maphorash Skill 2','TBOX04'] and battleLogic(270,access,parameters): return True
+            if location.mapCheckID in ['Maphorash','Maphorash Skill 1','Maphorash Skill 2','TBOX04'] and battleLogic(380,access,parameters): return True
             elif location.mapCheckID in ['TBOX01','TBOX02','TBOX03']: return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Maphorash'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Maphorash'): return True
             else: return False
         elif location.locName != 'Second Basement': return True
         else: return False
@@ -258,12 +258,12 @@ def canAccess(inventory,location,parameters):
             if location.mapCheckID == 'TBOX03' and access.canDoubleJump(): return True
             elif location.mapCheckID != 'TBOX03': return True
             else: return False
-        elif location.locName == 'Mid-Boss Arena' and battleLogic(180,access,parameters): return True
+        elif location.locName == 'Mid-Boss Arena' and battleLogic(230,access,parameters): return True
         elif location.locName == 'Fifth Floor' and access.canDoubleJump(): return True
         elif location.locName == 'Sixth Floor' and access.canDoubleJump(): return True
-        elif location.locName == 'Boss Arena' and battleLogic(200,access,parameters): 
+        elif location.locName == 'Boss Arena' and battleLogic(280,access,parameters): 
             if location.mapCheckID != 'Psyches': return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Carveros'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Carveros'): return True
             else: return False
         elif location.locName == 'Top Floor' and access.canDoubleJump() and access.canDefeat('Carveros'): return True
         else: return False
@@ -272,7 +272,7 @@ def canAccess(inventory,location,parameters):
         if location.mapCheckID != 'Ed Join': return True
         else: return False
     elif location.locRegion == 'East Coast Cave' and (access.canMove(6) or access.canClimb()) and access.canDoubleJump() and access.hasDina(): 
-        if location.mapCheckID != 'TBOX02' and battleLogic(100,access,parameters): return True
+        if location.mapCheckID != 'TBOX02' and battleLogic(170,access,parameters): return True
         elif location.mapCheckID == 'TBOX02': return True
     elif location.locRegion == 'Pirate Ship Eleftheria' and (access.canMove(6) or access.canClimb()) and access.canDoubleJump() and access.hasDina() and access.readNote1() and battleLogic(100,access,parameters):
         if location.locName == 'Submerged Hold' and access.canUnderwater(): return True
@@ -282,9 +282,9 @@ def canAccess(inventory,location,parameters):
             else: return False
         elif location.locName == 'Accessway': return True
         elif location.locName == 'Crew Quarters': return True
-        elif location.locName == 'Deck' and battleLogic(180,access,parameters): 
+        elif location.locName == 'Deck' and battleLogic(260,access,parameters): 
             if location.mapCheckID != 'Psyches': return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Pirate Revenant'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Pirate Revenant'): return True
             else: return False
         elif location.locName == 'Stairwell': return True
         else: return False
@@ -305,7 +305,7 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID != 'TBOX02': return True
             else: return False
         elif location.locName == 'Whirlpools': return True
-        elif location.locName == 'Mid-Boss Arena' and battleLogic(180,access,parameters): return True
+        elif location.locName == 'Mid-Boss Arena' and battleLogic(250,access,parameters): return True
         elif location.locName == 'Submerged Cave':
             if location.mapCheckID == 'TBOX01' and access.canDefeat('Coelacantos'): return True
             elif location.mapCheckID != 'TBOX01' and access.canUnderwater(): return True
@@ -313,14 +313,14 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Water Vents' and access.canUnderwater(): return True
         elif location.locName == 'Sunken Eternia Ruins West' and access.canUnderwater(): return True
         elif location.locName == 'Sunken Eternia Ruins East' and access.canUnderwater(): return True
-        elif location.locName == 'Boss Arena' and access.canUnderwater() and battleLogic(240,access,parameters):
+        elif location.locName == 'Boss Arena' and access.canUnderwater() and battleLogic(320,access,parameters):
             if location.mapCheckID != 'Psyches': return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Oceanus'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Oceanus'): return True
             else: return False
         else: return False
     elif location.locRegion == 'Vista Ridge' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'): 
         if location.locName == 'Vista Ridge Upper' and access.canMove(21) and access.canDoubleJump(): return True
-        if location.locName == 'Vista Ridge Lower' and access.canMove(14) and access.canSwampWalk() and access.hasDina() and access.hasAdol and access.canDefeat('Master Kong Hummel') and access.canSeeDark() and battleLogic(200,access,parameters): return True
+        if location.locName == 'Vista Ridge Lower' and access.canMove(14) and access.canSwampWalk() and access.hasDina() and access.hasAdol and access.canDefeat('Master Kong Hummel') and access.canSeeDark() and battleLogic(240,access,parameters): return True
     elif location.locRegion == 'Lodinia Marshland' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'):
         if location.locName == 'Entrance from Vista Ridge':
             if location.mapCheckID == 'TBOX01': return True
@@ -341,28 +341,28 @@ def canAccess(inventory,location,parameters):
         if location.locName == 'Valley of Kings - Camp' and access.hasDina(): return True
         elif location.locName == 'Entrance': return True
         elif location.locName == 'Northern Lower Level': return True
-        elif location.locName == 'Mid-Boss Arena' and access.canUndead() and battleLogic(210,access,parameters): return True
+        elif location.locName == 'Mid-Boss Arena' and access.canUndead() and battleLogic(270,access,parameters): return True
         elif location.locName == 'Stairway (Statue Doors)' and access.canUndead(): return True
         elif location.locName == 'End' and access.canUndead():
             if location.mapCheckID in ['TBOX01','TBOX02'] and access.canDoubleJump(): return True
             elif location.mapCheckID in ['TBOX03','TBOX04']: return True
             else: return False
-        elif location.locName == 'Boss Arena' and access.canUndead() and battleLogic(250,access,parameters):
+        elif location.locName == 'Boss Arena' and access.canUndead() and battleLogic(330,access,parameters):
             if location.mapCheckID != 'Psyches': return True
-            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(260,access,parameters) and access.canDefeat('Basileus'): return True
+            elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Basileus'): return True
             else: return False
         elif location.locName == 'Seren Garden' and access.canUndead() and ((parameters.goal != 'Release the Psyches' and access.canDefeat('Psyche-Ura')) or (parameters.goal == 'Release the Psyches' and access.hasSkyPsyches())): return True
         else: return False
-    elif location.locRegion == 'The Submerged Cemetery' and access.canSeeDark() and access.canClimb() and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater() and battleLogic(165,access,parameters): return True
+    elif location.locRegion == 'The Submerged Cemetery' and access.canSeeDark() and access.canClimb() and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater() and access.canDefeat('Giasburn'): return True
     elif location.locRegion == 'Solitude Island' and access.hasBoat(): return True
     elif location.locRegion == 'Eternal Hill'and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and access.past7() and access.canDefeat('Giasburn'): return True
     elif location.locRegion == 'Octus Overlook' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'):
-        if location.locName in ['Path of the Frozen Era','Path of the Ocean Era','Path of the Sky Era'] and battleLogic(260,access,parameters): return True
-        elif location.locName == 'Path of the Insectoid Era' and battleLogic(260,access,parameters): 
+        if location.locName in ['Path of the Frozen Era','Path of the Ocean Era','Path of the Sky Era'] and battleLogic(340,access,parameters): return True
+        elif location.locName == 'Path of the Insectoid Era' and battleLogic(340,access,parameters): 
             if location.mapCheckID == 'TBOX02' and access.canDoubleJump(): return True
             elif location.mapCheckID != 'TBOX02': return True
             else: return False
-        elif location.locName == 'Selection Sphere' and battleLogic(320,access,parameters):
+        elif location.locName == 'Selection Sphere' and battleLogic(390,access,parameters):
             if parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal): return True
             elif parameters.goal == 'Seiren Escape' and access.hasBoat() and access.hasMistilteinn() and access.hasChart(): return True
             elif parameters.goal == 'Release the Psyches' and access.hasAllPsyches(): return True
@@ -423,13 +423,12 @@ def battleLogic(requiredStr,access,parameters):
         armStr = 0
         accStr = 0
 
-       
         #weapon strength is based on rounded averages of accessible weapons at their base levels.
         #some basic checks will be made to make sure materials can be farmed as well
         if parameters.progressiveSuperWeapons and access.hasFlameStones(7) and ((access.hasMistilteinn() and access.hasAdol()) or (access.hasSpiritRing() and access.hasDana())):
-                weaponStr = 290
+            weaponStr = 290
         elif not parameters.progressiveSuperWeapons and ((access.hasMistilteinn() and access.hasAdol()) or (access.hasSpiritRing() and access.hasDana())):
-                weaponStr = 290
+            weaponStr = 290
         elif access.hasFlameStones(7) and (access.canDoubleJump() and access.hasDina() and access.canMove(24) or (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater()))) or (access.canUnderwater() and access.canMove(11) and access.canClimb()) or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3()) or access.hasDana())) and access.canDefeat('Giasburn'):
             weaponStr = 270
         elif access.hasFlameStones(6) and ((access.canMove(6) or access.canClimb()) and access.canDoubleJump() and access.hasDina()) or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and (((access.past2() and access.past3()) or access.hasDana()) or (access.past2() or (access.past3() and access.hasDana())))) and access.canDefeat('Giasburn'): 
