@@ -439,7 +439,6 @@ def getCrewFlags(name):
     SetDiaryShopFlag(SHOP_ID_DRESS_E,1) // "Ed & Alison's Tailor"
     JoinNPC( NPC_ED, JOIN_NPC_JOIN ) // Joined with Ed
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
-    SetFlag( GF_QUEST_510, QUEST_SUCCESS ) // [QS510] Hometown flower quest completed
     SetFlag( GF_QS510_FIND_ED, 1 ) //Found Ed on your own (achieved hometown flower)
     SetFlag( GF_SUBEV_JOIN_ED, 1 ) //Rescued Ed
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 1) ) //Quest accomplished [QS510] Hometown Flower Fame Value +1		

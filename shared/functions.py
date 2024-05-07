@@ -55,7 +55,20 @@ def getSkillInfo(itemName):
                 character = skillRow['character']
                 skillName = skillRow['skillName']
                 skillDB.close
-                return character,skillName
+                if character == 'PARTY_ADOL':
+                    characterName = 'Adol'  
+                elif character == 'PARTY_LAXIA':
+                    characterName = 'Laxia'  
+                elif character == 'PARTY_SAHAD':
+                    characterName = 'Sahad'  
+                elif character == 'PARTY_HUMMEL':
+                    characterName = 'Hummel'  
+                elif character == 'PARTY_RICOTTA':
+                    characterName = 'Ricotta'  
+                elif character == 'PARTY_DANA':
+                    characterName = 'Dana'  
+                    
+                return character,skillName,characterName
             
 def getLocFile(mapID,fileType):
     #The top versoin of the loop is used for running the randomizer from source, the bottom version of the loop is for the executable compile, comment and uncomment accordingly.

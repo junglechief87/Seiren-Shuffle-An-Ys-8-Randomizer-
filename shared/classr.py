@@ -26,7 +26,7 @@ class location:
   def writeSpoiler(self,file):
     if self.skill:
       skillName = getSkillInfo(self.itemName)
-      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + skillName[0] + ':' + skillName[1] + '\n')
+      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + skillName[2] + ':' + skillName[1] + '\n')
     elif self.quantity == 1:
       file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '\n')
     else:
@@ -417,6 +417,7 @@ class guiInput:
      self.finalBoss = None
      self.theosPhase = None
      self.originPhase = None
+     self.carePackage = None
   
   def getSeed(seed):
     guiInput.seed = seed
@@ -449,10 +450,11 @@ class guiInput:
   def getExpMult(expMult):
     guiInput.expMult = expMult
 
-  def getFinalBoss(finalBoss,theosPhase,originPhase):
+  def getFinalBoss(finalBoss,theosPhase,originPhase,carePackage):
     guiInput.finalBoss = finalBoss
     guiInput.theosPhase = theosPhase
     guiInput.originPhase = originPhase
+    guiInput.carePackage = carePackage
     
 class interceptReward:
   def __init__(self,stage,rewards):

@@ -55,7 +55,7 @@ def shuffleLocations(parameters):
 
 #these functions take locations and item lists and find the index of the specified characters skills and starting skills for locations.
 def findStartSkillSlot(fillLocations,character):
-    characterRegion = character.lower() + 'Skill'
+    characterRegion = character + ' Starting Skill'
     for index,location in enumerate(fillLocations):
         if location.mapID == 'startingSkill' and location.locRegion == characterRegion:
             return index
@@ -106,8 +106,9 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     #if skill shuffle is turned on we go ahead and pull the skill starting locations and find a skill for the corresponding character to place there. 
     #we do these before the main shuffle to avoid things being placed there that aren't skills
     if parameters.shuffleSkills:
+        random.shuffle(niceItems) 
         startingSkills = 2
-        for character in ['adol','laxia','sahad','hummel','ricotta','dana']:
+        for character in ['Adol','Laxia','Sahad','Hummel','Ricotta','Dana']:
             for startingSkill in range(0,startingSkills):
                 locationIndex = findStartSkillSlot(fillLocations,character)
                 skillIndex = findSkill(niceItems,character)

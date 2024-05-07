@@ -23,7 +23,7 @@ def buttons(inpt):
         parameters.getProgressionMods(app.getOptionBox("Jewel Trade Items: "),app.getOptionBox("Fish Trades: "),app.getOptionBox("Discoveries: "),app.getOptionBox("Map Completion: "),app.getOptionBox("Food Trades: "),app.getCheckBox("dogiIntercept"),app.getCheckBox("MKRewards"),app.getCheckBox("maphorash"))
         parameters.getOtherToggles(app.getCheckBox("intRewards"),app.getCheckBox("battleLogic"),app.getCheckBox("superWeapons"),app.getCheckBox("openPaths"))
         parameters.getExpMult(float(app.getScale("Experience Multiplier: ")))
-        parameters.getFinalBoss(app.getOptionBox("Final Boss: "),app.getOptionBox("Theos Start Phase: "),app.getOptionBox("Origin Start Phase: "))
+        parameters.getFinalBoss(app.getOptionBox("Final Boss: "),app.getOptionBox("Theos Start Phase: "),app.getOptionBox("Origin Start Phase: "),app.getOptionBox("Origin Care Package: "))
         rngPatcherMain(parameters) 
         app.okBox("Task Complete", "Seed Generation Complete!")
         
@@ -46,6 +46,20 @@ def goalChange():
         app.setScaleRange("goalCount",0,0,0)
         app.setCheckBox("superWeapons", ticked=False)
         app.setCheckBoxState("superWeapons","disabled")
+
+def finalBossChange():
+    if app.getOptionBox("Final Boss: ") == "Theos de Endogram":
+        app.setOptionBoxState("Origin Care Package: ","disabled")
+        app.setOptionBoxState("Origin Start Phase: ","disabled")
+        app.setOptionBoxState("Theos Start Phase: ","active")
+    elif app.getOptionBox("Final Boss: ") == "Origin of Life":
+        app.setOptionBoxState("Theos Start Phase: ","disabled")
+        app.setOptionBoxState("Origin Care Package: ","disabled")
+        app.setOptionBoxState("Origin Start Phase: ","active")
+    elif app.getOptionBox("Final Boss: ") == "Both":
+        app.setOptionBoxState("Theos Start Phase: ","active")
+        app.setOptionBoxState("Origin Care Package: ","active")
+        app.setOptionBoxState("Origin Start Phase: ","active")
 
 def close():
     return app.yesNoBox("Exit", "Close Application?")
@@ -131,9 +145,15 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '650x700',font = {'size':12}) as app:
     app.startLabelFrame("Final Boss Settings",6,0)
     app.setSticky("ew")
     app.addLabelOptionBox("Final Boss: ", ["Theos de Endogram","Origin of Life","Both"])
+    app.setOptionBoxChangeFunction("Final Boss: ", finalBossChange)
     app.addLabelOptionBox("Theos Start Phase: ", ['First','Second','Final'],1,0)
+    app.addLabelOptionBox("Origin Care Package: ", ['Generous', 'Lite','None'],0,1)
     app.addLabelOptionBox("Origin Start Phase: ", ['First','Final'],1,1)
+    app.setOptionBoxState("Origin Care Package: ","disabled")
+    app.setOptionBoxState("Origin Start Phase: ","disabled")
+    app.setOptionBoxState("Theos Start Phase: ","active")
     app.stopLabelFrame()
+
     app.startFrame("commands",7,0)
     app.setSticky("ew")
     app.addButtons(['Patch Files', 'Generate Seed'], [buttons, buttons],0,0)

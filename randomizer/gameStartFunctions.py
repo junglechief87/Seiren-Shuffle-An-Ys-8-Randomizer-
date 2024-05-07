@@ -30,7 +30,6 @@ function "startParameters"
 {{
     SetFlag(SF_ADOL_JOINOK, 0)
     SetFlag(SF_ADOL_JOINED, 0)
-    {0}
     CallFunc("rng:earlyGameParty")
     SetLevel(ADOL,1)
     SetLevel(LAXIA,1)
@@ -440,6 +439,7 @@ function "startParameters"
     EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EQUIP)
     EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EVFORCE)
     {1}
+    {0}
     //We add strength to put the character's power in line with the rest of the cast for later joining characters and leave them without weapons until they hit the shop tier for their weapon.
     //Characters without weapons animate with their base weapons still.
     SetChrWork(HUMMEL,CWK_SUP_STR,(HUMMEL.CHRWORK[CWK_SUP_STR] + 18))
