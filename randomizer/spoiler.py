@@ -13,6 +13,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
 
     spoilerLog.write("Seed# " + str(parameters.seed) + '\n')
     spoilerLog.write('Goal: ' + parameters.goal + '\t Number: ' + str(parameters.numGoal))
+    spoilerLog.write('Goal count to open Octus: ' + str(parameters.numOctus))
     spoilerLog.write('\n \n')
     spoilerLog.write("Settings:\n")
     spoilerLog.write("Shuffle Party: " + str(parameters.shuffleParty) + "\n")
@@ -29,12 +30,16 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Additional Intercept Rewards: " + str(parameters.intRewards) + "\n")
     spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
     spoilerLog.write("Experience Multiplier: " + str(parameters.expMult) + "\n")
+    spoilerLog.write("Exp Mult Growth Rate (%): " + str(int((parameters.expGrowth - 1)*100)) + "%\n")
     spoilerLog.write("Battle Logic: " + str(parameters.battleLogic) + "\n")
     spoilerLog.write("Progressive Super Weapons: " + str(parameters.progressiveSuperWeapons) + "\n")
     spoilerLog.write("Open Octus Paths: " + str(parameters.openOctusPaths) + "\n")
-    spoilerLog.write("Doggi Intercept Rewards: " + str(parameters.finalBoss) + "\n")
-    spoilerLog.write("Master Kong: " + str(parameters.theosPhase) + "\n")
-    spoilerLog.write("Master Kong: " + str(parameters.originPhase) + "\n")
+    spoilerLog.write("Extra Floame Stones: " + str(parameters.extraFlameStones) + "\n")
+    spoilerLog.write("Recipes Come w\ Ingredients: " + str(parameters.extraIngredients) + "\n")
+    spoilerLog.write("Final Boss: " + str(parameters.finalBoss) + "\n")
+    spoilerLog.write("Theos Start Phase: " + str(parameters.theosPhase) + "\n")
+    spoilerLog.write("Origin Start Phase: " + str(parameters.originPhase) + "\n")
+    spoilerLog.write("Origin Care Package: " + str(parameters.carePackage) + "\n")
     spoilerLog.write("Locations:\n")
 
     for location in shuffledLocations:

@@ -383,48 +383,53 @@ class access:
         return True
     return False
   
-  def hasAllPsyches(self):
+  def hasPsyches(self,goalCount):
     count = 0
     for item in self.inventoryObjects:
       if item.itemName in ['Psyches of the Sky Era','Psyches of the Insectoid Era','Psyches of the Frozen Era','Psyches of the Ocean Era']:
         count+=1
         
-    if count >= 4:
+    if count >= goalCount:
       return True
     return False
   
 class guiInput:
   def __init__(self):
-     self.seed = None
-     self.goal = None
-     self.numGoal = None
-     self.shuffleParty = None
-     self.shuffleCrew = None
-     self.shuffleSkills = None
-     self.jewelTrades = None
-     self.fishTrades = None
-     self.discoveries = None
-     self.mapCompletion = None
-     self.foodTrades = None
-     self.dogiRewards = None
-     self.mkRewards = None
-     self.maphorash = None
-     self.intRewards = None
-     self.expMult = None
-     self.battleLogic = None
-     self.progressiveSuperWeapons = None
-     self.openOctusPaths = None
-     self.finalBoss = None
-     self.theosPhase = None
-     self.originPhase = None
-     self.carePackage = None
+    self.seed = None
+    self.goal = None
+    self.numGoal = None
+    self.numOctus = None
+    self.shuffleParty = None
+    self.shuffleCrew = None
+    self.shuffleSkills = None
+    self.jewelTrades = None
+    self.fishTrades = None
+    self.discoveries = None
+    self.mapCompletion = None
+    self.foodTrades = None
+    self.dogiRewards = None
+    self.mkRewards = None
+    self.maphorash = None
+    self.intRewards = None
+    self.expMult = None
+    self.expGrowth = None
+    self.battleLogic = None
+    self.progressiveSuperWeapons = None
+    self.openOctusPaths = None
+    self.extraFlameStones = None
+    self.extraIngredients = None
+    self.finalBoss = None
+    self.theosPhase = None
+    self.originPhase = None
+    self.carePackage = None
   
   def getSeed(seed):
     guiInput.seed = seed
 
-  def getGoal(option, num):
+  def getGoal(option,num,numOctus):
     guiInput.goal = option
     guiInput.numGoal = int(num)
+    guiInput.numOctus = int(numOctus)
   
   def getShuffleLocations(party,crew,skills):
     guiInput.shuffleParty = party
@@ -441,14 +446,18 @@ class guiInput:
     guiInput.mkRewards = mkRewards
     guiInput.maphorash = maphorash
 
-  def getOtherToggles(intRewards,battleLogic,superWeapons,openPaths):
+  def getOtherToggles(intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients):
     guiInput.intRewards = intRewards
     guiInput.battleLogic = battleLogic
     guiInput.progressiveSuperWeapons = superWeapons
     guiInput.openOctusPaths = openPaths
+    guiInput.extraFlameStones = extraFlameStones
+    guiInput.extraIngredients = extraIngredients
 
-  def getExpMult(expMult):
+  def getExpMult(expMult,expGrowth):
     guiInput.expMult = expMult
+    expGrowth = expGrowth/100 + 1 #converting to growth rate percent(eg. if set to 5 convert to 1.05)
+    guiInput.expGrowth = expGrowth
 
   def getFinalBoss(finalBoss,theosPhase,originPhase,carePackage):
     guiInput.finalBoss = finalBoss

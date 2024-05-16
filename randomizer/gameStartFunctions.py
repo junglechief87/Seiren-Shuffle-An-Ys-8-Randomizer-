@@ -25,6 +25,12 @@ def buildStartParameters(location,parameters):
         gameSettingFlags = gameSettingFlags + """
     SetFlag(GF_TBOX_DUMMY113,1)
     """
+    if parameters.extraIngredients: #The player starts with fish soup so we'll give some ingredients for it here
+        gameSettingFlags = gameSettingFlags + """
+    GetItem(ICON3D_FD_SEA_SALT,3)
+    GetItem(ICON3D_FD_MEAT_02,3)
+    """
+        
     startParams = """
 function "startParameters"
 {{
@@ -176,7 +182,6 @@ function "startParameters"
     SetFlag(GF_06MP6409_AFTER_INTERCEPT12,1) // Interception Battle 12 has ended
     GetItem(ICON3D_MAP,1) //start with the map for faster exploration
     SetFlag(SF_ITEMSLOT_NUM,1) //Let's adventure books actually increase slots from the start of the game.
-    SetFlag(GF_06MP6409_OPEN_GATE, 1) //Set the great tree of origins to be open if it can be reached, this will probably be a setting at some point.
     //Remove all tutorials from the game
     SetFlag(    GF_HELP_A01,1 )
     SetFlag(	GF_HELP_A02,			1 )

@@ -12,7 +12,7 @@ from randomizer.gameStartFunctions import *
 #Plus rng.scp is a fitting filename for a rando.
 patchFile = ''
 scpIncludeList = ['#include "inc/mons.h"','#include "inc/def.h"','#include "inc/efx.h"','#include "inc/flag.h"','#include "inc/se.h"',
-                  '#include "inc/scr_inc.h"','#include "inc/3dicon.h"','#include "inc/skilldef.h"','#include "inc/vo.h"'] #standard set of header files used in most Ys 8 .scp files
+                  '#include "inc/scr_inc.h"','#include "inc/3dicon.h"','#include "inc/skilldef.h"','#include "inc/vo.h"','#include "inc/temp/rng.h"'] #standard set of header files used in most Ys 8 .scp files
 genericMessage = " Obtained."
 crewMessage = " Joined the Village."
 partyMessage = " Joined the Party."
@@ -58,6 +58,7 @@ def rngPatcherMain(parameters):
     patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
+    patchFile = patchFile + octusGoal(parameters)
     patchFile = patchFile + goal(parameters)
     patchFile = patchFile + endingHandler(parameters)
 
@@ -87,16 +88,61 @@ def genericItemMessage(location,vanillaScript,parameters):
         script = script + danaPastEvents(location.itemID)
     elif location.itemID == 9: #mistilteinn
         script = script + sopEvent(parameters)
+        #this solution for unique message on the progressive weapons is a little heavy handed but it should resolves all issues I had with them
         if parameters.progressiveSuperWeapons:
-            location.itemName = 'Broken Mistilteinn'
-            itemIcon = -1 #Rusty Sword
-            message = 'Broken Mistilteinn Obtained'
+            if location.event:   
+                getItemFunction =  """
+function "{0}"
+{{
+    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
+    GetItemMessageExPlus(-1,1,{1},"#2CBroken Mistilteinn#0C Obtained.",0,0)
+    WaitPrompt()
+    WaitCloseWindow()
+    {2}
+}}
+"""  
+            else:
+                getItemFunction =  """
+function "{0}"
+{{
+    SetStopFlag(STOPFLAG_TALK)
+    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
+    GetItemMessageExPlus(-1,1,{1},"#2CBroken Mistilteinn#0C Obtained.",0,0)
+    WaitPrompt()
+    WaitCloseWindow()
+    {2}
+    ResetStopFlag(STOPFLAG_TALK)
+}}
+"""  
+            return getItemFunction.format(scriptName,itemSE,script)
     elif location.itemID == 13: #Spirit Ring Celesdia
         script = script + spiritRingEvent(parameters)
         if parameters.progressiveSuperWeapons:
-            location.itemName = 'Broken Spirit Ring'
-            itemIcon = -1 #Rusty Sword
-            message = 'Broken Spirit Ring Obtained'
+            if location.event:   
+                getItemFunction =  """
+function "{0}"
+{{
+    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
+    GetItemMessageExPlus(-1,1,{1},"#2CBroken Spirit Ring#4C Obtained.",0,0)
+    WaitPrompt()
+    WaitCloseWindow()
+    {2}
+}}
+"""  
+            else:
+                getItemFunction =  """
+function "{0}"
+{{
+    SetStopFlag(STOPFLAG_TALK)
+    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
+    GetItemMessageExPlus(-1,1,{1},"#2CBroken Spirit Ring#4C Obtained.",0,0)
+    WaitPrompt()
+    WaitCloseWindow()
+    {2}
+    ResetStopFlag(STOPFLAG_TALK)
+}}
+"""  
+            return getItemFunction.format(scriptName,itemSE,script)
     elif location.itemID == 770: #logbook from east coast cave
         script = script + pirateShipDocks()
     elif location.itemID in [760,761,762,763]: #T memos
@@ -106,12 +152,13 @@ def genericItemMessage(location,vanillaScript,parameters):
     GetItem(ICON3D_FISHBAIT_WORM,30)
     """
         script = script + startingBait
-    
     elif location.itemID == 779: #ship blueprints
         buildBoat = """
     SetFlag(GF_SUBEV_06_1111_LOOK_BOAT,1)
     """
         script = script + buildBoat
+    elif location.itemID in [569,570,571,572,573,574,575,576,577,578,579] and parameters.extraIngredients: #item IDs for recipes
+        script = script + recipeIngredients(location.itemID)
         
     message = genericMessage
     script =  script + vanillaScript #append the original chest scripts to the end of the function
@@ -126,7 +173,6 @@ function "{0}"
     GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
     WaitPrompt()
     WaitCloseWindow()
-    
     {5}
 }}
 """  
@@ -139,9 +185,7 @@ function "{0}"
     GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
     WaitPrompt()
     WaitCloseWindow()
-
     {5}
-
     ResetStopFlag(STOPFLAG_TALK)
 }}
 """          
@@ -155,9 +199,9 @@ def buildCrewLocation(location,script):
     itemSE = 'ITEMMSG_SE_BETTER'
     
     if location.party:
-        message = location.itemName + partyMessage
+        message = "#2C" + location.itemName + "#4C" + partyMessage
     elif location.crew:
-        message = location.itemName + crewMessage
+        message = "#2C" + location.itemName + "#4C" + crewMessage
         
     crewFlags = getCrewFlags(location.itemName)
 
@@ -172,7 +216,6 @@ function "{0}"
     WaitPrompt()
     WaitCloseWindow()
     {5}
-    
     {6}
 }}
 """
@@ -186,15 +229,13 @@ function "{0}"
     WaitPrompt()
     WaitCloseWindow()
     {5}
-    
     {6}
     ResetStopFlag(STOPFLAG_TALK)
-    
-    
 }}
 """   
     return getCrewFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,crewFlags,script)
 
+#now skills are in the rando and they need a third special handler for their locations
 def buildSkillLocation(location,script):
     scriptName = buildLocScripts(location.locID,False)
     itemIcon = -1
@@ -202,7 +243,7 @@ def buildSkillLocation(location,script):
     itemSE = 'ITEMMSG_SE_NORMAL'
     skillInfo = getSkillInfo(location.itemName) #retuns tuple: character,skill name,character name
     characterName = skillInfo[2]
-    message = characterName + skillMessage + skillInfo[1] + "#4C"
+    message = "#4C" + characterName + skillMessage + skillInfo[1] + "#4C."
     character = skillInfo[0]
 
     if location.locRegion == 'startingSkill': #for starting skills just go ahead and give the skill, don't bombard the player with messages each time they get a character.
@@ -221,7 +262,6 @@ function "{0}"
     GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
     WaitPrompt()
     WaitCloseWindow()
-    
     {5}
 }}
 """
@@ -234,16 +274,101 @@ function "{0}"
     GetSkill({6},{7},1)
     GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
     WaitPrompt()
-    WaitCloseWindow()
-    
+    WaitCloseWindow()  
     {5}
     ResetStopFlag(STOPFLAG_TALK)
-    
-    
 }}
 """  
     return getSkillFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,script,character,location.itemName)
 
+def recipeIngredients(itemID):
+    if itemID == 569: #omlet
+        ingredients = """
+        GetItem(ICON3D_FD_LAND_EGG,2)
+        GetItem(ICON3D_FD_MUSHROOM,2)
+        GetItem(ICON3D_FD_SEA_SHELLFISH,2)
+        """
+        return ingredients
+    elif itemID == 570: #ratatouille
+        ingredients = """
+        GetItem(ICON3D_FD_LAND_HONEY,2)
+        GetItem(ICON3D_FD_MEAT_01,2)
+        GetItem(ICON3D_FD_VG_EGGPLANT,2)
+        """
+        return ingredients
+    elif itemID == 571: #meuniere
+        ingredients = """
+        GetItem(ICON3D_FD_WHEAT,2)
+        GetItem(ICON3D_FD_MEAT_02,2)
+        GetItem(ICON3D_FD_MUSHROOM,2)
+        GetItem(ICON3D_FD_VG_PAPRIKA,2)
+        """
+        return ingredients
+    elif itemID == 572: #quiche
+        ingredients = """
+        GetItem(ICON3D_FD_WHEAT,2)
+        GetItem(ICON3D_FD_LAND_EGG,2)
+        GetItem(ICON3D_FD_MEAT_02,2)
+        GetItem(ICON3D_FD_SEA_SHELLFISH,2)
+        """
+        return ingredients
+    elif itemID == 573: #cabbage
+        ingredients = """
+        GetItem(ICON3D_FD_SEA_SALT,2)
+        GetItem(ICON3D_FD_LAND_HONEY,2)
+        GetItem(ICON3D_FD_MEAT_01,2)
+        GetItem(ICON3D_FD_VG_CABBAGE,2)
+        """
+        return ingredients
+    elif itemID == 574: #mushroom-wrapped meat
+        ingredients = """
+        GetItem(ICON3D_FD_SEA_SALT,2)
+        GetItem(ICON3D_FD_MUSHROOM,4)
+        GetItem(ICON3D_FD_MEAT_03,2)
+        GetItem(ICON3D_FD_VG_CORN,2)
+        """
+        return ingredients
+    elif itemID == 575: #fish fry
+        ingredients = """
+        GetItem(ICON3D_FD_WHEAT,2)
+        GetItem(ICON3D_FD_LAND_EGG,2)
+        GetItem(ICON3D_FD_MEAT_02,4)
+        GetItem(ICON3D_FD_VG_TOMATO,2)
+        """
+        return ingredients
+    elif itemID == 576: #pirate platter
+        ingredients = """
+        GetItem(ICON3D_FD_SEA_SHELLFISH,2)
+        GetItem(ICON3D_FD_MEAT_01,2)
+        GetItem(ICON3D_FD_MEAT_03,4)
+        GetItem(ICON3D_FD_VG_PUMPKIN,2)
+        """
+        return ingredients
+    elif itemID == 577: #coleslaw
+        ingredients = """
+        GetItem(ICON3D_FD_SEA_SALT,2)
+        GetItem(ICON3D_FD_LAND_HONEY,2)
+        GetItem(ICON3D_FD_VG_CABBAGE,4)
+        GetItem(ICON3D_FD_VG_CORN,4)
+        """
+        return ingredients
+    elif itemID == 578: #Bolognese
+        ingredients = """
+        GetItem(ICON3D_FD_WHEAT,2)
+        GetItem(ICON3D_FD_MEAT_03,2)
+        GetItem(ICON3D_FD_VG_EGGPLANT,4)
+        GetItem(ICON3D_FD_VG_TOMATO,4)
+        """
+        return ingredients
+    elif itemID == 579: #pumpkin pie
+        ingredients = """
+        GetItem(ICON3D_FD_LAND_HONEY,2)
+        GetItem(ICON3D_FD_WHEAT,2)
+        GetItem(ICON3D_FD_VG_PAPRIKA,4)
+        GetItem(ICON3D_FD_VG_PUMPKIN,4)
+        """
+        return ingredients
+    
 #The glow stone will now trigger this script from the chest that has it. This unlocks night explorations.
 def makeGlowStoneUseful():
     script = """
@@ -369,6 +494,7 @@ def danaPastEvents(pastItem):
     return script
 
 #Sword of Psyches event. Adol gets Mistletein(probably mispelled that)
+#we make sure the weapon is equipped here when it is received, if progressive super weapons we just set the flag for haivng received it so Kathleen will know the upgrade can happen at shop rank max 
 def sopEvent(parameters):
     if parameters.progressiveSuperWeapons:
         script = """
@@ -383,6 +509,7 @@ def sopEvent(parameters):
 	"""
     return script
 
+#dana spirit ring
 def spiritRingEvent(parameters):
     if parameters.progressiveSuperWeapons:
         script = """
@@ -417,7 +544,7 @@ def shopUpgrades(location):
         {3}
         if (!FLAG[GF_02MP1201_JOIN_KATRIN])
         {{
-            GetItemMessageExPlus(-1,1,ITEMMSG_SE_BETTER,"Kathleen {1}",0,0)
+            GetItemMessageExPlus(-1,1,ITEMMSG_SE_BETTER,"#2CKathleen#4C {1}",0,0)
             WaitPrompt()
             WaitCloseWindow()        
             {0}
@@ -478,6 +605,8 @@ def shopUpgrades(location):
             SetFlag(GF_TBOX_DUMMY083,1)
             GetItem(ICON3D_FIRESTONE,1)
             GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            WaitPrompt()
+            WaitCloseWindow()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 4.",0,0)
             WaitPrompt()
             WaitCloseWindow()
@@ -497,6 +626,8 @@ def shopUpgrades(location):
             SetFlag(GF_TBOX_DUMMY084,1)
             GetItem(ICON3D_FIRESTONE,1)
             GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            WaitPrompt()
+            WaitCloseWindow()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 5.",0,0)
             WaitPrompt()
             WaitCloseWindow()
@@ -507,6 +638,8 @@ def shopUpgrades(location):
             SetFlag(GF_TBOX_DUMMY085,1)
             GetItem(ICON3D_FIRESTONE,1)
             GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            WaitPrompt()
+            WaitCloseWindow()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 6.",0,0)
             WaitPrompt()
             WaitCloseWindow()
@@ -521,7 +654,16 @@ def shopUpgrades(location):
             SetFlag(GF_06MP1201_GOTO_GEND,1)
             GetItem(ICON3D_FIRESTONE,1)
             GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            WaitPrompt()
+            WaitCloseWindow()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank MAX.",0,0)
+            WaitPrompt()
+            WaitCloseWindow()
+        }}
+        else
+        {{
+            GetItem(ICON3D_MT_N4_STONE,5)
+            GetItemMessageExPlus(ICON3D_MT_N4_STONE,5,ITEMMSG_SE_NORMAL," Obtained.",0,0)
             WaitPrompt()
             WaitCloseWindow()
         }}
@@ -531,6 +673,45 @@ def shopUpgrades(location):
 
     return script.format(getCrewFlags("Kathleen"),crewMessage,genericMessage,stopFlag,stopFlagEnd,scriptName)
 
+#setting for when the great tree of origins entrance opens
+def octusGoal(parameters):
+    if parameters.goal == 'Find Crew':
+        octusAccess ="""
+function "openTree"
+{{
+    if(WORK[WK_NPCNUM] >= {0} && !FLAG[GF_06MP6409_OPEN_GATE])
+    {{
+        SetFlag(GF_06MP6409_OPEN_GATE, 1)
+        CallFunc("mp6409:init")
+    }}
+}}
+"""
+        return octusAccess.format(str(parameters.numOctus))
+    
+    elif parameters.goal == 'Seiren Escape':
+        octusAccess ="""
+function "openTree"
+{
+    SetFlag(GF_06MP6409_OPEN_GATE, 1)
+    CallFunc("mp6409:init")
+}
+"""
+        return octusAccess
+    
+    elif parameters.goal == 'Release the Psyches':
+        octusAccess ="""
+function "openTree"
+{{
+    if(ALLITEMWORK[ICON3D_972] >= {0} && !FLAG[GF_06MP6409_OPEN_GATE]) //ICON3D_972:junk item used for tracking
+    {{
+        SetFlag(GF_06MP6409_OPEN_GATE, 1)
+        CallFunc("mp6409:init")
+    }}
+}}
+"""
+    return octusAccess.format(str(parameters.numOctus))
+    
+#Our goals for entering the selection sphere
 def goal(parameters):
     if parameters.goal == 'Find Crew':
         selectionSphereAccess ="""
@@ -561,17 +742,17 @@ function "goal"
     elif parameters.goal == 'Release the Psyches':
         selectionSphereAccess ="""
 function "goal"
-{
-    if(FLAG[GF_06MP6305_TALK_HYDRA] && FLAG[GF_06MP6306_TALK_MINOS] && FLAG[GF_06MP6307_TALK_NESTOR] && FLAG[GF_06MP6308_TALK_SARAI] && !FLAG[GF_06MP6301_GOTO_BOSSROOM])
-    {
+{{
+    if(ALLITEMWORK[ICON3D_972] >= {0} && !FLAG[GF_06MP6301_GOTO_BOSSROOM]) //ICON3D_972:junk item used for tracking
+    {{
         SetFlag( GF_06MP6301_OPEN_STAIRS , 1 )
 	    SetFlag( GF_06MP6301_GOTO_BOSSROOM , 1 )
         CallFunc("mp6301:init")
-    }
-}
+    }}
+}}
 """
     
-    return selectionSphereAccess
+    return selectionSphereAccess.format(str(parameters.numGoal))
 
 #This sorts out our final boss settings.
 #First we figure out what phases we're doing then we run through our script that's called to start the final boss and what's used to call the ending cutscenes.
@@ -600,7 +781,7 @@ def endingHandler(parameters):
         GetItem(ICON3D_USFD_FOOD15,9)
         GetItem(ICON3D_USFD_FOOD03,9)
         GetItem(ICON3D_US_RESSURECT_02,9)
-        GetItem(ICON3D_US_EXTRA_02,9)
+        GetItem(ICON3D_US_EXTRA_02,2)
         """
     elif parameters.carePackage == 'Lite':
         package = """
@@ -651,7 +832,7 @@ def endingHandler(parameters):
         EventCue("mp0021:EV_M07S130")
     }
     """
-    if parameters.finalBoss == 'Both':
+    elif parameters.finalBoss == 'Both':
         ending1 = """
     function "ending"
     {{
@@ -683,6 +864,7 @@ def pirateShipDocks():
 """
     return script
 
+#this builds out all our intercept rewards, it's called every time we return from an intercept in castaway village by checking the flags for last stage rank and stage clear
 def interceptionHandler(parameters):
     interceptionRewards = getIntRewards()
 
@@ -781,6 +963,12 @@ def jewelTrade(locations):
     for location in locations:
         if location.locName == "Jewel Trade":
             dinasItems[location.locID - 461] = copyLocationToNewLoc(location) #dina's location IDs for the rando start at ID 461 so this gets us the exact array index we need to have them in order inside the array
+    
+    #we have to do a little extra work for skills because of the divergent way I handled skills in the locaiton file
+    for item in dinasItems: 
+        if item.skill:
+            skillInfo = getSkillInfo(item.itemName)
+            item.itemName = skillInfo[2] + " Skill -" + skillInfo[1]
     
     script = """
 function "newTradeHandler"
@@ -891,6 +1079,7 @@ function "newTradeHandler"
     item10 = dinasItems[9].itemName + ' x ' + str(dinasItems[9].quantity)
     return script.format(item1,item2,item3,item4,item5,item6,item7,item8,item9,item10)
 
+#the order intercepts unlock for finding T's Memos
 def interceptUnlock():
     script = """
     if( !FLAG[GF_TBOX_DUMMY100])
@@ -952,6 +1141,8 @@ def interceptUnlock():
 #GF_TBOX_DUMMY112 is our flag for release the psyches so these won't get called outside this game mode.
 #Therefore we don't need to worry about these not being built outside that flag being on.
 #The calls will be an EventCue which could be a little awkward in larger environments when it triggers but this is the best way to make these work logically.
+#The random item given, ICON3D_972, is being used to track how many wardens have been fought. It doesn't show up in inventory and the game still tracks it, which isn't true for all unused junk items, so it can be an effective hidden counter.
+#I give it when the fight loads because it's easier to plug it in here rather than after every fight and the player is locked into the fight until they've won anyway.
 def buildPsyches(location):
     scriptName = buildLocScripts(location.locID,False)
     callPrompt = ''
@@ -979,66 +1170,81 @@ def buildPsyches(location):
     psycheFunction = """
 function "{0}"
 {{
-    WaitFade()
-	Wait(20)
-    {1}
+    if(!FLAG[SF_BOSS_BATTLE])
+    {{
+        WaitFade()
+	    Wait(20)
+        {1}
+    }}
 }}
 {2}
 """
     return psycheFunction.format(scriptName,callPrompt,promptFight)
-  
+
 def hydraFight():
     script = """
     function "hydraFight"
     {
-        SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-        Message("The presence of the Ocean Warden Can be felt.")
-        WaitPrompt()
-        WaitCloseWindow()
-		SetFlag( TF_MENU_SELECT, 0 )
-		YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-		
-		//──────────────────────
-		//　⇒支援要請を出す
-		if( FLAG[TF_MENU_SELECT] )
-		{
-			SetEnvSEPlayState(-1, 0)
-			FadeOut(FADE_BLACK,FADE_NORMAL)
-			WaitFade()
-			
-			SetFlag( TF_MENU_SELECT, 1 )	
-		}
-		//	⇒やめる
-		else
-		{
-			
-			SetFlag( TF_MENU_SELECT, 0 )
-		}
-		//──────────────────────
+        if(!FLAG[GF_06MP6305_TALK_HYDRA])
+        {
+            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            Message("The presence of the Ocean Warden can be felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            SetFlag( TF_MENU_SELECT, 0 )
+            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+            
+            //──────────────────────
+            //　⇒支援要請を出す
+            if( FLAG[TF_MENU_SELECT] )
+            {
+                SetEnvSEPlayState(-1, 0)
+                FadeOut(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                
+                SetFlag( TF_MENU_SELECT, 1 )	
+            }
+            //	⇒やめる
+            else
+            {
+                
+                SetFlag( TF_MENU_SELECT, 0 )
+            }
+            //──────────────────────
 
-		if( FLAG[TF_MENU_SELECT] == 0 )
-		{
-			CrossFade(FADE_CROSS)
-			SetStopFlag(STOPFLAG_NOCHARACLIP)
-			
-			ResetPartyPos()
-			ResetFollowPoint()
-			
-			RestoreCamera(0,0)
-			ResetCameraObserver(0)
-			ResetCameraZPlane()
-			Wait(FADE_CROSS)
-			
-			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		}
-		else
-		{
-			LoadArg("map/mp6305b/mp6305b.arg")
-	        EventCue("mp6305b:EV_RetryBoss")
-			//FadeIn(FADE_BLACK,FADE_NORMAL)
-			WaitFade()
-			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		}
+            if( FLAG[TF_MENU_SELECT] == 0 )
+            {
+                CrossFade(FADE_CROSS)
+                SetStopFlag(STOPFLAG_NOCHARACLIP)
+                
+                ResetPartyPos()
+                ResetFollowPoint()
+                
+                RestoreCamera(0,0)
+                ResetCameraObserver(0)
+                ResetCameraZPlane()
+                Wait(FADE_CROSS)
+                
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+            else
+            {
+                GetItem(ICON3D_972,1)
+                LoadArg("map/mp6305b/mp6305b.arg")
+                EventCue("mp6305b:EV_RetryBoss")
+                //FadeIn(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+        }
+        else
+        {
+            SetStopFlag(STOPFLAG_TALK)
+            Message("No presence felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            ResetStopFlag(STOPFLAG_TALK)
+        }
 	}
 """
     return script
@@ -1047,54 +1253,66 @@ def minosFight():
     script = """
     function "minosFight"
     {
-        Message("The presence of the Frozen Warden Can be felt.")
-        WaitPrompt()
-        WaitCloseWindow()
-		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		SetFlag( TF_MENU_SELECT, 0 )
-		YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-		
-		//──────────────────────
-		//　⇒支援要請を出す
-		if( FLAG[TF_MENU_SELECT] )
-		{
-			SetEnvSEPlayState(-1, 0)
-			FadeOut(FADE_BLACK,FADE_NORMAL)
-			WaitFade()
-			
-			SetFlag( TF_MENU_SELECT, 1 )	
-		}
-		//	⇒やめる
-		else
-		{
-			
-			SetFlag( TF_MENU_SELECT, 0 )
-		}
-		//──────────────────────
+        if(!FLAG[GF_06MP6306_TALK_MINOS])
+        {
+            Message("The presence of the Frozen Warden can be felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            SetFlag( TF_MENU_SELECT, 0 )
+            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+            
+            //──────────────────────
+            //　⇒支援要請を出す
+            if( FLAG[TF_MENU_SELECT] )
+            {
+                SetEnvSEPlayState(-1, 0)
+                FadeOut(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                
+                SetFlag( TF_MENU_SELECT, 1 )	
+            }
+            //	⇒やめる
+            else
+            {
+                
+                SetFlag( TF_MENU_SELECT, 0 )
+            }
+            //──────────────────────
 
-		if( FLAG[TF_MENU_SELECT] == 0 )
-		{
-			CrossFade(FADE_CROSS)
-			SetStopFlag(STOPFLAG_NOCHARACLIP)
-			
-			ResetPartyPos()
-			ResetFollowPoint()
-			
-			RestoreCamera(0,0)
-			ResetCameraObserver(0)
-			ResetCameraZPlane()
-			Wait(FADE_CROSS)
-			
-			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		}
-		else
-		{
-			LoadArg("map/mp6306b/mp6306b.arg")
-	        EventCue("mp6306b:EV_RetryBoss")
-			//FadeIn(FADE_BLACK,FADE_NORMAL)
-			WaitFade()
-			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		}
+            if( FLAG[TF_MENU_SELECT] == 0 )
+            {
+                CrossFade(FADE_CROSS)
+                SetStopFlag(STOPFLAG_NOCHARACLIP)
+                
+                ResetPartyPos()
+                ResetFollowPoint()
+                
+                RestoreCamera(0,0)
+                ResetCameraObserver(0)
+                ResetCameraZPlane()
+                Wait(FADE_CROSS)
+                
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+            else
+            {
+                GetItem(ICON3D_972,1)
+                LoadArg("map/mp6306b/mp6306b.arg")
+                EventCue("mp6306b:EV_RetryBoss")
+                //FadeIn(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+        }
+        else
+        {
+            SetStopFlag(STOPFLAG_TALK)
+            Message("No presence felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            ResetStopFlag(STOPFLAG_TALK)
+        }
 	}
 """
     return script
@@ -1103,54 +1321,66 @@ def nestorFight():
     script = """
     function "nestorFight"
     {
-        Message("The presence of the Insect Warden Can be felt.")
-        WaitPrompt()
-        WaitCloseWindow()
-		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		SetFlag( TF_MENU_SELECT, 0 )
-		YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-		
-		//──────────────────────
-		//　⇒支援要請を出す
-		if( FLAG[TF_MENU_SELECT] )
-		{
-			SetEnvSEPlayState(-1, 0)
-			FadeOut(FADE_BLACK,FADE_NORMAL)
-			WaitFade()
-			
-			SetFlag( TF_MENU_SELECT, 1 )	
-		}
-		//	⇒やめる
-		else
-		{
-			
-			SetFlag( TF_MENU_SELECT, 0 )
-		}
-		//──────────────────────
+        if(!FLAG[GF_06MP6307_TALK_NESTOR])
+        {
+            Message("The presence of the Insect Warden can be felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            SetFlag( TF_MENU_SELECT, 0 )
+            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+            
+            //──────────────────────
+            //　⇒支援要請を出す
+            if( FLAG[TF_MENU_SELECT] )
+            {
+                SetEnvSEPlayState(-1, 0)
+                FadeOut(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                
+                SetFlag( TF_MENU_SELECT, 1 )	
+            }
+            //	⇒やめる
+            else
+            {
+                
+                SetFlag( TF_MENU_SELECT, 0 )
+            }
+            //──────────────────────
 
-		if( FLAG[TF_MENU_SELECT] == 0 )
-		{
-			CrossFade(FADE_CROSS)
-			SetStopFlag(STOPFLAG_NOCHARACLIP)
-			
-			ResetPartyPos()
-			ResetFollowPoint()
-			
-			RestoreCamera(0,0)
-			ResetCameraObserver(0)
-			ResetCameraZPlane()
-			Wait(FADE_CROSS)
-			
-			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		}
-		else
-		{
-			LoadArg("map/mp6307b/mp6307b.arg")
-	        EventCue("mp6307b:EV_RetryBoss")
-			//FadeIn(FADE_BLACK,FADE_NORMAL)
-			WaitFade()
-			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		}
+            if( FLAG[TF_MENU_SELECT] == 0 )
+            {
+                CrossFade(FADE_CROSS)
+                SetStopFlag(STOPFLAG_NOCHARACLIP)
+                
+                ResetPartyPos()
+                ResetFollowPoint()
+                
+                RestoreCamera(0,0)
+                ResetCameraObserver(0)
+                ResetCameraZPlane()
+                Wait(FADE_CROSS)
+                
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+            else
+            {
+                GetItem(ICON3D_972,1)
+                LoadArg("map/mp6307b/mp6307b.arg")
+                EventCue("mp6307b:EV_RetryBoss")
+                //FadeIn(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+        }
+        else
+        {
+            SetStopFlag(STOPFLAG_TALK)
+            Message("No presence felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            ResetStopFlag(STOPFLAG_TALK)
+        }
 	}
 """
     return script
@@ -1159,63 +1389,80 @@ def uraFight():
     script = """
     function "uraFight"
     {
-        Message("The presence of the Sky Warden Can be felt.")
-        WaitPrompt()
-        WaitCloseWindow()
-		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		SetFlag( TF_MENU_SELECT, 0 )
-		YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-		
-		//──────────────────────
-		//　⇒支援要請を出す
-		if( FLAG[TF_MENU_SELECT] )
-		{
-			SetEnvSEPlayState(-1, 0)
-			FadeOut(FADE_BLACK,FADE_NORMAL)
-			WaitFade()
-			
-			SetFlag( TF_MENU_SELECT, 1 )	
-		}
-		//	⇒やめる
-		else
-		{
-			
-			SetFlag( TF_MENU_SELECT, 0 )
-		}
-		//──────────────────────
+        if(!FLAG[GF_06MP6308_TALK_SARAI])
+        {
+            Message("The presence of the Sky Warden can be felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            SetFlag( TF_MENU_SELECT, 0 )
+            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+            
+            //──────────────────────
+            //　⇒支援要請を出す
+            if( FLAG[TF_MENU_SELECT] )
+            {
+                SetEnvSEPlayState(-1, 0)
+                FadeOut(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                
+                SetFlag( TF_MENU_SELECT, 1 )	
+            }
+            //	⇒やめる
+            else
+            {
+                
+                SetFlag( TF_MENU_SELECT, 0 )
+            }
+            //──────────────────────
 
-		if( FLAG[TF_MENU_SELECT] == 0 )
-		{
-			CrossFade(FADE_CROSS)
-			SetStopFlag(STOPFLAG_NOCHARACLIP)
-			
-			ResetPartyPos()
-			ResetFollowPoint()
-			
-			RestoreCamera(0,0)
-			ResetCameraObserver(0)
-			ResetCameraZPlane()
-			Wait(FADE_CROSS)
-			
-			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		}
-		else
-		{
-			LoadArg("map/mp6308b/mp6308b.arg")
-	        EventCue("mp6308b:EV_RetryBoss")
-			//FadeIn(FADE_BLACK,FADE_NORMAL)
-			WaitFade()
-			ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-		}
+            if( FLAG[TF_MENU_SELECT] == 0 )
+            {
+                CrossFade(FADE_CROSS)
+                SetStopFlag(STOPFLAG_NOCHARACLIP)
+                
+                ResetPartyPos()
+                ResetFollowPoint()
+                
+                RestoreCamera(0,0)
+                ResetCameraObserver(0)
+                ResetCameraZPlane()
+                Wait(FADE_CROSS)
+                
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+            else
+            {
+                GetItem(ICON3D_972,1)
+                LoadArg("map/mp6308b/mp6308b.arg")
+                EventCue("mp6308b:EV_RetryBoss")
+                //FadeIn(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+        }
+        else
+        {
+            SetStopFlag(STOPFLAG_TALK)
+            Message("No presence felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            ResetStopFlag(STOPFLAG_TALK)
+        }
 	}
 """
     return script
 
+#this function runs once per map load. It's heavy handed but works to increase the exp of every enemy in the game.
+#there's a second similar formula we use for a growth rate, it's called per "major" boss defeat, which we do by just checking the flags that are set after each "major" boss and calling again.
+#this creates a compounding exp growth curve which should play well with this game's overall exp curve and help make sure levels don't come too quickly in "early game" while remaining relatively fast in "late game".
+#the idea is to flatten the overall exp curve in a way that makes sure grinding is never cumbersome in the rando while playthroughs remain fast but retain difficulty.
 def expMult(parameters):
     scripExpMult = """
 function "expMult"
 {{
-    if(!FLAG[TF_RNG_MAP_LOAD]){{
+    if(FLAG[SF_LOADMAP])
+    {{
         SetChrWorkGroup(B000,CWK_EXPMUL, {0}f)
         SetChrWorkGroup(B001,CWK_EXPMUL, {0}f)
         SetChrWorkGroup(B002,CWK_EXPMUL, {0}f)
@@ -1463,11 +1710,348 @@ function "expMult"
         SetChrWorkGroup(M9918,CWK_EXPMUL, {0}f)
         SetChrWorkGroup(M9919,CWK_EXPMUL, {0}f)
         SetChrWorkGroup(M9920,CWK_EXPMUL, {0}f)
-        SetFlag(TF_RNG_MAP_LOAD,1){)
+
+        SetFlag(GF_TBOX_DUMMY114,0)
+		SetFlag(GF_TBOX_DUMMY115,0)
+		SetFlag(GF_TBOX_DUMMY116,0)
+		SetFlag(GF_TBOX_DUMMY117,0)
+		SetFlag(GF_TBOX_DUMMY118,0)
+		SetFlag(GF_TBOX_DUMMY119,0)
+		SetFlag(GF_TBOX_DUMMY120,0)
+		SetFlag(GF_TBOX_DUMMY121,0)
+		SetFlag(GF_TBOX_DUMMY122,0)
+		SetFlag(GF_TBOX_DUMMY123,0)
+		SetFlag(GF_TBOX_DUMMY124,0)
+		SetFlag(GF_TBOX_DUMMY125,0)
+		SetFlag(GF_TBOX_DUMMY126,0)
+        CallFunc("rng:bossCheck")
     }}
 }}
+
+function "bossCheck"
+{{
+	
+    if(FLAG[GF_01MP1103_JOIN_SAHAD] && !FLAG[GF_TBOX_DUMMY114])
+    {{
+        SetFlag(GF_TBOX_DUMMY114,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_02MP1308_KILL_CHAMELEON] && !FLAG[GF_TBOX_DUMMY115])
+    {{
+        SetFlag(GF_TBOX_DUMMY115,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_TBOX_DUMMY074] && !FLAG[GF_TBOX_DUMMY116])
+    {{
+        SetFlag(GF_TBOX_DUMMY116,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_02MP2308_KILL_HIPPO] && !FLAG[GF_TBOX_DUMMY117])
+    {{
+        SetFlag(GF_TBOX_DUMMY117,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_02MP1103_KILL_KIERGAARD] && !FLAG[GF_TBOX_DUMMY118])
+    {{
+        SetFlag(GF_TBOX_DUMMY118,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_03MP4341_KILL_ANCIENT] && !FLAG[GF_TBOX_DUMMY119])
+    {{
+        SetFlag(GF_TBOX_DUMMY119,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_04MP6410_KILL_GUARDIAN] && !FLAG[GF_TBOX_DUMMY120])
+    {{
+        SetFlag(GF_TBOX_DUMMY120,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_05MP6329_KILL_BAHABOSS] && !FLAG[GF_TBOX_DUMMY121])
+    {{
+        SetFlag(GF_TBOX_DUMMY121,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_05MP0405_READ_REED] && !FLAG[GF_TBOX_DUMMY122])
+    {{
+        SetFlag(GF_TBOX_DUMMY122,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_TBOX_DUMMY078] && !FLAG[GF_TBOX_DUMMY123])
+    {{
+        SetFlag(GF_TBOX_DUMMY123,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_TBOX_DUMMY080] && !FLAG[GF_TBOX_DUMMY124])
+    {{
+        SetFlag(GF_TBOX_DUMMY124,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if((FLAG[GF_06MP6305_TALK_HYDRA] || FLAG[GF_06MP6306_TALK_MINOS] || FLAG[GF_06MP6307_TALK_NESTOR] || FLAG[GF_06MP6308_TALK_SARAI]) && !FLAG[GF_TBOX_DUMMY125])
+    {{
+        SetFlag(GF_TBOX_DUMMY125,1)
+        CallFunc("rng:expGrowth")
+    }}
+    if(FLAG[GF_SUBEV_06_6413_KILL_BOSS] && !FLAG[GF_TBOX_DUMMY126])
+    {{
+        SetFlag(GF_TBOX_DUMMY126,1)
+        CallFunc("rng:expGrowth")
+    }}
+}}
+
+function "expGrowth"
+{{
+    SetChrWorkGroup(B000,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B001,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B002,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B003,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B004,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B005,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B006,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B007,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B008,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B009,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B010,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B011,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B012,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B013,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B020,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B021,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B022,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B023,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B024,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B025,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B030,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B100,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B101,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B102,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B103,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B104,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B105,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B106,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B110,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B111,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B112,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B150,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B151,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B152,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B153,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B154,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B155,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B161,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B162,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B163,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B164,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B165,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(B170,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(G0001,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(G0002,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(G0003,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(G0004,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(G0005,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(G0006,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(G0007,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(G0008,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(G0009,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0100,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0101,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0102,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0103,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0104,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0105,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0106,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0107,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0108,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0109,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0110,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0111,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0112,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0113,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0120,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0121,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0122,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0123,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0124,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0140,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0141,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0142,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0143,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0144,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0145,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0146,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0147,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0148,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0149,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0150,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0151,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0200,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0201,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0202,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0203,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0220,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0221,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0222,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0223,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0224,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0225,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0226,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0240,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0241,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0300,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0301,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0302,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0303,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0340,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0341,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0400,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0401,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0402,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0403,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0440,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0441,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0442,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0500,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0501,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0502,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0503,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0504,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0600,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0601,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0602,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0603,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0604,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0605,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0620,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0621,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0622,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0623,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0640,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0641,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0642,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0643,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0644,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0660,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0661,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0662,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0663,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0664,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0680,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0700,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0701,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0800,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0801,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0805,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0806,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0810,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0811,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0815,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0816,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0830,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0831,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0840,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0841,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0850,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0851,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0860,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0861,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0870,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0871,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0881,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0882,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0883,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0884,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0885,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0886,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0887,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0888,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0889,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0890,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0900,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0901,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0902,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0903,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0910,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0911,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0915,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0916,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0920,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0925,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0926,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0930,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0931,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0935,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0936,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0940,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0941,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0942,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0945,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M0960,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1000,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1001,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1003,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1004,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1005,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1007,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1009,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1010,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1011,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1012,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1013,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1014,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1015,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1020,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1021,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1022,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1030,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1031,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1040,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1041,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1042,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1099,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1100,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1101,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1102,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1103,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1104,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1105,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1200,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1201,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1202,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1203,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1300,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1301,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1400,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1401,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1402,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1403,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1404,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1405,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1406,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1407,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1408,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1409,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1600,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1601,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1602,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1603,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1604,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1605,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1610,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1611,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1612,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M1613,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M2100,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M2101,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M2102,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M2103,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M9917,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M9918,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M9919,CWK_EXPMUL, {1}f)
+    SetChrWorkGroup(M9920,CWK_EXPMUL, {1}f)
+    CallFunc("rng:bossCheck")
+    
+}}
 """ 
-    return scripExpMult.format(parameters.expMult)         
+    return scripExpMult.format(parameters.expMult,parameters.expGrowth)
 
 
 

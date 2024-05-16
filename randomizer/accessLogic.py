@@ -25,12 +25,21 @@ def canAccess(inventory,location,parameters):
             if location.mapCheckID == 'Percent 10' and (access.canClimb() or access.canMove(8)) and access.hasEuron(): return True
             elif location.mapCheckID == 'Percent 20' and (access.canClimb() or access.canMove(6)) and (access.canMove(8) or access.canDoubleJump()) and access.hasEuron(): return True
             elif location.mapCheckID == 'Percent 30' and (access.canClimb() or access.canMove(6)) and (access.canMove(8) or access.canDoubleJump()) and access.hasEuron() and access.canSwampWalk(): return True
-            elif location.mapCheckID == 'Percent 40' and (access.canClimb() or access.canMove(6)) and (access.canMove(8) or access.canDoubleJump()) and access.hasEuron() and access.canSwampWalk() and (access.hasDina() or (access.past1() and access.hasFlameStones(3))) and access.canMove(11) and access.canDefeat('Giasburn'): return True
-            elif location.mapCheckID == 'Percent 50' and access.canClimb() and (access.canDoubleJump() or (access.canMove(16) and access.canSwampWalk())) and access.hasEuron() and ((access.hasDina() and access.canDoubleJump() and access.readNote1()) or (access.past1() and access.hasFlameStones(3))) and access.canDefeat('Giasburn'): return True
-            elif location.mapCheckID == 'Percent 60' and access.mapIncrease() and access.canClimb() and access.canDoubleJump() and access.canMove(16) and access.canSwampWalk() and access.hasEuron() and ((access.hasDina() and access.readNote1) or (access.past1() and access.hasFlameStones(3) and access.past2() and access.past3 and access.hasDana())) and access.canDefeat('Giasburn'): return True
-            elif location.mapCheckID == 'Percent 70' and access.mapIncrease() and access.canClimb() and access.canDoubleJump() and access.canMove(16) and access.canSwampWalk() and access.hasEuron() and access.hasDina() and access.readNote1 and access.past1() and access.hasFlameStones(3) and access.past2() and access.past3() and ((access.hasDana() and  access.past4()) or (access.past5() and access.canUnderwater())) and access.canDefeat('Giasburn'): return True
-            elif location.mapCheckID == 'Percent 80' and access.mapIncrease() and access.canClimb() and access.canDoubleJump() and access.canMove(20) and access.canSwampWalk() and access.hasEuron() and access.hasDina() and access.readNote1 and access.past1() and access.hasFlameStones(3) and access.past2() and access.past3() and access.hasDana() and access.past4() and access.past5() and access.canUnderwater() and access.canSeeDark() and access.canDefeat('Giasburn'): return True
-            elif location.mapCheckID == 'Percent 90' and access.mapIncrease() and access.canClimb() and access.canDoubleJump() and access.canMove(24) and access.canSwampWalk() and access.hasEuron() and access.hasDina() and access.readNote1 and access.past1() and access.hasFlameStones(3) and access.past2() and access.past3() and access.hasDana() and access.past4() and access.past5() and access.canUnderwater() and access.past6() and access.canUndead() and access.canSeeDark() and access.canDefeat('Giasburn'): return True
+            elif location.mapCheckID == 'Percent 40' and (access.canClimb() or access.canMove(6)) and (access.canMove(8) or access.canDoubleJump()) and access.hasEuron() and access.canSwampWalk() and\
+                  (access.hasDina() or (access.past1() and access.hasFlameStones(3))) and access.canMove(11) and access.canDefeat('Giasburn'): return True
+            elif location.mapCheckID == 'Percent 50' and access.canClimb() and (access.canDoubleJump() or (access.canMove(16) and access.canSwampWalk())) and access.hasEuron() and\
+                  ((access.hasDina() and access.canDoubleJump() and access.readNote1()) or (access.past1() and access.hasFlameStones(3))) and access.canDefeat('Giasburn'): return True
+            elif location.mapCheckID == 'Percent 60' and access.mapIncrease() and access.canClimb() and access.canDoubleJump() and access.canMove(16) and access.canSwampWalk() and access.hasEuron() and\
+                  ((access.hasDina() and access.readNote1) or (access.past1() and access.hasFlameStones(3) and access.past2() and access.past3 and access.hasDana())) and access.canDefeat('Giasburn'): return True
+            elif location.mapCheckID == 'Percent 70' and access.mapIncrease() and access.canClimb() and access.canDoubleJump() and access.canMove(16) and access.canSwampWalk() and access.hasEuron() and access.hasDina()\
+                  and access.readNote1 and access.past1() and access.hasFlameStones(3) and access.past2() and access.past3() and ((access.hasDana() and  access.past4()) or (access.past5() and access.canUnderwater()))\
+                      and access.canDefeat('Giasburn'): return True
+            elif location.mapCheckID == 'Percent 80' and access.mapIncrease() and access.canClimb() and access.canDoubleJump() and access.canMove(20) and access.canSwampWalk() and access.hasEuron() and access.hasDina()\
+                  and access.readNote1 and access.past1() and access.hasFlameStones(3) and access.past2() and access.past3() and access.hasDana() and access.past4() and access.past5() and access.canUnderwater() and access.canSeeDark()\
+                      and access.canDefeat('Giasburn'): return True
+            elif location.mapCheckID == 'Percent 90' and access.mapIncrease() and access.canClimb() and access.canDoubleJump() and access.canMove(24) and access.canSwampWalk() and access.hasEuron() and access.hasDina()\
+                  and access.readNote1 and access.past1() and access.hasFlameStones(3) and access.past2() and access.past3() and access.hasDana() and access.past4() and access.past5() and access.canUnderwater() and access.past6()\
+                      and access.canUndead() and access.canSeeDark() and access.canDefeat('Giasburn'): return True
             elif location.mapCheckID == 'Percent 100': return False
             else: return False
         elif location.locName == 'Discovery Rewards':
@@ -44,12 +53,13 @@ def canAccess(inventory,location,parameters):
             else: return False
         elif location.locName == 'Ricotta and Shoebill Reunite' and access.hasRicotta(): return True
         elif location.locName == 'Calm Inlet (Castaway Village Area)':
-            if location.mapCheckID in ['Silvia Skill 1','Silvia Skill 1','Silvia'] and access.hasSilvia() and battleLogic(200,access,parameters): return True
-            elif location.mapCheckID not in ['Silvia Skill 1','Silvia Skill 1','Silvia']: return True
+            if location.mapCheckID in ['Silvia Skill 1','Silvia Skill 2','Silvia'] and access.hasSilvia() and battleLogic(200,access,parameters): return True
+            elif location.mapCheckID not in ['Silvia Skill 1','Silvia Skill 2','Silvia']: return True
+            else: return False
         else: return False
     elif location.locRegion == 'Nameless Coast':
         if location.locName == 'Shoreline North of Boulder' and (access.canMove(6) or access.canClimb()): return True
-        elif location.locName == 'Cliffs North' and (access.canMove(6) or access.canClimb()): return True
+        elif location.locName == 'Cliffs North' and (access.canMove(8) or access.canDoubleJump()): return True
         elif location.locName == 'Cliffs South - Treebridge':
             if location.mapCheckID == 'TBOX03' and (access.canClimb() or (access.canMove(6) and access.canDoubleJump())): return True
             elif location.mapCheckID != 'TBOX03': return True
@@ -72,7 +82,7 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID != 'Corpse' and access.canClimb(): return True
             else: return False
         elif location.locName in ['Rainbow Falls','End'] and access.canClimb(): return True
-        elif location.locName == 'Boss Arena' and battleLogic(30,access,parameters): 
+        elif location.locName == 'Boss Arena' and battleLogic(30,access,parameters) and access.canClimb(): 
             if location.mapCheckID != 'Psyches': return True
             elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Clareon'): return True
             else: return False
@@ -119,7 +129,7 @@ def canAccess(inventory,location,parameters):
             if location.mapCheckID == 'TBOX03' and access.canSeeDark(): return True
             elif location.mapCheckID != 'TBOX03': return True
         elif location.locName == 'End'  and access.canSeeDark() and access.canDefeat('Lonbrigius'): return True
-        elif location.locName == 'Boss Arena' and battleLogic(75,access,parameters): 
+        elif location.locName == 'Boss Arena' and battleLogic(75,access,parameters) and access.canSeeDark() and access.canDefeat('Lonbrigius'): 
             if location.mapCheckID != 'Psyches': return True
             elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Gargantula'): return True
             else: return False
@@ -172,14 +182,14 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'TBOX01' and access.canSwampWalk() and access.canClimb(): return True
             else: return False
         elif location.locName == 'End' and access.canSwampWalk() and access.canDefeat('Magamandra'): return True
-        elif location.locName == 'Boss Arena' and battleLogic(100,access,parameters): 
+        elif location.locName == 'Boss Arena' and battleLogic(100,access,parameters) and access.canDefeat('Magamandra') and access.canSwampWalk(): 
             if location.mapCheckID != 'Psyches': return True
             elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Laspisus'): return True
             else: return False
         else: return False
     elif location.locRegion == 'Odd Rock Coast' and (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())) and access.hasDina() and access.canSwampWalk() and access.canDefeat('Laspisus'): 
         if location.mapCheckID in ['Master Kong Skill Dana','Master Kong Dana'] and battleLogic(200,access,parameters) and access.hasDana() and access.canDefeat('Master Kong Sahad'): return True
-        elif location.mapCheckID in ['Kiergaard Weissman','Kiergaard Weissman Skill 1','Kiergaard Weissman Skill 1','Quina Join','Licht Join'] and battleLogic(120,access,parameters): return True
+        elif location.mapCheckID in ['Kiergaard Weissman','Kiergaard Weissman Skill 1','Kiergaard Weissman Skill 2','Quina Join','Licht Join'] and battleLogic(120,access,parameters): return True
         else: return False
     elif location.locRegion == 'The Primordial Passage' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1(): return True
     elif location.locRegion == 'Mont Gendarme' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1(): 
@@ -216,7 +226,8 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID not in ['Master Kong Skill Hummel','Master Kong Hummel']: return True
             else: return False
         else: return False
-    elif location.locRegion == 'The Ruins of Eternia' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and (access.past2() or (access.past3() and access.hasDana())) and access.canDefeat('Giasburn'):
+    elif location.locRegion == 'The Ruins of Eternia' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and (access.past2() or (access.past3() and access.hasDana()))\
+          and access.canDefeat('Giasburn'):
         if location.locName == 'Eastern Entrance' and access.past3(): return True
         elif location.locName == 'Central District' and access.hasDina(): return True
         elif location.locName == 'Residence':
@@ -225,7 +236,8 @@ def canAccess(inventory,location,parameters):
             else: return False
         elif location.locName == 'Palace Ruins': return True
         else: return False
-    elif location.locRegion == 'Temple of the Great Tree' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'):
+    elif location.locRegion == 'Temple of the Great Tree' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())\
+          and access.canDefeat('Giasburn'):
         if location.locName == 'Temple Boss Arena':
             if location.mapCheckID != 'Psyches': return True
             elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Brachion'): return True
@@ -261,7 +273,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName == 'Mid-Boss Arena' and battleLogic(230,access,parameters): return True
         elif location.locName == 'Fifth Floor' and access.canDoubleJump(): return True
         elif location.locName == 'Sixth Floor' and access.canDoubleJump(): return True
-        elif location.locName == 'Boss Arena' and battleLogic(280,access,parameters): 
+        elif location.locName == 'Boss Arena' and battleLogic(280,access,parameters) and access.canDoubleJump(): 
             if location.mapCheckID != 'Psyches': return True
             elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Carveros'): return True
             else: return False
@@ -290,15 +302,18 @@ def canAccess(inventory,location,parameters):
         else: return False
     elif location.locRegion == 'Balado Monastery' and access.canDefeat('Giasburn'):
         if location.locName == 'Basement' and access.canSeeDark():
-            if location.mapCheckID in ['TBOX01','TBOX02','TBOX03'] and access.canClimb() and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
-            elif location.mapCheckID in ['TBOX04','TBOX05'] and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and (access.past2() or (access.past3() and access.hasDana())) and access.past5(): return True
+            if location.mapCheckID in ['TBOX01','TBOX02','TBOX03'] and access.canClimb() and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and\
+                  (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater(): return True
+            elif location.mapCheckID in ['TBOX04','TBOX05'] and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and (access.past2() or (access.past3() and access.hasDana()))\
+                  and access.past5(): return True
             else: return False
         elif location.locName == 'Entrance' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and (access.past2() or (access.past3() and access.hasDana())) and access.past5():
             if location.mapCheckID in ['TBOX01','TBOX02','TBOX03'] and access.canSeeDark(): return True
             elif location.mapCheckID not in ['TBOX01','TBOX02','TBOX03']: return True
             else: return False
         else: return False
-    elif location.locRegion == 'Archeozoic Chasm' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and (access.past2() or (access.past3() and access.hasDana())) and access.past5() and access.canDefeat('Giasburn'):
+    elif location.locRegion == 'Archeozoic Chasm' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and (access.past2() or (access.past3() and access.hasDana())) and access.past5()\
+          and access.canDefeat('Giasburn'):
         if location.locName == 'Entrance': return True
         elif location.locName == 'Cliffs Overlooking Crater':
             if location.mapCheckID == 'TBOX02' and access.canMove(23): return True
@@ -318,10 +333,12 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Oceanus'): return True
             else: return False
         else: return False
-    elif location.locRegion == 'Vista Ridge' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'): 
+    elif location.locRegion == 'Vista Ridge' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())\
+          and access.canDefeat('Giasburn'): 
         if location.locName == 'Vista Ridge Upper' and access.canMove(21) and access.canDoubleJump(): return True
         if location.locName == 'Vista Ridge Lower' and access.canMove(14) and access.canSwampWalk() and access.hasDina() and access.hasAdol and access.canDefeat('Master Kong Hummel') and access.canSeeDark() and battleLogic(240,access,parameters): return True
-    elif location.locRegion == 'Lodinia Marshland' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'):
+    elif location.locRegion == 'Lodinia Marshland' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())\
+          and access.canDefeat('Giasburn'):
         if location.locName == 'Entrance from Vista Ridge':
             if location.mapCheckID == 'TBOX01': return True
             elif location.mapCheckID == 'TBOX02' and (access.canDoubleJump() or access.canSwampWalk()): return True
@@ -337,7 +354,8 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID != 'Fermented Sap': return True
             else: return False
         else: return False
-    elif location.locRegion == 'Valley of Kings' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and access.canDefeat('Giasburn'):
+    elif location.locRegion == 'Valley of Kings' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())\
+          and access.past6() and access.canDefeat('Giasburn'):
         if location.locName == 'Valley of Kings - Camp' and access.hasDina(): return True
         elif location.locName == 'Entrance': return True
         elif location.locName == 'Northern Lower Level': return True
@@ -355,17 +373,29 @@ def canAccess(inventory,location,parameters):
         else: return False
     elif location.locRegion == 'The Submerged Cemetery' and access.canSeeDark() and access.canClimb() and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater() and access.canDefeat('Giasburn'): return True
     elif location.locRegion == 'Solitude Island' and access.hasBoat(): return True
-    elif location.locRegion == 'Eternal Hill'and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and access.past7() and access.canDefeat('Giasburn'): return True
-    elif location.locRegion == 'Octus Overlook' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canDefeat('Giasburn'):
-        if location.locName in ['Path of the Frozen Era','Path of the Ocean Era','Path of the Sky Era'] and battleLogic(340,access,parameters): return True
-        elif location.locName == 'Path of the Insectoid Era' and battleLogic(340,access,parameters): 
+    elif location.locRegion == 'Eternal Hill'and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and\
+          access.past6() and access.past7() and access.canDefeat('Giasburn'): return True
+    elif location.locRegion == 'Octus Overlook' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())\
+          and access.canDefeat('Giasburn'):
+        if location.locName in ['Path of the Frozen Era','Path of the Ocean Era','Path of the Sky Era'] and battleLogic(340,access,parameters) and parameters.goal == 'Find Crew' and access.canMove(parameters.numOctus): return True
+        elif location.locName == 'Path of the Insectoid Era' and battleLogic(340,access,parameters) and parameters.goal == 'Find Crew' and access.canMove(parameters.numOctus): 
+            if location.mapCheckID == 'TBOX02' and access.canDoubleJump(): return True
+            elif location.mapCheckID != 'TBOX02': return True
+            else: return False
+        elif location.locName in ['Path of the Frozen Era','Path of the Ocean Era','Path of the Sky Era'] and battleLogic(340,access,parameters) and parameters.goal == 'Seiren Escape': return True
+        elif location.locName == 'Path of the Insectoid Era' and battleLogic(340,access,parameters) and parameters.goal == 'Seiren Escape': 
+            if location.mapCheckID == 'TBOX02' and access.canDoubleJump(): return True
+            elif location.mapCheckID != 'TBOX02': return True
+            else: return False
+        elif location.locName in ['Path of the Frozen Era','Path of the Ocean Era','Path of the Sky Era'] and battleLogic(340,access,parameters) and parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numOctus): return True
+        elif location.locName == 'Path of the Insectoid Era' and battleLogic(340,access,parameters) and parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numOctus): 
             if location.mapCheckID == 'TBOX02' and access.canDoubleJump(): return True
             elif location.mapCheckID != 'TBOX02': return True
             else: return False
         elif location.locName == 'Selection Sphere' and battleLogic(390,access,parameters):
-            if parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal): return True
+            if parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal) and access.canMove(parameters.numOctus): return True
             elif parameters.goal == 'Seiren Escape' and access.hasBoat() and access.hasMistilteinn() and access.hasChart(): return True
-            elif parameters.goal == 'Release the Psyches' and access.hasAllPsyches(): return True
+            elif parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numGoal) and access.hasPsyches(parameters.numOctus): return True
             else: return False
         else: return False
     else: return False
@@ -401,13 +431,15 @@ def canDiscover(access,requiredDiscoveries):
         discoveryCount+=2
     if access.canUnderwater() and access.canMove(11) and access.canClimb(): #Lapis Mineral Vein
         discoveryCount+=1
-    if access.canClimb() and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk()) and access.canMove(22) and access.canUnderwater() and access.canSeeDark() and access.canDefeat('Giasburn'): #Soundless Hall
+    if access.canClimb() and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and (access.canDoubleJump() or access.canSwampWalk())\
+          and access.canMove(22) and access.canUnderwater() and access.canSeeDark() and access.canDefeat('Giasburn'): #Soundless Hall
         discoveryCount+=1
     if access.canClimb() and access.canDoubleJump() and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.canSwampWalk() and access.canDefeat('Giasburn'): #Sky Garden
         discoveryCount+=1
     if access.hasBoat(): #Magnacarpa
         discoveryCount+=1
-    if access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and access.past7() and access.canDefeat('Giasburn'): #Graves of Ancient Heroes
+    if access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and access.past7()\
+          and access.canDefeat('Giasburn'): #Graves of Ancient Heroes
         discoveryCount+=1
 
     if discoveryCount >= requiredDiscoveries:
@@ -429,11 +461,17 @@ def battleLogic(requiredStr,access,parameters):
             weaponStr = 290
         elif not parameters.progressiveSuperWeapons and ((access.hasMistilteinn() and access.hasAdol()) or (access.hasSpiritRing() and access.hasDana())):
             weaponStr = 290
-        elif access.hasFlameStones(7) and (access.canDoubleJump() and access.hasDina() and access.canMove(24) or (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater()))) or (access.canUnderwater() and access.canMove(11) and access.canClimb()) or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3()) or access.hasDana())) and access.canDefeat('Giasburn'):
+        elif access.hasFlameStones(7) and (access.canDoubleJump() and access.hasDina() and access.canMove(24) or (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater())))\
+              or (access.canUnderwater() and access.canMove(11) and access.canClimb()) or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3()) or access.hasDana()))\
+                  and access.canDefeat('Giasburn'):
             weaponStr = 270
-        elif access.hasFlameStones(6) and ((access.canMove(6) or access.canClimb()) and access.canDoubleJump() and access.hasDina()) or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and (((access.past2() and access.past3()) or access.hasDana()) or (access.past2() or (access.past3() and access.hasDana())))) and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(6) and ((access.canMove(6) or access.canClimb()) and access.canDoubleJump() and access.hasDina()) or\
+              (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and (((access.past2() and access.past3()) or access.hasDana()) or (access.past2() or (access.past3() and access.hasDana()))))\
+                  and access.canDefeat('Giasburn'): 
             weaponStr = 240
-        elif access.hasFlameStones(5) and ((access.canMove(6) or access.canClimb()) and access.canDoubleJump() and access.hasDina()) or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and (((access.past2() and access.past3()) or access.hasDana()) or (access.past2() or (access.past3() and access.hasDana())))) and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(5) and ((access.canMove(6) or access.canClimb()) and access.canDoubleJump() and access.hasDina()) or\
+              (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and (((access.past2() and access.past3()) or access.hasDana()) or (access.past2() or (access.past3() and access.hasDana()))))\
+                  and access.canDefeat('Giasburn'): 
             weaponStr = 210
         elif access.hasFlameStones(4) and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canDefeat('Giasburn'): 
             weaponStr = 180
@@ -461,9 +499,11 @@ def battleLogic(requiredStr,access,parameters):
 
         #for armlet's and accesories we scan the world to see what's accessible from checks then compare that to what can be acquired from shop levels then take the highest number
         foundArmStr = access.armletStr()
-        if access.hasFlameStones(7) and access.hasEuron() and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3() and access.past5()) or access.hasDana()) and access.canDefeat('Giasburn'): 
+        if access.hasFlameStones(7) and access.hasEuron() and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3() and access.past5()) or access.hasDana())\
+              and access.canDefeat('Giasburn'): 
             armStr = 30
-        elif access.hasFlameStones(6) and access.hasEuron() and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3() and access.past5()) or access.hasDana()) and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(6) and access.hasEuron() and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3() and access.past5()) or access.hasDana())\
+              and access.canDefeat('Giasburn'): 
             armStr = 20
         elif access.hasFlameStones(4) and access.hasEuron() and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canDefeat('Giasburn'): 
             armStr = 10
@@ -495,17 +535,21 @@ def battleLogic(requiredStr,access,parameters):
             if access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasDina():
                 pyriosAcc.append(5) #Pyrios Talisman
         if access.hasEuron and access.hasFlameStones(4):
-            if (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.past3() and access.hasDana()) or ( access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasDina()) and access.canDefeat('Giasburn'):
+            if (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.past3() and access.hasDana()) or\
+                  ( access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasDina()) and access.canDefeat('Giasburn'):
                 bladeRings.append(30) #Blade Ring 3
                 otherAcc.append(10) #lightning stone
-            if (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())) or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasDina()) and access.canDefeat('Giasburn'):
+            if (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()))\
+                  or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasDina()) and access.canDefeat('Giasburn'):
                 otherAcc.append(10) #crow stone
-            if (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())) or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(5) and access.hasDina()) and access.canDefeat('Giasburn'):
+            if (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()))\
+                  or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(5) and access.hasDina()) and access.canDefeat('Giasburn'):
                 otherAcc.append(10) #snake stone
         if access.hasEuron and access.hasFlameStones(5):
             if (access.canMove(8) or ((access.canMove(6) or access.canClimb()) and access.canDoubleJump())):
                 dragonAcc.append(10) #dragon pauldron
-            if access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3()) or access.hasDana()) and (access.past2() or (access.past3() and access.hasDana())) and access.past5() and access.hasDina() and access.canDefeat('Giasburn'):
+            if access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3()) or access.hasDana()) and\
+                  (access.past2() or (access.past3() and access.hasDana())) and access.past5() and access.hasDina() and access.canDefeat('Giasburn'):
                 fenrirAcc.append(15) #fenrir stone
                 pyriosAcc.append(15) #pyrios stone
                 dragonAcc.append(20) #dragon stone

@@ -23,6 +23,8 @@ def shuffleLocations(parameters):
     while len(vanillaLocations) != 0:
         if vanillaLocations[0].locID in duplicateChests: #pop out duplicated locations, we'll copy these from the normal version of great river valley and valley of kings after we're done.
             chestsToCopy.append(vanillaLocations.pop(0))
+        elif not parameters.extraFlameStones and vanillaLocations[0].itemID == 778 and vanillaLocations[0].mapID == 'none': #if extra flames stones isn't turned on then discard these items.
+            vanillaLocations.pop(0)
         elif not parameters.shuffleCrew and vanillaLocations[0].crew and not vanillaLocations[0].party: #if we're not shuffling crew then add them to the final list
             shuffledLocations.append(vanillaLocations.pop(0))
         elif not parameters.shuffleParty and vanillaLocations[0].party: #if we're not shuffling party then add them to the final list
@@ -87,6 +89,15 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
             if item.itemID in [155,171,156,542,157,169,172,271,727,548,209,436,720]:
                 inventory[index].progression = True
 
+    #if progressive super weapons are on then we'll change the names of these to match our in-game signage for the flags being set to acquire the super weapons at max shop level. 
+    #This will also help adjust the display for Dina's shops
+    if parameters.progressiveSuperWeapons:
+        for item in inventory:
+            if item.itemID == 9:
+                item.itemName = 'Broken Mistilteinn'
+            elif item.itemID == 13:
+                item.itemName = 'Broken Spirit Ring'
+
     #pull out progression items to place first for easier processing
     #for release the psyches goal we need to pull those into their own list too
     while len(inventory) != 0:
@@ -127,7 +138,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
                     filledLocation = combineShuffledLocAndItem(psycheToFill,psycheToPlace)
                     shuffledLocations.append(filledLocation)
                     break
-                
+    
     #let's shuffle the inventory just to randomize the party order then run through the intventory until we find the first party member, store it, then pop it from inventory.
     #this will be our starting character.
     #this needs to be done before the main shuffle to avoid things that aren't character being placed here.
