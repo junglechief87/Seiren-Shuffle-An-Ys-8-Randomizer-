@@ -212,14 +212,12 @@ def getCrewFlags(name):
     SetDiaryCharaFlag( DRCHA_DINA, DRCHA_FLAG_INFO2, 1 )
     SetDiaryCharaFlag( DRCHA_DINA, DRCHA_FLAG_INFO3, 1 )
     GetItem(ICON3D_US_PESTCIDE,10)
-    SetStopFlag(STOPFLAG_TALK)
     GetItemMessageExPlus(ICON3D_US_PESTCIDE,10,ITEMMSG_SE_NORMAL," Obtained.",0,0)
     WaitPrompt()
     WaitCloseWindow()	
     GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Trades can now be made.",0,0)
     WaitPrompt()
     WaitCloseWindow()
-    ResetStopFlag(STOPFLAG_TALK)
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )	
 """
         case "Reja": #vanilla function call on mp1114 script rng:0413
