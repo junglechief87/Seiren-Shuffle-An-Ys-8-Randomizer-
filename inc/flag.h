@@ -2664,8 +2664,8 @@ enum {
 	GF_TBOX_DUMMY124, //expMult boss check 11
 	GF_TBOX_DUMMY125, //expMult boss check 12
 	GF_TBOX_DUMMY126, //expMult boss check 13
-	GF_TBOX_DUMMY127,
-	GF_TBOX_DUMMY128,
+	GF_TBOX_DUMMY127, //Used to check if in a warden fight
+	GF_TBOX_DUMMY128, //Remove monolith flag from tower top
 	GF_TBOX_DUMMY129,
 	GF_TBOX_DUMMY130,
 	GF_TBOX_DUMMY131,

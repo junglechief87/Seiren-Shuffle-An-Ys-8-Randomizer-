@@ -6,6 +6,7 @@ import sys
 encode = "utf-8"
 sourceScript = "rng"
 current_directory = os.path.dirname(__file__)
+parent_directory = os.path.join(os.path.dirname(__file__),os.pardir)
     
 def getLocations():
     with open(current_directory + "/database/location.csv",encoding = encode) as locDB:
@@ -87,6 +88,9 @@ def getLocFile(mapID,fileType):
                     return os.path.join(root, file)
     else:
         raise Exception('Must specify either script or map for file retrieval or specify correct mapID')
+
+def getExecutable():
+    return os.path.join(parent_directory, "ys8.exe")
 
 def buildLocScripts(locID, source):
 

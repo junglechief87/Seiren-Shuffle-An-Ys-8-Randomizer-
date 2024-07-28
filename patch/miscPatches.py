@@ -13,8 +13,8 @@ def miscFixes():
     monsScriptOffset = 92
     
     with open(locFile,"rb") as buffer:
-            while (curByte := buffer.read()):
-                fileBytes = curByte
+        while (curByte := buffer.read()):
+            fileBytes = curByte
                 
     for hive in deleteHives:
         hiveLoc = fileBytes.find(hive.encode('utf-8'))
@@ -26,4 +26,23 @@ def miscFixes():
     with open(locFile,"wb") as buffer:
             buffer.write(fileBytes)
             buffer.close()
+    
+    #executable patches
+    ys8 = getExecutable()
 
+    with open(ys8,"rb") as buffer:
+        while (curByte := buffer.read()):
+            exeBytes = curByte
+
+    exeBytes = bytearray(exeBytes)
+    # remove exp level scaling
+    exeBytes[0x29B61C:0x29B61E] = [0x29,0xC9] #convert opcode sub ecx, ebp to sub ecx, ecx
+    exeBytes[0x29B64F:0x29B651] = [0x29,0xC9] #convert opcode sub ecx, ebp to sub ecx, ecx
+    exeBytes[0x29B632:0x29B634] = [0x29,0xC9] #convert opcode sub ecx, ebp to sub ecx, ecx
+    exeBytes[0x29B665:0x29B667] = [0x29,0xC0] #convert opcode sub eax, ebp to sub eax, eax
+ 
+    with open(ys8,"wb") as buffer:
+        buffer.write(exeBytes)
+        buffer.close()
+    
+    

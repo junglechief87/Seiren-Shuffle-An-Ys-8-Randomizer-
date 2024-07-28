@@ -13,9 +13,11 @@ def canAccess(inventory,location,parameters):
     elif location.locRegion == 'Waterdrop Cave': return True
     elif location.locRegion == 'Calm Inlet': 
         if location.locName ==  'Intercept':
-            if location.mapCheckID in ['Stage 2','Stage 3','Stage 5'] and access.memoCheck(1): return True
+            if location.mapCheckID == 'Stage 2' and access.memoCheck(1) and battleLogic(30,access,parameters): return True
+            elif location.mapCheckID == 'Stage 3' and access.memoCheck(1) and battleLogic(75,access,parameters): return True
+            elif location.mapCheckID == 'Stage 5' and access.memoCheck(1) and battleLogic(120,access,parameters): return True
             elif location.mapCheckID == 'Stage 7' and access.memoCheck(1) and access.hasFlameStones(3): return True
-            elif location.mapCheckID == 'Stage 9' and access.memoCheck(3) and access.hasFlameStones(3): return True
+            elif location.mapCheckID == 'Stage 9' and access.memoCheck(3) and access.hasFlameStones(3) and battleLogic(200,access,parameters): return True
             else: return False
         elif location.locName == 'Jewel Trade' and access.hasDina():
             if location.mapCheckID == 'Item 5' and (access.canClimb() or access.canMove(6)) and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and access.canSeeDark() and access.canFish(): return True

@@ -1149,16 +1149,16 @@ def buildPsyches(location):
     promptFight = ''
     if location.itemName == 'Psyches of the Sky Era':
         callPrompt = 'CallFunc("rng:uraFight")'
-        promptFight = uraFight()
+        promptFight = uraFight(location.locID)
     elif location.itemName == 'Psyches of the Insectoid Era':
         callPrompt = 'CallFunc("rng:nestorFight")'
-        promptFight = nestorFight()
+        promptFight = nestorFight(location.locID)
     elif location.itemName == 'Psyches of the Frozen Era':
         callPrompt = 'CallFunc("rng:minosFight")'
-        promptFight = minosFight()
+        promptFight = minosFight(location.locID)
     elif location.itemName == 'Psyches of the Ocean Era':
         callPrompt = 'CallFunc("rng:hydraFight")'
-        promptFight = hydraFight()
+        promptFight = hydraFight(location.locID)
     elif location.itemName == 'Empty Psyches':
         callPrompt = """
     SetStopFlag(STOPFLAG_TALK)
@@ -1181,7 +1181,7 @@ function "{0}"
 """
     return psycheFunction.format(scriptName,callPrompt,promptFight)
 
-def hydraFight():
+def hydraFight(locationID):
     script = """
     function "hydraFight"
     {
@@ -1229,6 +1229,7 @@ def hydraFight():
             }
             else
             {
+                SetFlag(GF_TBOX_DUMMY127,1)
                 GetItem(ICON3D_972,1)
                 LoadArg("map/mp6305b/mp6305b.arg")
                 EventCue("mp6305b:EV_RetryBoss")
@@ -1247,9 +1248,22 @@ def hydraFight():
         }
 	}
 """
+    if locationID not in [617,618,619,620,621]:
+        script = script + """
+    function "warden1Scaling"
+    {
+        SetLevel("B112", 60)
+    }
+"""
+    else:
+        script = script + """
+    function "warden1Scaling"
+    {
+    }
+"""
     return script
 
-def minosFight():
+def minosFight(locationID):
     script = """
     function "minosFight"
     {
@@ -1297,6 +1311,7 @@ def minosFight():
             }
             else
             {
+                SetFlag(GF_TBOX_DUMMY127,1)
                 GetItem(ICON3D_972,1)
                 LoadArg("map/mp6306b/mp6306b.arg")
                 EventCue("mp6306b:EV_RetryBoss")
@@ -1315,9 +1330,22 @@ def minosFight():
         }
 	}
 """
+    if locationID not in [617,618,619,620,621]:
+        script = script + """
+    function "warden2Scaling"
+    {
+        SetLevel("B110", 60)
+    }
+"""
+    else:
+        script = script + """
+    function "warden2Scaling"
+    {
+    }
+"""
     return script
 
-def nestorFight():
+def nestorFight(locationID):
     script = """
     function "nestorFight"
     {
@@ -1365,6 +1393,7 @@ def nestorFight():
             }
             else
             {
+                SetFlag(GF_TBOX_DUMMY127,1)
                 GetItem(ICON3D_972,1)
                 LoadArg("map/mp6307b/mp6307b.arg")
                 EventCue("mp6307b:EV_RetryBoss")
@@ -1383,9 +1412,22 @@ def nestorFight():
         }
 	}
 """
+    if locationID not in [617,618,619,620,621]:
+        script = script + """
+    function "warden3Scaling"
+    {
+        SetLevel("B111", 60)
+    }
+"""
+    else:
+        script = script + """
+    function "warden3Scaling"
+    {
+    }
+"""
     return script
 
-def uraFight():
+def uraFight(locationID):
     script = """
     function "uraFight"
     {
@@ -1433,6 +1475,7 @@ def uraFight():
             }
             else
             {
+                SetFlag(GF_TBOX_DUMMY127,1)
                 GetItem(ICON3D_972,1)
                 LoadArg("map/mp6308b/mp6308b.arg")
                 EventCue("mp6308b:EV_RetryBoss")
@@ -1451,6 +1494,20 @@ def uraFight():
         }
 	}
 """
+    if locationID not in [617,618,619,620,621]:
+        script = script + """
+    function "warden4Scaling"
+    {
+        SetLevel("B008", 60)
+    }
+"""
+    else:
+        script = script + """
+    function "warden4Scaling"
+    {
+    }
+"""
+
     return script
 
 #this function runs once per map load. It's heavy handed but works to increase the exp of every enemy in the game.
@@ -1461,7 +1518,7 @@ def expMult(parameters):
     scripExpMult = """
 function "expMult"
 {{
-    if(FLAG[SF_LOADMAP])
+    if(FLAG[SF_LOADMAP] || FLAG[GF_TBOX_DUMMY127])
     {{
         SetChrWorkGroup(B000,CWK_EXPMUL, {0}f)
         SetChrWorkGroup(B001,CWK_EXPMUL, {0}f)
