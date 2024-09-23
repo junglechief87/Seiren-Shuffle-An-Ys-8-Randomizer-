@@ -177,6 +177,7 @@ function "{0}"
 }}
 """  
     else:
+	setChestItem(location,location.itemID,location.quantity)
         getItemFunction =  """
 function "{0}"
 {{
@@ -195,13 +196,16 @@ function "{0}"
 def buildCrewLocation(location,script):
     scriptName = buildLocScripts(location.locID,False)
     itemIcon = -1
+    itemID = 0
     itemQuantity = 1
     itemSE = 'ITEMMSG_SE_BETTER'
     
     if location.party:
         message = "#2C" + location.itemName + "#4C" + partyMessage
+        itemID = 145
     elif location.crew:
         message = "#2C" + location.itemName + "#4C" + crewMessage
+        itemID = 143
         
     crewFlags = getCrewFlags(location.itemName)
 
@@ -220,6 +224,7 @@ function "{0}"
 }}
 """
     else: 
+	 setChestItem(location,itemID,itemQuantity)
          getCrewFunction = """
 function "{0}"
 {{
@@ -535,6 +540,7 @@ def shopUpgrades(location):
     scriptName = buildLocScripts(location.locID,False)
 
     if not location.event:
+        setChestItem(location,139,1)
         stopFlag = 'SetStopFlag(STOPFLAG_TALK)'
         stopFlagEnd = 'ResetStopFlag(STOPFLAG_TALK)'
 
