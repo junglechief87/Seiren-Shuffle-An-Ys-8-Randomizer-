@@ -739,6 +739,8 @@ function "goal"
     }
 }
 """
+        return selectionSphereAccess
+        
     elif parameters.goal == 'Release the Psyches':
         selectionSphereAccess ="""
 function "goal"
