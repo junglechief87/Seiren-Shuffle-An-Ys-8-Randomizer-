@@ -15,8 +15,7 @@ Installation should be pretty simple.
 *A note on the edits this makes to the original game - The rando messes with the game's intended structure heavily so loading saves from the vanilla game will have unintended consequences, the saves won't be broken or anything just don't expect your old save files to work as intended while the rando is installed, saves from the rando will work fine.
 
 ## Settings
-![settings example](https://i.imgur.com/Ig9naCM.png)
-
+![settings example](https://i.imgur.com/iXKX4sT.png)
 ### Seed: 
 The is the unique identifier for the randomization of your playthrough. Seeds with the same settings and number here should generate the same playthrough.
 
