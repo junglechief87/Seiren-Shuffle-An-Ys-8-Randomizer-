@@ -6,8 +6,8 @@ Ys 8 is a game about an adventurer, Adol, who gets stranded on the deserted Isla
 ## Installation
 
 Installation should be pretty simple. 
-1. Download the package with the script files and "Seiren Shuffle.exe" from the most recent release then extract the contents to your root Ys 8 folder.
-2. (Note that before this next step you might want to copy your Ys 8 "Scripts" and "Maps" folders as those are going to be edited heavily during installation of the rando and you'll need to do a fresh install to return the game to normal functionality otherwise.) Place the scripts folder and "Seiren Shuffle.exe" in the root directory for Ys 8, the default path should be something like "SteamLibrary\steamapps\common\Ys VIII Lacrimosa of Dana". 
+1. Download the SeirenShuffle.zip file from the latest release.
+2. (Note that before this next step you might want to copy your Ys 8 "Scripts" and "Maps" folders as those are going to be edited heavily during installation of the rando and you'll need to do a fresh install to return the game to normal functionality otherwise.) Extract the contents of the SeirenShuffle.zip to the root directory of Ys8.
 3. Select yes to overwrite any files it prompts you on.
 5. Once this step is finished the rando gui can be launched by simply selecting the "Seiren Shuffle.exe".
 6. Before generating a seed the first thing that should be done is clicking the "Patch Files"(This only needs to be done the first time running the randomizer), this will do another round of file edits to the base game needed for the rando.
