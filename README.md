@@ -54,6 +54,8 @@ These are settings that modify how much players may need to do of certain activi
 
 **Master Kong Rewards**: Sets whether Master Kong can have progression, this is a fairly lengthy chain that spans the game.
 
+**Silvia**: Sets whether Silvia can block progression. This only refers to the optional boss fight.
+
 **Maphorash**: Sets whether Maphorash can block progression. Maphorash is the highest level optional fight in the game and the Silent Tower is high requirement location.
 
 ### Pacing Modifiers:
