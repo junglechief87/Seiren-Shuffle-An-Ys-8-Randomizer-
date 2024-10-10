@@ -409,6 +409,7 @@ class guiInput:
     self.foodTrades = None
     self.dogiRewards = None
     self.mkRewards = None
+    self.silvia = None
     self.maphorash = None
     self.intRewards = None
     self.expMult = None
@@ -436,7 +437,7 @@ class guiInput:
     guiInput.shuffleCrew = crew
     guiInput.shuffleSkills = skills
   
-  def getProgressionMods(jewels,fish,disc,map,food,dogiRewards,mkRewards,maphorash):
+  def getProgressionMods(jewels,fish,disc,map,food,dogiRewards,mkRewards,silvia,maphorash):
     guiInput.jewelTrades = jewels
     guiInput.fishTrades = fish
     guiInput.discoveries = disc
@@ -444,6 +445,7 @@ class guiInput:
     guiInput.foodTrades = food
     guiInput.dogiRewards = dogiRewards
     guiInput.mkRewards = mkRewards
+    guiInput.silvia = silvia
     guiInput.maphorash = maphorash
 
   def getOtherToggles(intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients):

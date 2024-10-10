@@ -20,10 +20,14 @@ def buttons(inpt):
         parameters.getSeed(app.getEntry("Seed#: "))
         parameters.getGoal(app.getOptionBox("goal"),app.getScale("goalCount"),app.getScale("octusNum"))
         parameters.getShuffleLocations(app.getCheckBox("party"),app.getCheckBox("crew"),app.getCheckBox("skills"))
-        parameters.getProgressionMods(app.getOptionBox("Jewel Trade Items: "),app.getOptionBox("Fish Trades: "),app.getOptionBox("Discoveries: "),app.getOptionBox("Map Completion: "),app.getOptionBox("Food Trades: "),app.getCheckBox("dogiIntercept"),app.getCheckBox("MKRewards"),app.getCheckBox("maphorash"))
-        parameters.getOtherToggles(app.getCheckBox("intRewards"),app.getCheckBox("battleLogic"),app.getCheckBox("superWeapons"),app.getCheckBox("openPaths"),app.getCheckBox("exFlameStones"),app.getCheckBox("extraIngredients"))
+        parameters.getProgressionMods(app.getOptionBox("Jewel Trade Items: "),app.getOptionBox("Fish Trades: "), \
+            app.getOptionBox("Discoveries: "),app.getOptionBox("Map Completion: "),app.getOptionBox("Food Trades: "),\
+                app.getCheckBox("dogiIntercept"),app.getCheckBox("MKRewards"),app.getCheckBox("silvia"),app.getCheckBox("maphorash"))
+        parameters.getOtherToggles(app.getCheckBox("intRewards"),app.getCheckBox("battleLogic"),app.getCheckBox("superWeapons"), \
+            app.getCheckBox("openPaths"),app.getCheckBox("exFlameStones"),app.getCheckBox("extraIngredients"))
         parameters.getExpMult(float(app.getScale("Experience Multiplier: ")), float(app.getScale("Exp Mult Growth Rate (%): ")))
-        parameters.getFinalBoss(app.getOptionBox("Final Boss: "),app.getOptionBox("Theos Start Phase: "),app.getOptionBox("Origin Start Phase: "),app.getOptionBox("Origin Care Package: "))
+        parameters.getFinalBoss(app.getOptionBox("Final Boss: "),app.getOptionBox("Theos Start Phase: "),app.getOptionBox("Origin Start Phase: "), \
+            app.getOptionBox("Origin Care Package: "))
         rngPatcherMain(parameters) 
         app.okBox("Task Complete", "Seed Generation Complete!")
         
@@ -153,7 +157,9 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.setCheckBox("dogiIntercept", ticked=True)
     app.addNamedCheckBox("Master Kong Rewards", "MKRewards",2,3)
     app.setCheckBox("MKRewards", ticked=True)
-    app.addNamedCheckBox("Maphorash", "maphorash",3,3)
+    app.addNamedCheckBox("Silvia", "silvia",3,3)
+    app.setCheckBox("silvia", ticked=True)
+    app.addNamedCheckBox("Maphorash", "maphorash",4,3)
     app.setCheckBox("maphorash", ticked=True)
     app.stopFrame()
     app.stopLabelFrame()
