@@ -34,7 +34,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Battle Logic: " + str(parameters.battleLogic) + "\n")
     spoilerLog.write("Progressive Super Weapons: " + str(parameters.progressiveSuperWeapons) + "\n")
     spoilerLog.write("Open Octus Paths: " + str(parameters.openOctusPaths) + "\n")
-    spoilerLog.write("Extra Floame Stones: " + str(parameters.extraFlameStones) + "\n")
+    spoilerLog.write("Extra Flame Stones: " + str(parameters.extraFlameStones) + "\n")
     spoilerLog.write("Recipes Come w\ Ingredients: " + str(parameters.extraIngredients) + "\n")
     spoilerLog.write("Final Boss: " + str(parameters.finalBoss) + "\n")
     spoilerLog.write("Theos Start Phase: " + str(parameters.theosPhase) + "\n")
