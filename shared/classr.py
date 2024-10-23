@@ -97,7 +97,7 @@ class access:
         break
 
     for item in self.inventoryObjects:
-      if item.crew and item.itemName != 'Little Paro' and item.itemId != 778: #I used the curran2 and austen2 NPC allocated space to make kong and shoebill count towards village totals, there wasn't another free one for paro but paro is a small bird anyway so it's logical he doesn't count for moving obstacles
+      if item.crew and item.itemName != 'Little Paro' and item.itemID != 778: #I used the curran2 and austen2 NPC allocated space to make kong and shoebill count towards village totals, there wasn't another free one for paro but paro is a small bird anyway so it's logical he doesn't count for moving obstacles
         count+=1
 
     if count >= requiredCrew:
