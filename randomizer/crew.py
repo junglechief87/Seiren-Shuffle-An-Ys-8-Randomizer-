@@ -11,16 +11,16 @@ def getCrewFlags(name):
     GetItem(ICON3D_WP_ADOL_000,1)
     EquipWeapon(ADOL,ICON3D_WP_ADOL_000)
     
-    if( FLAG[GF_03MP1201_ALARM_INTERCEPT] && !FLAG[GF_TBOX_DUMMY071])
-    {
-        GetItem(ICON3D_WP_ADOL_003, 1)		
-	    EquipWeapon(ADOL, ICON3D_WP_ADOL_003)
-    }
-    if( FLAG[GF_TBOX_DUMMY071] && !FLAG[GF_TBOX_DUMMY109])
+    if( ITEMWORK[ICON3D_WP_ADOL_008] )
     {
         SetFlag(GF_ADOLWEAPON_BACKUP,(ADOL.CHRWORK[CWK_WEAPON]))
         GetItem(ICON3D_WP_ADOL_008, 1)		
 	    EquipWeapon(ADOL, ICON3D_WP_ADOL_008)
+    }
+    else if( FLAG[GF_03MP1201_ALARM_INTERCEPT] )
+    {
+        GetItem(ICON3D_WP_ADOL_003, 1)		
+	    EquipWeapon(ADOL, ICON3D_WP_ADOL_003)
     }
     
     JoinParty(PARTY_ADOL)
