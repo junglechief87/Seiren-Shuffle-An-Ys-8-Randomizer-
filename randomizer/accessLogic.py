@@ -198,15 +198,15 @@ def canAccess(inventory,location,parameters):
         if location.locName == 'Mishy Rewards' and access.canDefeat('Avalodragil 2'):
             if location.mapCheckID == 'Food 2' and access.canCook(1): return True
             elif location.mapCheckID == 'Food 4' and access.canCook(2): return True
-            elif location.mapCheckID == 'Food 4' and access.canCook(3): return True
-            elif location.mapCheckID == 'Food 4' and access.canCook(4): return True
-            elif location.mapCheckID == 'Food 4' and access.canCook(5): return True
-            elif location.mapCheckID == 'Food 4' and access.canCook(6): return True
+            elif location.mapCheckID == 'Food 6' and access.canCook(3): return True
+            elif location.mapCheckID == 'Food 8' and access.canCook(4): return True
+            elif location.mapCheckID == 'Food 10' and access.canCook(5): return True
+            elif location.mapCheckID == 'Food 12' and access.canCook(6): return True
             else: return False
         elif location.locName == 'Mid-Boss Arena' and battleLogic(140,access,parameters): return True
         elif location.locName in ['Upper Cliffs 1','Upper Cliffs 2'] and access.canDefeat('Avalodragil 2'): return True
         elif location.locName == 'Boss Arena': 
-            if location.mapCheckID in ['Giasburn Skill 1','Giasburn Skill 2','Giasburn'] and battleLogic(230,access,parameters): return True
+            if location.mapCheckID in ['Giasburn Skill 1','Giasburn Skill 2','Giasburn'] and battleLogic(230,access,parameters) and access.hasFlameStones(3): return True
             elif location.mapCheckID in ['Master Kong Skill Laxia','Master Kong Laxia'] and battleLogic(220,access,parameters) and access.hasLaxia() and access.canDefeat('Master Kong Dana'): return True
             elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Giasburn'): return True
             else: return False
