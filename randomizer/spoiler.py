@@ -26,6 +26,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Fish Trades: " + str(parameters.fishTrades) + "\n")
     spoilerLog.write("Doggi Intercept Rewards: " + str(parameters.dogiRewards) + "\n")
     spoilerLog.write("Master Kong: " + str(parameters.mkRewards) + "\n")
+    spoilerLog.write("Silvia: " + str(parameters.silvia) + "\n")
     spoilerLog.write("Maphorash: " + str(parameters.maphorash) + "\n")
     spoilerLog.write("Additional Intercept Rewards: " + str(parameters.intRewards) + "\n")
     spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
