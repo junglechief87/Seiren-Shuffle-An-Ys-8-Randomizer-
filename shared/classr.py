@@ -195,6 +195,17 @@ class access:
         return True
     return False
   
+  def partySize(self, requiredSize):
+    count = 0
+    for item in self.inventoryObjects:
+      if item.itemName in ['Laxia','Sahad','Hummel','Adol','Ricotta','Dana']:
+        count+=1
+
+    if count >= requiredSize:
+      return True
+    else:
+      return False
+
   def canShowDiscoveries(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Austin':
