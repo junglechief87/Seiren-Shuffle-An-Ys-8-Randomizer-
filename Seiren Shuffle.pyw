@@ -28,6 +28,7 @@ def buttons(inpt):
         parameters.getExpMult(float(app.getScale("Experience Multiplier: ")), float(app.getScale("Exp Mult Growth Rate (%): ")))
         parameters.getFinalBoss(app.getOptionBox("Final Boss: "),app.getOptionBox("Theos Start Phase: "),app.getOptionBox("Origin Start Phase: "), \
             app.getOptionBox("Origin Care Package: "))
+        parameters.getShuffleBgm(app.getCheckBox("shuffleBGM"))
         rngPatcherMain(parameters) 
         app.okBox("Task Complete", "Seed Generation Complete!")
         
@@ -222,7 +223,13 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.setOptionBoxState("Theos Start Phase: ","active")
     app.stopLabelFrame()
 
-    app.startFrame("commands",7,0)
+    app.startLabelFrame("Misc Settings", 7, 0)
+    app.setSticky("ew")
+    app.addNamedCheckBox("Shuffle BGM", "shuffleBGM")
+    app.setCheckBox("shuffleBGM", ticked=False)
+    app.stopLabelFrame()
+
+    app.startFrame("commands",8,0)
     app.setSticky("ew")
     app.addButtons(['Patch Files', 'Generate Seed'], [buttons, buttons],0,0)
     app.stopFrame()

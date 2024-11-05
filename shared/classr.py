@@ -419,6 +419,7 @@ class guiInput:
     self.openOctusPaths = None
     self.extraFlameStones = None
     self.extraIngredients = None
+    self.shuffleBgm = None
     self.finalBoss = None
     self.theosPhase = None
     self.originPhase = None
@@ -460,6 +461,9 @@ class guiInput:
     guiInput.expMult = expMult
     expGrowth = expGrowth/100 + 1 #converting to growth rate percent(eg. if set to 5 convert to 1.05)
     guiInput.expGrowth = expGrowth
+
+  def getShuffleBgm(shuffleBgm):
+    guiInput.shuffleBgm = shuffleBgm
 
   def getFinalBoss(finalBoss,theosPhase,originPhase,carePackage):
     guiInput.finalBoss = finalBoss
