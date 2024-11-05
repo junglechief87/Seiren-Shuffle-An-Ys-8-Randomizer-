@@ -74,8 +74,7 @@ These are settings that help with the pacing of the rando. Like most randos Seir
 **Origin Care Package**: Origin is a long fight and a decently higher level than Theos. Since the Abyss is skipped in the rando there's an option here to help the player if they're doing both fights consecutively. Lite gives the player a few ripe items and recipes, generous gives the player stacks of ripe items and recipes.
 **Origin Start Phase**: Sets which phase the Origin fight starts in. First is the mobbing phase, second is the main boss.
 
-### Misc Settings:
-These are settings that doesn't directly impact the gameplay but will give the randomizer a different air.  
+### Misc Settings:  
 **Shuffle BGM**: (This setting will modify the file ./text/bgmtbl.tbl so you may want to make a copy of it if you want to keep the original file) Shuffles the background tracks from the "bgm" folder from the game. This setting also allows for audio files that are external to Ys VIII. In order to add new tracks, add .OGG files to the "bgm" folder in the root directory of Ys VIII.    
 Note: Adding external tracks will add a few seconds to the seed generation process 
 
