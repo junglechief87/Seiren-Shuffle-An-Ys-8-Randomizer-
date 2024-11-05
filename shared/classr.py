@@ -419,11 +419,11 @@ class guiInput:
     self.openOctusPaths = None
     self.extraFlameStones = None
     self.extraIngredients = None
-    self.shuffleBgm = None
     self.finalBoss = None
     self.theosPhase = None
     self.originPhase = None
     self.carePackage = None
+    self.shuffleBgm = None
   
   def getSeed(seed):
     guiInput.seed = seed
@@ -462,14 +462,14 @@ class guiInput:
     expGrowth = expGrowth/100 + 1 #converting to growth rate percent(eg. if set to 5 convert to 1.05)
     guiInput.expGrowth = expGrowth
 
-  def getShuffleBgm(shuffleBgm):
-    guiInput.shuffleBgm = shuffleBgm
-
   def getFinalBoss(finalBoss,theosPhase,originPhase,carePackage):
     guiInput.finalBoss = finalBoss
     guiInput.theosPhase = theosPhase
     guiInput.originPhase = originPhase
     guiInput.carePackage = carePackage
+  
+  def getShuffleBgm(shuffleBgm):
+    guiInput.shuffleBgm = shuffleBgm
     
 class interceptReward:
   def __init__(self,stage,rewards):
