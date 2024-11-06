@@ -580,9 +580,14 @@ def battleLogic(requiredStr,access,parameters):
         if accStr < foundAccStr:
             accStr = foundAccStr
 
-        if (weaponStr + armorStr + armStr + accStr) >= requiredStr:
-            return True
-        else: return False
+        if requiredStr >= 150:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2):
+                return True
+            else: return False
+        else:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr:
+                return True
+            else: return False
 
     else: return True #if battle logic isn't on then we skip everything and return true for access logic
 

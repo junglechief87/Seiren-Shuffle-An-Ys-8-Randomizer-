@@ -75,4 +75,52 @@ def clearBytes(byteArray,startOffset,clearType):
         byteArray[makeChestsClosed+1] = 00 #I thought I had an issue fixed with some chests with two bytes for their item ID still spawning an item but it cropped up again, so this is an extra failsafe
     
     return byteArray
+
+
+#places item in the chest
+def fillChest(location,itemID,quantity):
+    
+    itemIDOffset = 9
+    quantityOffset = 15
+    itemID2 = 0
+
+    #find the chest in the file
+    if location.mapCheckID.find('TBOX') != -1:
+        locFile = getLocFile(location.mapID,'map')
+        #print("patching .arb file containing chests: " + locFile)
+        with open(locFile,"rb") as buffer:
+            while (curByte := buffer.read()):
+                fileBytes = curByte
+
+            if location.mapID == 'mp6201' and location.mapCheckID == 'TBOX02':
+                startOfChestArgs = fileBytes.rfind('TBOX01'.encode('utf-8'))
+            elif location.mapID == 'mp1304t2':
+                if location.mapCheckID == 'TBOX02':
+                    startOfChestArgs = fileBytes.find('TBOX01'.encode('utf-8'),fileBytes.find('TBOX01'.encode('utf-8'))+1)
+                elif location.mapCheckID == 'TBOX03':
+                    startOfChestArgs = fileBytes.rfind('TBOX01'.encode('utf-8'))
+                else:
+                    startOfChestArgs = fileBytes.find(location.mapCheckID.encode('utf-8'))
+            else:
+                startOfChestArgs = fileBytes.find(location.mapCheckID.encode('utf-8'))
+
+            fileBytes = bytearray(fileBytes)
+
+            #set Quantity
+            fileBytes[startOfChestArgs + quantityOffset] = quantity
+   
+            #make the item ID two values
+            while itemID > 255:
+                itemID -= 256
+                itemID2 += 1
+                
+            #place item
+            fileBytes[startOfChestArgs + itemIDOffset] = itemID
+            fileBytes[startOfChestArgs + itemIDOffset + 1] = itemID2 
+            buffer.close()
+
+        #patch file
+        with open(locFile,"wb") as buffer:
+            buffer.write(fileBytes)
+            buffer.close()
     
