@@ -107,8 +107,8 @@ function "{0}"
 }}
 """  
             else:
-		fillChest(location,location.itemID,location.quantity)
-		getItemFunction =  """
+                fillChest(location,location.itemID,location.quantity)
+        getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
@@ -120,7 +120,7 @@ function "{0}"
   ResetStopFlag(STOPFLAG_TALK)
 }}
 """  
-            return getItemFunction.format(scriptName,itemSE,script)
+        return getItemFunction.format(scriptName,itemSE,script)
     elif location.itemID == 13: #Spirit Ring Celesdia
         script = script + spiritRingEvent(parameters)
         if parameters.progressiveSuperWeapons:
@@ -184,7 +184,7 @@ function "{0}"
 }}
 """  
     else:
-	fillChest(location,location.itemID,location.quantity)
+        fillChest(location,location.itemID,location.quantity)
         getItemFunction =  """
 function "{0}"
 {{
@@ -231,8 +231,8 @@ function "{0}"
 }}
 """
     else: 
-	 fillChest(location,143,1)
-         getCrewFunction = """
+        fillChest(location,143,1)
+        getCrewFunction = """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
@@ -2125,7 +2125,6 @@ function "expGrowth"
 }}
 """ 
     return scripExpMult.format(parameters.expMult,parameters.expGrowth)
-
 
 
 
