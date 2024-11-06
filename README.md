@@ -76,8 +76,7 @@ These are settings that help with the pacing of the rando. Like most randos Seir
 
 ### Misc Settings:
 These are settings that doesn't directly impact the gameplay but will give the randomizer a different air.  
-**Shuffle BGM**: (This setting will modify the file ./text/bgmtbl.tbl so you may want to make a copy of it if you want to keep the original file) Shuffles the background tracks from the "bgm" folder from the game. This setting also allows for audio files that are external to Ys VIII. In order to add new tracks, add .OGG files to the "bgm" folder in the root directory of Ys VIII.    
-Note: Adding external tracks will add a few seconds to the seed generation process 
+**Shuffle BGM**: Shuffles the background tracks from the "bgm" folder from the game. This setting also allows for audio files that are external to Ys VIII. In order to add new tracks, add .OGG files to the "bgm" folder in the root directory of Ys VIII. (This setting will modify the file ./text/bgmtbl.tbl so you may want to make a copy of it if you want to keep the original file)    
 
 ## New Progression Items
 The randomizer features a variety of new progression items that are meant to take story gated events and turn them into item gated events to improve the overall experience of the rando. 
