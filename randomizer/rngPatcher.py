@@ -5,6 +5,7 @@ from shared.functions import *
 from randomizer.crew import *
 from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
+from patch.chestPatcher import *
 
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
@@ -102,16 +103,17 @@ function "{0}"
 }}
 """  
             else:
-                getItemFunction =  """
+		fillChest(location,location.itemID,location.quantity)
+		getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
-    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
-    GetItemMessageExPlus(-1,1,{1},"#2CBroken Mistilteinn#0C Obtained.",0,0)
-    WaitPrompt()
-    WaitCloseWindow()
+//    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
+//    GetItemMessageExPlus(-1,1,{1},"#2CBroken Mistilteinn#0C Obtained.",0,0)
+//    WaitPrompt()
+//    WaitCloseWindow()
     {2}
-    ResetStopFlag(STOPFLAG_TALK)
+  ResetStopFlag(STOPFLAG_TALK)
 }}
 """  
             return getItemFunction.format(scriptName,itemSE,script)
@@ -130,14 +132,15 @@ function "{0}"
 }}
 """  
             else:
+                fillChest(location,location.itemID,location.quantity)
                 getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
-    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
-    GetItemMessageExPlus(-1,1,{1},"#2CBroken Spirit Ring#4C Obtained.",0,0)
-    WaitPrompt()
-    WaitCloseWindow()
+//    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
+//    GetItemMessageExPlus(-1,1,{1},"#2CBroken Spirit Ring#4C Obtained.",0,0)
+//    WaitPrompt()
+//    WaitCloseWindow()
     {2}
     ResetStopFlag(STOPFLAG_TALK)
 }}
@@ -177,16 +180,17 @@ function "{0}"
 }}
 """  
     else:
+	fillChest(location,location.itemID,location.quantity)
         getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
-    GetItem({1},{2})
-    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
-    WaitPrompt()
-    WaitCloseWindow()
+//    GetItem({1},{2})
+//    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
+//    WaitPrompt()
+//    WaitCloseWindow()
     {5}
-    ResetStopFlag(STOPFLAG_TALK)
+   ResetStopFlag(STOPFLAG_TALK)
 }}
 """          
     return getItemFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,script)
@@ -195,13 +199,16 @@ function "{0}"
 def buildCrewLocation(location,script):
     scriptName = buildLocScripts(location.locID,False)
     itemIcon = -1
+    itemID = 0
     itemQuantity = 1
     itemSE = 'ITEMMSG_SE_BETTER'
     
     if location.party:
         message = "#2C" + location.itemName + "#4C" + partyMessage
+        itemID = 145
     elif location.crew:
         message = "#2C" + location.itemName + "#4C" + crewMessage
+        itemID = 143
         
     crewFlags = getCrewFlags(location.itemName)
 
@@ -220,6 +227,7 @@ function "{0}"
 }}
 """
     else: 
+	 fillChest(location,143,1)
          getCrewFunction = """
 function "{0}"
 {{
@@ -266,6 +274,7 @@ function "{0}"
 }}
 """
     else: 
+         fillChest(location,144,1)
          getSkillFunction = """
 function "{0}"
 {{
@@ -535,6 +544,7 @@ def shopUpgrades(location):
     scriptName = buildLocScripts(location.locID,False)
 
     if not location.event:
+        fillChest(location,139,1)
         stopFlag = 'SetStopFlag(STOPFLAG_TALK)'
         stopFlagEnd = 'ResetStopFlag(STOPFLAG_TALK)'
 
