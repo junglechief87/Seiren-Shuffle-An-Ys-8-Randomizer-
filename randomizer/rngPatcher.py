@@ -102,16 +102,17 @@ function "{0}"
 }}
 """  
             else:
+                fillChest(location,location.itemID,location.quantity)
                 getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
-    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
-    GetItemMessageExPlus(-1,1,{1},"#2CBroken Mistilteinn#0C Obtained.",0,0)
-    WaitPrompt()
-    WaitCloseWindow()
+//    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
+//    GetItemMessageExPlus(-1,1,{1},"#2CBroken Mistilteinn#0C Obtained.",0,0)
+//    WaitPrompt()
+//    WaitCloseWindow()
     {2}
-    ResetStopFlag(STOPFLAG_TALK)
+  ResetStopFlag(STOPFLAG_TALK)
 }}
 """  
             return getItemFunction.format(scriptName,itemSE,script)
@@ -130,14 +131,15 @@ function "{0}"
 }}
 """  
             else:
+                fillChest(location,location.itemID,location.quantity)
                 getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
-    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
-    GetItemMessageExPlus(-1,1,{1},"#2CBroken Spirit Ring#4C Obtained.",0,0)
-    WaitPrompt()
-    WaitCloseWindow()
+//    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
+//    GetItemMessageExPlus(-1,1,{1},"#2CBroken Spirit Ring#4C Obtained.",0,0)
+//    WaitPrompt()
+//    WaitCloseWindow()
     {2}
     ResetStopFlag(STOPFLAG_TALK)
 }}
@@ -177,17 +179,17 @@ function "{0}"
 }}
 """  
     else:
-	setChestItem(location,location.itemID,location.quantity)
+	fillChest(location,location.itemID,location.quantity)
         getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
-    GetItem({1},{2})
-    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
-    WaitPrompt()
-    WaitCloseWindow()
+//    GetItem({1},{2})
+//    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
+//    WaitPrompt()
+//    WaitCloseWindow()
     {5}
-    ResetStopFlag(STOPFLAG_TALK)
+   ResetStopFlag(STOPFLAG_TALK)
 }}
 """          
     return getItemFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,script)
@@ -224,7 +226,7 @@ function "{0}"
 }}
 """
     else: 
-	 setChestItem(location,itemID,itemQuantity)
+	 fillChest(location,143,1)
          getCrewFunction = """
 function "{0}"
 {{
@@ -271,6 +273,7 @@ function "{0}"
 }}
 """
     else: 
+         fillChest(location,144,1)
          getSkillFunction = """
 function "{0}"
 {{
@@ -540,7 +543,7 @@ def shopUpgrades(location):
     scriptName = buildLocScripts(location.locID,False)
 
     if not location.event:
-        setChestItem(location,139,1)
+        fillChest(location,139,1)
         stopFlag = 'SetStopFlag(STOPFLAG_TALK)'
         stopFlagEnd = 'ResetStopFlag(STOPFLAG_TALK)'
 
