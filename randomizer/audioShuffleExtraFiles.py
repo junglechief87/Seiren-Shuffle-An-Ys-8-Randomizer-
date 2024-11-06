@@ -3,7 +3,8 @@ import random
 import csv
 import sys
 import os
-from pydub import AudioSegment
+#from pydub import AudioSegment
+import soundfile as sf
 
 # returns a list with the info of all audios 
 # (filename, loopFlag, loopstart, loopend) from bgm folder
@@ -45,11 +46,12 @@ def generate_audio_info():
           # Load the audio file to get its duration in seconds
           audio_path = os.path.join(bgm_folder, filename)
           loop_flag = "1"
-          audio = AudioSegment.from_file(audio_path)
-          track_length_in_seconds = audio.duration_seconds
+          #audio = AudioSegment.from_file(audio_path)
+          #track_length_in_seconds = audio.duration_seconds
 
           # Calculate LoopEnd
-          loop_end = int(track_length_in_seconds * 48000) - 24000
+          #loop_end = int(track_length_in_seconds * 48000) - 24000
+          loop_end = len(sf.SoundFile(audio_path)) - 24000
 
           # Create tuple with filename, LoopFlag, LoopStart, and LoopEnd
           extra_audio_info = (file_base_name, loop_flag, '00000000', f"{loop_end:08d}")
