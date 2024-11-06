@@ -85,43 +85,49 @@ def clearBytes(byteArray,startOffset,clearType,val=0):
 
 
 #places item in the chest
-def setChestItem(location,itemID,quantity):
+def fillChest(location,itemID,quantity):
+    
     itemIDOffset = 9
-    quatityOffset = 15
-    scriptOffset = 107
+    quantityOffset = 15
+    itemID2 = 0
 
-    locFile = getLocFile(location.mapID,'map')
+    #find the chest in the file
+    if location.mapCheckID.find('TBOX') != -1:
+        locFile = getLocFile(location.mapID,'map')
+        #print("patching .arb file containing chests: " + locFile)
+        with open(locFile,"rb") as buffer:
+            while (curByte := buffer.read()):
+                fileBytes = curByte
 
-    with open(locFile,"rb") as buffer:
-         while (curByte := buffer.read()):
-             fileBytes = curByte
+            if location.mapID == 'mp6201' and location.mapCheckID == 'TBOX02':
+                startOfChestArgs = fileBytes.rfind('TBOX01'.encode('utf-8'))
+            elif location.mapID == 'mp1304t2':
+                if location.mapCheckID == 'TBOX02':
+                    startOfChestArgs = fileBytes.find('TBOX01'.encode('utf-8'),fileBytes.find('TBOX01'.encode('utf-8'))+1)
+                elif location.mapCheckID == 'TBOX03':
+                    startOfChestArgs = fileBytes.rfind('TBOX01'.encode('utf-8'))
+                else:
+                    startOfChestArgs = fileBytes.find(location.mapCheckID.encode('utf-8'))
+            else:
+                startOfChestArgs = fileBytes.find(location.mapCheckID.encode('utf-8'))
 
-             #we have a special rule here because both chests in the ruins of eternia central district have the same ID for some reason,
-             #in the locations list I gave them different IDs so logic and players could tell them apart
-             #but for this function that means we need to make a special case
-             #switching to a right find should do it since there's only two chests in the file
-             #ran into a similar issue for rainbow falls night, I'll need to do something special for it as it has 3 chests
-    if location.mapID == 'mp6201' and location.mapCheckID == 'TBOX02':
-        startOfChestArgs = fileBytes.rfind('TBOX01'.encode('utf-8'))
-    elif location.mapID == 'mp1304t2':
-        if location.mapCheckID == 'TBOX02':
-            startOfChestArgs = fileBytes.find('TBOX01'.encode('utf-8'),fileBytes.find('TBOX01'.encode('utf-8'))+1)
-        elif location.mapCheckID == 'TBOX03':
-            startOfChestArgs = fileBytes.rfind('TBOX01'.encode('utf-8'))
-        else:
-            startOfChestArgs = fileBytes.find(location.mapCheckID.encode('utf-8'))
-    else:
-        startOfChestArgs = fileBytes.find(location.mapCheckID.encode('utf-8'))
+            fileBytes = bytearray(fileBytes)
 
-    fileBytes = bytearray(fileBytes)
-    fileBytes = clearBytes(fileBytes,startOfChestArgs + itemIDOffset,"place",itemID)    
-    fileBytes = clearBytes(fileBytes,startOfChestArgs + quatityOffset,"place",quantity)
-    fileBytes = clearBytes(fileBytes,startOfChestArgs + scriptOffset,"")
+            #set Quantity
+            fileBytes[startOfChestArgs + quantityOffset] = quantity
+   
+            #make the item ID two values
+            while itemID > 255:
+                itemID -= 256
+                itemID2 += 1
+                
+            #place item
+            fileBytes[startOfChestArgs + itemIDOffset] = itemID
+            fileBytes[startOfChestArgs + itemIDOffset + 1] = itemID2 
+            buffer.close()
 
-    buffer.close()
-
-    with open(locFile,"wb") as buffer:
-        buffer.write(fileBytes)
-        buffer.close()
-
+        #patch file
+        with open(locFile,"wb") as buffer:
+            buffer.write(fileBytes)
+            buffer.close()
     
