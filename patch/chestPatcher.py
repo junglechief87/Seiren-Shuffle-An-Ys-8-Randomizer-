@@ -57,7 +57,7 @@ def cleanChests():
                 buffer.close()
                     
 #clears out existing chest contents and scripts, this is to help error proof our overwritting of the chest data.
-def clearBytes(byteArray,startOffset,clearType,val=0):
+def clearBytes(byteArray,startOffset,clearType):
     endOffset = startOffset
     makeChestsClosed = startOffset
     
@@ -73,13 +73,6 @@ def clearBytes(byteArray,startOffset,clearType,val=0):
     elif clearType == "itemID":
         byteArray[makeChestsClosed] = 139
         byteArray[makeChestsClosed+1] = 00 #I thought I had an issue fixed with some chests with two bytes for their item ID still spawning an item but it cropped up again, so this is an extra failsafe
-    elif clearType == "place":
-        while val > 255:
-            val = val - 256
-            val2 = val2 + 1
-            
-        byteArray[makeChestsClosed] = val
-        byteArray[makeChestsClosed+1] = val2
     
     return byteArray
 
