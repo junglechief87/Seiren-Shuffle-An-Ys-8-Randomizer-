@@ -5,7 +5,6 @@ from shared.functions import *
 from randomizer.crew import *
 from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
-from randomizer.audioShuffleExtraFiles import *
 from patch.chestPatcher import *
 
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
@@ -25,9 +24,6 @@ rngScriptFile = getLocFile('rng','script')
 def rngPatcherMain(parameters):
     global patchFile
     patchFile = ''
-
-    if parameters.shuffleBgm:
-        randomize_bgmtbl(parameters.seed)
     
     shuffledLocations = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
