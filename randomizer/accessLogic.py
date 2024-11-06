@@ -198,15 +198,15 @@ def canAccess(inventory,location,parameters):
         if location.locName == 'Mishy Rewards' and access.canDefeat('Avalodragil 2'):
             if location.mapCheckID == 'Food 2' and access.canCook(1): return True
             elif location.mapCheckID == 'Food 4' and access.canCook(2): return True
-            elif location.mapCheckID == 'Food 4' and access.canCook(3): return True
-            elif location.mapCheckID == 'Food 4' and access.canCook(4): return True
-            elif location.mapCheckID == 'Food 4' and access.canCook(5): return True
-            elif location.mapCheckID == 'Food 4' and access.canCook(6): return True
+            elif location.mapCheckID == 'Food 6' and access.canCook(3): return True
+            elif location.mapCheckID == 'Food 8' and access.canCook(4): return True
+            elif location.mapCheckID == 'Food 10' and access.canCook(5): return True
+            elif location.mapCheckID == 'Food 12' and access.canCook(6): return True
             else: return False
         elif location.locName == 'Mid-Boss Arena' and battleLogic(140,access,parameters): return True
         elif location.locName in ['Upper Cliffs 1','Upper Cliffs 2'] and access.canDefeat('Avalodragil 2'): return True
         elif location.locName == 'Boss Arena': 
-            if location.mapCheckID in ['Giasburn Skill 1','Giasburn Skill 2','Giasburn'] and battleLogic(230,access,parameters): return True
+            if location.mapCheckID in ['Giasburn Skill 1','Giasburn Skill 2','Giasburn'] and battleLogic(230,access,parameters) and access.hasFlameStones(3): return True
             elif location.mapCheckID in ['Master Kong Skill Laxia','Master Kong Laxia'] and battleLogic(220,access,parameters) and access.hasLaxia() and access.canDefeat('Master Kong Dana'): return True
             elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Giasburn'): return True
             else: return False
@@ -351,7 +351,7 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'TBOX02' and (access.canSwampWalk() or access.canUnderwater()): return True
             else: return False
         elif location.locName == 'Muddy Lake' and access.canSwampWalk(): return True
-        elif location.locName == 'Exit to Valley of Kings'  and (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater())): 
+        elif location.locName == 'Exit to Valley of Kings' and access.past6() and (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater())): 
             if location.mapCheckID == 'Fermented Sap' and access.canSwampWalk() and access.canDoubleJump(): return True
             elif location.mapCheckID != 'Fermented Sap': return True
             else: return False
@@ -580,9 +580,14 @@ def battleLogic(requiredStr,access,parameters):
         if accStr < foundAccStr:
             accStr = foundAccStr
 
-        if (weaponStr + armorStr + armStr + accStr) >= requiredStr:
-            return True
-        else: return False
+        if requiredStr >= 150:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2):
+                return True
+            else: return False
+        else:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr:
+                return True
+            else: return False
 
     else: return True #if battle logic isn't on then we skip everything and return true for access logic
 

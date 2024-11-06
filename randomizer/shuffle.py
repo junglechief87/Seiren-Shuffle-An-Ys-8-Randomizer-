@@ -313,6 +313,11 @@ def progressionBans(parameters):
 
     locationBans = addLocations(locationsToAdd,locationBans)
 
+    if not parameters.silvia:
+        locationsToAdd = [542,543,591]
+
+    locationBans = addLocations(locationsToAdd,locationBans)
+
     return locationBans
 
 def addLocations(locationsToAdd,locationBans):

@@ -177,6 +177,7 @@ function "startParameters"
     //Valley of Kings
     SetFlag(GF_05MP4105_PASS_TEM, 1)
     SetFlag(GF_05MP6108_MALK_CAMP,1)
+    SetFlag(GF_06MP6305_IN_OCEAN,1)
     SetFlag(GF_SUBEV_ST_DOOR_1STTALK,1)
     SetFlag(GF_06MP6409_OCCUR_INTERCEPT12,1) // Interception 12 has occurred
     SetFlag(GF_06MP6409_AFTER_INTERCEPT12,1) // Interception Battle 12 has ended

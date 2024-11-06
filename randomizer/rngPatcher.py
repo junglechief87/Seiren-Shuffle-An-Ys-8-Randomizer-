@@ -745,6 +745,8 @@ function "goal"
     }
 }
 """
+        return selectionSphereAccess
+        
     elif parameters.goal == 'Release the Psyches':
         selectionSphereAccess ="""
 function "goal"
@@ -1176,7 +1178,7 @@ def buildPsyches(location):
     psycheFunction = """
 function "{0}"
 {{
-    if(!FLAG[SF_BOSS_BATTLE])
+    if(!FLAG[SF_BOSS_BATTLE] && !FLAG[GF_TBOX_DUMMY127])
     {{
         WaitFade()
 	    Wait(20)

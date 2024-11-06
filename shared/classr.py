@@ -97,7 +97,7 @@ class access:
         break
 
     for item in self.inventoryObjects:
-      if item.crew and item.itemName != 'Little Paro': #I used the curran2 and austen2 NPC allocated space to make kong and shoebill count towards village totals, there wasn't another free one for paro but paro is a small bird anyway so it's logical he doesn't count for moving obstacles
+      if item.crew and item.itemName != 'Little Paro' and item.itemID != 778: #I used the curran2 and austen2 NPC allocated space to make kong and shoebill count towards village totals, there wasn't another free one for paro but paro is a small bird anyway so it's logical he doesn't count for moving obstacles
         count+=1
 
     if count >= requiredCrew:
@@ -195,6 +195,17 @@ class access:
         return True
     return False
   
+  def partySize(self, requiredSize):
+    count = 0
+    for item in self.inventoryObjects:
+      if item.itemName in ['Laxia','Sahad','Hummel','Adol','Ricotta','Dana']:
+        count+=1
+
+    if count >= requiredSize:
+      return True
+    else:
+      return False
+
   def canShowDiscoveries(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Austin':
@@ -409,6 +420,7 @@ class guiInput:
     self.foodTrades = None
     self.dogiRewards = None
     self.mkRewards = None
+    self.silvia = None
     self.maphorash = None
     self.intRewards = None
     self.expMult = None
@@ -436,7 +448,7 @@ class guiInput:
     guiInput.shuffleCrew = crew
     guiInput.shuffleSkills = skills
   
-  def getProgressionMods(jewels,fish,disc,map,food,dogiRewards,mkRewards,maphorash):
+  def getProgressionMods(jewels,fish,disc,map,food,dogiRewards,mkRewards,silvia,maphorash):
     guiInput.jewelTrades = jewels
     guiInput.fishTrades = fish
     guiInput.discoveries = disc
@@ -444,6 +456,7 @@ class guiInput:
     guiInput.foodTrades = food
     guiInput.dogiRewards = dogiRewards
     guiInput.mkRewards = mkRewards
+    guiInput.silvia = silvia
     guiInput.maphorash = maphorash
 
   def getOtherToggles(intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients):

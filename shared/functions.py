@@ -6,7 +6,9 @@ import sys
 encode = "utf-8"
 sourceScript = "rng"
 current_directory = os.path.dirname(__file__)
-parent_directory = os.path.join(os.path.dirname(__file__),os.pardir)
+#The top versoin is used for running the randomizer from source, the bottom version of the loop is for the executable compile, comment and uncomment accordingly.
+#parent_directory = os.path.join(os.path.dirname(__file__),os.pardir)
+parent_directory = os.path.join(os.path.dirname(sys.executable))
     
 def getLocations():
     with open(current_directory + "/database/location.csv",encoding = encode) as locDB:
