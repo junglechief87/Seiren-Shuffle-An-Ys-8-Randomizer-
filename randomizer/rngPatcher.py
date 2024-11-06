@@ -5,6 +5,7 @@ from shared.functions import *
 from randomizer.crew import *
 from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
+from patch.chestPatcher import *
 
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
@@ -102,8 +103,8 @@ function "{0}"
 }}
 """  
             else:
-                fillChest(location,location.itemID,location.quantity)
-                getItemFunction =  """
+		fillChest(location,location.itemID,location.quantity)
+		getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
