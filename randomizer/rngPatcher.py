@@ -104,7 +104,7 @@ function "{0}"
 """  
             else:
                 fillChest(location,location.itemID,location.quantity)
-        getItemFunction =  """
+                getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
