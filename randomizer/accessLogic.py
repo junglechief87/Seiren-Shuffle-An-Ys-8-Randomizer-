@@ -207,7 +207,7 @@ def canAccess(inventory,location,parameters):
         elif location.locName in ['Upper Cliffs 1','Upper Cliffs 2'] and access.canDefeat('Avalodragil 2'): return True
         elif location.locName == 'Boss Arena': 
             if location.mapCheckID in ['Giasburn Skill 1','Giasburn Skill 2','Giasburn'] and battleLogic(230,access,parameters) and access.hasFlameStones(3): return True
-            elif location.mapCheckID in ['Master Kong Skill Laxia','Master Kong Laxia'] and battleLogic(220,access,parameters) and access.hasLaxia() and access.canDefeat('Master Kong Dana'): return True
+            elif location.mapCheckID in ['Master Kong Skill Laxia','Master Kong Laxia'] and battleLogic(220,access,parameters) and access.hasLaxia() and access.canDefeat('Master Kong Dana') and access.canDefeat('Giasburn'): return True
             elif location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340,access,parameters) and access.canDefeat('Giasburn'): return True
             else: return False
         elif location.locName not in ['Mid-Boss Arena','Upper Cliffs 1','Upper Cliffs 2','Mishy Rewards','Boss Arena']: return True

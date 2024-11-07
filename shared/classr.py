@@ -434,6 +434,7 @@ class guiInput:
     self.theosPhase = None
     self.originPhase = None
     self.carePackage = None
+    self.shuffleBgm = None
   
   def getSeed(seed):
     guiInput.seed = seed
@@ -477,6 +478,9 @@ class guiInput:
     guiInput.theosPhase = theosPhase
     guiInput.originPhase = originPhase
     guiInput.carePackage = carePackage
+  
+  def getShuffleBgm(shuffleBgm):
+    guiInput.shuffleBgm = shuffleBgm
     
 class interceptReward:
   def __init__(self,stage,rewards):

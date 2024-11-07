@@ -6,6 +6,7 @@ from randomizer.crew import *
 from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
 from patch.chestPatcher import *
+from randomizer.audioShuffleExtraFiles import *
 
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
@@ -24,6 +25,9 @@ rngScriptFile = getLocFile('rng','script')
 def rngPatcherMain(parameters):
     global patchFile
     patchFile = ''
+
+    if parameters.shuffleBgm:
+        randomize_bgmtbl(parameters.seed)
     
     shuffledLocations = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
@@ -103,8 +107,8 @@ function "{0}"
 }}
 """  
             else:
-		fillChest(location,location.itemID,location.quantity)
-		getItemFunction =  """
+                fillChest(location,location.itemID,location.quantity)
+                getItemFunction =  """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
@@ -180,7 +184,7 @@ function "{0}"
 }}
 """  
     else:
-	fillChest(location,location.itemID,location.quantity)
+        fillChest(location,location.itemID,location.quantity)
         getItemFunction =  """
 function "{0}"
 {{
@@ -227,8 +231,8 @@ function "{0}"
 }}
 """
     else: 
-	 fillChest(location,143,1)
-         getCrewFunction = """
+        fillChest(location,143,1)
+        getCrewFunction = """
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
@@ -2121,7 +2125,6 @@ function "expGrowth"
 }}
 """ 
     return scripExpMult.format(parameters.expMult,parameters.expGrowth)
-
 
 
 
