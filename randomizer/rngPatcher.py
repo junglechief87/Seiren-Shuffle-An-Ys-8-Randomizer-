@@ -6,6 +6,7 @@ from randomizer.crew import *
 from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
 from patch.chestPatcher import *
+from randomizer.audioShuffleExtraFiles import *
 
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
@@ -24,6 +25,9 @@ rngScriptFile = getLocFile('rng','script')
 def rngPatcherMain(parameters):
     global patchFile
     patchFile = ''
+
+    if parameters.shuffleBgm:
+        randomize_bgmtbl(parameters.seed)
     
     shuffledLocations = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
@@ -116,7 +120,7 @@ function "{0}"
   ResetStopFlag(STOPFLAG_TALK)
 }}
 """  
-        return getItemFunction.format(scriptName,itemSE,script)
+            return getItemFunction.format(scriptName,itemSE,script)
     elif location.itemID == 13: #Spirit Ring Celesdia
         script = script + spiritRingEvent(parameters)
         if parameters.progressiveSuperWeapons:
