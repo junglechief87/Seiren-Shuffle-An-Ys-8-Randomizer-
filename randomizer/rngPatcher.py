@@ -197,6 +197,20 @@ function "{0}"
    ResetStopFlag(STOPFLAG_TALK)
 }}
 """          
+    if location.itemID == 218: #3 Combat Medals from meladuma check
+        getItemFunction =  """
+function "{0}"
+{{
+    GetItem(ICON3D_AC_067,1)
+	GetItem(ICON3D_AC_068,1)
+	GetItem(ICON3D_AC_069,1)
+    Message("#0CObtained #2C#372ISlash Medal, #2C#373IPierce Medal, \nand#2C#374IStrike Medal.")
+    WaitPrompt()
+    WaitCloseWindow()
+}}
+"""  
+        return getItemFunction.format(scriptName)
+
     return getItemFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,script)
 
 #function used for all people function generations

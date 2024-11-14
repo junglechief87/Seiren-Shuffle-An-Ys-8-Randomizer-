@@ -61,7 +61,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         while True:
             itemFound = 0
             for index,location in enumerate(accessibleLocation):
-                if canAccess(progressionInventory,location,parameters) or location.locRegion.find(blacklistRegion) >= 0:
+                if canAccess(progressionInventory,location,parameters) or any(location.locRegion.find(region) >= 0 for region in blacklistRegion):
                     newLocation = accessibleLocation.pop(index)
                     accessibleItem = classr.inventory(newLocation)
                     if accessibleItem.progression and newLocation.locID not in duplicateChests:

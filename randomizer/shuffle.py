@@ -5,7 +5,7 @@ from randomizer.spoiler import *
 from randomizer.accessLogic import *
 
 #constants
-blacklistRegion = 'Sanctuary Crypt'
+blacklistRegion = ['Sanctuary Crypt']
 duplicateChests = [47,48,49,179] #dawn versions of large shoreline for great river valley and valley of kings
 
 def shuffleLocations(parameters):
@@ -19,6 +19,10 @@ def shuffleLocations(parameters):
     preShuffleLoc = [] #locations only, pulled out and ready for shuffling
     shuffledLocations = [] #finalized list of locations and items at the location
     chestsToCopy = []
+
+    if not parameters.formerSanctuaryCrypt:
+        blacklistRegion.append('Former Sanctuary Crypt')
+    
     
     while len(vanillaLocations) != 0:
         if vanillaLocations[0].locID in duplicateChests: #pop out duplicated locations, we'll copy these from the normal version of great river valley and valley of kings after we're done.
@@ -31,7 +35,7 @@ def shuffleLocations(parameters):
             shuffledLocations.append(vanillaLocations.pop(0))
         elif not parameters.shuffleSkills and vanillaLocations[0].skill: #if we're not shuffling skills then discard them
             vanillaLocations.pop(0)
-        elif (vanillaLocations[0].mapCheckID == 'Psyches' and parameters.goal != 'Release the Psyches') or vanillaLocations[0].locRegion.find(blacklistRegion) != -1: #if goal isn't release the psyches and location is a psyche or the location we're looking at is blacklisted just discard it completely
+        elif (vanillaLocations[0].mapCheckID == 'Psyches' and parameters.goal != 'Release the Psyches') or any(vanillaLocations[0].locRegion.find(region) == 0 for region in blacklistRegion): #if goal isn't release the psyches and location is a psyche or the location we're looking at is blacklisted just discard it completely
             vanillaLocations.pop(0)
         elif parameters.goal == 'Release the Psyches' and vanillaLocations[0].mapCheckID in ['Psyche-Ura','Psyche-Nestor','Psyche-Minos','Psyche-Hydra']: #if goal is release the psyches discard warden bosses, their defeats will be tracked with the psyches
             vanillaLocations.pop(0)
@@ -76,6 +80,15 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     accessibleInventory = []
     accessibleLocation = []
     progressionBanList = progressionBans(parameters)
+
+    if not parameters.formerSanctuaryCrypt:
+        blacklistRegion.append('Former Sanctuary Crypt')
+
+    # if former sanctuary crypt is on, Essence key stones are progression
+    if parameters.formerSanctuaryCrypt:
+        for index, item in enumerate(inventory):
+            if item.itemID == 703: #Essence key stone
+                inventory[index].progression = True
 
     #if we're doing seiren escape then make Mistilteinn and the Seiren Area Map progression items
     if parameters.goal == 'Seiren Escape':
@@ -180,12 +193,12 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
 
         #loop through locations and test if the player can access them. If they can access them then queue the location to be filled and remove from pool
         for index,location in enumerate(fillLocations):
-            if canAccess(accessibleInventory,fillLocations[index],parameters) and location.locID not in progressionBanList:
+            if ( parameters.essenceKeySanity or ( (itemToPlace.itemID != 703) or (location.locRegion.find('Former Sanctuary Crypt') == 0) ) ) and canAccess(accessibleInventory,fillLocations[index],parameters) and location.locID not in progressionBanList:
                 fillLocation = fillLocations.pop(index)
                 filledLocation = combineShuffledLocAndItem(fillLocation, itemToPlace)
                 shuffledLocations.append(filledLocation)
                 break
-
+        
         accessibleInventory = []
         accessibleLocation = []
     

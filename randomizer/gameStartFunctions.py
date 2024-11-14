@@ -30,6 +30,11 @@ def buildStartParameters(location,parameters):
     GetItem(ICON3D_FD_SEA_SALT,3)
     GetItem(ICON3D_FD_MEAT_02,3)
     """
+    if parameters.formerSanctuaryCrypt:
+        gameSettingFlags = gameSettingFlags + """
+    SetFlag(SF_SYS_CLEARED, 1)
+	SetFlag(GF_SUBEV_PAST_07_CLEAR, 1)
+    """
         
     startParams = """
 function "startParameters"
