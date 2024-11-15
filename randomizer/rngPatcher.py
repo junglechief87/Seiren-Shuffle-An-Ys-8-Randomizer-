@@ -641,8 +641,11 @@ def shopUpgrades(location):
 
             SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] - 130))
             GetItem(ICON3D_AM_023, 1)
-            GetItem(ICON3D_WP_DANA_000, 1)
-            EquipWeapon(DANA,ICON3D_WP_DANA_000)
+            if( !(FLAG[GF_TBOX_DUMMY108] && !FLAG[GF_TBOX_DUMMY109]) )
+            {
+                EquipWeapon(DANA,ICON3D_WP_DANA_000)
+                GetItem(ICON3D_WP_DANA_000,1)
+            }
         }}
         else if (!FLAG[GF_TBOX_DUMMY084])
         {{
