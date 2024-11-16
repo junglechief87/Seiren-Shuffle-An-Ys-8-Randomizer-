@@ -402,7 +402,8 @@ def canAccess(inventory,location,parameters):
         else: return False
     
     elif 'Former Sanctuary Crypt' in location.locRegion and access.hasDina() and (access.past2() or (access.past3() and access.hasDana()))and access.canDefeat('Giasburn') and battleLogic(390,access,parameters):
-        if location.locRegion == 'Former Sanctuary Crypt - B1' and location.locName == 'Entrance': return True
+        if location.locRegion == 'Former Sanctuary Crypt - B1' and location.locName == 'Entrance' and location.mapCheckID in [TBOX01, TBOX03]: return True
+        if location.locRegion == 'Former Sanctuary Crypt - B1' and location.locName == 'Entrance' and location.mapCheckID in [TBOX02] and access.canDoubleJump(): return True
         if access.hasEssenceKeyStone(1):
             if location.locRegion == 'Former Sanctuary Crypt - B1':
                 if location.locName in ['First Brazier', 'Boss Arena']: return True
