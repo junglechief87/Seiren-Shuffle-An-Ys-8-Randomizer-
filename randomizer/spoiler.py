@@ -24,10 +24,11 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Map Completion: " + str(parameters.mapCompletion) + "\n")
     spoilerLog.write("Food Trades: " + str(parameters.foodTrades) + "\n")
     spoilerLog.write("Fish Trades: " + str(parameters.fishTrades) + "\n")
-    spoilerLog.write("Doggi Intercept Rewards: " + str(parameters.dogiRewards) + "\n")
+    spoilerLog.write("Dogi Intercept Rewards: " + str(parameters.dogiRewards) + "\n")
     spoilerLog.write("Master Kong: " + str(parameters.mkRewards) + "\n")
     spoilerLog.write("Silvia: " + str(parameters.silvia) + "\n")
     spoilerLog.write("Maphorash: " + str(parameters.maphorash) + "\n")
+    spoilerLog.write("Former Sanctuary Crypt: " + str(parameters.formerSanctuaryCrypt) + "\n")
     spoilerLog.write("Additional Intercept Rewards: " + str(parameters.intRewards) + "\n")
     spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
     spoilerLog.write("Experience Multiplier: " + str(parameters.expMult) + "\n")
@@ -41,6 +42,8 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Theos Start Phase: " + str(parameters.theosPhase) + "\n")
     spoilerLog.write("Origin Start Phase: " + str(parameters.originPhase) + "\n")
     spoilerLog.write("Origin Care Package: " + str(parameters.carePackage) + "\n")
+    spoilerLog.write("BGM shuffle: " + str(parameters.shuffleBgm) + "\n")
+    spoilerLog.write("Essence Key Sanity: " + str(parameters.essenceKeySanity) + "\n")
     spoilerLog.write("Locations:\n")
 
     for location in shuffledLocations:
