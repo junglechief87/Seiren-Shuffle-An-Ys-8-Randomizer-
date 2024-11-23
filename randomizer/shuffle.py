@@ -210,6 +210,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
         shuffledLocations.append(filledLocation)
     
     #take what's left of the fill locations and place all junk items, there will be leftover items
+    random.shuffle(junkItems)
     placedItems = 0
     for fillLocation in fillLocations:
         if len(junkItems) <= 0:
