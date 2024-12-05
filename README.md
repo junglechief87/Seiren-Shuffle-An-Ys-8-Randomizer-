@@ -58,6 +58,8 @@ These are settings that modify how much players may need to do of certain activi
 
 **Maphorash**: Sets whether Maphorash can block progression. Maphorash is the highest level optional fight in the game and the Silent Tower is high requirement location.
 
+**Former Sanctuary Crypt**: Sets whether Former Sanctuary Crypt is added to the item pool. If turned off the dungeon is closed. All essence key stones are placed within the dungeon unless Essence Key Sanity is on.
+
 ### Pacing Modifiers:
 These are settings that help with the pacing of the rando. Like most randos Seiren Shuffle is designed to be complete-able in a single sitting, these settings are meant to help with that. 
 **Experience Multiplier**: Pretty straighforward, classic multiplier to EXP. I generally reccomend higher values here than what you might be used to in other randos. The new version removes the game's EXP scaling based on enemy level to help smooth the curve out and keep the player from "slingshotting" to high levels too quickly. This has the consequence that enemies give half their base EXP(the base exp value for enemies in Ys 8 is based on them being slightly higher level than the player, if they're considered the same level as the player then they drop to almost half EXP and the scaling patch makes the game think the player is always equal level to the enemy).
@@ -75,7 +77,9 @@ These are settings that help with the pacing of the rando. Like most randos Seir
 **Origin Start Phase**: Sets which phase the Origin fight starts in. First is the mobbing phase, second is the main boss.
 
 ### Misc Settings:  
-**Shuffle BGM**: (This setting will modify the file ./text/bgmtbl.tbl so you may want to make a copy of it if you want to keep the original file) Shuffles the background tracks from the "bgm" folder from the game. This setting also allows for audio files that are external to Ys VIII. In order to add new tracks, add .OGG files to the "bgm" folder in the root directory of Ys VIII.    
+**Shuffle BGM**: (This setting will modify the file ./text/bgmtbl.tbl so you may want to make a copy of it if you want to keep the original file) Shuffles the background tracks from the "bgm" folder from the game. This setting also allows for audio files that are external to Ys VIII. In order to add new tracks, add .OGG files to the "bgm" folder in the root directory of Ys VIII.  
+
+**Essence Key Sanity**: If Former Sanctuary Crypt setting is on, the Essence Key Stones can be placed anywhere in the game and not just within the dungeon itself.
 
 ## New Progression Items
 The randomizer features a variety of new progression items that are meant to take story gated events and turn them into item gated events to improve the overall experience of the rando. 

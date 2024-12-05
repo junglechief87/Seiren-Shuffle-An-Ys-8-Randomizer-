@@ -50,8 +50,8 @@ def generate_audio_info():
           #track_length_in_seconds = audio.duration_seconds
 
           # Calculate LoopEnd
-          #loop_end = int(track_length_in_seconds * 48000) - 24000
-          loop_end = len(sf.SoundFile(audio_path)) - 24000
+          #loop_end = int(track_length_in_seconds * 48000)
+          loop_end = len(sf.SoundFile(audio_path))
 
           # Create tuple with filename, LoopFlag, LoopStart, and LoopEnd
           extra_audio_info = (file_base_name, loop_flag, '00000000', f"{loop_end:08d}")

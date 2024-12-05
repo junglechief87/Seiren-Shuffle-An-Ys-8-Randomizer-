@@ -30,6 +30,7 @@ def buildStartParameters(location,parameters):
     GetItem(ICON3D_FD_SEA_SALT,3)
     GetItem(ICON3D_FD_MEAT_02,3)
     """
+
         
     startParams = """
 function "startParameters"
@@ -430,7 +431,8 @@ function "startParameters"
     SetFlag(GF_QUEST_600, QUEST_END)
     SetFlag(GF_QUEST_601, QUEST_END)
     SetFlag(GF_QUEST_602, QUEST_END)
-    SetFlag(GF_QUEST_610, QUEST_END)
+    SetFlag(GF_QUEST_610, QUEST_START)
+    SetFlag(GF_QS610_LOOK_STELE, 1)
     SetFlag(GF_QUEST_611, QUEST_END)
     SetFlag(GF_QUEST_612, QUEST_END)
     SetFlag(GF_QUEST_613, QUEST_END)

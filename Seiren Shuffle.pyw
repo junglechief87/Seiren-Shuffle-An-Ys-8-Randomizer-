@@ -29,6 +29,8 @@ def buttons(inpt):
         parameters.getFinalBoss(app.getOptionBox("Final Boss: "),app.getOptionBox("Theos Start Phase: "),app.getOptionBox("Origin Start Phase: "), \
             app.getOptionBox("Origin Care Package: "))
         parameters.getShuffleBgm(app.getCheckBox("shuffleBGM"))
+        parameters.getEssenceKeySanity(app.getCheckBox("essenceKeySanity"))
+        parameters.getFormerSanctuaryCrypt(app.getCheckBox("formerSanctuaryCrypt"))
         rngPatcherMain(parameters) 
         app.okBox("Task Complete", "Seed Generation Complete!")
         
@@ -162,6 +164,8 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.setCheckBox("silvia", ticked=True)
     app.addNamedCheckBox("Maphorash", "maphorash",4,3)
     app.setCheckBox("maphorash", ticked=True)
+    app.addNamedCheckBox("Former Sanctuary Crypt", "formerSanctuaryCrypt",1,4)
+    app.setCheckBox("formerSanctuaryCrypt", ticked=False)
     app.stopFrame()
     app.stopLabelFrame()
     
@@ -225,8 +229,10 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
 
     app.startLabelFrame("Misc Settings", 7, 0)
     app.setSticky("ew")
-    app.addNamedCheckBox("Shuffle BGM", "shuffleBGM")
+    app.addNamedCheckBox("Shuffle BGM", "shuffleBGM", 0, 1)
     app.setCheckBox("shuffleBGM", ticked=False)
+    app.addNamedCheckBox("Essence Key Sanity", "essenceKeySanity", 0, 2)
+    app.setCheckBox("essenceKeySanity", ticked=False)
     app.stopLabelFrame()
 
     app.startFrame("commands",8,0)

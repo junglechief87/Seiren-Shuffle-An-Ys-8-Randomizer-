@@ -237,6 +237,7 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'TBOX01': return True
             else: return False
         elif location.locName == 'Palace Ruins': return True
+        elif location.locRegion == 'Central Stupa': return True
         else: return False
     elif location.locRegion == 'Temple of the Great Tree' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())\
           and access.canDefeat('Giasburn'):
@@ -400,6 +401,42 @@ def canAccess(inventory,location,parameters):
             elif parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numGoal) and access.hasPsyches(parameters.numOctus): return True
             else: return False
         else: return False
+    
+    elif 'Former Sanctuary Crypt' in location.locRegion and access.hasDina() and (access.past2() or (access.past3() and access.hasDana()))and access.canDefeat('Giasburn') and access.canSeeDark() and access.hasJadePendant() and battleLogic(390,access,parameters):
+        if location.locRegion == 'Former Sanctuary Crypt - B1' and location.locName == 'Entrance' and location.mapCheckID in ['TBOX01', 'TBOX03']: return True
+        if location.locRegion == 'Former Sanctuary Crypt - B1' and location.locName == 'Entrance' and location.mapCheckID in ['TBOX02'] and access.canDoubleJump(): return True
+        if access.hasEssenceKeyStone(1):
+            if location.locRegion == 'Former Sanctuary Crypt - B1':
+                if location.locName in ['First Brazier', 'Boss Arena']: return True
+                elif location.locName == 'North Brazier Room' and access.hasEssenceKeyStone(9): return True
+            elif access.canDoubleJump():
+                if location.locRegion == 'Former Sanctuary Crypt - B2' and location.locName == 'Entrance': return True
+                if access.hasEssenceKeyStone(3):
+                    if location.locRegion == 'Former Sanctuary Crypt - B2' and location.locName == 'Stone and Rock Block Puzzle': return True
+                    if access.canUndead():
+                        if location.locRegion == 'Former Sanctuary Crypt - B2' and location.locName == 'Boss Arena': return True
+                        if access.canSwampWalk():
+                            if location.locRegion == 'Former Sanctuary Crypt - B3':
+                                if location.mapCheckID not in ['TBOX05', 'TBOX06']: return True
+                                if location.mapCheckID in ['TBOX05', 'TBOX06'] and access.hasEssenceKeyStone(9): return True
+                            if location.locRegion == 'Former Sanctuary Crypt - B4':
+                                if location.locName == 'Entrance':
+                                    if location.mapCheckID != 'TBOX02': return True
+                                    if location.mapCheckID == 'TBOX02' and access.canUnderwater(): return True
+                            if access.hasEssenceKeyStone(6):
+                                if location.locRegion == 'Former Sanctuary Crypt - B4':
+                                    if location.locName == 'Frozen Statue Room':
+                                        if location.mapCheckID not in ['TBOX01', 'TBOX04']: return True
+                                        if location.mapCheckID in ['TBOX01', 'TBOX04'] and access.canUnderwater(): return True
+                                    elif location.locName == 'Boss Arena': return True
+                                elif location.locRegion == 'Former Sanctuary Crypt - B5':
+                                    if (location.locName == 'Entrance' and location.mapCheckID in ['TBOX01', 'TBOX02']) or (location.locName == 'Western Hall' and location.mapCheckID == 'TBOX02'):
+                                        if access.hasEssenceKeyStone(9): return True
+                                    else:
+                                        return True
+                                elif location.locRegion == 'Former Sanctuary Crypt - B6': return True
+        return False
+
     else: return False
 
 def canDiscover(access,requiredDiscoveries):

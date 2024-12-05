@@ -196,7 +196,23 @@ function "{0}"
     {5}
    ResetStopFlag(STOPFLAG_TALK)
 }}
-"""          
+"""   
+    if location.itemID == 218:
+        #Adding the other 2 medals to the slash medal check
+        script =  script + """
+    GetItem(ICON3D_AC_068,1)
+    GetItem(ICON3D_AC_069,1)
+            """ 
+    if location.itemID == 206: #Jade pendant
+        if parameters.formerSanctuaryCrypt:
+            script = script + """
+    SetFlag(SF_SYS_CLEARED, 1)
+    SetFlag(GF_SUBEV_PAST_07_CLEAR, 1)
+    GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"The path to the Sanctuary has opened.",0,0)
+    WaitPrompt()
+    WaitCloseWindow()
+                """
+
     return getItemFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,script)
 
 #function used for all people function generations
@@ -627,8 +643,11 @@ def shopUpgrades(location):
 
             SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] - 130))
             GetItem(ICON3D_AM_023, 1)
-            GetItem(ICON3D_WP_DANA_000, 1)
-            EquipWeapon(DANA,ICON3D_WP_DANA_000)
+            if( !(FLAG[GF_TBOX_DUMMY108] && !FLAG[GF_TBOX_DUMMY109]) )
+            {{
+                EquipWeapon(DANA,ICON3D_WP_DANA_000)
+                GetItem(ICON3D_WP_DANA_000,1)
+            }}
         }}
         else if (!FLAG[GF_TBOX_DUMMY084])
         {{
