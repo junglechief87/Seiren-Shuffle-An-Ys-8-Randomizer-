@@ -196,20 +196,22 @@ function "{0}"
     {5}
    ResetStopFlag(STOPFLAG_TALK)
 }}
-"""          
-    if location.itemID == 218: #3 Combat Medals from meladuma check
-        getItemFunction =  """
-function "{0}"
-{{
-    GetItem(ICON3D_AC_067,1)
-	GetItem(ICON3D_AC_068,1)
-	GetItem(ICON3D_AC_069,1)
-    Message("#0CObtained #2C#372ISlash Medal, #2C#373IPierce Medal, \nand#2C#374IStrike Medal.")
+"""   
+    if location.itemID == 218:
+        #Adding the other 2 medals to the slash medal check
+        script =  script + """
+    GetItem(ICON3D_AC_068,1)
+    GetItem(ICON3D_AC_069,1)
+            """ 
+    if location.itemID == 206: #Jade pendant
+        if parameters.formerSanctuaryCrypt:
+            script = script + """
+    SetFlag(SF_SYS_CLEARED, 1)
+    SetFlag(GF_SUBEV_PAST_07_CLEAR, 1)
+    GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"The path to the Sanctuary has opened.",0,0)
     WaitPrompt()
     WaitCloseWindow()
-}}
-"""  
-        return getItemFunction.format(scriptName)
+                """
 
     return getItemFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,script)
 

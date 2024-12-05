@@ -237,6 +237,7 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'TBOX01': return True
             else: return False
         elif location.locName == 'Palace Ruins': return True
+        elif location.locRegion == 'Central Stupa': return True
         else: return False
     elif location.locRegion == 'Temple of the Great Tree' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())\
           and access.canDefeat('Giasburn'):
@@ -401,7 +402,7 @@ def canAccess(inventory,location,parameters):
             else: return False
         else: return False
     
-    elif 'Former Sanctuary Crypt' in location.locRegion and access.hasDina() and (access.past2() or (access.past3() and access.hasDana()))and access.canDefeat('Giasburn') and battleLogic(390,access,parameters):
+    elif 'Former Sanctuary Crypt' in location.locRegion and access.hasDina() and (access.past2() or (access.past3() and access.hasDana()))and access.canDefeat('Giasburn') and access.canSeeDark() and access.hasJadePendant() and battleLogic(390,access,parameters):
         if location.locRegion == 'Former Sanctuary Crypt - B1' and location.locName == 'Entrance' and location.mapCheckID in ['TBOX01', 'TBOX03']: return True
         if location.locRegion == 'Former Sanctuary Crypt - B1' and location.locName == 'Entrance' and location.mapCheckID in ['TBOX02'] and access.canDoubleJump(): return True
         if access.hasEssenceKeyStone(1):

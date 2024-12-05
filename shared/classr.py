@@ -307,6 +307,12 @@ class access:
         return True
     return False
   
+  def hasJadePendant(self):
+    for item in self.inventoryObjects:
+      if item.itemID == 206: #Jade Pendant
+        return True
+    return False
+  
   def armletStr(self):
     #check for the two armlets that are in the shuffle not bound by shops, if you hit on the warrior wrist set strength to 20 but keep searching, if you hit on battle armlet kill the search since it's the most powerful anyway.
     strength = 0

@@ -87,7 +87,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     # if former sanctuary crypt is on, Essence key stones are progression
     if parameters.formerSanctuaryCrypt:
         for index, item in enumerate(inventory):
-            if item.itemID == 703: #Essence key stone
+            if item.itemID in [703, 206]: #Essence key stone, jade pendant
                 inventory[index].progression = True
 
     #if we're doing seiren escape then make Mistilteinn and the Seiren Area Map progression items
