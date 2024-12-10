@@ -50,7 +50,7 @@ def rngPatcherMain(parameters):
                 patchFile = patchFile + soloStartingCharacterEvent(location) 
 
             if location.itemID == 778:#flame stone: moving this here as we're now mixing items and crew into the shop upgrade chain and it makes the most sense to have the upgrade function do any calling of necessary item/crew scripts
-                patchFile = patchFile + shopUpgrades(location)
+                patchFile = patchFile + shopUpgrades(location, script)
             elif location.item: 
                 patchFile = patchFile + genericItemMessage(location,script,parameters)      
             elif location.crew:
@@ -221,8 +221,11 @@ def buildCrewLocation(location,script):
     itemIcon = -1
     itemID = 0
     itemQuantity = 1
-    itemSE = 'ITEMMSG_SE_BETTER'
+    itemSE = 'ITEMMSG_SE_BETTER' #Placeholder item jingles in chests
     
+    if location.event:
+        itemSE = 'ITEMMSG_SE_JINGLE' 
+
     if location.party:
         message = "#2C" + location.itemName + "#4C" + partyMessage
         itemID = 145
@@ -558,15 +561,17 @@ def spiritRingEvent(parameters):
 #The idea being that weapons are the most important factor for combat balancing so making sure that Kathleen is found first before the reforge chains are unlocked will help with the game flow.
 #Also to improve character balance in the rando late joining characters come without weapons equipped and are supplemented with stat bonuses equal to what stats that would be expected of a weapon at that tier for that character.
 #Character with no weapon animate with their default weapons still, with the exception of Adol who starts with his tier 1 weapon anyway.
-def shopUpgrades(location):
+def shopUpgrades(location, vanillaScript = ''):
     stopFlag = ''
     stopFlagEnd = ''
+    itemSE = 'ITEMMSG_SE_JINGLE' #Jingle during events
     scriptName = buildLocScripts(location.locID,False)
 
     if not location.event:
         fillChest(location,139,1)
         stopFlag = 'SetStopFlag(STOPFLAG_TALK)'
         stopFlagEnd = 'ResetStopFlag(STOPFLAG_TALK)'
+        itemSE = 'ITEMMSG_SE_BETTER' #Placeholder item jingles in chests
 
     script = """
     function "{5}"
@@ -574,7 +579,7 @@ def shopUpgrades(location):
         {3}
         if (!FLAG[GF_02MP1201_JOIN_KATRIN])
         {{
-            GetItemMessageExPlus(-1,1,ITEMMSG_SE_BETTER,"#2CKathleen#4C {1}",0,0)
+            GetItemMessageExPlus(-1,1,{6},"#2CKathleen#4C {1}",0,0)
             WaitPrompt()
             WaitCloseWindow()        
             {0}
@@ -593,7 +598,7 @@ def shopUpgrades(location):
             SetFlag(GF_QS201_SHOP_ADD,1)
             SetFlag(GF_TBOX_DUMMY081,1)
             GetItem(ICON3D_FIRESTONE,1)
-            GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            GetItemMessageExPlus(ICON3D_FIRESTONE,1,{6},"{2}",0,0)
             WaitPrompt()
             WaitCloseWindow()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 2.",0,0)
@@ -618,7 +623,7 @@ def shopUpgrades(location):
             EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_002)
             SetFlag(GF_TBOX_DUMMY082,1)
             GetItem(ICON3D_HIIROKANE,1)
-            GetItemMessageExPlus(ICON3D_HIIROKANE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            GetItemMessageExPlus(ICON3D_HIIROKANE,1,{6},"{2}",0,0)
             WaitPrompt()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Turn this into Kathleen.",0,0)
             WaitPrompt()
@@ -634,7 +639,7 @@ def shopUpgrades(location):
             SetFlag(GF_SHOP_RANK_5_02,1)
             SetFlag(GF_TBOX_DUMMY083,1)
             GetItem(ICON3D_FIRESTONE,1)
-            GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            GetItemMessageExPlus(ICON3D_FIRESTONE,1,{6},"{2}",0,0)
             WaitPrompt()
             WaitCloseWindow()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 4.",0,0)
@@ -658,7 +663,7 @@ def shopUpgrades(location):
             SetFlag(GF_QS310_GET_ITEM3,1)
             SetFlag(GF_TBOX_DUMMY084,1)
             GetItem(ICON3D_FIRESTONE,1)
-            GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            GetItemMessageExPlus(ICON3D_FIRESTONE,1,{6},"{2}",0,0)
             WaitPrompt()
             WaitCloseWindow()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 5.",0,0)
@@ -670,7 +675,7 @@ def shopUpgrades(location):
             SetFlag(GF_SHOP_RANK_5_07,1)
             SetFlag(GF_TBOX_DUMMY085,1)
             GetItem(ICON3D_FIRESTONE,1)
-            GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            GetItemMessageExPlus(ICON3D_FIRESTONE,1,{6},"{2}",0,0)
             WaitPrompt()
             WaitCloseWindow()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 6.",0,0)
@@ -686,7 +691,7 @@ def shopUpgrades(location):
             SetFlag(GF_NPC_6_03_AFTER_INTERCEPT12,1)
             SetFlag(GF_06MP1201_GOTO_GEND,1)
             GetItem(ICON3D_FIRESTONE,1)
-            GetItemMessageExPlus(ICON3D_FIRESTONE,1,ITEMMSG_SE_JINGLE,"{2}",0,0)
+            GetItemMessageExPlus(ICON3D_FIRESTONE,1,{6},"{2}",0,0)
             WaitPrompt()
             WaitCloseWindow()
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank MAX.",0,0)
@@ -701,10 +706,11 @@ def shopUpgrades(location):
             WaitCloseWindow()
         }}
         {4}
+        {7}
     }}
     """
 
-    return script.format(getCrewFlags("Kathleen"),crewMessage,genericMessage,stopFlag,stopFlagEnd,scriptName)
+    return script.format(getCrewFlags("Kathleen"),crewMessage,genericMessage,stopFlag,stopFlagEnd,scriptName, itemSE, vanillaScript)
 
 #setting for when the great tree of origins entrance opens
 def octusGoal(parameters):
