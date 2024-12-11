@@ -25,7 +25,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Map Completion: " + str(parameters.mapCompletion) + "\n")
     spoilerLog.write("Food Trades: " + str(parameters.foodTrades) + "\n")
     spoilerLog.write("Fish Trades: " + str(parameters.fishTrades) + "\n")
-    spoilerLog.write("Doggi Intercept Rewards: " + str(parameters.dogiRewards) + "\n")
+    spoilerLog.write("Dogi Intercept Rewards: " + str(parameters.dogiRewards) + "\n")
     spoilerLog.write("Master Kong: " + str(parameters.mkRewards) + "\n")
     spoilerLog.write("Silvia: " + str(parameters.silvia) + "\n")
     spoilerLog.write("Maphorash: " + str(parameters.maphorash) + "\n")
@@ -65,7 +65,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         while True:
             itemFound = 0
             for index,location in enumerate(accessibleLocation):
-                if canAccess(progressionInventory,location,parameters) or location.locRegion.find(blacklistRegion) >= 0:
+                if canAccess(progressionInventory,location,parameters) and not any(location.locRegion.find(region) >= 0 for region in blacklistRegion): #Returns true if you can access the location and it is not blacklisted
                     newLocation = accessibleLocation.pop(index)
                     accessibleItem = classr.inventory(newLocation)
                     if accessibleItem.progression and newLocation.locID not in duplicateChests:
@@ -137,6 +137,9 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
             progressionInventory.append(newInventory.pop(0))
         sphere+=1
         
+        if sphere >= 100: #Added this safety check in case there are other bugs in spoiler generation
+            break 
+
     spoilerLog.close()
 
 def testSeed(progressionLocations,parameters):

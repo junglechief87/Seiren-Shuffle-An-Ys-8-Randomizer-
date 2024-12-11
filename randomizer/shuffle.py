@@ -19,6 +19,10 @@ def shuffleLocations(parameters):
     preShuffleLoc = [] #locations only, pulled out and ready for shuffling
     shuffledLocations = [] #finalized list of locations and items at the location
     chestsToCopy = []
+
+    if not parameters.formerSanctuaryCrypt:
+        blacklistRegion.append('Former Sanctuary Crypt')
+    
     
     if not parameters.formerSanctuaryCrypt:
         blacklistRegion.append('Former Sanctuary Crypt')
@@ -79,6 +83,15 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     accessibleInventory = []
     accessibleLocation = []
     progressionBanList = progressionBans(parameters)
+
+    if not parameters.formerSanctuaryCrypt:
+        blacklistRegion.append('Former Sanctuary Crypt')
+
+    # if former sanctuary crypt is on, Essence key stones are progression
+    if parameters.formerSanctuaryCrypt:
+        for index, item in enumerate(inventory):
+            if item.itemID in [703, 206]: #Essence key stone, jade pendant
+                inventory[index].progression = True
 
     #if we're doing seiren escape then make Mistilteinn and the Seiren Area Map progression items
     if parameters.goal == 'Seiren Escape':
@@ -185,12 +198,12 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
 
         #loop through locations and test if the player can access them. If they can access them then queue the location to be filled and remove from pool
         for index,location in enumerate(fillLocations):
-            if canAccess(accessibleInventory,fillLocations[index],parameters) and location.locID not in progressionBanList:
+            if ( parameters.essenceKeySanity or ( (itemToPlace.itemID != 703) or (location.locRegion.find('Former Sanctuary Crypt') == 0) ) ) and canAccess(accessibleInventory,fillLocations[index],parameters) and location.locID not in progressionBanList:
                 fillLocation = fillLocations.pop(index)
                 filledLocation = combineShuffledLocAndItem(fillLocation, itemToPlace)
                 shuffledLocations.append(filledLocation)
                 break
-
+        
         accessibleInventory = []
         accessibleLocation = []
     
@@ -202,6 +215,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
         shuffledLocations.append(filledLocation)
     
     #take what's left of the fill locations and place all junk items, there will be leftover items
+    random.shuffle(junkItems)
     placedItems = 0
     for fillLocation in fillLocations:
         if len(junkItems) <= 0:

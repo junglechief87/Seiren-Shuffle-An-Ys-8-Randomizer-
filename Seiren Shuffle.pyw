@@ -31,6 +31,8 @@ def buttons(inpt):
         parameters.getEssenceKeySanity(app.getCheckBox("essenceKeySanity"))
         parameters.getFormerSanctuaryCrypt(app.getCheckBox("formerSanctuaryCrypt"))
         parameters.getShuffleBgm(app.getCheckBox("shuffleBGM"))
+        parameters.getEssenceKeySanity(app.getCheckBox("essenceKeySanity"))
+        parameters.getFormerSanctuaryCrypt(app.getCheckBox("formerSanctuaryCrypt"))
         rngPatcherMain(parameters) 
         app.okBox("Task Complete", "Seed Generation Complete!")
         

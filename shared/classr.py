@@ -312,7 +312,7 @@ class access:
       if item.itemID == 206: #Jade Pendant
         return True
     return False
-
+  
   def armletStr(self):
     #check for the two armlets that are in the shuffle not bound by shops, if you hit on the warrior wrist set strength to 20 but keep searching, if you hit on battle armlet kill the search since it's the most powerful anyway.
     strength = 0
@@ -420,6 +420,16 @@ class access:
       return True
     return False
   
+  def hasEssenceKeyStone(self, requiredEssenceKeyStone):
+    count = 0
+    for item in self.inventoryObjects:
+      if item.itemID == 703: #Essence key stone
+        count += 1
+    
+    if count >= requiredEssenceKeyStone:
+      return True
+    return False
+  
 class guiInput:
   def __init__(self):
     self.seed = None
@@ -439,6 +449,7 @@ class guiInput:
     self.mkRewards = None
     self.silvia = None
     self.maphorash = None
+    self.formerSanctuaryCrypt = None
     self.intRewards = None
     self.expMult = None
     self.expGrowth = None
@@ -452,6 +463,7 @@ class guiInput:
     self.originPhase = None
     self.carePackage = None
     self.shuffleBgm = None
+    self.essenceKeySanity = None
   
   def getSeed(seed):
     guiInput.seed = seed
@@ -499,6 +511,12 @@ class guiInput:
   
   def getShuffleBgm(shuffleBgm):
     guiInput.shuffleBgm = shuffleBgm
+
+  def getEssenceKeySanity(essenceKeySanity):
+    guiInput.essenceKeySanity = essenceKeySanity
+  
+  def getFormerSanctuaryCrypt(formerSanctuaryCrypt):
+    guiInput.formerSanctuaryCrypt = formerSanctuaryCrypt
     
 class interceptReward:
   def __init__(self,stage,rewards):
