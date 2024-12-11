@@ -82,6 +82,7 @@ def fillChest(location,itemID,quantity):
     
     itemIDOffset = 9
     quantityOffset = 15
+    jingleOffset = 27
     itemID2 = 0
 
     #find the chest in the file
@@ -108,6 +109,12 @@ def fillChest(location,itemID,quantity):
 
             #set Quantity
             fileBytes[startOfChestArgs + quantityOffset] = quantity
+
+            #set Jingle sound effect
+            if location.progression:
+                fileBytes[startOfChestArgs + jingleOffset] = 2
+            else:
+                fileBytes[startOfChestArgs + jingleOffset] = 0
    
             #make the item ID two values
             while itemID > 255:

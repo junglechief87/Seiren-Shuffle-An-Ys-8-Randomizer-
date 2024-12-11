@@ -64,7 +64,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         while True:
             itemFound = 0
             for index,location in enumerate(accessibleLocation):
-                if canAccess(progressionInventory,location,parameters) or any(location.locRegion.find(region) >= 0 for region in blacklistRegion):
+                if canAccess(progressionInventory,location,parameters) and not any(location.locRegion.find(region) >= 0 for region in blacklistRegion): #Returns true if you can access the location and it is not blacklisted
                     newLocation = accessibleLocation.pop(index)
                     accessibleItem = classr.inventory(newLocation)
                     if accessibleItem.progression and newLocation.locID not in duplicateChests:
@@ -136,6 +136,9 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
             progressionInventory.append(newInventory.pop(0))
         sphere+=1
         
+        if sphere >= 100: #Added this safety check in case there are other bugs in spoiler generation
+            break 
+
     spoilerLog.close()
 
 def testSeed(progressionLocations,parameters):
