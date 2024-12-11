@@ -5,8 +5,16 @@ def getCrewFlags(name):
     match name:
         case "Adol":
             flag = """
-    SetFlag(SF_ADOL_JOINED, 1)
-    SetFlag(SF_ADOL_JOINOK, 1)
+    if (FLAG[GF_TBOX_DUMMY129])
+    {
+        SetFlag(SF_RESERVE10_JOINOK,1)
+    }
+    else
+    {
+        SetFlag(SF_ADOL_JOINED, 1)
+        SetFlag(SF_ADOL_JOINOK, 1)
+        JoinParty(PARTY_ADOL)
+    }
     
     GetItem(ICON3D_WP_ADOL_000,1)
     EquipWeapon(ADOL,ICON3D_WP_ADOL_000)
@@ -22,8 +30,6 @@ def getCrewFlags(name):
         GetItem(ICON3D_WP_ADOL_003, 1)		
 	    EquipWeapon(ADOL, ICON3D_WP_ADOL_003)
     }
-    
-    JoinParty(PARTY_ADOL)
 
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {
@@ -35,8 +41,16 @@ def getCrewFlags(name):
 
         case "Laxia": #vanilla function call on mp1101 script rng:0401
             flag = """
-    SetFlag(SF_LAXIA_JOINED, 1)
-    SetFlag(SF_LAXIA_JOINOK, 1)
+    if (FLAG[GF_TBOX_DUMMY129])
+    {
+        SetFlag(SF_RESERVE13_JOINOK,1)
+    }
+    else
+    {
+        SetFlag(SF_LAXIA_JOINED, 1)
+        SetFlag(SF_LAXIA_JOINOK, 1)
+        JoinParty(PARTY_LAXIA)
+    }
  
     SetDiaryFlag( DF_JOIN_LAXIA, 1 )	
     SetDiaryCharaFlag( DRCHA_LAXIA, DRCHA_FLAG_OPEN, 1 )
@@ -52,8 +66,6 @@ def getCrewFlags(name):
         GetItem(ICON3D_WP_LAXIA_003, 1)		
 	    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_003)
     }
-
-    JoinParty(PARTY_LAXIA)
 
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {
@@ -88,8 +100,16 @@ def getCrewFlags(name):
 """
         case "Sahad": #vanilla function call on mp1103 script rng:0404
             flag = """
-    SetFlag(SF_SAHAD_JOINED, 1)
-    SetFlag(SF_SAHAD_JOINOK, 1)
+    if (FLAG[GF_TBOX_DUMMY129])
+    {
+        SetFlag(SF_RESERVE11_JOINOK,1)
+    }
+    else
+    {
+        SetFlag(SF_SAHAD_JOINED, 1)
+        SetFlag(SF_SAHAD_JOINOK, 1)
+        JoinParty(PARTY_SAHAD)
+    }
  
     SetDiaryFlag( DF_JOIN_SAHAD, 1 )		
     SetDiaryCharaFlag( DRCHA_SAHAD, DRCHA_FLAG_OPEN, 1 )
@@ -106,8 +126,6 @@ def getCrewFlags(name):
         GetItem(ICON3D_WP_SAHAD_003, 1)		
 	    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_003)
     }
-
-    JoinParty(PARTY_SAHAD)
 
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {
@@ -280,8 +298,17 @@ def getCrewFlags(name):
 """
         case "Ricotta": #vanilla function call on mp4202 script rng:0417
             flag = """
-    SetFlag(SF_RICOTTA_JOINED, 1)
-    SetFlag(SF_RICOTTA_JOINOK, 1)
+    if (FLAG[GF_TBOX_DUMMY129])
+    {
+        SetFlag(SF_RESERVE14_JOINOK,1)
+    }
+    else
+    {
+        SetFlag(SF_RICOTTA_JOINED, 1)
+        SetFlag(SF_RICOTTA_JOINOK, 1)
+        JoinParty(PARTY_RICOTTA)
+    }
+
     SetDiaryFlag( DF_JOIN_RICOTTA, 1 )
     SetFlag( GF_QUEST_400, QUEST_START )
     SetDiaryFlag( DF_QS400_START, 1 )
@@ -295,8 +322,6 @@ def getCrewFlags(name):
         GetItem(ICON3D_WP_RICOTTA_001	, 1)
 	    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_001)
     }
-    
-    JoinParty(PARTY_RICOTTA)
 
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {
@@ -346,8 +371,16 @@ def getCrewFlags(name):
 """
         case "Hummel": #vanilla function call on mp1108 script rng:0411
             flag = """
-    SetFlag(SF_HUMMEL_JOINED, 1)
-    SetFlag(SF_HUMMEL_JOINOK, 1)
+    if (FLAG[GF_TBOX_DUMMY129])
+    {
+        SetFlag(SF_RESERVE12_JOINOK,1)
+    }
+    else
+    {
+        SetFlag(SF_HUMMEL_JOINED, 1)
+        SetFlag(SF_HUMMEL_JOINOK, 1)
+        JoinParty(PARTY_HUMMEL)
+    }
 
     SetDiaryFlag( DF_JOIN_HUMMEL, 1 )
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
@@ -361,8 +394,6 @@ def getCrewFlags(name):
         GetItem(ICON3D_WP_HUMMEL_002	, 1)
 	    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_002)
     }
-    
-    JoinParty(PARTY_HUMMEL)
 
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {

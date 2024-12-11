@@ -12,10 +12,11 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog = open('Ys_8_' + str(parameters.seed) + '.txt', 'w')
 
     spoilerLog.write("Seed# " + str(parameters.seed) + '\n')
-    spoilerLog.write('Goal: ' + parameters.goal + '\t Number: ' + str(parameters.numGoal))
+    spoilerLog.write('Goal: ' + parameters.goal + '\t \t Number: ' + str(parameters.numGoal))
     spoilerLog.write('Goal count to open Octus: ' + str(parameters.numOctus))
     spoilerLog.write('\n \n')
     spoilerLog.write("Settings:\n")
+    spoilerLog.write("Game Mode: " + str(parameters.charMode) + "\n")
     spoilerLog.write("Shuffle Party: " + str(parameters.shuffleParty) + "\n")
     spoilerLog.write("Shuffle Crew: " + str(parameters.shuffleCrew) + "\n")
     spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
@@ -28,6 +29,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Master Kong: " + str(parameters.mkRewards) + "\n")
     spoilerLog.write("Silvia: " + str(parameters.silvia) + "\n")
     spoilerLog.write("Maphorash: " + str(parameters.maphorash) + "\n")
+    spoilerLog.write("Former Sanctuary Crypt: " + str(parameters.formerSanctuaryCrypt) + "\n")
     spoilerLog.write("Additional Intercept Rewards: " + str(parameters.intRewards) + "\n")
     spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
     spoilerLog.write("Experience Multiplier: " + str(parameters.expMult) + "\n")
@@ -41,6 +43,8 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Theos Start Phase: " + str(parameters.theosPhase) + "\n")
     spoilerLog.write("Origin Start Phase: " + str(parameters.originPhase) + "\n")
     spoilerLog.write("Origin Care Package: " + str(parameters.carePackage) + "\n")
+    spoilerLog.write("BGM shuffle: " + str(parameters.shuffleBgm) + "\n")
+    spoilerLog.write("Essence Key Sanity: " + str(parameters.essenceKeySanity) + "\n")
     spoilerLog.write("Locations:\n")
 
     for location in shuffledLocations:

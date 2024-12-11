@@ -307,6 +307,12 @@ class access:
         return True
     return False
   
+  def hasJadePendant(self):
+    for item in self.inventoryObjects:
+      if item.itemID == 206: #Jade Pendant
+        return True
+    return False
+
   def armletStr(self):
     #check for the two armlets that are in the shuffle not bound by shops, if you hit on the warrior wrist set strength to 20 but keep searching, if you hit on battle armlet kill the search since it's the most powerful anyway.
     strength = 0
@@ -403,6 +409,16 @@ class access:
     if count >= goalCount:
       return True
     return False
+
+  def hasEssenceKeyStone(self, requiredEssenceKeyStone):
+    count = 0
+    for item in self.inventoryObjects:
+      if item.itemID == 703: #Essence key stone
+        count += 1
+    
+    if count >= requiredEssenceKeyStone:
+      return True
+    return False
   
 class guiInput:
   def __init__(self):
@@ -410,6 +426,7 @@ class guiInput:
     self.goal = None
     self.numGoal = None
     self.numOctus = None
+    self.charMode = None
     self.shuffleParty = None
     self.shuffleCrew = None
     self.shuffleSkills = None
@@ -439,11 +456,12 @@ class guiInput:
   def getSeed(seed):
     guiInput.seed = seed
 
-  def getGoal(option,num,numOctus):
+  def getGoal(option,num,numOctus,charMode):
     guiInput.goal = option
     guiInput.numGoal = int(num)
     guiInput.numOctus = int(numOctus)
-  
+    guiInput.charMode = charMode
+    
   def getShuffleLocations(party,crew,skills):
     guiInput.shuffleParty = party
     guiInput.shuffleCrew = crew

@@ -18,7 +18,7 @@ def buttons(inpt):
 
     elif inpt == 'Generate Seed':
         parameters.getSeed(app.getEntry("Seed#: "))
-        parameters.getGoal(app.getOptionBox("goal"),app.getScale("goalCount"),app.getScale("octusNum"))
+        parameters.getGoal(app.getOptionBox("goal"),app.getScale("goalCount"),app.getScale("octusNum"),app.getOptionBox("characterMode"))
         parameters.getShuffleLocations(app.getCheckBox("party"),app.getCheckBox("crew"),app.getCheckBox("skills"))
         parameters.getProgressionMods(app.getOptionBox("Jewel Trade Items: "),app.getOptionBox("Fish Trades: "), \
             app.getOptionBox("Discoveries: "),app.getOptionBox("Map Completion: "),app.getOptionBox("Food Trades: "),\
@@ -28,6 +28,8 @@ def buttons(inpt):
         parameters.getExpMult(float(app.getScale("Experience Multiplier: ")), float(app.getScale("Exp Mult Growth Rate (%): ")))
         parameters.getFinalBoss(app.getOptionBox("Final Boss: "),app.getOptionBox("Theos Start Phase: "),app.getOptionBox("Origin Start Phase: "), \
             app.getOptionBox("Origin Care Package: "))
+        parameters.getEssenceKeySanity(app.getCheckBox("essenceKeySanity"))
+        parameters.getFormerSanctuaryCrypt(app.getCheckBox("formerSanctuaryCrypt"))
         parameters.getShuffleBgm(app.getCheckBox("shuffleBGM"))
         rngPatcherMain(parameters) 
         app.okBox("Task Complete", "Seed Generation Complete!")
@@ -62,6 +64,14 @@ def goalChange():
         app.setScaleRange("octusNum",0,0,0)
         app.setCheckBox("superWeapons", ticked=False)
         app.setCheckBoxState("superWeapons","disabled")
+
+def charModeChange():
+    if app.getOptionsBox("Character Mode: ") == "Past Dana":
+        app.setCheckBox("MKRewards", ticked=False)
+        app.setCheckBoxState("MKRewards", "disabled")
+    elif app.getOptionsBox("Character Mode: ") == "Past Dana":
+        app.setCheckBox("MKRewards", ticked=True)
+        app.setCheckBoxState("MKRewards", "active")
 
 def finalBossChange():
     if app.getOptionBox("Final Boss: ") == "Theos de Endogram":
@@ -107,7 +117,12 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.addButton("New Seed", buttons,0,1)
     app.stopFrame()
 
-    app.startLabelFrame("Selection Sphere Access: ",1,0,0)
+    app.startLabelFrame("Mode:",1,0,0)
+    app.addOptionBox("characterMode", ["Standard","Past Dana"])
+    app.setOptionBoxChangeFunction("characterMode", charModeChange)
+    app.stopLabelFrame()
+
+    app.startLabelFrame("Selection Sphere Access: ",2,0,0)
     app.setSticky("ew")
     app.addOptionBox("goal", ["Release the Psyches","Seiren Escape","Find Crew"],1,0,0)
     app.addScale("goalCount",1,2,3)
@@ -128,7 +143,7 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.setOptionBoxChangeFunction("goal", goalChange)
     app.stopLabelFrame()
 
-    app.startLabelFrame("Shuffle Locations",2,0,0)
+    app.startLabelFrame("Shuffle Locations",3,0,0)
     app.setSticky("ew")
     app.addNamedCheckBox("Shuffle Castaways", "crew",1,1)
     app.setCheckBox("crew", ticked=True)
@@ -162,10 +177,12 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.setCheckBox("silvia", ticked=True)
     app.addNamedCheckBox("Maphorash", "maphorash",4,3)
     app.setCheckBox("maphorash", ticked=True)
+    app.addNamedCheckBox("Former Sanctuary Crypt", "formerSanctuaryCrypt",1,4)
+    app.setCheckBox("formerSanctuaryCrypt", ticked=False)
     app.stopFrame()
     app.stopLabelFrame()
     
-    app.startLabelFrame("Pacing Modifiers",5,0)
+    app.startLabelFrame("Pacing Modifiers",6,0)
     app.setSticky("ew")
     app.startFrame("experience",1,0)
     app.setSticky("ew")
@@ -211,7 +228,7 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.stopFrame()
     app.stopLabelFrame()
 
-    app.startLabelFrame("Final Boss Settings",6,0)
+    app.startLabelFrame("Final Boss Settings",7,0)
     app.setSticky("ew")
     app.addLabelOptionBox("Final Boss: ", ["Theos de Endogram","Origin of Life","Both"])
     app.setOptionBoxChangeFunction("Final Boss: ", finalBossChange)
@@ -223,13 +240,15 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.setOptionBoxState("Theos Start Phase: ","active")
     app.stopLabelFrame()
 
-    app.startLabelFrame("Misc Settings", 7, 0)
+    app.startLabelFrame("Misc Settings", 8, 0)
     app.setSticky("ew")
-    app.addNamedCheckBox("Shuffle BGM", "shuffleBGM")
+    app.addNamedCheckBox("Shuffle BGM", "shuffleBGM", 0, 1)
     app.setCheckBox("shuffleBGM", ticked=False)
+    app.addNamedCheckBox("Essence Key Sanity", "essenceKeySanity", 0, 2)
+    app.setCheckBox("essenceKeySanity", ticked=False)
     app.stopLabelFrame()
 
-    app.startFrame("commands",8,0)
+    app.startFrame("commands",9,0)
     app.setSticky("ew")
     app.addButtons(['Patch Files', 'Generate Seed'], [buttons, buttons],0,0)
     app.stopFrame()

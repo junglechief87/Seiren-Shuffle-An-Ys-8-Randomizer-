@@ -5,7 +5,7 @@ from randomizer.spoiler import *
 from randomizer.accessLogic import *
 
 #constants
-blacklistRegion = 'Sanctuary Crypt'
+blacklistRegion = ['Sanctuary Crypt']
 duplicateChests = [47,48,49,179] #dawn versions of large shoreline for great river valley and valley of kings
 
 def shuffleLocations(parameters):
@@ -20,6 +20,9 @@ def shuffleLocations(parameters):
     shuffledLocations = [] #finalized list of locations and items at the location
     chestsToCopy = []
     
+    if not parameters.formerSanctuaryCrypt:
+        blacklistRegion.append('Former Sanctuary Crypt')
+
     while len(vanillaLocations) != 0:
         if vanillaLocations[0].locID in duplicateChests: #pop out duplicated locations, we'll copy these from the normal version of great river valley and valley of kings after we're done.
             chestsToCopy.append(vanillaLocations.pop(0))
@@ -31,7 +34,7 @@ def shuffleLocations(parameters):
             shuffledLocations.append(vanillaLocations.pop(0))
         elif not parameters.shuffleSkills and vanillaLocations[0].skill: #if we're not shuffling skills then discard them
             vanillaLocations.pop(0)
-        elif (vanillaLocations[0].mapCheckID == 'Psyches' and parameters.goal != 'Release the Psyches') or vanillaLocations[0].locRegion.find(blacklistRegion) != -1: #if goal isn't release the psyches and location is a psyche or the location we're looking at is blacklisted just discard it completely
+        elif (vanillaLocations[0].mapCheckID == 'Psyches' and parameters.goal != 'Release the Psyches') or any(vanillaLocations[0].locRegion.find(region) == 0 for region in blacklistRegion): #if goal isn't release the psyches and location is a psyche or the location we're looking at is blacklisted just discard it completely
             vanillaLocations.pop(0)
         elif parameters.goal == 'Release the Psyches' and vanillaLocations[0].mapCheckID in ['Psyche-Ura','Psyche-Nestor','Psyche-Minos','Psyche-Hydra']: #if goal is release the psyches discard warden bosses, their defeats will be tracked with the psyches
             vanillaLocations.pop(0)
@@ -145,7 +148,9 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     random.shuffle(progressionInventory) 
     if parameters.shuffleParty:
         for index,partyMember in enumerate(progressionInventory):
-            if partyMember.party:
+            if partyMember.itemName == 'Dana' and partyMember.party and parameters.charMode = 'Past Dana':
+                startingPartyMember = progressionInventory.pop(index)
+            elif partyMember.party:
                 startingPartyMember = progressionInventory.pop(index)
                 #let's find the opening cutscene real quick and make sure we fill is with a playable character
                 for locNum,location in enumerate(fillLocations):

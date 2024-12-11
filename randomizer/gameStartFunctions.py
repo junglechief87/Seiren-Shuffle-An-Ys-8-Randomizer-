@@ -5,6 +5,41 @@ from randomizer.crew import *
 def buildStartParameters(location,parameters):
     gameSettingFlags = ''
     startingCharacter = getCrewFlags(location.itemName) 
+    if parameters.charMode == "Past Dana":
+        gameSettingFlags = gameSettingFlags + """
+        SetFlag(SF_DANA_JOINED, 1)
+        SetFlag(SF_DANA_JOINOK, 1)
+        //SetFlag(SF_PAST_MODE, 1)
+        CallFunc("rng:soloEvent")
+        CallFunc("rng:earlyGameParty")
+        
+            // 過去編
+        SetFlag(SF_CHRSWITCH_MODE, 1)
+        JoinParty(PARTY_DANA)
+        JoinParty(PARTY_DANA2)
+        SetFlag(SF_DANA2_JOINOK, 1)
+        JoinParty(PARTY_DANA3)
+        SetFlag(SF_DANA3_JOINOK, 1)
+        SetFlag(SF_CANTLEARN_SKILL, 1)
+        SetFlag(SF_DANA_WATERSTYLE_LV, 1)	// 水スタイル
+        SetFlag(SF_DANA_EARTHSTYLE_LV, 1)	// 地スタイル
+        SetFlag(SF_DANA_LIGHTSTYLE_LV, 1)
+        GetItem(ICON3D_AC_069, 1)
+        GetItem(ICON3D_AC_068, 1)
+        GetSkill(PARTY_DANA, -1, -1)				// スキル全部忘れる
+            //SetSkillShortCut(PARTY_DANA, -1, -1)		// スキルショートカットを全て外す
+            //GetSkill(PARTY_DANA, -1, 3)					// 現在のレベルで習得できる物を全て習得する
+            //SetSkillShortCut(PARTY_DANA, -1, 0)			// 現在のレベルに見合ったものに自動設定
+        GetSkill(PARTY_DANA, SKILL_DANA_SP_C3, 1)
+        GetSkill(PARTY_DANA, SKILL_DANA_SP_C4, 1)
+        GetSkill(PARTY_DANA, SKILL_DANA_SP_B5, 1)
+        GetSkill(PARTY_DANA, SKILL_DANA_SP_A2, 1)
+        SetSkillShortCut(PARTY_DANA,	ATKSKILL_CIRCLE,	SKILL_DANA_SP_C3)	//ウォーターシュート
+        SetSkillShortCut(PARTY_DANA,	ATKSKILL_CROSS,		SKILL_DANA_SP_B5)	//ミストラルエッジ
+        SetSkillShortCut(PARTY_DANA,	ATKSKILL_SQUARE,	SKILL_DANA_SP_A2)	//蒼輪舞踏
+        SetSkillShortCut(PARTY_DANA,	ATKSKILL_TRIANGLE,	SKILL_DANA_SP_C4)	//竜気
+        SetFlag(GF_TBOX_DUMMY129,1) //Past Dana Mode
+    """
     if parameters.progressiveSuperWeapons:
         gameSettingFlags = gameSettingFlags + """
     SetFlag(GF_TBOX_DUMMY109,1)
@@ -430,7 +465,8 @@ function "startParameters"
     SetFlag(GF_QUEST_600, QUEST_END)
     SetFlag(GF_QUEST_601, QUEST_END)
     SetFlag(GF_QUEST_602, QUEST_END)
-    SetFlag(GF_QUEST_610, QUEST_END)
+    SetFlag(GF_QUEST_610, QUEST_START)
+    SetFlag(GF_QS610_LOOK_STELE, 1)
     SetFlag(GF_QUEST_611, QUEST_END)
     SetFlag(GF_QUEST_612, QUEST_END)
     SetFlag(GF_QUEST_613, QUEST_END)
