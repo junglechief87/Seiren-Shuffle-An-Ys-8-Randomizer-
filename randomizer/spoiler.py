@@ -49,14 +49,17 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
 
     for location in shuffledLocations:
         location.writeSpoiler(spoilerLog)
+
     for location in shuffledLocations:
         if location.locName == 'Opening Cutscene':
             openingCutscene = location
             progressionInventory.append(location)
         else:
             accessibleLocation.append(location)
+
     spoilerLog.write('\n \n \n')
     spoilerLog.write("Playthrough:\n")
+    
     #We build an initial list of progression items on the way to the goal
     while len(accessibleLocation) != 0 and not win:
         while True:
