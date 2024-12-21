@@ -24,13 +24,16 @@ class location:
     print("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '(' + str(self.itemID) + ')x' + str(self.quantity))
 
   def writeSpoiler(self,file):
-    if self.skill:
-      skillName = getSkillInfo(self.itemName)
-      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + skillName[2] + ':' + skillName[1] + '\n')
-    elif self.quantity == 1:
-      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '\n')
-    else:
-      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + ' x ' + str(self.quantity) + '\n')
+    try:
+      if self.skill:
+        skillName = getSkillInfo(self.itemName)
+        file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + skillName[2] + ':' + skillName[1] + '\n')
+      elif self.quantity == 1:
+        file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '\n')
+      else:
+        file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + ' x ' + str(self.quantity) + '\n')
+    except Exception as e:
+        print(f"Error writing spoiler log for location {self.locRegion} - {self.locName} with item {self.itemName} x {str(self.quantity)}: {e}")
 
 class shuffledLocation(location):
   def __init__(self,location):
@@ -281,7 +284,7 @@ class access:
     for item in self.inventoryObjects:
       if item.itemID == 745: #eagle eye orb
         return True
-      return False
+    return False
   
   def hasBoat(self):
     for item in self.inventoryObjects:
@@ -464,6 +467,7 @@ class guiInput:
     self.carePackage = None
     self.shuffleBgm = None
     self.essenceKeySanity = None
+    self.hint = None
   
   def getSeed(seed):
     guiInput.seed = seed
@@ -517,6 +521,9 @@ class guiInput:
   
   def getFormerSanctuaryCrypt(formerSanctuaryCrypt):
     guiInput.formerSanctuaryCrypt = formerSanctuaryCrypt
+  
+  def getHint(hint):
+    guiInput.hint = hint
     
 class interceptReward:
   def __init__(self,stage,rewards):

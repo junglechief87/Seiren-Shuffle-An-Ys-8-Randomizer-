@@ -1,7 +1,7 @@
 import shared.classr as classr
 from randomizer.accessLogic import *
 
-def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests):
+def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests, hints):
     sphere = 0
     newInventory = []
     progressionLocations = []
@@ -49,23 +49,20 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
 
     for location in shuffledLocations:
         location.writeSpoiler(spoilerLog)
-
     for location in shuffledLocations:
         if location.locName == 'Opening Cutscene':
             openingCutscene = location
             progressionInventory.append(location)
         else:
             accessibleLocation.append(location)
-        
     spoilerLog.write('\n \n \n')
     spoilerLog.write("Playthrough:\n")
-    
     #We build an initial list of progression items on the way to the goal
     while len(accessibleLocation) != 0 and not win:
         while True:
             itemFound = 0
             for index,location in enumerate(accessibleLocation):
-                if canAccess(progressionInventory,location,parameters) and not any(location.locRegion.find(region) >= 0 for region in blacklistRegion): #Returns true if you can access the location and it is not blacklisted
+                if canAccess(progressionInventory, location, parameters):
                     newLocation = accessibleLocation.pop(index)
                     accessibleItem = classr.inventory(newLocation)
                     if accessibleItem.progression and newLocation.locID not in duplicateChests:
@@ -131,6 +128,12 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         while len(foundLocations) != 0:
             location = foundLocations.pop(0)
             location.writeSpoiler(spoilerLog)
+            # label required hints
+            if len(hints) > 0:
+                for hint in hints:
+                    if hint.locRegion == location.locRegion and hint.locName == location.locName and hint.mapCheckID == location.mapCheckID:
+                        hint.isRequired = True
+                        break 
         spoilerLog.write('} \n')
 
         while len(newInventory) != 0:
@@ -139,7 +142,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         
         if sphere >= 100: #Added this safety check in case there are other bugs in spoiler generation
             break 
-
+    spoilerLog.flush()
     spoilerLog.close()
 
 def testSeed(progressionLocations,parameters):

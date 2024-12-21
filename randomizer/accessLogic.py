@@ -237,7 +237,7 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID == 'TBOX01': return True
             else: return False
         elif location.locName == 'Palace Ruins': return True
-        elif location.locRegion == 'Central Stupa': return True
+        elif location.locName == 'Central Stupa': return True
         else: return False
     elif location.locRegion == 'Temple of the Great Tree' and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana())\
           and access.canDefeat('Giasburn'):
