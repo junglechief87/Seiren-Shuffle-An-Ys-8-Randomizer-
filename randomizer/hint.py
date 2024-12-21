@@ -156,7 +156,7 @@ def createHints(shuffledLocations, parameters):
     alreadyPickedKathleen = 0 #just a flag so select only 1 flame stone
     randomLocs = [] #I will be giving full location for random checks
     usefulAdventuringGearLocs = []
-    nonRegions = ["Starting Skill"]# We will also remove some awkward ones like "Adol Starting Skill" as these aren't really checks
+    nonRegions = ["Starting Skill", "Lombardia"]# We will also remove some awkward ones like "Adol Starting Skill" as these aren't really checks
     nonItems = ["Defeated", "End the Lacrimosa"]# Removing the "Boss defeated" item
     seenBarrenRegions = set()
 
