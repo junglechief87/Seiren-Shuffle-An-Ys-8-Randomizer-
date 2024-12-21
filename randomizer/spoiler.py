@@ -45,6 +45,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Origin Care Package: " + str(parameters.carePackage) + "\n")
     spoilerLog.write("BGM shuffle: " + str(parameters.shuffleBgm) + "\n")
     spoilerLog.write("Essence Key Sanity: " + str(parameters.essenceKeySanity) + "\n")
+    spoilerLog.write("Hints: " + str(parameters.hint) + "\n")
     spoilerLog.write("Locations:\n")
 
     for location in shuffledLocations:
@@ -59,7 +60,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
 
     spoilerLog.write('\n \n \n')
     spoilerLog.write("Playthrough:\n")
-    
+
     #We build an initial list of progression items on the way to the goal
     while len(accessibleLocation) != 0 and not win:
         while True:
