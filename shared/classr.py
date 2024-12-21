@@ -24,16 +24,13 @@ class location:
     print("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '(' + str(self.itemID) + ')x' + str(self.quantity))
 
   def writeSpoiler(self,file):
-    try:
-      if self.skill:
-        skillName = getSkillInfo(self.itemName)
-        file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + skillName[2] + ':' + skillName[1] + '\n')
-      elif self.quantity == 1:
-        file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '\n')
-      else:
-        file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + ' x ' + str(self.quantity) + '\n')
-    except Exception as e:
-        print(f"Error writing spoiler log for location {self.locRegion} - {self.locName} with item {self.itemName} x {str(self.quantity)}: {e}")
+    if self.skill:
+      skillName = getSkillInfo(self.itemName)
+      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + skillName[2] + ':' + skillName[1] + '\n')
+    elif self.quantity == 1:
+      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '\n')
+    else:
+      file.write("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + ' x ' + str(self.quantity) + '\n')
 
 class shuffledLocation(location):
   def __init__(self,location):
