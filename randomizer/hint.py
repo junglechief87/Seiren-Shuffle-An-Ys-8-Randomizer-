@@ -269,7 +269,7 @@ def format_hint(itemName, quantity, hintNumber, isFoolish, isRequired, charPortr
 
     specificLocationText = ''
     if displayFullLoc:
-        specificLocationText = locName + ' - ' + mapCheckID
+        specificLocationText = locName
 
     if isFoolish:
         itemName = ""
