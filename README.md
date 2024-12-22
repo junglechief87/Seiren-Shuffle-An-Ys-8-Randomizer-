@@ -81,6 +81,8 @@ These are settings that help with the pacing of the rando. Like most randos Seir
 
 **Essence Key Sanity**: If Former Sanctuary Crypt setting is on, the Essence Key Stones can be placed anywhere in the game and not just within the dungeon itself.
 
+**Hints**: If Hints setting is on, a set of hints will be displayed on the bulletin board in castaway village. They can also be seen in the quest menu.
+
 ## New Progression Items
 The randomizer features a variety of new progression items that are meant to take story gated events and turn them into item gated events to improve the overall experience of the rando. 
 

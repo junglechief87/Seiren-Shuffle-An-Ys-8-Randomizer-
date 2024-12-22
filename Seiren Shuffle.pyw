@@ -31,8 +31,7 @@ def buttons(inpt):
         parameters.getEssenceKeySanity(app.getCheckBox("essenceKeySanity"))
         parameters.getFormerSanctuaryCrypt(app.getCheckBox("formerSanctuaryCrypt"))
         parameters.getShuffleBgm(app.getCheckBox("shuffleBGM"))
-        parameters.getEssenceKeySanity(app.getCheckBox("essenceKeySanity"))
-        parameters.getFormerSanctuaryCrypt(app.getCheckBox("formerSanctuaryCrypt"))
+        parameters.getHint(app.getCheckBox("hints"))
         rngPatcherMain(parameters) 
         app.okBox("Task Complete", "Seed Generation Complete!")
         
@@ -68,10 +67,10 @@ def goalChange():
         app.setCheckBoxState("superWeapons","disabled")
 
 def charModeChange():
-    if app.getOptionsBox("Character Mode: ") == "Past Dana":
+    if app.getOptionBox("characterMode") == "Past Dana":
         app.setCheckBox("MKRewards", ticked=False)
         app.setCheckBoxState("MKRewards", "disabled")
-    elif app.getOptionsBox("Character Mode: ") == "Past Dana":
+    elif app.getOptionBox("characterMode") == "Standard":
         app.setCheckBox("MKRewards", ticked=True)
         app.setCheckBoxState("MKRewards", "active")
 
@@ -248,6 +247,8 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.setCheckBox("shuffleBGM", ticked=False)
     app.addNamedCheckBox("Essence Key Sanity", "essenceKeySanity", 0, 2)
     app.setCheckBox("essenceKeySanity", ticked=False)
+    app.addNamedCheckBox("Hints", "hints", 0, 3)
+    app.setCheckBox("hints", ticked=False)
     app.stopLabelFrame()
 
     app.startFrame("commands",9,0)

@@ -3,6 +3,7 @@ import shared.classr as classr
 from shared.functions import * 
 from randomizer.spoiler import *
 from randomizer.accessLogic import *
+from randomizer.hint import createHints, generateHint
 
 #constants
 blacklistRegion = ['Sanctuary Crypt']
@@ -23,10 +24,6 @@ def shuffleLocations(parameters):
     if not parameters.formerSanctuaryCrypt:
         blacklistRegion.append('Former Sanctuary Crypt')
     
-    
-    if not parameters.formerSanctuaryCrypt:
-        blacklistRegion.append('Former Sanctuary Crypt')
-
     while len(vanillaLocations) != 0:
         if vanillaLocations[0].locID in duplicateChests: #pop out duplicated locations, we'll copy these from the normal version of great river valley and valley of kings after we're done.
             chestsToCopy.append(vanillaLocations.pop(0))
@@ -87,32 +84,30 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     if not parameters.formerSanctuaryCrypt:
         blacklistRegion.append('Former Sanctuary Crypt')
 
-    # if former sanctuary crypt is on, Essence key stones are progression
-    if parameters.formerSanctuaryCrypt:
-        for index, item in enumerate(inventory):
-            if item.itemID in [703, 206]: #Essence key stone, jade pendant
-                inventory[index].progression = True
+    for item in inventory:
+        # If former sanctuary crypt is on, Essence key stones are progression
+        if parameters.formerSanctuaryCrypt and item.itemID in [703, 206]:  # Essence key stone, jade pendant
+            item.progression = True
 
-    #if we're doing seiren escape then make Mistilteinn and the Seiren Area Map progression items
-    if parameters.goal == 'Seiren Escape':
-        for index,item in enumerate(inventory):
-            if item.itemID in [9,795]:
-                inventory[index].progression = True
+        # If intercept rewards are off, make the T-memos not progression
+        if not parameters.dogiRewards and item.itemID in [760, 761, 762, 763]:  # T memos
+            item.progression = False
 
-    #if battle logic is on we have a number of items to make progression
-    if parameters.battleLogic:
-        for index,item in enumerate(inventory):
-            if item.itemID in [155,171,156,542,157,169,172,271,727,548,209,436,720]:
-                inventory[index].progression = True
+        # If we're doing Seiren Escape, make Mistilteinn and Seiren Area Map progression items
+        if parameters.goal == 'Seiren Escape' and item.itemID in [9, 795]:
+            item.progression = True
 
-    #if progressive super weapons are on then we'll change the names of these to match our in-game signage for the flags being set to acquire the super weapons at max shop level. 
-    #This will also help adjust the display for Dina's shops
-    if parameters.progressiveSuperWeapons:
-        for item in inventory:
+        # If battle logic is on, make specific items progression
+        if parameters.battleLogic and item.itemID in [155, 171, 156, 542, 157, 169, 172, 271, 727, 548, 209, 436, 720]:
+            item.progression = True
+
+        # If progressive super weapons are on, rename specific items
+        if parameters.progressiveSuperWeapons:
             if item.itemID == 9:
                 item.itemName = 'Broken Mistilteinn'
             elif item.itemID == 13:
                 item.itemName = 'Broken Spirit Ring'
+
 
     #pull out progression items to place first for easier processing
     #for release the psyches goal we need to pull those into their own list too
@@ -161,7 +156,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     random.shuffle(progressionInventory) 
     if parameters.shuffleParty:
         for index,partyMember in enumerate(progressionInventory):
-            if partyMember.itemName == 'Dana' and partyMember.party and parameters.charMode = 'Past Dana':
+            if partyMember.itemName == 'Dana' and partyMember.party and parameters.charMode == 'Past Dana':
                 startingPartyMember = progressionInventory.pop(index)
             elif partyMember.party:
                 startingPartyMember = progressionInventory.pop(index)
@@ -250,7 +245,14 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
             chestsToCopy[3].locID = 179
             shuffledLocations.append(chestsToCopy[3])
 
-    generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests)
+    hints = []
+    if parameters.hint:
+        hints = createHints(shuffledLocations, parameters)    
+
+    #Passing the hints list to the generateSpoiler to label the required hints (based on the spoiler log playthough)
+    generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests, hints)
+    #This function will be responsible for clearing hints in case hints are toggled off
+    generateHint(hints, parameters)
         
     return shuffledLocations
 
