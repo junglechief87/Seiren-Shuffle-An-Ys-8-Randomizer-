@@ -467,7 +467,7 @@ class guiInput:
     self.hint = None
   
   def getSeed(seed):
-    guiInput.seed = seed
+    guiInput.seed = int(seed)
 
   def getGoal(option,num,numOctus,charMode):
     guiInput.goal = option
