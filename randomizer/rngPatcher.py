@@ -6,7 +6,7 @@ from randomizer.crew import *
 from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
 from patch.chestPatcher import *
-from randomizer.audioShuffleExtraFiles import *
+from randomizer.audioShuffle import *
 
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
@@ -756,11 +756,15 @@ def goal(parameters):
         selectionSphereAccess ="""
 function "goal"
 {{
-    if(WORK[WK_NPCNUM] >= {0} && !FLAG[GF_06MP6301_GOTO_BOSSROOM])
+    if(WORK[WK_NPCNUM] >= {0})
     {{
-        SetFlag( GF_06MP6301_OPEN_STAIRS , 1 )
-	    SetFlag( GF_06MP6301_GOTO_BOSSROOM , 1 )
-        CallFunc("mp6301:init")
+        SetChrWork("LP_warpin_mp6310b", CWK_CHECKOFF, 0)
+	    SetChrPos("b020",00.00f,0.00f,0.00f)
+    }}
+    else 
+    {{
+        SetChrWork("LP_warpin_mp6310b", CWK_CHECKOFF, 1)
+        SetChrPos("b020",-100000.00f,0.00f,0.00f)
     }}
 }}
 """
