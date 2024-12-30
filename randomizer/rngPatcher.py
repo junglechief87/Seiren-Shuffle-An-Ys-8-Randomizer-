@@ -800,7 +800,19 @@ function "goal"
 #if we're only doing theos then the theos start script calls theos and the ending script calls the ending cutscene.
 #if we're doing both then the ending cutscene script instead calls origin.
 #if we're only doing origin then the theos start script calls the origin boss fight.
+#for Past Dana we only load the Io fight
 def endingHandler(parameters):
+
+    if parameters.charMode == 'Past Dana':
+        ioFightLoad = """
+    function "finalBoss"
+    {{
+        LoadArg("map/mp6569m/mp6569m.arg")
+	    EventCue("mp6569m:EV_RetryBoss")
+    }}
+    """
+        return ioFightLoad
+    
     if parameters.theosPhase == 'First':
         theosPhase = ''
     elif parameters.theosPhase == 'Second':
@@ -1189,6 +1201,7 @@ def buildPsyches(location, parameters):
     scriptName = buildLocScripts(location.locID,False)
     callPrompt = ''
     promptFight = ''
+
     if location.itemName == 'Psyches of the Sky Era':
         if parameters.charMode == 'Past Dana':
             callPrompt = 'CallFunc("rng:brazierFight")'

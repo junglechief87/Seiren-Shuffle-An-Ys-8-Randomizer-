@@ -70,9 +70,17 @@ def charModeChange():
     if app.getOptionBox("characterMode") == "Past Dana":
         app.setCheckBox("MKRewards", ticked=False)
         app.setCheckBoxState("MKRewards", "disabled")
+        app.setOptionBoxState("Final Boss: ","disabled")
+        app.setOptionBoxState("Origin Care Package: ","disabled")
+        app.setOptionBoxState("Origin Start Phase: ","disabled")
+        app.setOptionBoxState("Theos Start Phase: ","disabled")
     elif app.getOptionBox("characterMode") == "Standard":
         app.setCheckBox("MKRewards", ticked=True)
         app.setCheckBoxState("MKRewards", "active")
+        app.setOptionBoxState("Final Boss: ","active")
+        app.setOptionBoxState("Origin Care Package: ","active")
+        app.setOptionBoxState("Origin Start Phase: ","active")
+        app.setOptionBoxState("Theos Start Phase: ","active")
 
 def finalBossChange():
     if app.getOptionBox("Final Boss: ") == "Theos de Endogram":
