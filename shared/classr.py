@@ -55,8 +55,9 @@ class inventory(location):
     self.skill = location.skill
 
 class access:
-  def __init__(self, inventoryObjects):
+  def __init__(self, inventoryObjects, parameters):
     self.inventoryObjects = inventoryObjects
+    self.parameters = parameters
 
   def canDoubleJump(self):
     for item in self.inventoryObjects:
@@ -90,12 +91,16 @@ class access:
 
   def canMove(self,requiredCrew):
     count = 0
+    #This needs to be checked since Past Dana mode has the player starting with 2 additional characters, Dana's two other forms are counted by the game as castaways.
+    if self.parameters.charMode == 'Past Dana':
+      requiredCrew -= 2
+
     #since Kathleen is now progressive with the flame stones she needs to be counted as the first flame stone here.
     for item in self.inventoryObjects:
       if item.itemID == 778: #flame stones
         count+=1
         break
-
+    
     for item in self.inventoryObjects:
       if item.crew and item.itemName != 'Little Paro' and item.itemID != 778: #I used the curran2 and austen2 NPC allocated space to make kong and shoebill count towards village totals, there wasn't another free one for paro but paro is a small bird anyway so it's logical he doesn't count for moving obstacles
         count+=1

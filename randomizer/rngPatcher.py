@@ -58,7 +58,7 @@ def rngPatcherMain(parameters):
             elif location.skill:
                 patchFile = patchFile + buildSkillLocation(location,script)
             elif location.mapCheckID == 'Psyches':
-                patchFile = patchFile + buildPsyches(location)
+                patchFile = patchFile + buildPsyches(location,parameters)
 
     patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
@@ -1184,22 +1184,39 @@ def interceptUnlock():
 #The calls will be an EventCue which could be a little awkward in larger environments when it triggers but this is the best way to make these work logically.
 #The random item given, ICON3D_972, is being used to track how many wardens have been fought. It doesn't show up in inventory and the game still tracks it, which isn't true for all unused junk items, so it can be an effective hidden counter.
 #I give it when the fight loads because it's easier to plug it in here rather than after every fight and the player is locked into the fight until they've won anyway.
-def buildPsyches(location):
+#I'm hijacking this to setup a unique version of this for Past Dana so she'll have bosses that make use of her gimmicks. Still figuring out how I want to handle some of this but this is a good starting place for testing. 
+def buildPsyches(location, parameters):
     scriptName = buildLocScripts(location.locID,False)
     callPrompt = ''
     promptFight = ''
     if location.itemName == 'Psyches of the Sky Era':
-        callPrompt = 'CallFunc("rng:uraFight")'
-        promptFight = uraFight(location.locID)
+        if parameters.charMode == 'Past Dana':
+            callPrompt = 'CallFunc("rng:brazierFight")'
+            promptFight = brazierFight()
+        else:
+            callPrompt = 'CallFunc("rng:uraFight")'
+            promptFight = uraFight(location.locID)
     elif location.itemName == 'Psyches of the Insectoid Era':
-        callPrompt = 'CallFunc("rng:nestorFight")'
-        promptFight = nestorFight(location.locID)
+        if parameters.charMode == 'Past Dana':
+            callPrompt = 'CallFunc("rng:stoneFight")'
+            promptFight = stoneFight()
+        else:
+            callPrompt = 'CallFunc("rng:nestorFight")'
+            promptFight = nestorFight(location.locID)
     elif location.itemName == 'Psyches of the Frozen Era':
-        callPrompt = 'CallFunc("rng:minosFight")'
-        promptFight = minosFight(location.locID)
+        if parameters.charMode == 'Past Dana':
+            callPrompt = 'CallFunc("rng:stoneFight")'
+            promptFight = clairvoyanceFight()
+        else:
+            callPrompt = 'CallFunc("rng:minosFight")'
+            promptFight = minosFight(location.locID)
     elif location.itemName == 'Psyches of the Ocean Era':
-        callPrompt = 'CallFunc("rng:hydraFight")'
-        promptFight = hydraFight(location.locID)
+        if parameters.charMode == 'Past Dana':
+            callPrompt = 'CallFunc("rng:stoneFight")'
+            promptFight = frostFight()
+        else:
+            callPrompt = 'CallFunc("rng:hydraFight")'
+            promptFight = hydraFight(location.locID)
     elif location.itemName == 'Empty Psyches':
         callPrompt = """
     SetStopFlag(STOPFLAG_TALK)
@@ -1221,6 +1238,351 @@ function "{0}"
 {2}
 """
     return psycheFunction.format(scriptName,callPrompt,promptFight)
+
+def brazierFight():
+    script = """
+    function "brazierFight"
+    {
+        if(!FLAG[GF_SUBEV_PAST_02_BOSS])
+        {
+            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            Message("The guardian of the Chamber of Braziers is near.")
+            WaitPrompt()
+            WaitCloseWindow()
+            SetFlag( TF_MENU_SELECT, 0 )
+            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+            
+            //──────────────────────
+            //　⇒支援要請を出す
+            if( FLAG[TF_MENU_SELECT] )
+            {
+                SetEnvSEPlayState(-1, 0)
+                FadeOut(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                
+                SetFlag( TF_MENU_SELECT, 1 )	
+            }
+            //	⇒やめる
+            else
+            {
+                
+                SetFlag( TF_MENU_SELECT, 0 )
+            }
+            //──────────────────────
+
+            if( FLAG[TF_MENU_SELECT] == 0 )
+            {
+                CrossFade(FADE_CROSS)
+                SetStopFlag(STOPFLAG_NOCHARACLIP)
+                
+                ResetPartyPos()
+                ResetFollowPoint()
+                
+                RestoreCamera(0,0)
+                ResetCameraObserver(0)
+                ResetCameraZPlane()
+                Wait(FADE_CROSS)
+                
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+            else
+            {
+                SetFlag(GF_TBOX_DUMMY127,1)
+                GetItem(ICON3D_972,1)
+                LoadArg("map/mp6519m/mp6519m.arg")
+                EventCue("mp6519m:EV_RetryBoss")
+                //FadeIn(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+        }
+        else
+        {
+            SetStopFlag(STOPFLAG_TALK)
+            Message("No presence felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            ResetStopFlag(STOPFLAG_TALK)
+        }
+	}
+"""
+    return script
+
+def stoneFight(locationID):
+    script = """
+    function "stoneFight"
+    {
+        if(!FLAG[GF_SUBEV_PAST_BOSS_B2])
+        {
+            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            Message("The guardian of the Chamber of Stone is near.")
+            WaitPrompt()
+            WaitCloseWindow()
+            SetFlag( TF_MENU_SELECT, 0 )
+            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+            
+            //──────────────────────
+            //　⇒支援要請を出す
+            if( FLAG[TF_MENU_SELECT] )
+            {
+                SetEnvSEPlayState(-1, 0)
+                FadeOut(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                
+                SetFlag( TF_MENU_SELECT, 1 )	
+            }
+            //	⇒やめる
+            else
+            {
+                
+                SetFlag( TF_MENU_SELECT, 0 )
+            }
+            //──────────────────────
+
+            if( FLAG[TF_MENU_SELECT] == 0 )
+            {
+                CrossFade(FADE_CROSS)
+                SetStopFlag(STOPFLAG_NOCHARACLIP)
+                
+                ResetPartyPos()
+                ResetFollowPoint()
+                
+                RestoreCamera(0,0)
+                ResetCameraObserver(0)
+                ResetCameraZPlane()
+                Wait(FADE_CROSS)
+                
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+            else
+            {
+                SetFlag(GF_TBOX_DUMMY127,1)
+                GetItem(ICON3D_972,1)
+                LoadArg("map/mp6529m/mp6529m.arg")
+                EventCue("mp6529m:EV_RetryBoss")
+                //FadeIn(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+        }
+        else
+        {
+            SetStopFlag(STOPFLAG_TALK)
+            Message("No presence felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            ResetStopFlag(STOPFLAG_TALK)
+        }
+	}
+"""
+    return script
+
+def clairvoyanceFight(locationID):
+    script = """
+    function "clairvoyanceFight"
+    {
+        if(!FLAG[GF_SUBEV_PAST_BOSS_B3])
+        {
+            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            Message("The guardian of the Chamber of Clairvoyance is near.")
+            WaitPrompt()
+            WaitCloseWindow()
+            SetFlag( TF_MENU_SELECT, 0 )
+            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+            
+            //──────────────────────
+            //　⇒支援要請を出す
+            if( FLAG[TF_MENU_SELECT] )
+            {
+                SetEnvSEPlayState(-1, 0)
+                FadeOut(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                
+                SetFlag( TF_MENU_SELECT, 1 )	
+            }
+            //	⇒やめる
+            else
+            {
+                
+                SetFlag( TF_MENU_SELECT, 0 )
+            }
+            //──────────────────────
+
+            if( FLAG[TF_MENU_SELECT] == 0 )
+            {
+                CrossFade(FADE_CROSS)
+                SetStopFlag(STOPFLAG_NOCHARACLIP)
+                
+                ResetPartyPos()
+                ResetFollowPoint()
+                
+                RestoreCamera(0,0)
+                ResetCameraObserver(0)
+                ResetCameraZPlane()
+                Wait(FADE_CROSS)
+                
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+            else
+            {
+                SetFlag(GF_TBOX_DUMMY127,1)
+                GetItem(ICON3D_972,1)
+                LoadArg("map/mp6539m/mp6539m.arg")
+                EventCue("mp6539m:EV_RetryBoss")
+                //FadeIn(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+        }
+        else
+        {
+            SetStopFlag(STOPFLAG_TALK)
+            Message("No presence felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            ResetStopFlag(STOPFLAG_TALK)
+        }
+	}
+"""
+    return script
+
+def frostFight(locationID):
+    script = """
+    function "frostFight"
+    {
+        if(!FLAG[GF_SUBEV_PAST_BOSS_B4])
+        {
+            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            Message("The guardian of the Chamber of Frost is near.")
+            WaitPrompt()
+            WaitCloseWindow()
+            SetFlag( TF_MENU_SELECT, 0 )
+            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+            
+            //──────────────────────
+            //　⇒支援要請を出す
+            if( FLAG[TF_MENU_SELECT] )
+            {
+                SetEnvSEPlayState(-1, 0)
+                FadeOut(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                
+                SetFlag( TF_MENU_SELECT, 1 )	
+            }
+            //	⇒やめる
+            else
+            {
+                
+                SetFlag( TF_MENU_SELECT, 0 )
+            }
+            //──────────────────────
+
+            if( FLAG[TF_MENU_SELECT] == 0 )
+            {
+                CrossFade(FADE_CROSS)
+                SetStopFlag(STOPFLAG_NOCHARACLIP)
+                
+                ResetPartyPos()
+                ResetFollowPoint()
+                
+                RestoreCamera(0,0)
+                ResetCameraObserver(0)
+                ResetCameraZPlane()
+                Wait(FADE_CROSS)
+                
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+            else
+            {
+                SetFlag(GF_TBOX_DUMMY127,1)
+                GetItem(ICON3D_972,1)
+                LoadArg("map/mp6549m/mp6549m.arg")
+                EventCue("mp6549m:EV_RetryBoss")
+                //FadeIn(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+        }
+        else
+        {
+            SetStopFlag(STOPFLAG_TALK)
+            Message("No presence felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            ResetStopFlag(STOPFLAG_TALK)
+        }
+	}
+"""
+    return script
+
+def magmaFight(locationID):
+    script = """
+    function "magmaFight"
+    {
+        if(!FLAG[GF_SUBEV_PAST_BOSS_B5])
+        {
+            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            Message("The guardian of the Chamber of Frost is near.")
+            WaitPrompt()
+            WaitCloseWindow()
+            SetFlag( TF_MENU_SELECT, 0 )
+            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
+            
+            //──────────────────────
+            //　⇒支援要請を出す
+            if( FLAG[TF_MENU_SELECT] )
+            {
+                SetEnvSEPlayState(-1, 0)
+                FadeOut(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                
+                SetFlag( TF_MENU_SELECT, 1 )	
+            }
+            //	⇒やめる
+            else
+            {
+                
+                SetFlag( TF_MENU_SELECT, 0 )
+            }
+            //──────────────────────
+
+            if( FLAG[TF_MENU_SELECT] == 0 )
+            {
+                CrossFade(FADE_CROSS)
+                SetStopFlag(STOPFLAG_NOCHARACLIP)
+                
+                ResetPartyPos()
+                ResetFollowPoint()
+                
+                RestoreCamera(0,0)
+                ResetCameraObserver(0)
+                ResetCameraZPlane()
+                Wait(FADE_CROSS)
+                
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+            else
+            {
+                SetFlag(GF_TBOX_DUMMY127,1)
+                GetItem(ICON3D_972,1)
+                LoadArg("map/mp6559m/mp6559m.arg")
+                EventCue("mp6559m:EV_RetryBoss")
+                //FadeIn(FADE_BLACK,FADE_NORMAL)
+                WaitFade()
+                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
+            }
+        }
+        else
+        {
+            SetStopFlag(STOPFLAG_TALK)
+            Message("No presence felt.")
+            WaitPrompt()
+            WaitCloseWindow()
+            ResetStopFlag(STOPFLAG_TALK)
+        }
+	}
+"""
+    return script
 
 def hydraFight(locationID):
     script = """

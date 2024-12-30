@@ -1,7 +1,7 @@
 import shared.classr as classr  
 
 def canAccess(inventory,location,parameters):
-    access = classr.access(inventory)
+    access = classr.access(inventory,parameters)
     if location.locRegion == 'White Sand Cape':
         if location.locName == 'Cobalt Crag':
             if location.mapCheckID == 'TBOX03' and access.canMove(20): return True
