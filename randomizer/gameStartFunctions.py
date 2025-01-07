@@ -219,6 +219,7 @@ function "startParameters"
     SetFlag(GF_06MP6409_AFTER_INTERCEPT12,1) // Interception Battle 12 has ended
     GetItem(ICON3D_MAP,1) //start with the map for faster exploration
     SetFlag(SF_ITEMSLOT_NUM,1) //Let's adventure books actually increase slots from the start of the game.
+    SetFlag( GF_06MP6301_OPEN_STAIRS , 1 ) // open selection sphere
     //Remove all tutorials from the game
     SetFlag(    GF_HELP_A01,1 )
     SetFlag(	GF_HELP_A02,			1 )

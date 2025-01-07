@@ -216,10 +216,18 @@ def createHints(shuffledLocations, parameters):
 
     hints = (
     selected_useful_adventure_gear
+    + selected_castaways
+    + selected_barren_locs
+    )
+
+    ''' removing the random_locs from the hints as from testing these seem useless majority of the time. There should be better ways of implementing additional hints
+    hints = (
+    selected_useful_adventure_gear
     + selected_random_locs
     + selected_castaways
     + selected_barren_locs
     )
+    '''
 
     '''
     for i, hint in enumerate(hints, start=1):
@@ -247,7 +255,7 @@ def findBarrenRegions(shuffledLocations):
 
     for location in shuffledLocations:
         # once a location.progression = True, the value in the dict will always be true
-        isRegionBarren[location.locRegion] = isRegionBarren[location.locRegion] or location.progression
+        isRegionBarren[location.locRegion] = isRegionBarren[location.locRegion] or location.progression or location.itemName == "Gale Feather"
     
     return isRegionBarren
     

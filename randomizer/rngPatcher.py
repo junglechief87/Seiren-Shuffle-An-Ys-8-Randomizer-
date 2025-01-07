@@ -758,8 +758,7 @@ function "goal"
 {{
     if(WORK[WK_NPCNUM] >= {0})
     {{
-        SetChrWork("LP_warpin_mp6310b", CWK_CHECKOFF, 0)
-	    SetChrPos("b020",00.00f,0.00f,0.00f)
+        SetMapMarker( SMI_SYMBOL ,PAGE_MP6310, MARKER_EV_M06S231, 0.0f, -60.0f, 0.0f, 0.0f, -60.0f,MARKER_EV_M06S231,MN_D_MP6310,0)
     }}
     else 
     {{
@@ -773,14 +772,17 @@ function "goal"
     elif parameters.goal == 'Seiren Escape':
         selectionSphereAccess ="""
 function "goal"
-{
-    if(ALLITEMWORK[ICON3D_SHIP_PLAN] && ALLITEMWORK[ICON3D_SEIREN_CHART] && ALLITEMWORK[ICON3D_WP_ADOL_008] && !FLAG[GF_06MP6301_GOTO_BOSSROOM])
-    {
-        SetFlag( GF_06MP6301_OPEN_STAIRS , 1 )
-	    SetFlag( GF_06MP6301_GOTO_BOSSROOM , 1 )
-        CallFunc("mp6301:init")
-    }
-}
+{{
+    if(ALLITEMWORK[ICON3D_SHIP_PLAN] && ALLITEMWORK[ICON3D_SEIREN_CHART] && ALLITEMWORK[ICON3D_WP_ADOL_008])
+    {{
+        SetMapMarker( SMI_SYMBOL ,PAGE_MP6310, MARKER_EV_M06S231, 0.0f, -60.0f, 0.0f, 0.0f, -60.0f,MARKER_EV_M06S231,MN_D_MP6310,0)
+    }}
+    else 
+    {{
+        SetChrWork("LP_warpin_mp6310b", CWK_CHECKOFF, 1)
+        SetChrPos("b020",-100000.00f,0.00f,0.00f)
+    }}
+}}
 """
         return selectionSphereAccess
         
@@ -788,11 +790,14 @@ function "goal"
         selectionSphereAccess ="""
 function "goal"
 {{
-    if(ALLITEMWORK[ICON3D_972] >= {0} && !FLAG[GF_06MP6301_GOTO_BOSSROOM]) //ICON3D_972:junk item used for tracking
+    if(ALLITEMWORK[ICON3D_972] >= {0}) //ICON3D_972:junk item used for tracking
     {{
-        SetFlag( GF_06MP6301_OPEN_STAIRS , 1 )
-	    SetFlag( GF_06MP6301_GOTO_BOSSROOM , 1 )
-        CallFunc("mp6301:init")
+        SetMapMarker( SMI_SYMBOL ,PAGE_MP6310, MARKER_EV_M06S231, 0.0f, -60.0f, 0.0f, 0.0f, -60.0f,MARKER_EV_M06S231,MN_D_MP6310,0)
+    }}
+    else 
+    {{
+        SetChrWork("LP_warpin_mp6310b", CWK_CHECKOFF, 1)
+        SetChrPos("b020",-100000.00f,0.00f,0.00f)
     }}
 }}
 """

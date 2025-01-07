@@ -10,7 +10,7 @@ import soundfile as sf
 # (filename, loopFlag, loopstart, loopend) from bgm folder
 def generate_audio_info():
   # Load ys8audio.csv to get the original audio info
-  original_audio_info = []
+  original_audio_info = {} #Filename => [loop_flag, loop_start, loop_end]
   exe_dir = os.path.dirname(sys.executable)
   csv_path = os.path.join(exe_dir, 'shared', 'database', 'ys8audio.csv')
 
@@ -19,43 +19,42 @@ def generate_audio_info():
         reader = csv.reader(file)
         for row in reader:
             filename, loop_flag, loop_start, loop_end = row
-            original_audio_info.append((filename, loop_flag, loop_start, loop_end))
+            original_audio_info[filename] = [loop_start, loop_end]
+
   except FileNotFoundError:
     print(f"Error: The file '{csv_path}' was not found.")
   except Exception as e:
-    print(f"An error occurred: {e}")
-
-  # Get a set of original filenames for O(1) comparison
-  original_filenames = {info[0] for info in original_audio_info}
+    print(f"An error occurred at generate_audio_info: {e}")
 
   # List to store all audio information, including extra audio files
-  all_audio_info = original_audio_info.copy()
+  all_audio_info = []
 
   # Process extra audio files in the bgm folder
-  #bgm_folder = '../bgm'
   bgm_folder = os.path.join(exe_dir, 'bgm')
   for filename in os.listdir(bgm_folder):
-      if filename.endswith('.ogg'):
-          # Remove '.ogg' extension
-          file_base_name = filename[:-4]
+    if filename.endswith('.ogg'):
+      # Remove '.ogg' extension
+      file_base_name = filename[:-4]
+      loop_flag = "1"
+      loop_start = '00000000'
+      loop_end = '00000000'
           
-          # Skip files that are part of the original audio
-          if file_base_name in original_filenames or file_base_name == 'y8_muon':
-              continue
+      # Skip audioless files
+      if file_base_name == 'y8_muon':
+        continue
+    
+      if file_base_name in original_audio_info:
+        loop_start, loop_end = original_audio_info[file_base_name]
+      else: 
+        audio_path = os.path.join(bgm_folder, filename)
 
-          # Load the audio file to get its duration in seconds
-          audio_path = os.path.join(bgm_folder, filename)
-          loop_flag = "1"
-          #audio = AudioSegment.from_file(audio_path)
-          #track_length_in_seconds = audio.duration_seconds
+        #loop_end = int(track_length_in_seconds * 48000)
+        loop_end = len(sf.SoundFile(audio_path))
 
-          # Calculate LoopEnd
-          #loop_end = int(track_length_in_seconds * 48000)
-          loop_end = len(sf.SoundFile(audio_path))
-
-          # Create tuple with filename, LoopFlag, LoopStart, and LoopEnd
-          extra_audio_info = (file_base_name, loop_flag, '00000000', f"{loop_end:08d}")
-          all_audio_info.append(extra_audio_info)
+      # Create tuple with filename, LoopFlag, LoopStart, and LoopEnd
+      loop_end = int(loop_end)
+      extra_audio_info = (file_base_name, loop_flag, loop_start, f"{loop_end:08d}")
+      all_audio_info.append(extra_audio_info)
           
   return all_audio_info
 
@@ -110,7 +109,8 @@ def randomize_bgmtbl(seed):
 
         # Assign the shuffled values back to the rows
         for i, row in enumerate(bgmtbl_rows):
-            row[1], row[2], row[3], row[4] = audio_data[i]
+            audio_index = i % len(audio_data)  # Cycle through audio_data
+            row[1], row[2], row[3], row[4] = audio_data[audio_index]
 
         # Rebuild the modified lines
         modified_lines = []
@@ -134,7 +134,7 @@ def randomize_bgmtbl(seed):
     except FileNotFoundError:
         print(f"File '{file_path}' not found.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred at randomize_bgmtbl: {e}")
 
 
 if __name__ == "__main__":

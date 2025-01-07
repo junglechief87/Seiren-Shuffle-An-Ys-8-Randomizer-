@@ -396,10 +396,12 @@ def canAccess(inventory,location,parameters):
             elif location.mapCheckID != 'TBOX02': return True
             else: return False
         elif location.locName == 'Selection Sphere' and battleLogic(390,access,parameters):
-            if parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal) and access.canMove(parameters.numOctus): return True
-            elif parameters.goal == 'Seiren Escape' and access.hasBoat() and access.hasMistilteinn() and access.hasChart(): return True
-            elif parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numGoal) and access.hasPsyches(parameters.numOctus): return True
-            else: return False
+            if location.mapCheckID == 'Goal':
+                if parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal) and access.canMove(parameters.numOctus): return True
+                elif parameters.goal == 'Seiren Escape' and access.hasBoat() and access.hasMistilteinn() and access.hasChart(): return True
+                elif parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numGoal) and access.hasPsyches(parameters.numOctus): return True
+                else: return False
+            elif location.mapCheckID != 'Goal': return True
         else: return False
     
     elif 'Former Sanctuary Crypt' in location.locRegion and access.hasDina() and (access.past2() or (access.past3() and access.hasDana()))and access.canDefeat('Giasburn') and access.canSeeDark() and access.hasJadePendant() and battleLogic(390,access,parameters):
