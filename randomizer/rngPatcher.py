@@ -758,7 +758,7 @@ function "goal"
 {{
     if(WORK[WK_NPCNUM] >= {0})
     {{
-        SetMapMarker( SMI_SYMBOL ,PAGE_MP6310, MARKER_EV_M06S231, 0.0f, -60.0f, 0.0f, 0.0f, -60.0f,MARKER_EV_M06S231,MN_D_MP6310,0)
+        // filler
     }}
     else 
     {{
@@ -775,7 +775,7 @@ function "goal"
 {{
     if(ALLITEMWORK[ICON3D_SHIP_PLAN] && ALLITEMWORK[ICON3D_SEIREN_CHART] && ALLITEMWORK[ICON3D_WP_ADOL_008])
     {{
-        SetMapMarker( SMI_SYMBOL ,PAGE_MP6310, MARKER_EV_M06S231, 0.0f, -60.0f, 0.0f, 0.0f, -60.0f,MARKER_EV_M06S231,MN_D_MP6310,0)
+        // filler
     }}
     else 
     {{
@@ -792,7 +792,7 @@ function "goal"
 {{
     if(ALLITEMWORK[ICON3D_972] >= {0}) //ICON3D_972:junk item used for tracking
     {{
-        SetMapMarker( SMI_SYMBOL ,PAGE_MP6310, MARKER_EV_M06S231, 0.0f, -60.0f, 0.0f, 0.0f, -60.0f,MARKER_EV_M06S231,MN_D_MP6310,0)
+        // filler
     }}
     else 
     {{
