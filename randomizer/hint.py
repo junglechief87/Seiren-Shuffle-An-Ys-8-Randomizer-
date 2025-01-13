@@ -359,13 +359,6 @@ def findBarrenRegions(shuffledLocations, parameters):
     isRodProgression = isChainLocsProgression["FishRewards"]
     isEssenceKeyProgression = isChainLocsProgression["EssenceKey"]
 
-    '''
-    print("isJewelProgression: ", isJewelProgression)
-    print("isRecipeProgression: ", isRecipeProgression)
-    print("isRodProgression: ", isRodProgression)
-    print("isEssenceKeyProgression: ", isEssenceKeyProgression)
-    '''
-
     for location in shuffledLocations:
         # once a location.progression = True, the value in the dict will always be true
         isRegionNotBarren[location.locRegion] = (
@@ -377,13 +370,6 @@ def findBarrenRegions(shuffledLocations, parameters):
             ("Recipe Book" in location.itemName and isRecipeProgression) or
             (location.itemName == "Essence Key Stone" and isEssenceKeyProgression)
             )
-    '''
-        if (location.progression and not any(nonItem in location.itemName for nonItem in nonItems)) or location.itemName == "Gale Feather" or (location.itemName == "Prismatic Jewel" and isJewelProgression) or (location.itemName == "Fishing Rod" and isRodProgression) or("Recipe Book" in location.itemName and isRecipeProgression) or (location.itemName == "Essence Key Stone" and isEssenceKeyProgression) :
-            print("Location ", location.locRegion, "Is not barren because of ", location.itemName, (location.progression and not any(nonItem in location.itemName for nonItem in nonItems)), (location.itemName == "Prismatic Jewel" and isJewelProgression), (location.itemName == "Fishing Rod" and isRodProgression), ("Recipe Book" in location.itemName and isRecipeProgression), (location.itemName == "Essence Key Stone" and isEssenceKeyProgression))
-    for key in isRegionNotBarren:
-        if isRegionNotBarren[key] == False:
-            print(key, " is barren")
-    '''
 
     return isRegionNotBarren
     
