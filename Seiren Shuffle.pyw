@@ -5,10 +5,12 @@ import shared.classr as classr
 from randomizer.rngPatcher import *
 from patch.chestPatcher import *
 from patch.miscPatches import *
+import json
 
 seed=int(random.random()*pow(10,16))
 parameters = classr.guiInput
 parameters.getSeed(seed)
+SETTINGS_FILE = "seirenShuffleSettings.json"
 
 def buttons(inpt):
     if inpt == 'Patch Files':
@@ -33,6 +35,7 @@ def buttons(inpt):
         parameters.getShuffleBgm(app.getCheckBox("shuffleBGM"))
         parameters.getHint(app.getCheckBox("hints"))
         rngPatcherMain(parameters) 
+        saveSettings() #save settings to the json settings file
         app.okBox("Task Complete", "Seed Generation Complete!")
         
     elif inpt == 'New Seed':
@@ -48,7 +51,6 @@ def goalChange():
         app.setScaleState("octusNum","active")
         app.setScaleRange("octusNum",1,28,18)
         app.showScaleIntervals("octusNum",5)
-        app.setCheckBox("superWeapons", ticked=True)
         app.setCheckBoxState("superWeapons","active")
     elif app.getOptionBox("goal") == "Release the Psyches":
         app.setScaleState("goalCount","active")
@@ -57,7 +59,7 @@ def goalChange():
         app.setScaleState("octusNum","active")
         app.setScaleRange("octusNum",1,4,2)
         app.showScaleIntervals("octusNum",2)
-        app.setCheckBox("superWeapons", ticked=True)
+        app.setCheckBoxState("superWeapons","active")
     elif app.getOptionBox("goal") == "Seiren Escape":
         app.setScaleState("goalCount","disabled")
         app.setScaleRange("goalCount",0,0,0)
@@ -102,6 +104,166 @@ def growthUpdate():
     app.setLabel("10BossGrowth", "10 bosses:" + growthExample(10) + "x")
     app.setLabel("13BossGrowth", "13 bosses:" + growthExample(13) + "x")
 
+def saveSettings():
+    """Save current settings to a JSON file"""
+    settings = {
+        "goal": app.getOptionBox("goal"),
+        "goalCount": app.getScale("goalCount"),
+        "octusNum": app.getScale("octusNum"),
+        "characterMode": app.getOptionBox("characterMode"),
+        "finalBoss": app.getOptionBox("Final Boss: "),
+        "theosStartPhase": app.getOptionBox("Theos Start Phase: "),
+        "originCarePackage": app.getOptionBox("Origin Care Package: "),
+        "originStartPhase": app.getOptionBox("Origin Start Phase: "),
+        "crew": app.getCheckBox("crew"),
+        "party": app.getCheckBox("party"),
+        "skills": app.getCheckBox("skills"),
+        "experienceMultiplier": app.getScale("Experience Multiplier: "),
+        "expMultGrowthRate": app.getScale("Exp Mult Growth Rate (%): "),
+        "shuffleBGM": app.getCheckBox("shuffleBGM"),
+        "essenceKeySanity": app.getCheckBox("essenceKeySanity"),
+        "hints": app.getCheckBox("hints"),
+        "dogiIntercept": app.getCheckBox("dogiIntercept"),
+        "mkRewards": app.getCheckBox("MKRewards"),
+        "silvia": app.getCheckBox("silvia"),
+        "maphorash": app.getCheckBox("maphorash"),
+        "formerSanctuaryCrypt": app.getCheckBox("formerSanctuaryCrypt"),
+        "intRewards": app.getCheckBox("intRewards"),
+        "battleLogic": app.getCheckBox("battleLogic"),
+        "superWeapons": app.getCheckBox("superWeapons"),
+        "openPaths": app.getCheckBox("openPaths"),
+        "exFlameStones": app.getCheckBox("exFlameStones"),
+        "extraIngredients": app.getCheckBox("extraIngredients"),
+        "jewelTradeItems": app.getOptionBox("Jewel Trade Items: "),
+        "fishTrades": app.getOptionBox("Fish Trades: "),
+        "foodTrades": app.getOptionBox("Food Trades: "),
+        "mapCompletion": app.getOptionBox("Map Completion: "),
+        "discoveries": app.getOptionBox("Discoveries: "),
+    }
+    with open(SETTINGS_FILE, "w") as f:
+        json.dump(settings, f)
+
+def loadSettings():
+    """Load settings from the JSON settings file and apply them to the GUI"""
+    if not os.path.exists(SETTINGS_FILE):
+        return  # Use default settings if file doesn't exist
+    with open(SETTINGS_FILE, "r") as f:
+        settings = json.load(f)
+        # We get each parameter of the json, but if for some reason it doesn't exist we still assign them the default values
+
+        # Load option box values
+        app.setOptionBox("goal", settings.get("goal", "Release the Psyches"))
+        app.setScale("goalCount", settings.get("goalCount", 1))
+        app.setScale("octusNum", settings.get("octusNum", 2))
+        app.setOptionBox("characterMode", settings.get("characterMode", "Standard"))
+        app.setOptionBox("Final Boss: ", settings.get("finalBoss", "Theos de Endogram"))
+        app.setOptionBox("Theos Start Phase: ", settings.get("theosStartPhase", "First"))
+        app.setOptionBox("Origin Care Package: ", settings.get("originCarePackage", "Generous"))
+        app.setOptionBox("Origin Start Phase: ", settings.get("originStartPhase", "First"))
+        app.setCheckBox("crew", settings.get("crew", True))
+        app.setCheckBox("party", settings.get("party", True))
+        app.setCheckBox("skills", settings.get("skills", True))
+        app.setScale("Experience Multiplier: ", settings.get("experienceMultiplier", 4))
+        app.setScale("Exp Mult Growth Rate (%): ", settings.get("expMultGrowthRate", 3))
+        app.setCheckBox("shuffleBGM", settings.get("shuffleBGM", False))
+        app.setCheckBox("essenceKeySanity", settings.get("essenceKeySanity", False))
+        app.setCheckBox("hints", settings.get("hints", False))
+        app.setCheckBox("dogiIntercept", settings.get("dogiIntercept", True))
+        app.setCheckBox("MKRewards", settings.get("mkRewards", True))
+        app.setCheckBox("silvia", settings.get("silvia", True))
+        app.setCheckBox("maphorash", settings.get("maphorash", True))
+        app.setCheckBox("formerSanctuaryCrypt", settings.get("formerSanctuaryCrypt", False))
+        app.setCheckBox("intRewards", settings.get("intRewards", True))
+        app.setCheckBox("battleLogic", settings.get("battleLogic", True))
+        app.setCheckBox("superWeapons", settings.get("superWeapons", True))
+        app.setCheckBox("openPaths", settings.get("openPaths", True))
+        app.setCheckBox("exFlameStones", settings.get("exFlameStones", True))
+        app.setCheckBox("extraIngredients", settings.get("extraIngredients", True))
+        app.setOptionBox("Jewel Trade Items: ", settings.get("jewelTradeItems", "Jewel Trades Costing <= 10"))
+        app.setOptionBox("Fish Trades: ", settings.get("fishTrades", "6"))
+        app.setOptionBox("Food Trades: ", settings.get("foodTrades", "6"))
+        app.setOptionBox("Map Completion: ", settings.get("mapCompletion", "70%"))
+        app.setOptionBox("Discoveries: ", settings.get("discoveries", "All(24)"))
+
+def importSeedFromSpoilerLog(filePath):
+    try:
+        with open(filePath, 'r') as file:
+            lines = file.readlines()
+
+        # Create a dictionary of settings by splitting lines on the first ":"
+        settings = {}
+        for line in lines:
+            if line.strip() == 'Locations:': 
+                break
+            if ":" in line:
+                key, value = line.split(":", 1)
+                value = value.strip()
+                # Check if the value is a boolean (e.g., "True" or "False")
+                if value.lower() == "true":
+                    settings[key.strip()] = True
+                elif value.lower() == "false":
+                    settings[key.strip()] = False
+                else:
+                    settings[key.strip()] = value
+            elif "#" in line:
+                #This is for grabbing the seed
+                key, value = line.split("#", 1)
+                settings[key.strip()] = value.strip()
+                
+        if "Exp Mult Growth Rate (%)" in settings:
+            settings["Exp Mult Growth Rate (%)"] = int(settings["Exp Mult Growth Rate (%)"].replace('%', ''))
+
+        # Update GUI with extracted settings
+        app.setEntry("Seed#: ", settings.get("Seed", 0))
+        app.setOptionBox("goal", settings.get("Goal", "Release the Psyches"))
+        app.setScale("goalCount", settings.get("Number", 1))
+        app.setScale("octusNum", settings.get("Goal count to open Octus", 2))
+        app.setOptionBox("characterMode", settings.get("Game Mode:", "Standard"))
+        app.setOptionBox("Final Boss: ", settings.get("Final Boss", "Theos de Endogram"))
+        app.setOptionBox("Theos Start Phase: ", settings.get("Theos Start Phase", "First"))
+        app.setOptionBox("Origin Care Package: ", settings.get("Origin Care Package", "Generous"))
+        app.setOptionBox("Origin Start Phase: ", settings.get("Origin Start Phase", "First"))
+        app.setCheckBox("crew", settings.get("Shuffle Crew", True))
+        app.setCheckBox("party", settings.get("Shuffle Party", True))
+        app.setCheckBox("skills", settings.get("Skills w/ Boss Bonuses", True))
+        app.setScale("Experience Multiplier: ", settings.get("Experience Multiplier", 4))
+        app.setScale("Exp Mult Growth Rate (%): ", settings.get("Exp Mult Growth Rate (%)", 3))
+        app.setCheckBox("shuffleBGM", settings.get("BGM shuffle", False))
+        app.setCheckBox("essenceKeySanity", settings.get("Essence Key Sanity", False))
+        app.setCheckBox("hints", settings.get("Hints", False))
+        app.setCheckBox("dogiIntercept", settings.get("Dogi Intercept Rewards", True))
+        app.setCheckBox("MKRewards", settings.get("Master Kong", True))
+        app.setCheckBox("silvia", settings.get("Silvia", True))
+        app.setCheckBox("maphorash", settings.get("Maphorash", True))
+        app.setCheckBox("formerSanctuaryCrypt", settings.get("Former Sanctuary Crypt", False))
+        app.setCheckBox("intRewards", settings.get("Additional Intercept Rewards", True))
+        app.setCheckBox("battleLogic", settings.get("Battle Logic", True))
+        app.setCheckBox("superWeapons", settings.get("Progressive Super Weapons", True))
+        app.setCheckBox("openPaths", settings.get("Open Octus Paths", True))
+        app.setCheckBox("exFlameStones", settings.get("Extra Flame Stones", True))
+        app.setCheckBox("extraIngredients", settings.get("Recipes Come w\ Ingredients", True))
+        app.setOptionBox("Jewel Trade Items: ", settings.get("Jewel Trades", "Jewel Trades Costing <= 10"))
+        app.setOptionBox("Fish Trades: ", settings.get("Fish Trades", "6"))
+        app.setOptionBox("Food Trades: ", settings.get("Food Trades", "6"))
+        app.setOptionBox("Map Completion: ", settings.get("Map Completion", "70%"))
+        app.setOptionBox("Discoveries: ", settings.get("Discoveries", "All(24)"))
+
+        app.okBox("Task Complete", "Seed has been imported!")
+    except Exception as e:
+        print(f"Error importing settings: {e}")
+
+
+# Function to import seed from the selected file
+def importSeed():
+    # Open a file dialog to select the seed file
+    filePath = app.openBox(title="Select File", fileTypes=[("Text Files", "*.txt"),])
+    if filePath:
+        try:
+            importSeedFromSpoilerLog(filePath)
+        except Exception as e:
+            print("Error", f"An error occurred while importing the seed: {str(e)}") 
+
+
 def close():
     return app.yesNoBox("Exit", "Close Application?")
 
@@ -116,6 +278,7 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
     app.setEntry("Seed#: ",parameters.seed)
     app.setSticky("n")
     app.addButton("New Seed", buttons,0,1)
+    app.addButton("Import Seed", importSeed, 0, 2)
     app.stopFrame()
 
     app.startLabelFrame("Mode:",1,0,0)
@@ -258,5 +421,6 @@ with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
 
     app.setFastStop(True)
     app.setStopFunction(close)
+    loadSettings() #Load the settings if the json settings file exist
     app.go()
     

@@ -150,7 +150,7 @@ class Hint:
 #This function will create and return a list of all hints that will be displayed ingame
 def createHints(shuffledLocations, parameters):
     random.seed(parameters.seed)
-    regionHasProgression = findBarrenRegions(shuffledLocations)
+    regionHasProgression = findBarrenRegions(shuffledLocations, parameters)
     barrenLocs = []
     castawayLocs = []
     alreadyPickedKathleen = 0 #just a flag so select only 1 flame stone
@@ -207,7 +207,7 @@ def createHints(shuffledLocations, parameters):
     numberOfAdventureGearLocs = min(len(usefulAdventuringGearLocs), 1)
     numberOfRandomLocs = min(len(randomLocs), 3)
     numberOfCastawayLocs = min(len(castawayLocs), 3)
-    numberOfBarrenLocs = min(len(barrenLocs), 4)
+    numberOfBarrenLocs = min(len(barrenLocs), 5)
 
     selected_useful_adventure_gear = usefulAdventuringGearLocs[:numberOfAdventureGearLocs]
     selected_random_locs = randomLocs[:numberOfRandomLocs]
@@ -216,10 +216,18 @@ def createHints(shuffledLocations, parameters):
 
     hints = (
     selected_useful_adventure_gear
+    + selected_castaways
+    + selected_barren_locs
+    )
+
+    ''' removing the random_locs from the hints as from testing these seem useless majority of the time. There should be better ways of implementing additional hints
+    hints = (
+    selected_useful_adventure_gear
     + selected_random_locs
     + selected_castaways
     + selected_barren_locs
     )
+    '''
 
     '''
     for i, hint in enumerate(hints, start=1):
@@ -238,18 +246,132 @@ def createHints(shuffledLocations, parameters):
     '''
     return hints #list of Hint of all hints to be displayed
 
+def determine_progression(shuffledLocations, parameters):
+    """
+    This function will determine whether some progression items that lock multiple checks are indeed progression or not.
+    if Mishy Rewards is barren then all recipes are junk
+    if Jewel Trade is barren then all prismatic jewel are junk
+    if Fish Trade is barren then fishing rod is junk
+    """
+    # Initial assumptions: both are progression
+    is_jewel_progression = False
+    is_recipe_progression = False
+    is_fish_progression = False
+    is_essence_key_progression = False
+
+    # Progression items for tracking
+    jewel_trade_rewards = []
+    mishy_rewards = []
+    fish_rewards = []
+    essence_key_rewards = []
+    for location in shuffledLocations:
+        if location.locName == "Mishy Rewards":
+            mishy_rewards.append(location)
+        elif location.locName == "Jewel Trade":
+            jewel_trade_rewards.append(location)
+        elif location.locName == "Fish Trade":
+            fish_rewards.append(location)
+        elif parameters.formerSanctuaryCrypt and "Former Sanctuary Crypt" in location.locRegion:
+        # Exclude the only 3 checks that don't require any essence key stone
+            if not (
+            location.locRegion == "Former Sanctuary Crypt - B1" and
+            location.locName == "Entrance" and
+            location.mapCheckID in {"TBOX01", "TBOX02", "TBOX03"}
+            ):
+                essence_key_rewards.append(location)
+
+    while True:
+        # Previous states for comparison
+        prev_jewel_progression = is_jewel_progression
+        prev_recipe_progression = is_recipe_progression
+        prev_fish_progression = is_fish_progression
+        prev_essence_key_progression = is_essence_key_progression
+
+        # Determine if Jewel Trade rewards progression
+        for location in jewel_trade_rewards:
+            if is_jewel_progression or (location.progression and location.itemName != "Prismatic Jewel" and "Recipe Book" not in location.itemName and location.itemName != "Fishing Rod" and location.itemName != "Essence Key Stone"):
+                is_jewel_progression = True
+            elif "Recipe Book" in location.itemName and is_recipe_progression:
+                is_jewel_progression = True
+            elif location.itemName == "Fishing Rod" and is_fish_progression:
+                is_jewel_progression = True
+            elif location.itemName == "Essence Key Stone" and is_essence_key_progression:
+                is_jewel_progression = True
 
 
-def findBarrenRegions(shuffledLocations):
-    # isRegionBarren["region"]: True => has progression
-    # isRegionBarren["region"]: False => is barren
-    isRegionBarren = defaultdict(bool)
+        # Determine if Mishy Rewards rewards progression
+        for location in mishy_rewards:
+            if is_recipe_progression or (location.progression and location.itemName != "Prismatic Jewel" and "Recipe Book" not in location.itemName and location.itemName != "Fishing Rod" and location.itemName != "Essence Key Stone"):
+                is_recipe_progression = True
+            elif location.itemName == "Prismatic Jewel" and is_jewel_progression:
+                is_recipe_progression = True
+            elif location.itemName == "Fishing Rod" and is_fish_progression:
+                is_recipe_progression = True
+            elif location.itemName == "Essence Key Stone" and is_essence_key_progression:
+                is_recipe_progression = True
+
+        
+        # Determine if fish rewards progression
+        for location in fish_rewards:
+            if is_fish_progression or (location.progression and location.itemName != "Prismatic Jewel" and "Recipe Book" not in location.itemName and location.itemName != "Fishing Rod" and location.itemName != "Essence Key Stone"):
+                is_fish_progression = True
+            elif location.itemName == "Prismatic Jewel" and is_jewel_progression:
+                is_fish_progression = True
+            elif "Recipe Book" in location.itemName and is_recipe_progression:
+                is_jewel_progression = True
+            elif location.itemName == "Essence Key Stone" and is_essence_key_progression:
+                is_jewel_progression = True
+        
+        for location in essence_key_rewards:
+            if is_essence_key_progression or (location.progression and location.itemName != "Prismatic Jewel" and "Recipe Book" not in location.itemName and location.itemName != "Fishing Rod" and location.itemName != "Essence Key Stone"):
+                is_essence_key_progression = True
+            elif location.itemName == "Prismatic Jewel" and is_jewel_progression:
+                is_fish_progression = True
+            elif "Recipe Book" in location.itemName and is_recipe_progression:
+                is_jewel_progression = True
+            elif location.itemName == "Fishing Rod" and is_fish_progression:
+                is_recipe_progression = True
+
+        # Break loop if no changes
+        if (is_jewel_progression == prev_jewel_progression and
+            is_recipe_progression == prev_recipe_progression and 
+            is_fish_progression == prev_fish_progression and
+            is_essence_key_progression == prev_essence_key_progression):
+            break
+
+    return {
+        "JewelTrade": is_jewel_progression,
+        "MishyRewards": is_recipe_progression,
+        "FishRewards": is_fish_progression,
+        "EssenceKey": is_essence_key_progression
+    }
+
+
+
+def findBarrenRegions(shuffledLocations, parameters):
+    # isRegionNotBarren["region"]: True => has progression
+    # isRegionNotBarren["region"]: False => is barren
+    isRegionNotBarren = defaultdict(bool)
+    nonItems = ["Defeated", "End the Lacrimosa", "Prismatic Jewel", "Fishing Rod", "Recipe Book", "Essence Key Stone"]# Removing the "Boss defeated" item
+    isChainLocsProgression = determine_progression(shuffledLocations, parameters)
+    isJewelProgression = isChainLocsProgression["JewelTrade"]
+    isRecipeProgression = isChainLocsProgression["MishyRewards"]
+    isRodProgression = isChainLocsProgression["FishRewards"]
+    isEssenceKeyProgression = isChainLocsProgression["EssenceKey"]
 
     for location in shuffledLocations:
         # once a location.progression = True, the value in the dict will always be true
-        isRegionBarren[location.locRegion] = isRegionBarren[location.locRegion] or location.progression
-    
-    return isRegionBarren
+        isRegionNotBarren[location.locRegion] = (
+            isRegionNotBarren[location.locRegion] or 
+            location.itemName == "Gale Feather" or
+            (location.progression and not any(nonItem in location.itemName for nonItem in nonItems)) or 
+            (location.itemName == "Prismatic Jewel" and isJewelProgression) or
+            (location.itemName == "Fishing Rod" and isRodProgression) or
+            ("Recipe Book" in location.itemName and isRecipeProgression) or
+            (location.itemName == "Essence Key Stone" and isEssenceKeyProgression)
+            )
+
+    return isRegionNotBarren
     
 
 def format_hint(itemName, quantity, hintNumber, isFoolish, isRequired, charPortrait, locRegion, displayFullLoc, locName = '', mapCheckID = ''):
