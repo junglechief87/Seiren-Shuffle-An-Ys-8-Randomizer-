@@ -165,6 +165,9 @@ class access:
     return False
 
   def hasDana(self):
+    if self.parameters.charMode == 'Past Dana':
+      return True
+    
     for item in self.inventoryObjects:
       if item.itemName == 'Dana':
         return True
