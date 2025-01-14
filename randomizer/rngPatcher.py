@@ -1211,54 +1211,58 @@ def buildPsyches(location, parameters):
     callPrompt = ''
     promptFight = ''
 
-    if location.itemName == 'Psyches of the Sky Era':
+    if location.itemName == 'Psyches of the Sky Era\Braziers Fight(DANA)':
         if parameters.charMode == 'Past Dana':
             callPrompt = 'CallFunc("rng:brazierFight")'
             promptFight = brazierFight()
         else:
             callPrompt = 'CallFunc("rng:uraFight")'
             promptFight = uraFight(location.locID)
-    elif location.itemName == 'Psyches of the Insectoid Era':
+    elif location.itemName == 'Psyches of the Insectoid Era\Stone Fight(DANA)':
         if parameters.charMode == 'Past Dana':
             callPrompt = 'CallFunc("rng:stoneFight")'
             promptFight = stoneFight()
         else:
             callPrompt = 'CallFunc("rng:nestorFight")'
             promptFight = nestorFight(location.locID)
-    elif location.itemName == 'Psyches of the Frozen Era':
+    elif location.itemName == 'Psyches of the Frozen Era\Clairvoyance Fight(DANA)':
         if parameters.charMode == 'Past Dana':
-            callPrompt = 'CallFunc("rng:stoneFight")'
+            callPrompt = 'CallFunc("rng:clairvoyanceFight")'
             promptFight = clairvoyanceFight()
         else:
             callPrompt = 'CallFunc("rng:minosFight")'
             promptFight = minosFight(location.locID)
-    elif location.itemName == 'Psyches of the Ocean Era':
+    elif location.itemName == 'Psyches of the Ocean Era\Frost Fight(DANA)':
         if parameters.charMode == 'Past Dana':
-            callPrompt = 'CallFunc("rng:stoneFight")'
+            callPrompt = 'CallFunc("rng:frostFight")'
             promptFight = frostFight()
         else:
             callPrompt = 'CallFunc("rng:hydraFight")'
             promptFight = hydraFight(location.locID)
-    elif location.itemName == 'Empty Psyches':
-        callPrompt = """
-    SetStopFlag(STOPFLAG_TALK)
-    Message("No presence felt.")
-    WaitPrompt()
-    WaitCloseWindow()
-    ResetStopFlag(STOPFLAG_TALK)
-    """
-    psycheFunction = """
-function "{0}"
-{{
-    if(!FLAG[SF_BOSS_BATTLE] && !FLAG[GF_TBOX_DUMMY127])
+    elif location.itemName == 'Empty Psyches\Magma Fight(DANA)':
+        if parameters.charMode == 'Past Dana':
+            callPrompt = 'CallFunc("rng:magmaFight")'
+            promptFight = frostFight()
+        else:
+            callPrompt = """
+        SetStopFlag(STOPFLAG_TALK)
+        Message("No presence felt.")
+        WaitPrompt()
+        WaitCloseWindow()
+        ResetStopFlag(STOPFLAG_TALK)
+        """
+        psycheFunction = """
+    function "{0}"
     {{
-        WaitFade()
-	    Wait(20)
-        {1}
+        if(!FLAG[SF_BOSS_BATTLE] && !FLAG[GF_TBOX_DUMMY127])
+        {{
+            WaitFade()
+            Wait(20)
+            {1}
+        }}
     }}
-}}
-{2}
-"""
+    {2}
+    """
     return psycheFunction.format(scriptName,callPrompt,promptFight)
 
 def brazierFight():

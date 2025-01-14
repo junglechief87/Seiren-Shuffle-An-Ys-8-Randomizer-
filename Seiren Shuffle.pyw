@@ -60,6 +60,18 @@ def goalChange():
         app.setScaleRange("octusNum",1,4,2)
         app.showScaleIntervals("octusNum",2)
         app.setCheckBoxState("superWeapons","active")
+        if app.getOptionBox("characterMode") == "Past Dana":
+            app.setScaleState("goalCount","active")
+            app.setScaleRange("goalCount",1,5,3)
+            app.showScaleIntervals("goalCount",2)
+        else:
+            app.setScaleState("goalCount","active")
+            app.setScaleRange("goalCount",1,4,3)
+            app.showScaleIntervals("goalCount",2)
+        app.setScaleState("octusNum","active")
+        app.setScaleRange("octusNum",1,4,2)
+        app.showScaleIntervals("octusNum",2)
+        app.setCheckBox("superWeapons", ticked=True)
     elif app.getOptionBox("goal") == "Seiren Escape":
         app.setScaleState("goalCount","disabled")
         app.setScaleRange("goalCount",0,0,0)
@@ -70,6 +82,10 @@ def goalChange():
 
 def charModeChange():
     if app.getOptionBox("characterMode") == "Past Dana":
+        if app.getOptionBox("goal") == "Release the Psyches":
+            app.setScaleState("goalCount","active")
+            app.setScaleRange("goalCount",1,5,3)
+            app.showScaleIntervals("goalCount",2)
         app.setCheckBox("MKRewards", ticked=False)
         app.setCheckBoxState("MKRewards", "disabled")
         app.setOptionBoxState("Final Boss: ","disabled")
@@ -77,6 +93,10 @@ def charModeChange():
         app.setOptionBoxState("Origin Start Phase: ","disabled")
         app.setOptionBoxState("Theos Start Phase: ","disabled")
     elif app.getOptionBox("characterMode") == "Standard":
+        if app.getOptionBox("goal") == "Release the Psyches":
+            app.setScaleState("goalCount","active")
+            app.setScaleRange("goalCount",1,4,3)
+            app.showScaleIntervals("goalCount",2)
         app.setCheckBox("MKRewards", ticked=True)
         app.setCheckBoxState("MKRewards", "active")
         app.setOptionBoxState("Final Boss: ","active")
@@ -275,7 +295,7 @@ def importSeed():
 def close():
     return app.yesNoBox("Exit", "Close Application?")
 
-with gui('Seiren Shuffle (An Ys 8 Rando)', '700x850',font = {'size':12}) as app:
+with gui('Seiren Shuffle (An Ys 8 Rando)', '700x900',font = {'size':12}) as app:
     #The top versoin of the icon call is used for running the randomizer from source, the bottom version of the loop is for the executable compile, comment and uncomment accordingly.
     #app.setIcon(os.path.dirname(os.path.realpath(__file__)) + "/shared/ysR Logo.ico") 
     app.setIcon(os.path.dirname(os.path.realpath(sys.executable)) + "/shared/ysR Logo.ico")     

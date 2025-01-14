@@ -112,7 +112,8 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     #pull out progression items to place first for easier processing
     #for release the psyches goal we need to pull those into their own list too
     while len(inventory) != 0:
-        if inventory[0].itemName in ['Empty Psyches','Psyches of the Sky Era','Psyches of the Insectoid Era','Psyches of the Frozen Era','Psyches of the Ocean Era']:
+        if inventory[0].itemName in ['Empty Psyches','Psyches of the Sky Era\Braziers Fight(DANA)','Psyches of the Insectoid Era\Stone Fight(DANA)',\
+                                     'Psyches of the Frozen Era\Clairvoyance Fight(DANA)','Psyches of the Ocean Era\Frost Fight(DANA)','Empty Psyches\Magma Fight(DANA)']:
             psycheItem = inventory.pop(0)
             psycheItems.append(psycheItem)
         elif inventory[0].progression:    

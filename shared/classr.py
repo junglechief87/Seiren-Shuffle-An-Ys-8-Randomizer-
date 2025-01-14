@@ -407,9 +407,16 @@ class access:
   
   def hasPsyches(self,goalCount):
     count = 0
-    for item in self.inventoryObjects:
-      if item.itemName in ['Psyches of the Sky Era','Psyches of the Insectoid Era','Psyches of the Frozen Era','Psyches of the Ocean Era']:
-        count+=1
+    if self.parameters.charMode == 'Past Dana':
+      for item in self.inventoryObjects:
+        if item.itemName in ['Psyches of the Sky Era\Braziers Fight(DANA)','Psyches of the Insectoid Era\Stone Fight(DANA)',\
+                                      'Psyches of the Frozen Era\Clairvoyance Fight(DANA)','Psyches of the Ocean Era\Frost Fight(DANA)','Empty Psyches\Magma Fight(DANA)']:
+          count+=1
+    else:
+      for item in self.inventoryObjects:
+        if item.itemName in ['Psyches of the Sky Era\Braziers Fight(DANA)','Psyches of the Insectoid Era\Stone Fight(DANA)',\
+                                        'Psyches of the Frozen Era\Clairvoyance Fight(DANA)','Psyches of the Ocean Era\Frost Fight(DANA)']:
+            count+=1
         
     if count >= goalCount:
       return True
