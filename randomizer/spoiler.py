@@ -12,7 +12,8 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog = open('Ys_8_' + str(parameters.seed) + '.txt', 'w')
 
     spoilerLog.write("Seed# " + str(parameters.seed) + '\n')
-    spoilerLog.write('Goal: ' + parameters.goal + '\t \t Number: ' + str(parameters.numGoal))
+    spoilerLog.write('Goal: ' + parameters.goal + '\n')
+    spoilerLog.write('Number: ' + str(parameters.numGoal) + '\n')
     spoilerLog.write('Goal count to open Octus: ' + str(parameters.numOctus))
     spoilerLog.write('\n \n')
     spoilerLog.write("Settings:\n")

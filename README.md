@@ -77,7 +77,7 @@ These are settings that help with the pacing of the rando. Like most randos Seir
 **Origin Start Phase**: Sets which phase the Origin fight starts in. First is the mobbing phase, second is the main boss.
 
 ### Misc Settings:  
-**Shuffle BGM**: (This setting will modify the file ./text/bgmtbl.tbl so you may want to make a copy of it if you want to keep the original file) Shuffles the background tracks from the "bgm" folder from the game. This setting also allows for audio files that are external to Ys VIII. In order to add new tracks, add .OGG files to the "bgm" folder in the root directory of Ys VIII.  
+**Shuffle BGM**: (This setting will modify the file ./text/bgmtbl.tbl so you may want to make a copy of it if you want to keep the original file) Shuffles the background tracks from the "bgm" folder from the game. This setting also allows for audio files that are external to Ys VIII. In order to add new tracks, add .OGG files to the "bgm" folder in the root directory of Ys VIII. Make sure the file names are at most 8 characters long.  
 
 **Essence Key Sanity**: If Former Sanctuary Crypt setting is on, the Essence Key Stones can be placed anywhere in the game and not just within the dungeon itself.
 
