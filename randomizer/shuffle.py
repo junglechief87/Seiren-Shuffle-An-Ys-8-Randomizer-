@@ -154,21 +154,27 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     #let's shuffle the inventory just to randomize the party order then run through the intventory until we find the first party member, store it, then pop it from inventory.
     #this will be our starting character.
     #this needs to be done before the main shuffle to avoid things that aren't character being placed here.
-    random.shuffle(progressionInventory) 
-    if parameters.shuffleParty:
+    random.shuffle(progressionInventory)
+    if parameters.charMode == 'Past Dana':
+        # Select Dana as starting character
         for index,partyMember in enumerate(progressionInventory):
-            if partyMember.itemName == 'Dana' and partyMember.party and parameters.charMode == 'Past Dana':
+            if partyMember.itemName == 'Dana':
                 startingPartyMember = progressionInventory.pop(index)
-            elif partyMember.party:
+                break
+    if parameters.shuffleParty and not parameters.charMode == 'Past Dana':
+        #Select random party member as starting character
+        for index,partyMember in enumerate(progressionInventory):
+            if partyMember.party:
                 startingPartyMember = progressionInventory.pop(index)
-                #let's find the opening cutscene real quick and make sure we fill is with a playable character
-                for locNum,location in enumerate(fillLocations):
-                    if location.locName == 'Opening Cutscene':
-                        partyFillLocation = fillLocations.pop(locNum)
-                        filledLocation = combineShuffledLocAndItem(partyFillLocation,startingPartyMember)
-                        shuffledLocations.append(filledLocation)
-                        break 
-                break      
+                break
+
+    if parameters.shuffleParty or parameters.charMode == 'Past Dana':
+        for locNum,location in enumerate(fillLocations):
+            if location.locName == 'Opening Cutscene':
+                partyFillLocation = fillLocations.pop(locNum)
+                filledLocation = combineShuffledLocAndItem(partyFillLocation,startingPartyMember)
+                shuffledLocations.append(filledLocation)
+                break 
              
     #loop through progression items and place them by first pulling out the item at index 0
     #this fill algorithim is based in large part of the fill algorithim used by most modern randos

@@ -4,16 +4,19 @@ from randomizer.crew import *
 #I also included the stuff for the starting character functions because they seemed logical to group together
 def buildStartParameters(location,parameters):
     gameSettingFlags = ''
+    pastDanaFlags = '' #setting the past dana flags after loading castaway village was the only way I found to fix a problem where you spawn at a black map with either barbaros or katheew
     startingCharacter = getCrewFlags(location.itemName) 
     if parameters.charMode == "Past Dana":
         gameSettingFlags = gameSettingFlags + """
         SetFlag(SF_DANA_JOINED, 1)
-        SetFlag(SF_DANA_JOINOK, 1)
+        //SetFlag(SF_DANA_JOINOK, 1)
         //SetFlag(SF_PAST_MODE, 1)
         CallFunc("rng:soloEvent")
-        CallFunc("rng:earlyGameParty")
-        
-            // 過去編
+        //CallFunc("rng:earlyGameParty")
+        SetFlag(GF_TBOX_DUMMY129,1) //Past Dana Mode
+    """
+        pastDanaFlags = pastDanaFlags + """
+        // 過去編
         SetFlag(SF_CHRSWITCH_MODE, 1)
         JoinParty(PARTY_DANA)
         JoinParty(PARTY_DANA2)
@@ -27,9 +30,9 @@ def buildStartParameters(location,parameters):
         GetItem(ICON3D_AC_069, 1)
         GetItem(ICON3D_AC_068, 1)
         GetSkill(PARTY_DANA, -1, -1)				// スキル全部忘れる
-            //SetSkillShortCut(PARTY_DANA, -1, -1)		// スキルショートカットを全て外す
-            //GetSkill(PARTY_DANA, -1, 3)					// 現在のレベルで習得できる物を全て習得する
-            //SetSkillShortCut(PARTY_DANA, -1, 0)			// 現在のレベルに見合ったものに自動設定
+        //SetSkillShortCut(PARTY_DANA, -1, -1)		// スキルショートカットを全て外す
+        //GetSkill(PARTY_DANA, -1, 3)					// 現在のレベルで習得できる物を全て習得する
+        //SetSkillShortCut(PARTY_DANA, -1, 0)			// 現在のレベルに見合ったものに自動設定
         GetSkill(PARTY_DANA, SKILL_DANA_SP_C3, 1)
         GetSkill(PARTY_DANA, SKILL_DANA_SP_C4, 1)
         GetSkill(PARTY_DANA, SKILL_DANA_SP_B5, 1)
@@ -38,7 +41,6 @@ def buildStartParameters(location,parameters):
         SetSkillShortCut(PARTY_DANA,	ATKSKILL_CROSS,		SKILL_DANA_SP_B5)	//ミストラルエッジ
         SetSkillShortCut(PARTY_DANA,	ATKSKILL_SQUARE,	SKILL_DANA_SP_A2)	//蒼輪舞踏
         SetSkillShortCut(PARTY_DANA,	ATKSKILL_TRIANGLE,	SKILL_DANA_SP_C4)	//竜気
-        SetFlag(GF_TBOX_DUMMY129,1) //Past Dana Mode
     """
     if parameters.progressiveSuperWeapons:
         gameSettingFlags = gameSettingFlags + """
@@ -494,9 +496,10 @@ function "startParameters"
     SetChrWork(RICOTTA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] + 22))
     LoadArg("map/mp1201/mp1201.arg")
     EventCue("mp1201:EV_M01S070_ED")
+    {2}
 }}
 """
-    return startParams.format(startingCharacter,gameSettingFlags)
+    return startParams.format(startingCharacter,gameSettingFlags, pastDanaFlags)
 
 def manageEarlyGameParty(location):
     match location.itemName:
