@@ -431,6 +431,7 @@ def danaPastEvents(pastItem):
         script = """
     if(!FLAG[GF_03MP1101_LEAVE_CAMP] ) //primordial passage access
     {
+        SetFlag(GF_TBOX_DUMMY131, 1) // activate load zone to pinnacle from temple approach
         SetFlag(GF_03MP1101_LEAVE_CAMP,1)
         GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"The path up The Mountain is open.",0,0)
         WaitPrompt()

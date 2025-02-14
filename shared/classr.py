@@ -473,6 +473,7 @@ class guiInput:
     self.openOctusPaths = None
     self.extraFlameStones = None
     self.extraIngredients = None
+    self.northSideOpen = None
     self.finalBoss = None
     self.theosPhase = None
     self.originPhase = None
@@ -480,6 +481,9 @@ class guiInput:
     self.shuffleBgm = None
     self.essenceKeySanity = None
     self.hint = None
+    self.adventuringGearHints = None
+    self.castawayHints = None
+    self.foolishHints = None
   
   def getSeed(seed):
     guiInput.seed = int(seed)
@@ -506,13 +510,14 @@ class guiInput:
     guiInput.silvia = silvia
     guiInput.maphorash = maphorash
 
-  def getOtherToggles(intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients):
+  def getOtherToggles(intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients, northSideOpen):
     guiInput.intRewards = intRewards
     guiInput.battleLogic = battleLogic
     guiInput.progressiveSuperWeapons = superWeapons
     guiInput.openOctusPaths = openPaths
     guiInput.extraFlameStones = extraFlameStones
     guiInput.extraIngredients = extraIngredients
+    guiInput.northSideOpen = northSideOpen
 
   def getExpMult(expMult,expGrowth):
     guiInput.expMult = expMult
@@ -524,18 +529,15 @@ class guiInput:
     guiInput.theosPhase = theosPhase
     guiInput.originPhase = originPhase
     guiInput.carePackage = carePackage
-  
-  def getShuffleBgm(shuffleBgm):
-    guiInput.shuffleBgm = shuffleBgm
 
-  def getEssenceKeySanity(essenceKeySanity):
+  def getMiscSettings(shuffleBgm, essenceKeySanity, formerSanctuaryCrypt, hint, adventuringGearHints, castawayHints, foolishHints):
+    guiInput.shuffleBgm = shuffleBgm
     guiInput.essenceKeySanity = essenceKeySanity
-  
-  def getFormerSanctuaryCrypt(formerSanctuaryCrypt):
-    guiInput.formerSanctuaryCrypt = formerSanctuaryCrypt
-  
-  def getHint(hint):
+    guiInput.formerSanctuaryCrypt = formerSanctuaryCrypt  
     guiInput.hint = hint
+    guiInput.adventuringGearHints = adventuringGearHints
+    guiInput.castawayHints = castawayHints
+    guiInput.foolishHints = foolishHints
     
 class interceptReward:
   def __init__(self,stage,rewards):
