@@ -67,6 +67,11 @@ def buildStartParameters(location,parameters):
     GetItem(ICON3D_FD_SEA_SALT,3)
     GetItem(ICON3D_FD_MEAT_02,3)
     """
+        
+    if parameters.northSideOpen: #Unlocking the crystal warp point to temple approach - camp
+        gameSettingFlags = gameSettingFlags + """
+    SetMapMarker( SMI_CHECKED_WARPPT, PAGE_F039, MARKER_CP_MP4111, -131, 587, 121, -131, 587, CP_MP4111, MN_F_MP4111, 0) 
+    """
 
         
     startParams = """

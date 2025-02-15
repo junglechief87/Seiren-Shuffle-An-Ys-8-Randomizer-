@@ -303,7 +303,7 @@ def checkLodiniaMarshland(location, access, parameters):
             (access.canSwampWalk() or access.canUnderwater()) and 
             (
                 (location.mapCheckID == 'Fermented Sap' and 
-                 access.canSwampWalk() and access.canDoubleJump()) or 
+                 access.canSwampWalk() and access.canDoubleJump() and access.canClimb()) or 
                 (location.mapCheckID != 'Fermented Sap')
             )
         ),
@@ -327,7 +327,7 @@ def checkVistaRidge(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkArcheozoicChasm(location, access, parameters):
-    if not (canAccessNorthSide(access, parameters) and access.past5()):
+    if not (canAccessNorthSide(access, parameters) and eterniaOpen(access) and access.past5()):
         return False
 
     location_checks = {
@@ -359,7 +359,7 @@ def checkArcheozoicChasm(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkBoladoMonastery(location, access, parameters):
-    if not (canAccessNorthSide(access, parameters) and  access.past5()):
+    if not (canAccessNorthSide(access, parameters) and eterniaOpen(access) and  access.past5()):
         return False
 
     location_checks = {
@@ -452,7 +452,8 @@ def checkBajaTower(location, access, parameters):
         canAccessNorthSide(access, parameters) and
         eterniaOpen(access) and
         access.past4() and 
-        access.hasDana()
+        access.hasDana() and
+        access.canClimb() #Adding this because of northSideOpen
     ):
         return False
 
@@ -479,6 +480,10 @@ def checkTowalHighway(location, access, parameters):
         ):
         return False
     
+    if location.mapCheckID == 'Katthew Join' and not access.canClimb():
+        # with northSideOpen, its possible to not have grip gloves on north side now
+        return False
+
     return True
 
 def checkStonePillarWindCave(location, access, parameters):

@@ -20,7 +20,6 @@ FRAME_TITLE_STYLE = {
 
 SETTINGS_FILE = "seirenShuffleSettings.json"
 
-
 class SeedFrame(ctk.CTkFrame):
   def __init__(self, master, ):
     super().__init__(master)
@@ -68,7 +67,6 @@ class SeedFrame(ctk.CTkFrame):
     )
     if file_path:
       self.master.importSeed(file_path)
-
 
 class ModeFrame(ctk.CTkFrame):
     def __init__(self, master):
