@@ -1,5 +1,10 @@
 import shared.classr as classr  
 
+def alwaysFalse(*args):
+    #this exists because in some places I was calling lambda: False with arguments
+    #as the default value for some calls
+    return False
+
 def southSideOpen(access, parameters):
     # technically Great river valley open
     if parameters.northSideOpen:
@@ -17,7 +22,7 @@ def eterniaOpen(access):
 def templeOfGreatTreeOpen(access):
     return ( (access.past2() and access.past3()) or access.hasDana() )
 
-def FormerSanctuaryCryptOpen(location, access, parameters):
+def FormerSanctuaryCryptOpen(access, parameters):
     return (
         canAccessNorthSide(access, parameters) and
         eterniaOpen(access) and 
@@ -85,11 +90,11 @@ def canAccess(inventory, location, parameters):
         'Former Sanctuary Crypt - B6': checkFSC_B6,
     }
 
-    return regionChecks.get(location.locRegion, lambda: False)(location, access, parameters)
+    return regionChecks.get(location.locRegion, alwaysFalse)(location, access, parameters)
 
 def checkFSC_B6(location, access, parameters):
     return (
-        FormerSanctuaryCryptOpen(access) and 
+        FormerSanctuaryCryptOpen(access, parameters) and 
         access.canDoubleJump() and
         access.hasEssenceKeyStone(6) and 
         access.canUndead() and
@@ -97,7 +102,7 @@ def checkFSC_B6(location, access, parameters):
     )
 
 def checkFSC_B5(location, access, parameters):
-    if not (FormerSanctuaryCryptOpen(access) and 
+    if not (FormerSanctuaryCryptOpen(access, parameters) and 
         access.canDoubleJump() and
         access.hasEssenceKeyStone(6) and 
         access.canUndead() and
@@ -122,7 +127,7 @@ def checkFSC_B5(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkFSC_B4(location, access, parameters):
-    if not (FormerSanctuaryCryptOpen(access) and 
+    if not (FormerSanctuaryCryptOpen(access, parameters) and 
             access.canDoubleJump() and
             access.hasEssenceKeyStone(3) and 
             access.canUndead() and
@@ -143,7 +148,7 @@ def checkFSC_B4(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkFSC_B3(location, access, parameters):
-    if not (FormerSanctuaryCryptOpen(access) and 
+    if not (FormerSanctuaryCryptOpen(access, parameters) and 
             access.canDoubleJump() and
             access.hasEssenceKeyStone(3) and 
             access.canUndead() and
@@ -163,7 +168,7 @@ def checkFSC_B3(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkFSC_B2(location, access, parameters):
-    if not (FormerSanctuaryCryptOpen(access) and 
+    if not (FormerSanctuaryCryptOpen(access, parameters) and 
             access.canDoubleJump() and
             access.hasEssenceKeyStone(1)
             ):
@@ -177,7 +182,7 @@ def checkFSC_B2(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkFSC_B1(location, access, parameters):
-    if not FormerSanctuaryCryptOpen(access):
+    if not FormerSanctuaryCryptOpen(access, parameters):
         return False
     
     location_checks = {
@@ -467,7 +472,7 @@ def checkBajaTower(location, access, parameters):
             battleLogic(280, access, parameters) and access.canDoubleJump() and 
             (location.mapCheckID != 'Psyches' or (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Carveros')))
         ),
-        'Top Floor': access.canDefeat('Carveros')
+        'Top Floor': lambda: access.canDefeat('Carveros')
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -515,7 +520,7 @@ def checkSilentTower(location, access, parameters):
         'First Basement': lambda: True
     }
 
-    return location_checks.get(location.locName, lambda: False)
+    return location_checks.get(location.locName, lambda: False)()
 
 def checkWaterAndWoodHills(location, access, parameters):
     if not (access.hasDina() and southSideOpen(access, parameters)):
@@ -645,8 +650,8 @@ def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
         'Outside Cabin': lambda: True,
         'Cliffside Midpoint': lambda: True,
         'Mid-Boss Arena': lambda: True,
-        'Upper Cliffs 1': True,
-        'Upper Cliffs 2': True,
+        'Upper Cliffs 1': lambda: True,
+        'Upper Cliffs 2': lambda: True,
         'Boss Arena': lambda: (
             (location.mapCheckID in ['Master Kong Skill Laxia', 'Master Kong Laxia'] and 
              access.hasLaxia() and 
@@ -709,10 +714,10 @@ def checkOddRockCoast(location, access, parameters):
         return False
 
     return (
-        (access.mapCheckID in ['Master Kong Skill Dana', 'Master Kong Dana'] and battleLogic(200, access, parameters) 
+        (location.mapCheckID in ['Master Kong Skill Dana', 'Master Kong Dana'] and battleLogic(200, access, parameters) 
         and access.hasDana() 
         and access.canDefeat('Master Kong Sahad')) or
-        (access.mapCheckID not in ['Master Kong Skill Dana', 'Master Kong Dana'] 
+        (location.mapCheckID not in ['Master Kong Skill Dana', 'Master Kong Dana'] 
         and battleLogic(120, access, parameters))
     )
 
@@ -966,7 +971,7 @@ def checkCalmInlet(location, access, parameters):
         'Calm Inlet (Castaway Village Area)': checkCastawayVillage,
     }
 
-    return location_checks.get(location.locName, lambda: False)(location, access, parameters)
+    return location_checks.get(location.locName, alwaysFalse)(location, access, parameters)
 
 def checkIntercept(location, access, parameters):
     stage_logic = {
@@ -1100,7 +1105,7 @@ def checkWhiteSandCape(location, access, parameters):
         'Coral Shore': lambda: True
     }
 
-    return location_checks.get(location.locName, lambda: True)()
+    return location_checks.get(location.locName, lambda: False)()
 
 def canDiscover(access,requiredDiscoveries):
     discoveryCount = 1 #1 discovery in sphere 0 Cobalt Crag

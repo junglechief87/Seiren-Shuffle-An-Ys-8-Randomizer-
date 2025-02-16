@@ -7,7 +7,6 @@ from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
 from patch.chestPatcher import *
 from randomizer.audioShuffle import *
-
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
 #We named our script file rng because we need something short, our script calls from the chests are limited to 8 characters so our standard format for script call is rng:(locID where locID is a 4 digit id).
@@ -28,14 +27,13 @@ def rngPatcherMain(parameters):
 
     if parameters.shuffleBgm:
         randomize_bgmtbl(parameters.seed)
-    
+
     shuffledLocations = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
     for inc in scpIncludeList:
         patchFile = patchFile + inc + '\n'
     
     duplicateChests = [47,48,49,179]
-    
     for location in shuffledLocations:
         if location.locID not in duplicateChests: #no need to build out functions for the same location twice, these chests share flags with the not dawn version
             #cleanup the placeholders the game had for chests without scripts
@@ -59,14 +57,12 @@ def rngPatcherMain(parameters):
                 patchFile = patchFile + buildSkillLocation(location,script)
             elif location.mapCheckID == 'Psyches':
                 patchFile = patchFile + buildPsyches(location,parameters)
-
     patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
     patchFile = patchFile + octusGoal(parameters)
     patchFile = patchFile + goal(parameters)
     patchFile = patchFile + endingHandler(parameters)
-
     with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string
         fileToPatch.write(patchFile)
         fileToPatch.close()

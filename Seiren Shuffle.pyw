@@ -8,6 +8,7 @@ from patch.chestPatcher import *
 from patch.miscPatches import *
 import json
 import time
+import threading
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("System")  # Can be System, Dark, Light
@@ -578,11 +579,11 @@ class CommandsFrame(ctk.CTkFrame):
     def saveSettingsCallback(self):
         self.master.saveSettings()
 
-    def patchFiles():
-        return
+    def patchFiles(self):
+        self.master.patch_files_callback()
     
-    def generateSeed():
-        return
+    def generateSeed(self):
+        self.master.generate_seed_callback()
 
 class App(ctk.CTk):
     def __init__(self):
@@ -789,7 +790,6 @@ class App(ctk.CTk):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load settings: {str(e)}")
 
-    # Add to App class
     def importSeed(self, file_path):
         try:
             with open(file_path, 'r') as f:
@@ -827,7 +827,7 @@ class App(ctk.CTk):
                         settings["octusNum"] = value
                     else:
                         settings[key] = value
-            print(settings)
+            #print(settings)
             # Map CSV keys to GUI components
             key_mapping = {
                 'seed': (self.seedFrame.seed_var, 'set'),
@@ -941,6 +941,8 @@ class App(ctk.CTk):
             shuffle_frame.skills_var.set(False)
             shuffle_frame.mk_rewards_checkbox.configure(state="disabled")
             shuffle_frame.mk_rewards_var.set(False)
+            shuffle_frame.party_checkbox.configure(state="disabled")
+            shuffle_frame.party_var.set(True)
             
             # Disable boss options
             boss_frame.final_boss_option.configure(state="disabled")
@@ -956,7 +958,7 @@ class App(ctk.CTk):
         else:
             shuffle_frame.skills_checkbox.configure(state="normal")
             shuffle_frame.mk_rewards_checkbox.configure(state="normal")
-            
+            shuffle_frame.party_checkbox.configure(state="normal")
             # Enable boss options
             boss_frame.final_boss_option.configure(state="normal")
             boss_frame.origin_care_option.configure(state="normal" if 
@@ -983,7 +985,7 @@ class App(ctk.CTk):
 
     def generate_seed_callback(self):
         try:
-            parameters = classr.guiInput
+            parameters = classr.guiInput()
             # Get all parameters from GUI components
             parameters.getSeed(self.seedFrame.seed_var.get())
             
@@ -1012,7 +1014,7 @@ class App(ctk.CTk):
                 self.shuffleLocationsFrame.dogi_intercept_var.get(),
                 self.shuffleLocationsFrame.mk_rewards_var.get(),
                 self.shuffleLocationsFrame.silvia_var.get(),
-                self.shuffleLocationsFrame.maphorash_var.get()
+                self.shuffleLocationsFrame.mephorash_var.get()
             )
             
             # Other Toggles
@@ -1046,9 +1048,9 @@ class App(ctk.CTk):
                 self.miscSettingsFrame.essence_key_sanity_var.get(),
                 self.shuffleLocationsFrame.former_sanctuary_crypt_var.get(),
                 self.miscSettingsFrame.hints_var.get(),
-                self.adventuring_gear_hints.get(),
-                self.castaway_hints.get(),
-                self.foolish_location_hints.get()
+                self.miscSettingsFrame.adventuring_gear_hints.get(),
+                self.miscSettingsFrame.castaway_hints.get(),
+                self.miscSettingsFrame.foolish_location_hints.get()
             )
             
             # Execute main patcher and save
@@ -1058,7 +1060,6 @@ class App(ctk.CTk):
         except Exception as e:
             messagebox.showerror("Error", f"Seed generation failed: {str(e)}")
     
-
     def show_notification(self, message, color = "#90ee90"):
         """Show a temporary notification toast in the bottom-right corner"""
         toast = ctk.CTkToplevel(self)

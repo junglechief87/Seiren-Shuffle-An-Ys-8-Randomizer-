@@ -29,7 +29,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Dogi Intercept Rewards: " + str(parameters.dogiRewards) + "\n")
     spoilerLog.write("Master Kong: " + str(parameters.mkRewards) + "\n")
     spoilerLog.write("Silvia: " + str(parameters.silvia) + "\n")
-    spoilerLog.write("Maphorash: " + str(parameters.maphorash) + "\n")
+    spoilerLog.write("Mephorash: " + str(parameters.maphorash) + "\n")
     spoilerLog.write("Former Sanctuary Crypt: " + str(parameters.formerSanctuaryCrypt) + "\n")
     spoilerLog.write("Additional Intercept Rewards: " + str(parameters.intRewards) + "\n")
     spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
@@ -40,6 +40,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Open Octus Paths: " + str(parameters.openOctusPaths) + "\n")
     spoilerLog.write("Extra Flame Stones: " + str(parameters.extraFlameStones) + "\n")
     spoilerLog.write("Recipes Come w\ Ingredients: " + str(parameters.extraIngredients) + "\n")
+    spoilerLog.write("North Side Open: " + str(parameters.northSideOpen) + "\n")
     spoilerLog.write("Final Boss: " + str(parameters.finalBoss) + "\n")
     spoilerLog.write("Theos Start Phase: " + str(parameters.theosPhase) + "\n")
     spoilerLog.write("Origin Start Phase: " + str(parameters.originPhase) + "\n")
@@ -47,6 +48,9 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("BGM shuffle: " + str(parameters.shuffleBgm) + "\n")
     spoilerLog.write("Essence Key Sanity: " + str(parameters.essenceKeySanity) + "\n")
     spoilerLog.write("Hints: " + str(parameters.hint) + "\n")
+    spoilerLog.write("Adventuring Gear Hints: " + str(parameters.adventuringGearHints) + "\n")
+    spoilerLog.write("Castaway Hints: " + str(parameters.castawayHints) + "\n")
+    spoilerLog.write("Foolish Location Hints: " + str(parameters.foolishHints) + "\n")
     spoilerLog.write("Locations:\n")
 
     for location in shuffledLocations:

@@ -200,14 +200,14 @@ def createHints(shuffledLocations, parameters):
     #Now we shuffle the lists, and pick the ones we want, merge them in the same list and return
     random.shuffle(castawayLocs)
     random.shuffle(usefulAdventuringGearLocs)
-    random.shuffle(randomLocs)
+    random.shuffle(randomLocs) #unused for now
     random.shuffle(barrenLocs)
 
     #Here it is probably a good idea to set these quantities in the randomizer user interface for customizeable hints
-    numberOfAdventureGearLocs = min(len(usefulAdventuringGearLocs), 1)
-    numberOfRandomLocs = min(len(randomLocs), 3)
-    numberOfCastawayLocs = min(len(castawayLocs), 3)
-    numberOfBarrenLocs = min(len(barrenLocs), 5)
+    numberOfAdventureGearLocs = min(len(usefulAdventuringGearLocs), int(parameters.adventuringGearHints))
+    numberOfRandomLocs = min(len(randomLocs), 3) #unused for now
+    numberOfCastawayLocs = min(len(castawayLocs), int(parameters.castawayHints))
+    numberOfBarrenLocs = min(len(barrenLocs), int(parameters.foolishHints))
 
     selected_useful_adventure_gear = usefulAdventuringGearLocs[:numberOfAdventureGearLocs]
     selected_random_locs = randomLocs[:numberOfRandomLocs]
