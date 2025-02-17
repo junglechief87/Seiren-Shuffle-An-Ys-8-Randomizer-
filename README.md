@@ -22,9 +22,9 @@ This is the unique identifier for the randomization of your playthrough. Seeds w
 ### Character Mode: 
 This setting changes what characters you will be controlling on your playthrough.
 
-**Standard**: The playable characters are the 6 default ones: Adol, Laxia, Sahad, Hummel, Ricotta, and Dana.  
+ - **Standard**: The playable characters are the 6 default ones: Adol, Laxia, Sahad, Hummel, Ricotta, and Dana.  
 
-**Past Dana**: The playthrough will start with Past Dana as well as Gratika and Luminous. No additional skills can be learned aside from the 4 starting ones. You will also start with the Pierce Medal and Strike Medal in your inventory since all 3 Danas hit with Slash type.
+ - **Past Dana**: The playthrough will start with Past Dana as well as Gratika and Luminous. No additional skills can be learned aside from the 4 starting ones. You will also start with the Pierce Medal and Strike Medal in your inventory since all 3 Danas hit with Slash type.
 
 ### Selection Sphere Access:
 This sets the goal for your seed and the required amount. The goal and the required number are used to determine when the player will gain access to the Selection Sphere, the game's final room that leads to the final boss. 
