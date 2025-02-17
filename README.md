@@ -68,23 +68,35 @@ These are settings that modify how much players may need to do of certain activi
 **Former Sanctuary Crypt**: Sets whether Former Sanctuary Crypt is added to the item pool. If turned off the dungeon is closed. All essence key stones are placed within the dungeon unless Essence Key Sanity is on.
 
 ### Pacing Modifiers:
-These are settings that help with the pacing of the rando. Like most randos Seiren Shuffle is designed to be complete-able in a single sitting, these settings are meant to help with that. 
-**Experience Multiplier**: Pretty straighforward, classic multiplier to EXP. I generally reccomend higher values here than what you might be used to in other randos. The new version removes the game's EXP scaling based on enemy level to help smooth the curve out and keep the player from "slingshotting" to high levels too quickly. This has the consequence that enemies give half their base EXP(the base exp value for enemies in Ys 8 is based on them being slightly higher level than the player, if they're considered the same level as the player then they drop to almost half EXP and the scaling patch makes the game think the player is always equal level to the enemy).
-**Exp Mult Growth Rate**: There are 13 bosses that are considered Major or Dungeon Bosses, each will add an small multiplier to the base EXP multiplier. The right side of the pacing modifiers breaks down how the math plays out to help the player determine how they'd like these options set.
-**Additional Intercept Rewards**: This settings causes intercepts to give out up to four additional rewards after returning to Castaway Village post intercept. Tempest Elixirs are always given out at some rate but there are also rewards to help players upgrade weapons as well as exp and stat increasing food rewards. This setting is highly encouraged as it helps a lot with endgame prep work. 
-**Battle Logic**: This attempts to help smooth over the combat pacing by guaranteeing the player always has access to some amount of strength for each boss, highly recommended this be left on expecially for Inferno. 
-**Progressive Super Weapons**: Both the Mistilteinn and Spirit Ring are in the pools now. If the player finds either with this option on they will instead be given the Broken Mistilteinn or Broken Spirit Ring. Once the forge is raised to max level speaking with Kathleen will prompt the player to fix the broken weapon and will give the Adol the Mistilteinn or Dana the Spirit Ring. 
-**Octus Paths Opened**: All the bridges in Octus will start lowered, all the bosses and mini-bosses are still present but do not need to be defeated to access everywhere in the dungeon. The mini-bosses are still an amazing EXP farm.
-**Extra Flame Stones**: Adds 3 Flame Stones to the item pool, makes hitting max level in any run more likely without being excessive. There are 7 Flame Stones by default so this puts it to a nice round 10. 
-**Recipes come w/ Ingredients**: This grants the player all ingredients necessary to cook a dish upon obtaining their respective Recipe Book.
+These are settings that help with the pacing of the rando. Like most randos Seiren Shuffle is designed to be complete-able in a single sitting, these settings are meant to help with that.   
+
+**Experience Multiplier**: Pretty straighforward, classic multiplier to EXP. I generally reccomend higher values here than what you might be used to in other randos. The new version removes the game's EXP scaling based on enemy level to help smooth the curve out and keep the player from "slingshotting" to high levels too quickly. This has the consequence that enemies give half their base EXP(the base exp value for enemies in Ys 8 is based on them being slightly higher level than the player, if they're considered the same level as the player then they drop to almost half EXP and the scaling patch makes the game think the player is always equal level to the enemy).  
+
+**Exp Mult Growth Rate**: There are 13 bosses that are considered Major or Dungeon Bosses, each will add an small multiplier to the base EXP multiplier. The right side of the pacing modifiers breaks down how the math plays out to help the player determine how they'd like these options set.  
+
+**Additional Intercept Rewards**: This settings causes intercepts to give out up to four additional rewards after returning to Castaway Village post intercept. Tempest Elixirs are always given out at some rate but there are also rewards to help players upgrade weapons as well as exp and stat increasing food rewards. This setting is highly encouraged as it helps a lot with endgame prep work.  
+
+**Battle Logic**: This attempts to help smooth over the combat pacing by guaranteeing the player always has access to some amount of strength for each boss, highly recommended this be left on expecially for Inferno.  
+
+**Progressive Super Weapons**: Both the Mistilteinn and Spirit Ring are in the pools now. If the player finds either with this option on they will instead be given the Broken Mistilteinn or Broken Spirit Ring. Once the forge is raised to max level speaking with Kathleen will prompt the player to fix the broken weapon and will give the Adol the Mistilteinn or Dana the Spirit Ring.  
+
+**Octus Paths Opened**: All the bridges in Octus will start lowered, all the bosses and mini-bosses are still present but do not need to be defeated to access everywhere in the dungeon. The mini-bosses are still an amazing EXP farm.  
+
+**Extra Flame Stones**: Adds 3 Flame Stones to the item pool, makes hitting max level in any run more likely without being excessive. There are 7 Flame Stones by default so this puts it to a nice round 10.  
+
+**Recipes come w/ Ingredients**: This grants the player all ingredients necessary to cook a dish upon obtaining their respective Recipe Book.  
+
 **North Side Open**: The playthrough will start with the Crystal Checkpoint to Temple Approach unlocked. This means that completing Mt Gendarme is no longer mandatory to access the North Side.
-And it also means that you may need to explore the North Side while underlevelled.
+And it also means that you may need to explore the North Side while underlevelled.  
 
 ### Final Boss Settings:
-**Final Boss**: Sets which boss will be the final one, Theos, Origin, or both. If set to both the fights happen consecutively.
-**Theos Start Phase**: Sets which phase the Theos fight will start in. First is normal, Second is the circular platform with the crystals, Final is the head.
-**Origin Care Package**: Origin is a long fight and a decently higher level than Theos. Since the Abyss is skipped in the rando there's an option here to help the player if they're doing both fights consecutively. Lite gives the player a few ripe items and recipes, generous gives the player stacks of ripe items and recipes.
-**Origin Start Phase**: Sets which phase the Origin fight starts in. First is the mobbing phase, second is the main boss.
+**Final Boss**: Sets which boss will be the final one, Theos, Origin, or both. If set to both the fights happen consecutively.  
+
+**Theos Start Phase**: Sets which phase the Theos fight will start in. First is normal, Second is the circular platform with the crystals, Final is the head.  
+
+**Origin Care Package**: Origin is a long fight and a decently higher level than Theos. Since the Abyss is skipped in the rando there's an option here to help the player if they're doing both fights consecutively. Lite gives the player a few ripe items and recipes, generous gives the player stacks of ripe items and recipes.  
+
+**Origin Start Phase**: Sets which phase the Origin fight starts in. First is the mobbing phase, second is the main boss.  
 
 ### Misc Settings:  
 **Shuffle BGM**: (This setting will modify the file ./text/bgmtbl.tbl so you may want to make a copy of it if you want to keep the original file) Shuffles the background tracks from the "bgm" folder from the game. This setting also allows for audio files that are external to Ys VIII. In order to add new tracks, add .OGG files to the "bgm" folder in the root directory of Ys VIII. Make sure the file names are at most 8 characters long.  
