@@ -17,7 +17,14 @@ Installation should be pretty simple.
 ## Settings
 ![settings example](https://i.imgur.com/iXKX4sT.png)
 ### Seed: 
-The is the unique identifier for the randomization of your playthrough. Seeds with the same settings and number here should generate the same playthrough.
+This is the unique identifier for the randomization of your playthrough. Seeds with the same settings and number here should generate the same playthrough.
+
+### Character Mode: 
+This setting changes what characters you will be controlling on your playthrough.
+
+**Standard**: The playable characters are the 6 default ones: Adol, Laxia, Sahad, Hummel, Ricotta, and Dana.  
+
+**Past Dana**: The playthrough will start with Past Dana as well as Gratika and Luminous. No additional skills can be learned aside from the 4 starting ones. You will also start with the Pierce Medal and Strike Medal in your inventory since all 3 Danas hit with Slash type.
 
 ### Selection Sphere Access:
 This sets the goal for your seed and the required amount. The goal and the required number are used to determine when the player will gain access to the Selection Sphere, the game's final room that leads to the final boss. 
@@ -69,6 +76,9 @@ These are settings that help with the pacing of the rando. Like most randos Seir
 **Progressive Super Weapons**: Both the Mistilteinn and Spirit Ring are in the pools now. If the player finds either with this option on they will instead be given the Broken Mistilteinn or Broken Spirit Ring. Once the forge is raised to max level speaking with Kathleen will prompt the player to fix the broken weapon and will give the Adol the Mistilteinn or Dana the Spirit Ring. 
 **Octus Paths Opened**: All the bridges in Octus will start lowered, all the bosses and mini-bosses are still present but do not need to be defeated to access everywhere in the dungeon. The mini-bosses are still an amazing EXP farm.
 **Extra Flame Stones**: Adds 3 Flame Stones to the item pool, makes hitting max level in any run more likely without being excessive. There are 7 Flame Stones by default so this puts it to a nice round 10. 
+**Recipes come w/ Ingredients**: This grants the player all ingredients necessary to cook a dish upon obtaining their respective Recipe Book.
+**North Side Open**: The playthrough will start with the Crystal Checkpoint to Temple Approach unlocked. This means that completing Mt Gendarme is no longer mandatory to access the North Side.
+And it also means that you may need to explore the North Side while underlevelled.
 
 ### Final Boss Settings:
 **Final Boss**: Sets which boss will be the final one, Theos, Origin, or both. If set to both the fights happen consecutively.
@@ -81,7 +91,11 @@ These are settings that help with the pacing of the rando. Like most randos Seir
 
 **Essence Key Sanity**: If Former Sanctuary Crypt setting is on, the Essence Key Stones can be placed anywhere in the game and not just within the dungeon itself.
 
-**Hints**: If Hints setting is on, a set of hints will be displayed on the bulletin board in castaway village. They can also be seen in the quest menu.
+**Hints**: If Hints setting is on, a set of hints will be displayed on the bulletin board in castaway village. They can also be seen in the quest menu. You can also customize the amount of each type of hint that will be displayed.
+  - *Adventuring Gear Hints*: Hints the Region where you will find a mentioned Adventuring Gear.
+  The only hintable Adventuring Gears are the ones that lock progression and the Gale Feather
+  - *Castaway Hints*: Hints the Region where you will find a mentioned Castaway.
+  - *Foolish Location Hints*: Hints a region where you will not find any progression items.
 
 ## New Progression Items
 The randomizer features a variety of new progression items that are meant to take story gated events and turn them into item gated events to improve the overall experience of the rando. 
