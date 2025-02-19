@@ -495,9 +495,11 @@ def checkStonePillarWindCave(location, access, parameters):
     if not (canAccessNorthSide(access, parameters) and access.canMove(18)):
         return False
 
-    if location.mapCheckID == 'TBOX04' and access.canDoubleJump():
+    if location.mapCheckID == 'TBOX01':
         return True
-    elif location.mapCheckID != 'TBOX04':
+    elif location.mapCheckID == 'TBOX04' and access.canDoubleJump():
+        return True
+    elif location.mapCheckID in ['TBOX02','TBOX03','TBOX05'] and access.canClimb():
         return True
 
 def checkSilentTower(location, access, parameters):
