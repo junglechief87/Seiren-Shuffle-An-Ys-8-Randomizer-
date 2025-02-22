@@ -2,13 +2,14 @@ import os.path
 import csv
 import shared.classr as classr
 import sys
-
 encode = "utf-8"
 sourceScript = "rng"
 current_directory = os.path.dirname(__file__)
 #The top versoin is used for running the randomizer from source, the bottom version of the loop is for the executable compile, comment and uncomment accordingly.
 #parent_directory = os.path.join(os.path.dirname(__file__),os.pardir)
 parent_directory = os.path.join(os.path.dirname(sys.executable))
+
+_cache = None  # Global variable for lazy loading
     
 def getLocations():
     with open(current_directory + "/database/location.csv",encoding = encode) as locDB:
@@ -73,7 +74,11 @@ def getSkillInfo(itemName):
 
                 return character,skillName,characterName
             
-def getLocFile(mapID,fileType):
+def getLocFile(mapID, fileType):
+    cache = load_cache()  # Loads cache only on first call
+    if (mapID, fileType) in cache:
+        return cache[(mapID, fileType)]
+
     #The top versoin of the loop is used for running the randomizer from source, the bottom version of the loop is for the executable compile, comment and uncomment accordingly.
     if fileType == 'script':
         #for root, dirs, files in os.walk(os.path.join(os.path.dirname(__file__),os.pardir) + "/script/"):
@@ -198,4 +203,22 @@ def getCharacterJoinLv(character):
 
     return lvScript
 
-            
+
+def load_cache():
+    """
+    Reads cache.txt and converts it into a dictionary.
+    This is used to improve time efficiency of findLocFile
+    """
+    global _cache
+    if _cache is None:  # Load only if it's not already loaded
+        _cache = {}  # Initialize empty dictionary
+        path = './shared/database/locFileCache.txt'
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                for line in f:
+                    parts = line.split(",")
+                    map_id = parts[0].strip()
+                    file_type = parts[1].strip()
+                    file_path = parts[2].strip()
+                    _cache[(map_id, file_type)] = file_path  # Convert "(mapID, fileType)" back to tuple
+    return _cache

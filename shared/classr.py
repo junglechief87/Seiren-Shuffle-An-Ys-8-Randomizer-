@@ -473,6 +473,7 @@ class guiInput:
     self.openOctusPaths = None
     self.extraFlameStones = None
     self.extraIngredients = None
+    self.northSideOpen = None
     self.finalBoss = None
     self.theosPhase = None
     self.originPhase = None
@@ -480,62 +481,63 @@ class guiInput:
     self.shuffleBgm = None
     self.essenceKeySanity = None
     self.hint = None
+    self.adventuringGearHints = None
+    self.castawayHints = None
+    self.foolishHints = None
   
-  def getSeed(seed):
-    guiInput.seed = int(seed)
+  def getSeed(self, seed):
+    self.seed = int(seed)
 
-  def getGoal(option,num,numOctus,charMode):
-    guiInput.goal = option
-    guiInput.numGoal = int(num)
-    guiInput.numOctus = int(numOctus)
-    guiInput.charMode = charMode
+  def getGoal(self, option,num,numOctus,charMode):
+    self.goal = option
+    self.numGoal = int(num)
+    self.numOctus = int(numOctus)
+    self.charMode = charMode
     
-  def getShuffleLocations(party,crew,skills):
-    guiInput.shuffleParty = party
-    guiInput.shuffleCrew = crew
-    guiInput.shuffleSkills = skills
+  def getShuffleLocations(self, party,crew,skills):
+    self.shuffleParty = party
+    self.shuffleCrew = crew
+    self.shuffleSkills = skills
   
-  def getProgressionMods(jewels,fish,disc,map,food,dogiRewards,mkRewards,silvia,maphorash):
-    guiInput.jewelTrades = jewels
-    guiInput.fishTrades = fish
-    guiInput.discoveries = disc
-    guiInput.mapCompletion = map
-    guiInput.foodTrades = food
-    guiInput.dogiRewards = dogiRewards
-    guiInput.mkRewards = mkRewards
-    guiInput.silvia = silvia
-    guiInput.maphorash = maphorash
+  def getProgressionMods(self, jewels,fish,disc,map,food,dogiRewards,mkRewards,silvia,maphorash):
+    self.jewelTrades = jewels
+    self.fishTrades = fish
+    self.discoveries = disc
+    self.mapCompletion = map
+    self.foodTrades = food
+    self.dogiRewards = dogiRewards
+    self.mkRewards = mkRewards
+    self.silvia = silvia
+    self.maphorash = maphorash
 
-  def getOtherToggles(intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients):
-    guiInput.intRewards = intRewards
-    guiInput.battleLogic = battleLogic
-    guiInput.progressiveSuperWeapons = superWeapons
-    guiInput.openOctusPaths = openPaths
-    guiInput.extraFlameStones = extraFlameStones
-    guiInput.extraIngredients = extraIngredients
+  def getOtherToggles(self, intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients, northSideOpen):
+    self.intRewards = intRewards
+    self.battleLogic = battleLogic
+    self.progressiveSuperWeapons = superWeapons
+    self.openOctusPaths = openPaths
+    self.extraFlameStones = extraFlameStones
+    self.extraIngredients = extraIngredients
+    self.northSideOpen = northSideOpen
 
-  def getExpMult(expMult,expGrowth):
-    guiInput.expMult = expMult
+  def getExpMult(self, expMult,expGrowth):
+    self.expMult = expMult
     expGrowth = expGrowth/100 + 1 #converting to growth rate percent(eg. if set to 5 convert to 1.05)
-    guiInput.expGrowth = expGrowth
+    self.expGrowth = expGrowth
 
-  def getFinalBoss(finalBoss,theosPhase,originPhase,carePackage):
-    guiInput.finalBoss = finalBoss
-    guiInput.theosPhase = theosPhase
-    guiInput.originPhase = originPhase
-    guiInput.carePackage = carePackage
-  
-  def getShuffleBgm(shuffleBgm):
-    guiInput.shuffleBgm = shuffleBgm
+  def getFinalBoss(self, finalBoss,theosPhase,originPhase,carePackage):
+    self.finalBoss = finalBoss
+    self.theosPhase = theosPhase
+    self.originPhase = originPhase
+    self.carePackage = carePackage
 
-  def getEssenceKeySanity(essenceKeySanity):
-    guiInput.essenceKeySanity = essenceKeySanity
-  
-  def getFormerSanctuaryCrypt(formerSanctuaryCrypt):
-    guiInput.formerSanctuaryCrypt = formerSanctuaryCrypt
-  
-  def getHint(hint):
-    guiInput.hint = hint
+  def getMiscSettings(self, shuffleBgm, essenceKeySanity, formerSanctuaryCrypt, hint, adventuringGearHints, castawayHints, foolishHints):
+    self.shuffleBgm = shuffleBgm
+    self.essenceKeySanity = essenceKeySanity
+    self.formerSanctuaryCrypt = formerSanctuaryCrypt  
+    self.hint = hint
+    self.adventuringGearHints = adventuringGearHints
+    self.castawayHints = castawayHints
+    self.foolishHints = foolishHints
     
 class interceptReward:
   def __init__(self,stage,rewards):

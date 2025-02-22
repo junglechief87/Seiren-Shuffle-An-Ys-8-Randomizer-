@@ -17,7 +17,14 @@ Installation should be pretty simple.
 ## Settings
 ![settings example](https://i.imgur.com/iXKX4sT.png)
 ### Seed: 
-The is the unique identifier for the randomization of your playthrough. Seeds with the same settings and number here should generate the same playthrough.
+This is the unique identifier for the randomization of your playthrough. Seeds with the same settings and number here should generate the same playthrough.
+
+### Character Mode: 
+This setting changes what characters you will be controlling on your playthrough.
+
+ - **Standard**: The playable characters are the 6 default ones: Adol, Laxia, Sahad, Hummel, Ricotta, and Dana.  
+
+ - **Past Dana**: The playthrough will start with Past Dana as well as Gratika and Luminous. No additional skills can be learned aside from the 4 starting ones. You will also start with the Pierce Medal and Strike Medal in your inventory since all 3 Danas hit with Slash type.
 
 ### Selection Sphere Access:
 This sets the goal for your seed and the required amount. The goal and the required number are used to determine when the player will gain access to the Selection Sphere, the game's final room that leads to the final boss. 
@@ -61,27 +68,46 @@ These are settings that modify how much players may need to do of certain activi
 **Former Sanctuary Crypt**: Sets whether Former Sanctuary Crypt is added to the item pool. If turned off the dungeon is closed. All essence key stones are placed within the dungeon unless Essence Key Sanity is on.
 
 ### Pacing Modifiers:
-These are settings that help with the pacing of the rando. Like most randos Seiren Shuffle is designed to be complete-able in a single sitting, these settings are meant to help with that. 
-**Experience Multiplier**: Pretty straighforward, classic multiplier to EXP. I generally reccomend higher values here than what you might be used to in other randos. The new version removes the game's EXP scaling based on enemy level to help smooth the curve out and keep the player from "slingshotting" to high levels too quickly. This has the consequence that enemies give half their base EXP(the base exp value for enemies in Ys 8 is based on them being slightly higher level than the player, if they're considered the same level as the player then they drop to almost half EXP and the scaling patch makes the game think the player is always equal level to the enemy).
-**Exp Mult Growth Rate**: There are 13 bosses that are considered Major or Dungeon Bosses, each will add an small multiplier to the base EXP multiplier. The right side of the pacing modifiers breaks down how the math plays out to help the player determine how they'd like these options set.
-**Additional Intercept Rewards**: This settings causes intercepts to give out up to four additional rewards after returning to Castaway Village post intercept. Tempest Elixirs are always given out at some rate but there are also rewards to help players upgrade weapons as well as exp and stat increasing food rewards. This setting is highly encouraged as it helps a lot with endgame prep work. 
-**Battle Logic**: This attempts to help smooth over the combat pacing by guaranteeing the player always has access to some amount of strength for each boss, highly recommended this be left on expecially for Inferno. 
-**Progressive Super Weapons**: Both the Mistilteinn and Spirit Ring are in the pools now. If the player finds either with this option on they will instead be given the Broken Mistilteinn or Broken Spirit Ring. Once the forge is raised to max level speaking with Kathleen will prompt the player to fix the broken weapon and will give the Adol the Mistilteinn or Dana the Spirit Ring. 
-**Octus Paths Opened**: All the bridges in Octus will start lowered, all the bosses and mini-bosses are still present but do not need to be defeated to access everywhere in the dungeon. The mini-bosses are still an amazing EXP farm.
-**Extra Flame Stones**: Adds 3 Flame Stones to the item pool, makes hitting max level in any run more likely without being excessive. There are 7 Flame Stones by default so this puts it to a nice round 10. 
+These are settings that help with the pacing of the rando. Like most randos Seiren Shuffle is designed to be complete-able in a single sitting, these settings are meant to help with that.   
+
+**Experience Multiplier**: Pretty straighforward, classic multiplier to EXP. I generally reccomend higher values here than what you might be used to in other randos. The new version removes the game's EXP scaling based on enemy level to help smooth the curve out and keep the player from "slingshotting" to high levels too quickly. This has the consequence that enemies give half their base EXP(the base exp value for enemies in Ys 8 is based on them being slightly higher level than the player, if they're considered the same level as the player then they drop to almost half EXP and the scaling patch makes the game think the player is always equal level to the enemy).  
+
+**Exp Mult Growth Rate**: There are 13 bosses that are considered Major or Dungeon Bosses, each will add an small multiplier to the base EXP multiplier. The right side of the pacing modifiers breaks down how the math plays out to help the player determine how they'd like these options set.  
+
+**Additional Intercept Rewards**: This settings causes intercepts to give out up to four additional rewards after returning to Castaway Village post intercept. Tempest Elixirs are always given out at some rate but there are also rewards to help players upgrade weapons as well as exp and stat increasing food rewards. This setting is highly encouraged as it helps a lot with endgame prep work.  
+
+**Battle Logic**: This attempts to help smooth over the combat pacing by guaranteeing the player always has access to some amount of strength for each boss, highly recommended this be left on expecially for Inferno.  
+
+**Progressive Super Weapons**: Both the Mistilteinn and Spirit Ring are in the pools now. If the player finds either with this option on they will instead be given the Broken Mistilteinn or Broken Spirit Ring. Once the forge is raised to max level speaking with Kathleen will prompt the player to fix the broken weapon and will give the Adol the Mistilteinn or Dana the Spirit Ring.  
+
+**Octus Paths Opened**: All the bridges in Octus will start lowered, all the bosses and mini-bosses are still present but do not need to be defeated to access everywhere in the dungeon. The mini-bosses are still an amazing EXP farm.  
+
+**Extra Flame Stones**: Adds 3 Flame Stones to the item pool, makes hitting max level in any run more likely without being excessive. There are 7 Flame Stones by default so this puts it to a nice round 10.  
+
+**Recipes come w/ Ingredients**: This grants the player all ingredients necessary to cook a dish upon obtaining their respective Recipe Book.  
+
+**North Side Open**: The playthrough will start with the Crystal Checkpoint to Temple Approach unlocked. This means that completing Mt Gendarme is no longer mandatory to access the North Side.
+And it also means that you may need to explore the North Side while underlevelled.  
 
 ### Final Boss Settings:
-**Final Boss**: Sets which boss will be the final one, Theos, Origin, or both. If set to both the fights happen consecutively.
-**Theos Start Phase**: Sets which phase the Theos fight will start in. First is normal, Second is the circular platform with the crystals, Final is the head.
-**Origin Care Package**: Origin is a long fight and a decently higher level than Theos. Since the Abyss is skipped in the rando there's an option here to help the player if they're doing both fights consecutively. Lite gives the player a few ripe items and recipes, generous gives the player stacks of ripe items and recipes.
-**Origin Start Phase**: Sets which phase the Origin fight starts in. First is the mobbing phase, second is the main boss.
+**Final Boss**: Sets which boss will be the final one, Theos, Origin, or both. If set to both the fights happen consecutively.  
+
+**Theos Start Phase**: Sets which phase the Theos fight will start in. First is normal, Second is the circular platform with the crystals, Final is the head.  
+
+**Origin Care Package**: Origin is a long fight and a decently higher level than Theos. Since the Abyss is skipped in the rando there's an option here to help the player if they're doing both fights consecutively. Lite gives the player a few ripe items and recipes, generous gives the player stacks of ripe items and recipes.  
+
+**Origin Start Phase**: Sets which phase the Origin fight starts in. First is the mobbing phase, second is the main boss.  
 
 ### Misc Settings:  
 **Shuffle BGM**: (This setting will modify the file ./text/bgmtbl.tbl so you may want to make a copy of it if you want to keep the original file) Shuffles the background tracks from the "bgm" folder from the game. This setting also allows for audio files that are external to Ys VIII. In order to add new tracks, add .OGG files to the "bgm" folder in the root directory of Ys VIII. Make sure the file names are at most 8 characters long.  
 
 **Essence Key Sanity**: If Former Sanctuary Crypt setting is on, the Essence Key Stones can be placed anywhere in the game and not just within the dungeon itself.
 
-**Hints**: If Hints setting is on, a set of hints will be displayed on the bulletin board in castaway village. They can also be seen in the quest menu.
+**Hints**: If Hints setting is on, a set of hints will be displayed on the bulletin board in castaway village. They can also be seen in the quest menu. You can also customize the amount of each type of hint that will be displayed.
+  - *Adventuring Gear Hints*: Hints the Region where you will find a mentioned Adventuring Gear.
+  The only hintable Adventuring Gears are the ones that lock progression and the Gale Feather
+  - *Castaway Hints*: Hints the Region where you will find a mentioned Castaway.
+  - *Foolish Location Hints*: Hints a region where you will not find any progression items.
 
 ## New Progression Items
 The randomizer features a variety of new progression items that are meant to take story gated events and turn them into item gated events to improve the overall experience of the rando. 
@@ -93,7 +119,8 @@ The randomizer features a variety of new progression items that are meant to tak
   - *Golden Seal of Piercing Light*: This one spawns the tree that leads into Baja Tower and also completes the quest for helping animals which spawns a new discovery on Pangaia Plains.
   - *Frozen Flower*: This one spawns the tree that protects The Palace and also completes the quest related to repairing The Monestary Door, which grants access to the optional dungeon Balado Monestary.
   - *Treasure Chest Key*: This one spawns the tree that grants access to the back half of Lodinia Marsh and is itself a key for a locked chest in the one accessible residence in The Ruins of Eternia.
-  - *Shrine Maiden Amulate*: This one is both a useful accessory while also unlocking the path to The Hill of Eternity, which is a discovery and one check. Seren Garden is restored by default in the rando though the Mistilteinn spot still requires dealing with the Wardens of Evolution.
+  - *Shrine Maiden Amulate*: This one is both a useful accessory while also unlocking the path to The Hill of Eternity, which is a discovery and one check. Seren Garden is restored by default in the rando though the Mistilteinn spot still requires dealing with the Wardens of Evolution.  
+  - *Jade Pendant*: This is the Pendant from Vanila that boosts the damage against saurians. It will also open the path to the Former Sanctuary Crypt if the setting is active.
 
 - There are now items that upgrade the shops, which includes all shops (Trade, Craft, Tailor, Smith, Brew) and unlocks new weapons to "Reforge"(Access to the shops still requires the requisite castaways that run them first). The items used for this are 7 *Flame Stones* and they unlock the upgrades progressively(in a linear order). You may be suprised to hear that in the original game the Flame Stones actually did nothing mechanically, the game's story event flags controlled the shops completely and the Flame Stones were only a guide post to let the player know the shops were upgraded, so now they actually do something and story events should no longer upgrade the shops. Hummel also gets a free weapon upgrade from shop upgrading too(This is because his reforge chain is incomplete with his starting weapon in the original game due to him leaving the party and rejoining much later so he's given his rejoin weapon as a bonus when the shops are at a certain level or when doing the next thing I will mention). The Orichalcum has an additional function, turning it into Kathleen triggers the event where the current party all get their weapons upgraded to damage Saurians, Adol, Laxia, Ricotta, Sahad, and Hummel* (Hummel gets an upgrade in the rando from this event, he didn't in the original game). This event also flips the game flag to allow the player to defeat enemies flaged as Saurians, which is very few enemies out in the world but a lot in intercepts. New in 2.0 Kathleen and the Orichalcum are part of the progressive Flame Stone path. The first Flame Stone found will give the player Kathleen.
 
