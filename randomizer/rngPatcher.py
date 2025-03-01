@@ -1248,7 +1248,7 @@ def buildPsyches(location, parameters):
         WaitCloseWindow()
         ResetStopFlag(STOPFLAG_TALK)
         """
-        psycheFunction = """
+    psycheFunction = """
     function "{0}"
     {{
         if(!FLAG[SF_BOSS_BATTLE] && !FLAG[GF_TBOX_DUMMY127])
