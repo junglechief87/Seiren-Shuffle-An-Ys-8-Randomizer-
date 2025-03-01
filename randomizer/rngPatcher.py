@@ -1248,7 +1248,7 @@ def buildPsyches(location, parameters):
         WaitCloseWindow()
         ResetStopFlag(STOPFLAG_TALK)
         """
-        psycheFunction = """
+    psycheFunction = """
     function "{0}"
     {{
         if(!FLAG[SF_BOSS_BATTLE] && !FLAG[GF_TBOX_DUMMY127])
@@ -1331,7 +1331,7 @@ def brazierFight():
 """
     return script
 
-def stoneFight(locationID):
+def stoneFight():
     script = """
     function "stoneFight"
     {
@@ -1400,7 +1400,7 @@ def stoneFight(locationID):
 """
     return script
 
-def clairvoyanceFight(locationID):
+def clairvoyanceFight():
     script = """
     function "clairvoyanceFight"
     {
@@ -1469,7 +1469,7 @@ def clairvoyanceFight(locationID):
 """
     return script
 
-def frostFight(locationID):
+def frostFight():
     script = """
     function "frostFight"
     {
@@ -1538,7 +1538,7 @@ def frostFight(locationID):
 """
     return script
 
-def magmaFight(locationID):
+def magmaFight():
     script = """
     function "magmaFight"
     {
