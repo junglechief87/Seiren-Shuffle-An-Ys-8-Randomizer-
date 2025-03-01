@@ -14,8 +14,9 @@ Installation should be pretty simple.
 7. Once that patch is complete feel free to toy with settings and generate a seed, start the game, then select new game, and you should be good to go.
 *A note on the edits this makes to the original game - The rando messes with the game's intended structure heavily so loading saves from the vanilla game will have unintended consequences, the saves won't be broken or anything just don't expect your old save files to work as intended while the rando is installed, saves from the rando will work fine.
 
+
 ## Settings
-![settings example](https://i.imgur.com/iXKX4sT.png)
+![settings example](https://i.imgur.com/SPa1Dkt.png)
 ### Seed: 
 This is the unique identifier for the randomization of your playthrough. Seeds with the same settings and number here should generate the same playthrough.
 
