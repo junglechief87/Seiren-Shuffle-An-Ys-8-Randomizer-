@@ -812,10 +812,10 @@ def endingHandler(parameters):
     if parameters.charMode == 'Past Dana':
         ioFightLoad = """
     function "finalBoss"
-    {{
+    {
         LoadArg("map/mp6569m/mp6569m.arg")
 	    EventCue("mp6569m:EV_RetryBoss")
-    }}
+    }
     """
         return ioFightLoad
     
