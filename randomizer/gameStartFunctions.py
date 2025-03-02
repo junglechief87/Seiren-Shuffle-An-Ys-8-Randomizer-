@@ -17,6 +17,7 @@ def buildStartParameters(location,parameters):
     """
         pastDanaFlags = pastDanaFlags + """
         // 過去編
+        SetFlag(SF_PAST_MODE, 1)
         SetFlag(SF_CHRSWITCH_MODE, 1)
         JoinParty(PARTY_DANA)
         JoinParty(PARTY_DANA2)
