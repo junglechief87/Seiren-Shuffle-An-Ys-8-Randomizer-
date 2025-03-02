@@ -1239,7 +1239,7 @@ def buildPsyches(location, parameters):
     elif location.itemName == 'Empty Psyches\Magma Fight(DANA)':
         if parameters.charMode == 'Past Dana':
             callPrompt = 'CallFunc("rng:magmaFight")'
-            promptFight = frostFight()
+            promptFight = magmaFight()
         else:
             callPrompt = """
         SetStopFlag(STOPFLAG_TALK)
@@ -1545,7 +1545,7 @@ def magmaFight():
         if(!FLAG[GF_SUBEV_PAST_BOSS_B5])
         {
             SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            Message("The guardian of the Chamber of Frost is near.")
+            Message("The guardian of the Chamber of Magma is near.")
             WaitPrompt()
             WaitCloseWindow()
             SetFlag( TF_MENU_SELECT, 0 )
