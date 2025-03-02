@@ -140,9 +140,15 @@ class SelectionSphereFrame(ctk.CTkFrame):
         """ Update sliders and their ranges based on selected goal """
         if choice == "Release the Psyches":
             # Enable both sliders and set range from 1 to 4
-            self.set_slider_range(self.goal_count_scale, 1, 4)
-            self.set_slider_range(self.octus_num_scale, 1, 4)
-            self.numbersOfSteps = 3  # Number of steps = range - 1
+            if self.master.modeFrame.character_mode.get() == "Past Dana":
+                self.set_slider_range(self.goal_count_scale, 1, 5)
+                self.set_slider_range(self.octus_num_scale, 1, 4)
+                self.numbersOfSteps = 4  # Number of steps = range - 1
+            if self.master.modeFrame.character_mode.get() == "Standard":
+                self.set_slider_range(self.goal_count_scale, 1, 4)
+                self.set_slider_range(self.octus_num_scale, 1, 4)
+                self.numbersOfSteps = 3  # Number of steps = range - 1
+            
             self.show_sliders(True)
 
             # Set sliders to pre-determined values
@@ -885,6 +891,9 @@ class App(ctk.CTk):
                     except Exception as e:
                         print(f"Error setting {csv_key}: {str(e)}")
 
+            # Update character mode dependencies
+            self.handle_char_mode_change(settings.get("Game Mode", "Standard"))
+            
             # Special handling for Selection Sphere Frame
             goal = settings.get("Goal", "Release the Psyches")
             goal_count = int(settings.get("goalCount", 4))
@@ -914,9 +923,6 @@ class App(ctk.CTk):
             # Force UI updates
             self.selectionsphereFrame.update_idletasks()
             self.pacingModifiersFrame.update_examples()
-
-            # Update character mode dependencies
-            self.handle_char_mode_change(settings.get("Game Mode", "Standard"))
 
             # Update final boss dependencies
             self.finalBossSettingsFrame.finalBossChange(settings.get("Final Boss", "Theos de Endogram"))
