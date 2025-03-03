@@ -230,7 +230,6 @@ function "startParameters"
 	SetFlag( GF_06MP6301_OPEN_BOSSROOM , 1) // open selection sphere
 	SetFlag( GF_06MP6310_ATTACK_BOSSROOM , 1 ) // open selection sphere
 	SetFlag( GF_GALL_EV_06_05, 1 ) // open selection sphere
-    SetFlag( GF_NPC_5_07_GOTO_VALLAY, 1) // story flag to allow hummel kong fight
     //Remove all tutorials from the game
     SetFlag(    GF_HELP_A01,1 )
     SetFlag(	GF_HELP_A02,			1 )
