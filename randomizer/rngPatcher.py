@@ -1312,6 +1312,7 @@ def brazierFight():
             {
                 SetFlag(GF_TBOX_DUMMY127,1)
                 GetItem(ICON3D_972,1)
+                SetFlag(SF_PAST_MODE, 1)
                 LoadArg("map/mp6519m/mp6519m.arg")
                 EventCue("mp6519m:EV_RetryBoss")
                 //FadeIn(FADE_BLACK,FADE_NORMAL)
@@ -1381,6 +1382,7 @@ def stoneFight():
             {
                 SetFlag(GF_TBOX_DUMMY127,1)
                 GetItem(ICON3D_972,1)
+                SetFlag(SF_PAST_MODE, 1)
                 LoadArg("map/mp6529m/mp6529m.arg")
                 EventCue("mp6529m:EV_RetryBoss")
                 //FadeIn(FADE_BLACK,FADE_NORMAL)
@@ -1450,6 +1452,7 @@ def clairvoyanceFight():
             {
                 SetFlag(GF_TBOX_DUMMY127,1)
                 GetItem(ICON3D_972,1)
+                SetFlag(SF_PAST_MODE, 1)
                 LoadArg("map/mp6539m/mp6539m.arg")
                 EventCue("mp6539m:EV_RetryBoss")
                 //FadeIn(FADE_BLACK,FADE_NORMAL)
@@ -1519,6 +1522,7 @@ def frostFight():
             {
                 SetFlag(GF_TBOX_DUMMY127,1)
                 GetItem(ICON3D_972,1)
+                SetFlag(SF_PAST_MODE, 1)
                 LoadArg("map/mp6549m/mp6549m.arg")
                 EventCue("mp6549m:EV_RetryBoss")
                 //FadeIn(FADE_BLACK,FADE_NORMAL)
@@ -1588,6 +1592,7 @@ def magmaFight():
             {
                 SetFlag(GF_TBOX_DUMMY127,1)
                 GetItem(ICON3D_972,1)
+                SetFlag(SF_PAST_MODE, 1)
                 LoadArg("map/mp6559m/mp6559m.arg")
                 EventCue("mp6559m:EV_RetryBoss")
                 //FadeIn(FADE_BLACK,FADE_NORMAL)
