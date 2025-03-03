@@ -7,11 +7,16 @@ def alwaysFalse(*args):
 
 def southSideOpen(access, parameters):
     # technically Great river valley open
-    if parameters.northSideOpen:
-        return access.canDefeat('Giasburn')
+    def isSouthSideRoute():
+        return (
+            ((access.canClimb() or access.canMove(6)) and
+            (access.canMove(8) or access.canDoubleJump())) 
+        )
     
-    return ((access.canClimb() or access.canMove(6)) and
-            (access.canMove(8) or access.canDoubleJump()))
+    def isNorthSideRoute():
+        return parameters.northSideOpen and access.canDefeat('Giasburn')
+    
+    return isSouthSideRoute() or isNorthSideRoute()
 
 def canAccessNorthSide(access, parameters):
     return  (access.canDefeat('Giasburn')) or (parameters.northSideOpen)
@@ -540,10 +545,30 @@ def checkPangaiaPlainsNight(location, access, parameters):
     return canAccessNorthSide(access, parameters) and access.canSeeDark()
 
 def checkMontGendarmeNight(location, access, parameters):
-    return (access.canClimb() and 
-            southSideOpen(access, parameters) and 
-            access.past1() and 
-            access.canSeeDark())
+    def isSouthSideRoute():
+        return (
+            access.canClimb()
+            and southSideOpen(access, parameters)
+            and access.past1()
+        )
+
+    def isNorthSideRoute():
+        return (
+            parameters.northSideOpen and
+            access.canDefeat("Giasburn") and 
+            isValidCheckIfNorth(location, access)
+        )
+
+    def isValidCheckIfNorth(location, access):
+        return (
+            location.locName != "Upper Cliffs 2" 
+            or access.canClimb()
+        )
+
+    return (
+        access.canSeeDark() and
+        (isSouthSideRoute() or isNorthSideRoute())
+    )
 
 def checkTempleOfGreatTree(location, access, parameters):
     if not (canAccessNorthSide(access, parameters) and 
@@ -709,7 +734,20 @@ def checkMontGendarme(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkPrimordialPassage(location, access, parameters):
-    return southSideOpen(access, parameters) and access.past1() and access.canClimb()
+    def isSouthSideRoute():
+        return (
+            southSideOpen(access, parameters) and 
+            access.past1() and 
+            access.canClimb()
+        )
+    
+    def isNorthSideRoute():
+        return (
+            parameters.northSideOpen and
+            access.canDefeat('Giasburn')
+        )
+    
+    return isSouthSideRoute() or isNorthSideRoute()
 
 def checkOddRockCoast(location, access, parameters):
     if not (access.canDefeat('Laspisus')):
