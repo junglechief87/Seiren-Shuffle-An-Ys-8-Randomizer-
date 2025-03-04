@@ -746,17 +746,17 @@ function "goal"
     elif parameters.goal == 'Seiren Escape':
         selectionSphereAccess ="""
 function "goal"
-{{
+{
     if(ALLITEMWORK[ICON3D_SHIP_PLAN] && ALLITEMWORK[ICON3D_SEIREN_CHART] && ALLITEMWORK[ICON3D_WP_ADOL_008])
-    {{
+    {
         // filler
-    }}
+    }
     else 
-    {{
+    {
         SetChrWork("LP_warpin_mp6310b", CWK_CHECKOFF, 1)
         SetChrPos("b020",-100000.00f,0.00f,0.00f)
-    }}
-}}
+    }
+}
 """
         return selectionSphereAccess
         
