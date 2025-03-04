@@ -103,20 +103,9 @@ function "{0}"
 }}
 """  
             else:
-                fillChest(location,location.itemID,location.quantity)
-                getItemFunction =  """
-function "{0}"
-{{
-    SetStopFlag(STOPFLAG_TALK)
-//    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
-//    GetItemMessageExPlus(-1,1,{1},"#2CBroken Mistilteinn#0C Obtained.",0,0)
-//    WaitPrompt()
-//    WaitCloseWindow()
-    {2}
-  ResetStopFlag(STOPFLAG_TALK)
-}}
-"""  
+                fillChest(location,146,location.quantity)
             return getItemFunction.format(scriptName,itemSE,script)
+        
     elif location.itemID == 13: #Spirit Ring Celesdia
         script = script + spiritRingEvent(parameters)
         if parameters.progressiveSuperWeapons:
@@ -132,19 +121,7 @@ function "{0}"
 }}
 """  
             else:
-                fillChest(location,location.itemID,location.quantity)
-                getItemFunction =  """
-function "{0}"
-{{
-    SetStopFlag(STOPFLAG_TALK)
-//    GetItem(ICON3D_WP_ADOL_009,1) //rusty sword is the best representation of broken weapon I can think of
-//    GetItemMessageExPlus(-1,1,{1},"#2CBroken Spirit Ring#4C Obtained.",0,0)
-//    WaitPrompt()
-//    WaitCloseWindow()
-    {2}
-    ResetStopFlag(STOPFLAG_TALK)
-}}
-"""  
+                fillChest(location,147,location.quantity)
             return getItemFunction.format(scriptName,itemSE,script)
     elif location.itemID == 770: #logbook from east coast cave
         script = script + pirateShipDocks()
