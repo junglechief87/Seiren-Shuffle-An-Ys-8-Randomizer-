@@ -104,6 +104,15 @@ function "{0}"
 """  
             else:
                 fillChest(location,146,location.quantity)
+
+                getItemFunction =  """
+function "{0}"
+{{
+    SetStopFlag(STOPFLAG_TALK)
+    {2}
+    ResetStopFlag(STOPFLAG_TALK)
+}}
+""" 
             return getItemFunction.format(scriptName,itemSE,script)
         
     elif location.itemID == 13: #Spirit Ring Celesdia
@@ -122,6 +131,14 @@ function "{0}"
 """  
             else:
                 fillChest(location,147,location.quantity)
+                getItemFunction =  """
+function "{0}"
+{{
+    SetStopFlag(STOPFLAG_TALK)
+    {2}
+    ResetStopFlag(STOPFLAG_TALK)
+}}
+""" 
             return getItemFunction.format(scriptName,itemSE,script)
     elif location.itemID == 770: #logbook from east coast cave
         script = script + pirateShipDocks()
