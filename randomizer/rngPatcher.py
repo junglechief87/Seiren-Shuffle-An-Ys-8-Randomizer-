@@ -18,6 +18,7 @@ genericMessage = " Obtained."
 crewMessage = " Joined the Village."
 partyMessage = " Joined the Party."
 skillMessage = " has learned skill #2C"
+landmarkMessage = ' discovered.'
 rngScriptFile = getLocFile('rng','script')
 
 
@@ -57,6 +58,8 @@ def rngPatcherMain(parameters):
                 patchFile = patchFile + buildSkillLocation(location,script)
             elif location.mapCheckID == 'Psyches':
                 patchFile = patchFile + buildPsyches(location,parameters)
+            elif 637 <= location.locID <= 660:
+                patchFile = patchFile + buildLandmarks(location,script)
     patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
@@ -1230,12 +1233,12 @@ def buildPsyches(location, parameters):
         else:
             callPrompt = 'CallFunc("rng:hydraFight")'
             promptFight = hydraFight(location.locID)
-    elif location.itemName == 'Empty Psyches\Magma Fight(DANA)':
-        if parameters.charMode == 'Past Dana':
-            callPrompt = 'CallFunc("rng:magmaFight")'
-            promptFight = magmaFight()
-        else:
-            callPrompt = """
+            
+    elif location.itemName == 'Empty Psyches\Magma Fight(DANA)' and parameters.charMode == "Past Dana":
+        callPrompt = 'CallFunc("rng:magmaFight")'
+        promptFight = magmaFight()
+    else:
+        callPrompt = """
         SetStopFlag(STOPFLAG_TALK)
         Message("No presence felt.")
         WaitPrompt()
@@ -1934,6 +1937,78 @@ def uraFight(locationID):
 """
 
     return script
+
+def buildLandmarks(location,script):
+    scriptName = buildLocScripts(location.locID, False)
+    itemIcon = -1
+    itemQuantity = 1
+    itemSE = 'ITEMMSG_SE_BETTER'
+    message = "#2C" + location.itemName + "#4C" + landmarkMessage
+
+    landmarkFlags = ['GF_LOCATION01','GF_LOCATION02','GF_LOCATION03','GF_LOCATION04','GF_LOCATION05','GF_LOCATION08','GF_LOCATION09',\
+     'GF_LOCATION10','GF_LOCATION11','GF_LOCATION13','GF_LOCATION16','GF_LOCATION17','GF_LOCATION19','GF_LOCATION21',\
+     'GF_LOCATION22','GF_LOCATION23','GF_LOCATION24','GF_LOCATION25','GF_LOCATION27','GF_LOCATION28','GF_LOCATION32',\
+     'GF_LOCATION33','GF_LOCATION34','GF_LOCATION18']
+    landmarkMarkers = [
+        'SetMapMarker(SMI_LOCATION ,PAGE_F001, MARKER_EV_LC_MP1112, 191.56f, -1038.36f, 19.90f, 191.56f, -1038.36f,LOCATION_MP1112,MN_F_SOUTHWEST_PLANE_MP1112,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F005, MARKER_EV_LC_MP1132, 248.87f, -1574.29f, 6.64f, 248.87f, -1574.29f,LOCATION_MP1132, MN_F_MP1132,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_MP1301, MARKER_EV_LC_MP1304, -168.19f, -30.17f, 1.17f , -168.19f, -30.17f,LOCATION_MP1304,MN_D_MP1304,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F008, MARKER_EV_LC_MP1117, -904.35f, -537.19f, 6.24f, -904.35f, -537.19f,LOCATION_MP1117,MN_F_MP1117,1)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F008, MARKER_EV_LC_MP1135, -724.75f, -824.40f, 151.63f,-724.75f, -824.40f,LOCATION_MP1135,MN_F_MP1135,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F002, MARKER_EV_LC_MP3104, 296.16f,-641.87f,93.75f, 296.16f,-641.87f,LOCATION_MP3104,MN_F_MP3104,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_MP4301, MARKER_EV_LC_MP4303, -95.07f,-305.72f,7.17f, -95.07f,-305.72f,LOCATION_MP4303,MN_D_EROSIONVALLEY_MP4303,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F010, MARKER_EV_LC_MP1119, 842.68f,792.22f,-2.67f, 842.68f,792.22f,LOCATION_MP1119,MN_F_MP1119,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_MP230x, MARKER_EV_LC_MP2306, 300.59f,-2.19f,12.86f, 300.59f,-2.19f,LOCATION_MP2306,MN_D_MP2306,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F014, MARKER_EV_LC_MP3107, -431.89f,-340.84f,243.95f, -431.89f,-340.84f,LOCATION_MP3107,MN_F_MP3107,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F006, MARKER_EV_LC_MP3102, -238.71f, -1189.07f, 171.47f, -238.71f, -1189.07f,LOCATION_MP3102,MN_F_MP3102,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_MP746x, MARKER_EV_LC_MP7462, 63.881f , 105.550f , 8.446f, 63.881f , 105.550f,LOCATION_MP7462,MN_D_MP7462,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F012, MARKER_EV_LC_MP1114, 627.60f, -727.38f, 26.55f, 627.60f, -727.38f,LOCATION_MP1114,MN_F_MP1114,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F004, MARKER_EV_LC_MP1116, 881.70f, -1372.22f, -0.92f, 881.70f, -1372.22f,LOCATION_MP1116,MN_F_MP1116,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_MP741x, MARKER_EV_LC_MP7411, -119.33f, -89.28f, 21.75f, -119.33f, -89.28f,LOCATION_MP7411,MN_D_MP7411,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F013, MARKER_EV_LC_MP1122, 530.35f, -1178.29f, 2.62f, 530.35f, -1178.29f,LOCATION_MP1122,MN_F_MP1122,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F031, MARKER_EV_LC_MP7102, -57.11f, 388.66f, -28.86f, -57.11f, 388.66f,LOCATION_MP7102,MN_F_MP7102,3)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F033, MARKER_EV_LC_MP5102, 185.18f, 739.42f, 116.63f, 185.18f, 739.42f,LOCATION_MP5102,MN_F_MP5102,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F034, MARKER_EV_LC_MP6116, 43.27f, 1324.20f, 52.69f, 43.27f, 1324.20f,LOCATION_MP6116,MN_F_MP6116,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F034, MARKER_EV_LC_MP6112, -11.73f, 1062.84f, 49.82f, -11.73f, 1062.84f,LOCATION_MP6112,MN_F_MP6112,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F037, MARKER_EV_LC_MP6114, -986.765f, 789.094f, 105.952f, -986.765f, 789.094f,LOCATION_MP6114,MN_F_MP6114,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_MP748x, MARKER_EV_LC_MP7481, 78.00f, 32.01f, -29.00f, 78.00f, 32.01f,LOCATION_MP7481,MN_D_MP7481,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_F038, MARKER_EV_LC_MP6109, -796.36f, 1322.28f, 66.29f, -796.36f, 1322.28f,LOCATION_MP6109,MN_F_MP6109,0)',
+        'SetMapMarker(SMI_LOCATION ,PAGE_MP747x, MARKER_EV_LC_MP7471, -40.94f,88.52f,2.60f, -40.94f,88.52f,LOCATION_MP7471,MN_D_MP7471,0)'
+    ]
+    landmarkFlag = 'SetFlag(' + landmarkFlags[(location.locID - 637)] +  ', 1)' #landmark flags are in the order they appear in the location file and landmarks start at locID 637
+    landmarkMarker = landmarkMarkers[(location.locID - 637)]
+
+    if location.event:
+        getLandmarkFunction = """
+function "{0}"
+{{
+    
+    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
+    WaitPrompt()
+    WaitCloseWindow()
+    {5}
+    {6}
+    {7}
+}}
+"""
+    else: 
+        fillChest(location,148,1)
+        getLandmarkFunction = """
+function "{0}"
+{{
+    SetStopFlag(STOPFLAG_TALK)
+    
+    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
+    WaitPrompt()
+    WaitCloseWindow()
+    {5}
+    {6}
+    {7}
+    ResetStopFlag(STOPFLAG_TALK)
+}}
+"""   
+    return getLandmarkFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,landmarkFlag,landmarkMarker,script)
+
 
 #this function runs once per map load. It's heavy handed but works to increase the exp of every enemy in the game.
 #there's a second similar formula we use for a growth rate, it's called per "major" boss defeat, which we do by just checking the flags that are set after each "major" boss and calling again.
