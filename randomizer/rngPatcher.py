@@ -1233,6 +1233,11 @@ def buildPsyches(location, parameters):
         else:
             callPrompt = 'CallFunc("rng:hydraFight")'
             promptFight = hydraFight(location.locID)
+    elif location.itemName == 'Empty Psyches\Magma Fight(DANA)' and parameters.charMode == "Past Dana":
+        callPrompt = 'CallFunc("rng:magmaFight")'
+        promptFight = magmaFight()
+    else:
+        callPrompt = """
             
     elif location.itemName == 'Empty Psyches\Magma Fight(DANA)' and parameters.charMode == "Past Dana":
         callPrompt = 'CallFunc("rng:magmaFight")'
