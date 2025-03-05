@@ -1238,12 +1238,6 @@ def buildPsyches(location, parameters):
         promptFight = magmaFight()
     else:
         callPrompt = """
-            
-    elif location.itemName == 'Empty Psyches\Magma Fight(DANA)' and parameters.charMode == "Past Dana":
-        callPrompt = 'CallFunc("rng:magmaFight")'
-        promptFight = magmaFight()
-    else:
-        callPrompt = """
         SetStopFlag(STOPFLAG_TALK)
         Message("No presence felt.")
         WaitPrompt()
