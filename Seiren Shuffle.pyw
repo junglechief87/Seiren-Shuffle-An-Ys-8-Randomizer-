@@ -234,30 +234,35 @@ class ShuffleLocationsFrame(ctk.CTkFrame):
         self.skills_checkbox = ctk.CTkCheckBox(self, text="Skills w/ Boss Bonuses", variable=self.skills_var)
         self.skills_checkbox.grid(row=1, column=2, padx=5, pady=5, sticky="w")
 
+        # Discover-Sanity Checkbox
+        self.landmark_var = ctk.BooleanVar(value=False)  # Default to False (unchecked)
+        self.landmark_checkbox = ctk.CTkCheckBox(self, text="Discover-Sanity", variable=self.landmark_var)
+        self.landmark_checkbox.grid(row=2, column=0, padx=5, pady=5, sticky="w")
+
         # Dogi Intercept Rewards Checkbox
         self.dogi_intercept_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.dogi_intercept_checkbox = ctk.CTkCheckBox(self, text="Dogi Intercept Rewards", variable=self.dogi_intercept_var)
-        self.dogi_intercept_checkbox.grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        self.dogi_intercept_checkbox.grid(row=2, column=1, padx=5, pady=5, sticky="w")
 
         # Master Kong Rewards Checkbox
         self.mk_rewards_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.mk_rewards_checkbox = ctk.CTkCheckBox(self, text="Master Kong Rewards", variable=self.mk_rewards_var)
-        self.mk_rewards_checkbox.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        self.mk_rewards_checkbox.grid(row=2, column=2, padx=5, pady=5, sticky="w")
 
         # Silvia Checkbox
         self.silvia_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.silvia_checkbox = ctk.CTkCheckBox(self, text="Silvia", variable=self.silvia_var)
-        self.silvia_checkbox.grid(row=2, column=2, padx=5, pady=5, sticky="w")
+        self.silvia_checkbox.grid(row=3, column=0, padx=5, pady=5, sticky="w")
 
         # Mephorash Checkbox
         self.mephorash_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.mephorash_checkbox = ctk.CTkCheckBox(self, text="Mephorash", variable=self.mephorash_var)
-        self.mephorash_checkbox.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.mephorash_checkbox.grid(row=3, column=1, padx=5, pady=5, sticky="w")
 
         # Former Sanctuary Crypt Checkbox
         self.former_sanctuary_crypt_var = ctk.BooleanVar(value=False)  # Default to False (unchecked)
         self.former_sanctuary_crypt_checkbox = ctk.CTkCheckBox(self, text="Former Sanctuary Crypt", variable=self.former_sanctuary_crypt_var)
-        self.former_sanctuary_crypt_checkbox.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+        self.former_sanctuary_crypt_checkbox.grid(row=3, column=2, padx=5, pady=5, sticky="w")
 
 class ProgressionPlacementModifiersFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -1007,7 +1012,8 @@ class App(ctk.CTk):
             parameters.getShuffleLocations(
                 self.shuffleLocationsFrame.party_var.get(),
                 self.shuffleLocationsFrame.crew_var.get(),
-                self.shuffleLocationsFrame.skills_var.get()
+                self.shuffleLocationsFrame.skills_var.get(),
+                self.shuffleLocationsFrame.landmark_var.get()
             )
             
             # Progression Modifiers

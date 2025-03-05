@@ -480,6 +480,7 @@ class guiInput:
     self.carePackage = None
     self.shuffleBgm = None
     self.essenceKeySanity = None
+    self.discoverySanity = None
     self.hint = None
     self.adventuringGearHints = None
     self.castawayHints = None
@@ -494,10 +495,11 @@ class guiInput:
     self.numOctus = int(numOctus)
     self.charMode = charMode
     
-  def getShuffleLocations(self, party,crew,skills):
+  def getShuffleLocations(self, party,crew,skills,discoverySanity):
     self.shuffleParty = party
     self.shuffleCrew = crew
     self.shuffleSkills = skills
+    self.discoverySanity = discoverySanity
   
   def getProgressionMods(self, jewels,fish,disc,map,food,dogiRewards,mkRewards,silvia,maphorash):
     self.jewelTrades = jewels
@@ -533,7 +535,7 @@ class guiInput:
   def getMiscSettings(self, shuffleBgm, essenceKeySanity, formerSanctuaryCrypt, hint, adventuringGearHints, castawayHints, foolishHints):
     self.shuffleBgm = shuffleBgm
     self.essenceKeySanity = essenceKeySanity
-    self.formerSanctuaryCrypt = formerSanctuaryCrypt  
+    self.formerSanctuaryCrypt = formerSanctuaryCrypt
     self.hint = hint
     self.adventuringGearHints = adventuringGearHints
     self.castawayHints = castawayHints
