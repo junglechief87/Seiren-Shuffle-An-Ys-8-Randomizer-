@@ -5,7 +5,7 @@ def getCrewFlags(name):
     match name:
         case "Adol":
             flag = """
-    if (FLAG[GF_TBOX_DUMMY129])
+    if (FLAG[GF_TBOX_DUMMY129]) //Past Dana Mode
     {
         SetFlag(SF_RESERVE10_JOINOK,1)
     }
@@ -41,7 +41,7 @@ def getCrewFlags(name):
 
         case "Laxia": #vanilla function call on mp1101 script rng:0401
             flag = """
-    if (FLAG[GF_TBOX_DUMMY129])
+    if (FLAG[GF_TBOX_DUMMY129]) //Past Dana Mode
     {
         SetFlag(SF_RESERVE13_JOINOK,1)
     }
@@ -100,7 +100,7 @@ def getCrewFlags(name):
 """
         case "Sahad": #vanilla function call on mp1103 script rng:0404
             flag = """
-    if (FLAG[GF_TBOX_DUMMY129])
+    if (FLAG[GF_TBOX_DUMMY129]) //Past Dana Mode
     {
         SetFlag(SF_RESERVE11_JOINOK,1)
     }
@@ -298,7 +298,7 @@ def getCrewFlags(name):
 """
         case "Ricotta": #vanilla function call on mp4202 script rng:0417
             flag = """
-    if (FLAG[GF_TBOX_DUMMY129])
+    if (FLAG[GF_TBOX_DUMMY129]) //Past Dana Mode
     {
         SetFlag(SF_RESERVE14_JOINOK,1)
     }
@@ -371,7 +371,7 @@ def getCrewFlags(name):
 """
         case "Hummel": #vanilla function call on mp1108 script rng:0411
             flag = """
-    if (FLAG[GF_TBOX_DUMMY129])
+    if (FLAG[GF_TBOX_DUMMY129]) //Past Dana Mode
     {
         SetFlag(SF_RESERVE12_JOINOK,1)
     }

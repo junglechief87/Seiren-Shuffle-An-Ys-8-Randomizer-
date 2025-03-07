@@ -42,7 +42,7 @@ def shuffleLocations(parameters):
             vanillaLocations.pop(0)
         elif parameters.goal == 'Release the Psyches' and vanillaLocations[0].mapCheckID in ['Psyche-Ura','Psyche-Nestor','Psyche-Minos','Psyche-Hydra']: #if goal is release the psyches discard warden bosses, their defeats will be tracked with the psyches
             vanillaLocations.pop(0)
-        elif not vanillaLocations[0].crew and not vanillaLocations[0].party and not vanillaLocations[0].item and not vanillaLocations[0].skill and vanillaLocations[0].mapCheckID != 'Psyches': #if the location has no randomizable property don't randomize it, mostly used for bosses
+        elif not vanillaLocations[0].crew and not vanillaLocations[0].party and not vanillaLocations[0].item and not vanillaLocations[0].skill and vanillaLocations[0].mapCheckID not in ['Psyches','Landmark']: #if the location has no randomizable property don't randomize it, mostly used for bosses
             shuffledLocations.append(vanillaLocations.pop(0))
         elif vanillaLocations[0].mapCheckID != 'Goal':
             locToBeShuffled = vanillaLocations.pop(0)
@@ -104,6 +104,10 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
         if parameters.battleLogic and item.itemID in [155, 171, 156, 542, 157, 169, 172, 271, 727, 548, 209, 436, 720]:
             item.progression = True
 
+        # Make 'Empty Psyches\Magma Fight(DANA)' item progression only if in Past Dana mode with Release the Psyches goal
+        if parameters.charMode == 'Past Dana' and parameters.goal == 'Release the Psyches' and item.itemName == 'Empty Psyches\Magma Fight(DANA)':
+            item.progression = True
+
         # If progressive super weapons are on, rename specific items
         if parameters.progressiveSuperWeapons:
             if item.itemID == 9:
@@ -145,10 +149,16 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
 
     #for release the psyches game goal we'll build our list here.
     if parameters.goal == 'Release the Psyches':
+        psycheInOctus = 0
         while len(psycheItems) != 0:
             psycheToPlace = psycheItems.pop(0)
+
             for locIndex,location in enumerate(fillLocations):
-                if location.mapCheckID == 'Psyches' and not (psycheToPlace.progression and location.locID in progressionBanList):
+                if location.mapCheckID == 'Psyches' and not (psycheToPlace.progression and (location.locID in progressionBanList or 
+                                                                                            (location.locRegion == 'Octus Overlook' and
+                                                                                             psycheInOctus > parameters.numOctus))):
+                    if location.locRegion == 'Octus Overlook':
+                        psycheInOctus += 1
                     psycheToFill = fillLocations.pop(locIndex)
                     filledLocation = combineShuffledLocAndItem(psycheToFill,psycheToPlace)
                     shuffledLocations.append(filledLocation)

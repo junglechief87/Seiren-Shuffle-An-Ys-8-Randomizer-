@@ -21,6 +21,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Shuffle Party: " + str(parameters.shuffleParty) + "\n")
     spoilerLog.write("Shuffle Crew: " + str(parameters.shuffleCrew) + "\n")
     spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
+    spoilerLog.write("Discovery-Sanity: " + str(parameters.discoverySanity) + "\n")
     spoilerLog.write("Jewel Trades: " + str(parameters.jewelTrades) + "\n")
     spoilerLog.write("Discoveries: " + str(parameters.discoveries) + "\n")
     spoilerLog.write("Map Completion: " + str(parameters.mapCompletion) + "\n")
@@ -32,7 +33,6 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Mephorash: " + str(parameters.maphorash) + "\n")
     spoilerLog.write("Former Sanctuary Crypt: " + str(parameters.formerSanctuaryCrypt) + "\n")
     spoilerLog.write("Additional Intercept Rewards: " + str(parameters.intRewards) + "\n")
-    spoilerLog.write("Skills w/ Boss Bonuses: " + str(parameters.shuffleSkills) + "\n")
     spoilerLog.write("Experience Multiplier: " + str(parameters.expMult) + "\n")
     spoilerLog.write("Exp Mult Growth Rate (%): " + str(int((parameters.expGrowth - 1)*100)) + "\n")
     spoilerLog.write("Battle Logic: " + str(parameters.battleLogic) + "\n")
@@ -53,7 +53,9 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Foolish Location Hints: " + str(parameters.foolishHints) + "\n")
     spoilerLog.write("Locations:\n")
 
-    for location in shuffledLocations:
+    locationsSorted = sorted(shuffledLocations, key=lambda x: (x.locRegion, x.locName, x.mapCheckID))
+    for location in locationsSorted:
+        #location.printSpoiler()
         location.writeSpoiler(spoilerLog)
 
     for location in shuffledLocations:
@@ -65,7 +67,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
 
     spoilerLog.write('\n \n \n')
     spoilerLog.write("Playthrough:\n")
-
+    print('Beginning playthrough')
     #We build an initial list of progression items on the way to the goal
     while len(accessibleLocation) != 0 and not win:
         while True:
@@ -89,6 +91,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
             progressionInventory.append(newInventory.pop(0))
 
     #We trim down the list by removing each progression location one at a time and seeing if the seed is still beatable, if it is then we remove the location completely
+    print('testing playthrough')
     progressionLocations.append(openingCutscene)
     while True:
         removed = False
@@ -104,6 +107,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         if not removed: break
 
     #We take the final list and do our playthrough using only the minimum required items
+    print('building playthrough')
     win = False
     progressionInventory = []
     for location in progressionLocations:

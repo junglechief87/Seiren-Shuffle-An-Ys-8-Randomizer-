@@ -410,6 +410,7 @@ class access:
   
   def hasPsyches(self,goalCount):
     count = 0
+
     if self.parameters.charMode == 'Past Dana':
       for item in self.inventoryObjects:
         if item.itemName in ['Psyches of the Sky Era\Braziers Fight(DANA)','Psyches of the Insectoid Era\Stone Fight(DANA)',\
@@ -418,8 +419,8 @@ class access:
     else:
       for item in self.inventoryObjects:
         if item.itemName in ['Psyches of the Sky Era\Braziers Fight(DANA)','Psyches of the Insectoid Era\Stone Fight(DANA)',\
-                                        'Psyches of the Frozen Era\Clairvoyance Fight(DANA)','Psyches of the Ocean Era\Frost Fight(DANA)']:
-            count+=1
+                                      'Psyches of the Frozen Era\Clairvoyance Fight(DANA)','Psyches of the Ocean Era\Frost Fight(DANA)']:
+          count+=1
         
     if count >= goalCount:
       return True
@@ -444,6 +445,32 @@ class access:
     if count >= requiredEssenceKeyStone:
       return True
     return False
+  
+  def hasDiscovery(self,discovery):
+    for item in self.inventoryObjects:
+      if item.itemName == discovery:
+        return True
+    return False
+  
+  def hasAnyDiscovery(self,discoveries):
+    for item in self.inventoryObjects:
+      if item.itemName in discoveries:
+        return True
+    return False
+  
+  def discoveryCount(self,requiredDiscoveries):
+    count = 0
+    for item in self.inventoryObjects:
+      if item.itemName in ['Birdsong Rock','Cobalt Crag','Rainbow Falls','Metavolicalis','Parasequoia','Chimney Rock','Indigo Mineral Vein',\
+                           'Beached Remains','Field of Medicinal Herbs','Airs Cairn','Zephyr Hill','Lapis Mineral Vein','Beehive','Ship Graveyard',\
+                            'Hidden Pirate Storehouse','Magna Carpa','Prismatic Mineral Vein','Unicalamites','Breath Fountain','Ancient Tree','Sky Garden',\
+                              'Soundless Hall','Graves of Ancient Heroes','Milky White Vein']:
+        count+=1
+
+    if count >= requiredDiscoveries:
+      return True
+    else:
+      return False
   
 class guiInput:
   def __init__(self):

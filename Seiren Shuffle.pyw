@@ -234,9 +234,9 @@ class ShuffleLocationsFrame(ctk.CTkFrame):
         self.skills_checkbox = ctk.CTkCheckBox(self, text="Skills w/ Boss Bonuses", variable=self.skills_var)
         self.skills_checkbox.grid(row=1, column=2, padx=5, pady=5, sticky="w")
 
-        # Discover-Sanity Checkbox
+        # Discovery-Sanity Checkbox
         self.landmark_var = ctk.BooleanVar(value=False)  # Default to False (unchecked)
-        self.landmark_checkbox = ctk.CTkCheckBox(self, text="Discover-Sanity", variable=self.landmark_var)
+        self.landmark_checkbox = ctk.CTkCheckBox(self, text="Discovery-Sanity", variable=self.landmark_var)
         self.landmark_checkbox.grid(row=2, column=0, padx=5, pady=5, sticky="w")
 
         # Dogi Intercept Rewards Checkbox
@@ -659,6 +659,7 @@ class App(ctk.CTk):
                 "crew": self.shuffleLocationsFrame.crew_var.get(),
                 "party": self.shuffleLocationsFrame.party_var.get(),
                 "skills": self.shuffleLocationsFrame.skills_var.get(),
+                "discovery-Sanity": self.shuffleLocationsFrame.landmark_var.get(),
                 "dogiIntercept": self.shuffleLocationsFrame.dogi_intercept_var.get(),
                 "mkRewards": self.shuffleLocationsFrame.mk_rewards_var.get(),
                 "silvia": self.shuffleLocationsFrame.silvia_var.get(),
@@ -739,6 +740,7 @@ class App(ctk.CTk):
             self.shuffleLocationsFrame.crew_var.set(settings.get("crew", True))
             self.shuffleLocationsFrame.party_var.set(settings.get("party", True))
             self.shuffleLocationsFrame.skills_var.set(settings.get("skills", True))
+            self.shuffleLocationsFrame.landmark_var.set(settings.get("discovery-Sanity", True))
             self.shuffleLocationsFrame.dogi_intercept_var.set(settings.get("dogiIntercept", True))
             self.shuffleLocationsFrame.mk_rewards_var.set(settings.get("mkRewards", True))
             self.shuffleLocationsFrame.silvia_var.set(settings.get("silvia", True))
@@ -846,6 +848,7 @@ class App(ctk.CTk):
                 'Shuffle Party': (self.shuffleLocationsFrame.party_var, 'set'),
                 'Shuffle Crew': (self.shuffleLocationsFrame.crew_var, 'set'),
                 'Skills w/ Boss Bonuses': (self.shuffleLocationsFrame.skills_var, 'set'),
+                'Discovery-Sanity': (self.shuffleLocationsFrame.landmark_var, 'set'),
                 'Jewel Trades': (self.progressionPlacementModifiersFrame.jewel_trade_option_menu, 'set'),
                 'Discoveries': (self.progressionPlacementModifiersFrame.discoveries_option_menu, 'set'),
                 'Map Completion': (self.progressionPlacementModifiersFrame.map_completion_option_menu, 'set'),
