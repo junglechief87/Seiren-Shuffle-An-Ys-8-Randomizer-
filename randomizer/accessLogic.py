@@ -253,18 +253,13 @@ def checkSolitudeIsland(location, access, parameters):
     return access.hasBoat() or access.hasDiscovery('Magna Carpa')
 
 def checkSubmergedCemetery(location, access, parameters):
-    if not ((
+    if not (((access.canDoubleJump() or access.canSwampWalk()) and 
+        access.canMove(22) and access.canSeeDark() and access.canUnderwater() and ((
         canAccessNorthSide(access, parameters) and
         templeOfGreatTreeOpen(access) and
-        access.canSeeDark() and 
-        access.past6() and 
-        (access.canDoubleJump() or access.canSwampWalk()) and 
-        access.canMove(22) and 
-        access.canUnderwater()) 
-        or access.hasDiscovery('Soundless Hall') or 
-        ((access.canSwampWalk() or access.canUnderwater()) and ((
-        access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or (access.hasDiscovery('Sky Garden'))) and 
-        access.canMove(22))):
+        access.past6()) or ((
+        access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or (access.hasDiscovery('Sky Garden'))))) or 
+        access.hasDiscovery('Soundless Hall')):
         return False 
     
     location_checks = {
@@ -280,7 +275,7 @@ def checkValleyOfKings(location, access, parameters):
             templeOfGreatTreeOpen(access) and
             access.past6() and 
             access.canClimb()) or (
-            (access.hasDiscovery('Graves of Ancient Heroes') and access.past7())or access.hasDiscovery('Sky Garden')))) or (
+            (access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.hasDiscovery('Sky Garden')))) or (
         access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
         ):
         return False
@@ -319,7 +314,7 @@ def checkLodiniaMarshland(location, access, parameters):
     if (access.hasDiscovery('Sky Garden') and checkLodiniaMarshlandFromSkyGarden(location, access)):
         return True
     
-    if (access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22) and 
+    if (access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22) and 
         checkLodiniaMarshlandFromCemetery(location, access)):
         return True
     
@@ -421,7 +416,7 @@ def lodiniaToVista(access):
     return (access.past6() and  (
         ((access.canSwampWalk() or access.canUnderwater()) and ((
         access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or (access.hasDiscovery('Sky Garden')))) or (
-        access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22))))
+        access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))))
    
      
 def checkVistaRidge(location, access, parameters):
@@ -1537,8 +1532,8 @@ def materialAccess(material,access,parameters):
                 templeOfGreatTreeOpen(access) and
                 access.past6() and 
                 access.canClimb()) or (
-                access.hasDiscovery('Graves of Ancient Heroes') or access.hasDiscovery('Sky Garden')))) or (
-            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22))
+                (access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.hasDiscovery('Sky Garden')))) or (
+            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
             ) or 
             #Octus Access
             access.canDefeat('Octus Enterance') or 
@@ -1563,8 +1558,8 @@ def materialAccess(material,access,parameters):
                 templeOfGreatTreeOpen(access) and
                 access.past6() and 
                 access.canClimb()) or (
-                access.hasDiscovery('Graves of Ancient Heroes') or access.hasDiscovery('Sky Garden')))) or (
-            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22))
+                (access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.hasDiscovery('Sky Garden')))) or (
+            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
             ) or (
             #Eleftheria Access
             (southSideOpen(access, parameters) and access.hasDina()) or 
@@ -1605,8 +1600,9 @@ def materialAccess(material,access,parameters):
                 templeOfGreatTreeOpen(access) and
                 access.past6() and 
                 access.canClimb()) or (
-                access.hasDiscovery('Graves of Ancient Heroes') or access.hasDiscovery('Sky Garden')))) or (
-            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22))))
+                (access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.hasDiscovery('Sky Garden')))) or (
+            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
+            ))
         case 'Ancient Lumber':
             #Temple of the Great Tree Access
             return (((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or 
