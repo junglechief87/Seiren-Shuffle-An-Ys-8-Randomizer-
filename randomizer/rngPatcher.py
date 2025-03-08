@@ -44,6 +44,7 @@ def rngPatcherMain(parameters):
                 script = ""
                 
             if location.locID == 429: #location ID 429 opening cutscene
+                print("opening")
                 patchFile = patchFile + buildStartParameters(location,parameters) 
                 patchFile = patchFile + manageEarlyGameParty(location)
                 patchFile = patchFile + soloStartingCharacterEvent(location) 
@@ -56,10 +57,10 @@ def rngPatcherMain(parameters):
                 patchFile = patchFile + buildCrewLocation(location,script)
             elif location.skill:
                 patchFile = patchFile + buildSkillLocation(location,script)
+            elif location.landmark:
+                patchFile = patchFile + buildLandmarks(location,script)
             elif location.mapCheckID == 'Psyches':
                 patchFile = patchFile + buildPsyches(location,parameters)
-            elif 637 <= location.locID <= 660:
-                patchFile = patchFile + buildLandmarks(location,script)
     patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
@@ -1944,9 +1945,12 @@ def buildLandmarks(location,script):
     itemSE = 'ITEMMSG_SE_BETTER'
     message = "#2C" + location.itemName + "#4C" + landmarkMessage
 
-    landmarkFlags = ['GF_LOCATION01','GF_LOCATION02','GF_LOCATION03','GF_LOCATION04','GF_LOCATION05','GF_LOCATION08','GF_LOCATION09',\
-     'GF_LOCATION10','GF_LOCATION11','GF_LOCATION13','GF_LOCATION16','GF_LOCATION17','GF_LOCATION19','GF_LOCATION21',\
-     'GF_LOCATION22','GF_LOCATION23','GF_LOCATION24','GF_LOCATION25','GF_LOCATION27','GF_LOCATION28','GF_LOCATION32',\
+    landmarks = ['Birdsong Rock','Cobalt Crag','Rainbow Falls','Metavolicalis','Parasequoia','Chimney Rock','Indigo Mineral Vein','Beached Remains',
+                 'Field of Medicinal Herbs','Airs Cairn','Zephyr Hill','Lapis Mineral Vein','Beehive','Ship Graveyard','Hidden Pirate Storehouse',
+                 'Magna Carpa','Prismatic Mineral Vein','Unicalamites','Breath Fountain','Ancient Tree','Sky Garden','Soundless Hall','Graves of Ancient Heroes','Milky White Vein']
+    landmarkFlags = ['GF_LOCATION01','GF_LOCATION02','GF_LOCATION03','GF_LOCATION04','GF_LOCATION05','GF_LOCATION08','GF_LOCATION09',
+     'GF_LOCATION10','GF_LOCATION11','GF_LOCATION13','GF_LOCATION16','GF_LOCATION17','GF_LOCATION19','GF_LOCATION21',
+     'GF_LOCATION22','GF_LOCATION23','GF_LOCATION24','GF_LOCATION25','GF_LOCATION27','GF_LOCATION28','GF_LOCATION32',
      'GF_LOCATION33','GF_LOCATION34','GF_LOCATION18']
     landmarkMarkers = [
         'SetMapMarker(SMI_LOCATION ,PAGE_F001, MARKER_EV_LC_MP1112, 191.56f, -1038.36f, 19.90f, 191.56f, -1038.36f,LOCATION_MP1112,MN_F_SOUTHWEST_PLANE_MP1112,0)',
@@ -1974,9 +1978,12 @@ def buildLandmarks(location,script):
         'SetMapMarker(SMI_LOCATION ,PAGE_F038, MARKER_EV_LC_MP6109, -796.36f, 1322.28f, 66.29f, -796.36f, 1322.28f,LOCATION_MP6109,MN_F_MP6109,0)',
         'SetMapMarker(SMI_LOCATION ,PAGE_MP747x, MARKER_EV_LC_MP7471, -40.94f,88.52f,2.60f, -40.94f,88.52f,LOCATION_MP7471,MN_D_MP7471,0)'
     ]
-    landmarkFlag = 'SetFlag(' + landmarkFlags[(location.locID - 637)] +  ', 1)' #landmark flags are in the order they appear in the location file and landmarks start at locID 637
-    landmarkMarker = landmarkMarkers[(location.locID - 637)]
-
+    flags = 0
+    for index,landmark in enumerate(landmarks):
+        if landmark == location.itemName:
+            flags = index
+            break
+    
     if location.event:
         getLandmarkFunction = """
 function "{0}"
@@ -1985,7 +1992,7 @@ function "{0}"
     GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
     WaitPrompt()
     WaitCloseWindow()
-    {5}
+    SetFlag({5},1)
     {6}
     {7}
 }}
@@ -2000,13 +2007,13 @@ function "{0}"
     GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
     WaitPrompt()
     WaitCloseWindow()
-    {5}
+    SetFlag({5},1)
     {6}
     {7}
     ResetStopFlag(STOPFLAG_TALK)
 }}
 """   
-    return getLandmarkFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,landmarkFlag,landmarkMarker,script)
+    return getLandmarkFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,landmarkFlags[flags],landmarkMarkers[flags],script)
 
 
 #this function runs once per map load. It's heavy handed but works to increase the exp of every enemy in the game.

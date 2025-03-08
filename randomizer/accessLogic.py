@@ -280,8 +280,8 @@ def checkValleyOfKings(location, access, parameters):
             templeOfGreatTreeOpen(access) and
             access.past6() and 
             access.canClimb()) or (
-            access.hasDiscovery('Graves of Ancient Heroes') or access.hasDiscovery('Sky Garden')))) or (
-        access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22))
+            (access.hasDiscovery('Graves of Ancient Heroes') and access.past7())or access.hasDiscovery('Sky Garden')))) or (
+        access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
         ):
         return False
 
@@ -1026,7 +1026,7 @@ def checkSunriseBeach(location, access, parameters):
                                   location.mapCheckID not in ['Master Kong Skill Sahad','Master Kong Sahad'] 
     }
 
-    return location_checks.get(location.mapCheckID, lambda: True)()
+    return location_checks.get(location.locName, lambda: False)()
 
 def checkErodedValley(location, access, parameters):
     if not (southSideOpen(access, parameters)):

@@ -33,7 +33,7 @@ def shuffleLocations(parameters):
             shuffledLocations.append(vanillaLocations.pop(0))
         elif not parameters.shuffleParty and vanillaLocations[0].party: #if we're not shuffling party then add them to the final list
             shuffledLocations.append(vanillaLocations.pop(0))
-        elif vanillaLocations[0].mapCheckID == 'Landmark' and not parameters.discoverySanity: #if we're not shuffling discoveries then add them to the final list
+        elif vanillaLocations[0].landmark and not parameters.discoverySanity: #if we're not shuffling discoveries then add them to the final list
             shuffledLocations.append(vanillaLocations.pop(0))
         elif not parameters.shuffleSkills and vanillaLocations[0].skill: #if we're not shuffling skills then discard them
             vanillaLocations.pop(0)
@@ -42,7 +42,7 @@ def shuffleLocations(parameters):
             vanillaLocations.pop(0)
         elif parameters.goal == 'Release the Psyches' and vanillaLocations[0].mapCheckID in ['Psyche-Ura','Psyche-Nestor','Psyche-Minos','Psyche-Hydra']: #if goal is release the psyches discard warden bosses, their defeats will be tracked with the psyches
             vanillaLocations.pop(0)
-        elif not vanillaLocations[0].crew and not vanillaLocations[0].party and not vanillaLocations[0].item and not vanillaLocations[0].skill and vanillaLocations[0].mapCheckID not in ['Psyches','Landmark']: #if the location has no randomizable property don't randomize it, mostly used for bosses
+        elif not vanillaLocations[0].crew and not vanillaLocations[0].party and not vanillaLocations[0].item and not vanillaLocations[0].skill and not vanillaLocations[0].landmark and vanillaLocations[0].mapCheckID not in ['Psyches']: #if the location has no randomizable property don't randomize it, mostly used for bosses
             shuffledLocations.append(vanillaLocations.pop(0))
         elif vanillaLocations[0].mapCheckID != 'Goal':
             locToBeShuffled = vanillaLocations.pop(0)

@@ -33,8 +33,9 @@ def getLocations():
             item = bool(int(row['item']))
             script = row['script']
             skill = bool(int(row['skill']))
+            landmark = bool(int(row['landmark']))
      
-            locationObject = classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill)
+            locationObject = classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill,landmark)
             locations.append(locationObject)
             
     locDB.close()
@@ -142,8 +143,9 @@ def combineShuffledLocAndItem(shuffledLocation,inventory):
     item = inventory.item
     script = shuffledLocation.script
     skill = inventory.skill
+    landmark = inventory.landmark
 
-    return classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill)
+    return classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill,landmark)
 
 def copyLocationToNewLoc(location):
     locID = location.locID
@@ -162,8 +164,9 @@ def copyLocationToNewLoc(location):
     item = location.item
     script = location.script
     skill = location.skill
+    landmark = location.landmark
 
-    return classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill)
+    return classr.location(locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill, landmark)
 
 def getIntRewards():
     with open(current_directory + "/database/interceptionRewards.csv",encoding = encode) as rewardDB:

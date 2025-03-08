@@ -2,7 +2,7 @@ from shared.functions import *
 from randomizer.accessLogic import *
 
 class location:
-  def __init__(self,locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill):
+  def __init__(self,locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill,landmark):
     self.locID = locID
     self.mapID = mapID
     self.locRegion = locRegion
@@ -19,6 +19,7 @@ class location:
     self.item = item
     self.script = script
     self.skill = skill
+    self.landmark = landmark
 
   def printSpoiler(self):
     print("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '(' + str(self.itemID) + ')x' + str(self.quantity))
@@ -53,6 +54,7 @@ class inventory(location):
     self.crew = location.crew
     self.item = location.item
     self.skill = location.skill
+    self.landmark = location.landmark
 
 class access:
   def __init__(self, inventoryObjects, parameters):
