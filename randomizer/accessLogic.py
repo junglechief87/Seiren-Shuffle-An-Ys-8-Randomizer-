@@ -221,8 +221,9 @@ def octusAccess(access,parameters):
             (parameters.goal == 'Release the Psyches')))# and access.hasPsyches(parameters.numOctus))))
 
 def checkOctusOverlook(location, access, parameters):
-    if not (access.canDefeat('Brachion') and octusAccess(access,parameters)):
+    if not (access.canDefeat('Octus Enterance')):
         return False
+    
     location_checks = {
         'Path of the Frozen Era': lambda: True,
         'Path of the Ocean Era': lambda: True,
@@ -274,14 +275,14 @@ def checkSubmergedCemetery(location, access, parameters):
 
 def checkValleyOfKings(location, access, parameters):
     if not (
-        (canAccessNorthSide(access, parameters) and 
-        templeOfGreatTreeOpen(access) and
-        access.past6() and 
-        access.canClimb() and 
-        (access.canSwampWalk() or access.canUnderwater())) or (
-        access.hasDiscovery('Graves of Ancient Heroes') and access.past7()
-        )
-    ):
+        ((access.canSwampWalk() or access.canUnderwater()) and ((
+            canAccessNorthSide(access, parameters) and 
+            templeOfGreatTreeOpen(access) and
+            access.past6() and 
+            access.canClimb()) or (
+            access.hasDiscovery('Graves of Ancient Heroes') or access.hasDiscovery('Sky Garden')))) or (
+        access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22))
+        ):
         return False
 
     location_checks = {
@@ -522,11 +523,9 @@ def monasteryBackhalfChests(location):
 
 def checkPirateShipEleftheria(location, access, parameters):
     if not (
-        ((southSideOpen(access, parameters) and access.hasDina()) or 
-         access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse','Beehive'])) and 
             access.canDoubleJump() and 
             access.readNote1() and 
-            battleLogic(170,access,parameters)
+            access.canDefeat('Gilkyra Encounter')
     ):
         return False
 
@@ -557,7 +556,8 @@ def checkEastCoastCave(location, access, parameters):
     location_checks = {
         'East Coast Cave': lambda: 
         (
-            (location.mapCheckID in ['TBOX01', 'TBOX03'] and battleLogic(170, access, parameters)) or
+            (location.mapCheckID in ['TBOX01', 'TBOX03'] and access.canDoubleJump() and access.canDefeat('Gilkyra Encounter')) or 
+            (location.mapCheckID == 'Gilkyra Encounter' and battleLogic(170, access, parameters)) or
             (location.mapCheckID in ['TBOX02','Landmark'])
         )
     }
@@ -707,7 +707,9 @@ def checkTempleOfGreatTree(location, access, parameters):
             battleLogic(230,access,parameters)
             )
         ),
-        'Great Tree Garden': lambda: access.canDefeat('Brachion'),
+        'Great Tree Garden': lambda: (access.canDefeat('Brachion') and 
+                                     ((location.mapCheckID != 'Octus Enterance') or (
+                                      location.mapCheckID == 'Octus Enterance' and octusAccess(access,parameters)))),
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -757,9 +759,6 @@ def checkTitisPrimevalForest(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
     
 def checkMountainPinnacleTrail(location, access, parameters):
-    if parameters.northSideOpen:
-        return access.past1()
-    
     return (canAccessNorthSide(access, parameters) and access.past1()) or access.hasDiscovery('Prismatic Mineral Vein')
 
 def checkCavernOfTheAncientKing(location, access, parameters):
@@ -1140,7 +1139,7 @@ def checkToweringCoralForest(location, access, parameters):
         'Entrance': lambda: True,
         'Walkways': lambda: (
             (location.mapCheckID in ['TBOX03', 'TBOX06'] and (access.canClimb() or access.canDoubleJump())) or
-            (location.mapCheckID in ['TBOX4', 'TBOX05'])
+            (location.mapCheckID in ['TBOX04', 'TBOX05'])
         ),
         'Midpoint': lambda: True,
         'After Mid-Boss': lambda: (
@@ -1165,7 +1164,7 @@ def coralForestFromRainbowFalls(location, access, parameters):
         'Entrance': lambda: True,
         'Walkways': lambda: (
             (location.mapCheckID in ['TBOX03', 'TBOX06'] and (access.canClimb() or access.canDoubleJump())) or
-            (location.mapCheckID in ['TBOX4', 'TBOX05'])
+            (location.mapCheckID in ['TBOX04', 'TBOX05'])
         ),
         'Midpoint': lambda: True,
         'After Mid-Boss': lambda: True,
@@ -1276,57 +1275,35 @@ def checkMapCompletion(location, access, parameters):
 
     completionLogic = {
         'Percent 10': lambda: (
-            access.canClimb() or access.canMove(8)
+            access.mapCompletion(13)
         ),
         'Percent 20': lambda: (
-            southSideOpen(access, parameters)
+            access.mapCompletion(23)
         ),
         'Percent 30': lambda: (
-            southSideOpen(access, parameters) and 
-            access.canSwampWalk()
+            access.mapCompletion(33)
         ),
         'Percent 40': lambda: (
-            canAccessNorthSide(access, parameters) and 
-            access.canSwampWalk() and 
-            (access.hasDina() or access.canMove(11))
+            access.mapCompletion(43)
         ),
         'Percent 50': lambda: (
-            canAccessNorthSide(access, parameters) and 
-            access.canSwampWalk() and 
-            access.hasDina() and 
-            access.canMove(14)
+            access.mapCompletion(53)
         ),
         'Percent 60': lambda: (
-            canAccessNorthSide(access, parameters) and 
-            eterniaOpen(access, parameters) and
-            access.canSwampWalk() and 
-            access.hasDina() and 
-            access.canMove(16) and
-            access.mapIncrease() and  
-            access.canDoubleJump()
+            access.mapCompletion(63) and 
+            access.mapIncrease() 
         ),
         'Percent 70': lambda: (
-            completionLogic['Percent 60']() and 
-            (
-                (access.hasDana() and access.past4()) or 
-                (access.past5() and access.canUnderwater())
-            )
+            access.mapCompletion(73) and 
+            access.mapIncrease() 
         ),
         'Percent 80': lambda: (
-            completionLogic['Percent 60']() and 
-            access.hasDana() and 
-            access.past4() and 
-            access.past5() and 
-            access.canUnderwater() and 
-            access.canMove(20) and 
-            access.readNote1() and 
-            access.canSeeDark()
+            access.mapCompletion(83) and 
+            access.mapIncrease() 
         ),
         'Percent 90': lambda: (
-            completionLogic['Percent 80']() and 
-            access.canMove(24) and 
-            access.past6() and 
-            access.canUndead()
+            access.mapCompletion(93) and 
+            access.mapIncrease() 
         ),
         'Percent 100': lambda: False,
     }
@@ -1394,51 +1371,77 @@ def battleLogic(requiredStr,access,parameters):
             weaponStr = 290
         elif not parameters.progressiveSuperWeapons and ((access.hasMistilteinn() and access.hasAdol()) or (access.hasSpiritRing() and access.hasDana())):
             weaponStr = 290
-        elif access.hasFlameStones(7) and (access.canDoubleJump() and access.hasDina() and access.canMove(24) or (access.canSwampWalk() or (access.canDoubleJump() and access.canUnderwater())))\
-              or (access.canUnderwater() and access.canMove(11) and access.canClimb()) or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3()) or access.hasDana()))\
-                  and access.canDefeat('Giasburn'):
+        elif access.hasFlameStones(7) and materialAccess('Dragon Crest Stone',access,parameters):
             weaponStr = 270
-        elif access.hasFlameStones(6) and ((coastNorthSideAccess(access, parameters)) and access.canDoubleJump() and access.hasDina()) or\
-              (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and (((access.past2() and access.past3()) or access.hasDana()) or (access.past2() or (access.past3() and access.hasDana()))))\
-                  and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(6) and (materialAccess('Essence Stone',access,parameters) or 
+                                           materialAccess('Dragon Crest Stone',access,parameters)): 
             weaponStr = 240
-        elif access.hasFlameStones(5) and ((coastNorthSideAccess(access, parameters)) and access.canDoubleJump() and access.hasDina()) or\
-              (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and (((access.past2() and access.past3()) or access.hasDana()) or (access.past2() or (access.past3() and access.hasDana()))))\
-                  and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(5) and (materialAccess('Essence Stone',access,parameters) or 
+                                           materialAccess('Dragon Crest Stone',access,parameters)): 
             weaponStr = 210
-        elif access.hasFlameStones(4) and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(4) and (materialAccess('Essence Stone',access,parameters) or 
+                                           materialAccess('Dragon Crest Stone',access,parameters) or
+                                           materialAccess('Tectite Ore',access,parameters)): 
             weaponStr = 180
         elif access.hasFlameStones(3): 
             weaponStr = 150
-        elif access.hasFlameStones(2) and (access.canMove(8) or ((coastNorthSideAccess(access, parameters)) and access.canDoubleJump())): 
+        elif access.hasFlameStones(2) and (materialAccess('Essence Stone',access,parameters) or 
+                                           materialAccess('Dragon Crest Stone',access,parameters) or
+                                           materialAccess('Tectite Ore',access,parameters) or
+                                           materialAccess('Iron Ore',access,parameters)): 
             weaponStr = 100
-        elif access.hasFlameStones(1) and (access.canMove(8) or ((coastNorthSideAccess(access, parameters)) and access.canDoubleJump())): 
+        elif access.hasFlameStones(1) and (materialAccess('Essence Stone',access,parameters) or 
+                                           materialAccess('Dragon Crest Stone',access,parameters) or
+                                           materialAccess('Tectite Ore',access,parameters) or
+                                           materialAccess('Iron Ore',access,parameters)): 
             weaponStr = 50
         
-        if access.hasFlameStones(7) and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3() and access.past5()) or access.hasDana()) and access.canDefeat('Giasburn'): 
+        if access.hasFlameStones(7) and materialAccess('Underworld Parts',access,parameters): 
             armorStr = 25
-        elif access.hasFlameStones(6) and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3() and access.past5()) or access.hasDana()) and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(6) and ((materialAccess('Underworld Parts',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Ancient Bone',access,parameters) and
+                                           materialAccess('Ancient Hide',access,parameters) and
+                                           materialAccess('Saurian Scale',access,parameters))): 
             armorStr = 20
-        elif access.hasFlameStones(5) and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(5) and ((materialAccess('Underworld Parts',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Ancient Bone',access,parameters) and
+                                           materialAccess('Ancient Hide',access,parameters) and
+                                           materialAccess('Saurian Scale',access,parameters))): 
             armorStr = 16
-        elif access.hasFlameStones(4) and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(4) and ((materialAccess('Underworld Parts',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Ancient Bone',access,parameters) and
+                                           materialAccess('Ancient Hide',access,parameters) and
+                                           materialAccess('Saurian Scale',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Beast Parts',access,parameters))): 
             armorStr = 13
-        elif access.hasFlameStones(2) and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and (access.hasFlameStones(3) or access.hasDina()) and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(2) and ((materialAccess('Underworld Parts',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Ancient Bone',access,parameters) and
+                                           materialAccess('Ancient Hide',access,parameters) and
+                                           materialAccess('Saurian Scale',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Beast Parts',access,parameters))): 
             armorStr = 10
-        elif access.hasFlameStones(1) and access.hasDina(): 
-            armorStr = 5
-        elif access.hasFlameStones(1) and (coastNorthSideAccess(access, parameters) or access.hasDina()): 
+        elif access.hasFlameStones(1) and (((materialAccess('Underworld Parts',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Ancient Bone',access,parameters) and
+                                           materialAccess('Ancient Hide',access,parameters) and
+                                           materialAccess('Saurian Scale',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Beast Parts',access,parameters) and access.hasDina())) or 
+                                           access.hasDina()): 
+            armorStr = 6
+        elif access.hasFlameStones(1) and (((materialAccess('Underworld Parts',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Ancient Bone',access,parameters) and
+                                           materialAccess('Ancient Hide',access,parameters) and
+                                           materialAccess('Saurian Scale',access,parameters) and access.hasDina()) or (
+                                           materialAccess('Beast Parts',access,parameters) and access.hasDina())) or 
+                                           access.hasDina()): 
             armorStr = 3
 
         #for armlet's and accesories we scan the world to see what's accessible from checks then compare that to what can be acquired from shop levels then take the highest number
         foundArmStr = access.armletStr()
-        if access.hasFlameStones(7) and access.hasEuron() and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3() and access.past5()) or access.hasDana())\
-              and access.canDefeat('Giasburn'): 
+        if access.hasFlameStones(7) and access.hasEuron() and materialAccess('Beast Parts',access,parameters): 
             armStr = 30
-        elif access.hasFlameStones(6) and access.hasEuron() and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3() and access.past5()) or access.hasDana())\
-              and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(6) and access.hasEuron() and materialAccess('Saurian Scale',access,parameters) and materialAccess('Ancient Hide',access,parameters):
             armStr = 20
-        elif access.hasFlameStones(4) and access.hasEuron() and access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.canDefeat('Giasburn'): 
+        elif access.hasFlameStones(4) and access.hasEuron() and materialAccess('Dragon Crest Stone',access,parameters) and materialAccess('Essence Stone',access,parameters): 
             armStr = 10
 
         if armStr < foundArmStr:
@@ -1460,35 +1463,34 @@ def battleLogic(requiredStr,access,parameters):
             if coastNorthSideAccess(access, parameters) or access.hasDina():
                 hopeAndLum.append(20) #Hope Stone
         if access.hasEuron and access.hasFlameStones(2):
-            if (access.canMove(8) or ((coastNorthSideAccess(access, parameters)) and access.canDoubleJump()))  and access.hasDina():
+            if materialAccess('Razor Feather',access,parameters) and southSideOpen(access, parameters):
                 fenrirAcc.append(5) #Fenrir Talisman
+            if southSideOpen(access, parameters):
                 bladeRings.append(20) #Blade Ring 2
-            if ((access.canFish() and access.hasPearls(7)) or (access.hasDina)) and (access.canMove(8) or ((coastNorthSideAccess(access, parameters)) and access.canDoubleJump())):
+            if ((access.canFish() and access.hasPearls(7)) or (access.hasDina)) and (southSideOpen(access, parameters)):
                 hopeAndLum.append(40) #luminous ring
-            if access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasDina():
+            if materialAccess('Accursed Shell',access,parameters) and southSideOpen(access, parameters):
                 pyriosAcc.append(5) #Pyrios Talisman
         if access.hasEuron and access.hasFlameStones(4):
-            if (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.past3() and access.hasDana()) or\
-                  ( access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasDina()) and access.canDefeat('Giasburn'):
-                bladeRings.append(30) #Blade Ring 3
+            if materialAccess('Thunder Claw',access,parameters) and materialAccess('Tectite Ore',access,parameters):
                 otherAcc.append(10) #lightning stone
-            if (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()))\
-                  or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasDina()) and access.canDefeat('Giasburn'):
+            if materialAccess('Thunder Claw',access,parameters) and materialAccess('Beast Parts',access,parameters):
+                bladeRings.append(30) #Blade Ring 3
+            if materialAccess('Essence Stone',access,parameters) and materialAccess('Tectite Ore',access,parameters):
                 otherAcc.append(10) #crow stone
-            if (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(3) and ((access.past2() and access.past3()) or access.hasDana()))\
-                  or (access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and access.hasFlameStones(5) and access.hasDina()) and access.canDefeat('Giasburn'):
+            if materialAccess('Tectite Ore',access,parameters) and materialAccess('Ancient Lumber',access,parameters):
                 otherAcc.append(10) #snake stone
         if access.hasEuron and access.hasFlameStones(5):
-            if (access.canMove(8) or ((coastNorthSideAccess(access, parameters)) and access.canDoubleJump())):
+            if southSideOpen(access, parameters):
                 dragonAcc.append(10) #dragon pauldron
-            if access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3()) or access.hasDana()) and\
-                  (access.past2() or (access.past3() and access.hasDana())) and access.past5() and access.hasDina() and access.canDefeat('Giasburn'):
+            if materialAccess('Essence Stone',access,parameters):
+                dragonAcc.append(20) #dragon stone
+            if materialAccess('Essence Stone',access,parameters) and materialAccess('Dragon Crest Stone',access,parameters):
                 fenrirAcc.append(15) #fenrir stone
                 pyriosAcc.append(15) #pyrios stone
-                dragonAcc.append(20) #dragon stone
                 otherAcc.append(10) #nature talisman
         if access.hasEuron and access.hasFlameStones(7):
-            if access.canClimb() and (access.canMove(8) or access.canDoubleJump()) and access.past1() and ((access.past2() and access.past3()) or access.hasDana()) and access.past6() and access.canDefeat('Giasburn'):
+            if materialAccess('Dragon Crest Stone',access,parameters) and materialAccess('Ancient Hide',access,parameters):
                 bladeRings.append(40) #Blade Ring 4
         
         #sort all of the lists of accessories that can't be equipped together highest strength to lowest. We'll then combine them taking only the highest from each list except the other category which doesn't have any conflicts.
@@ -1522,6 +1524,96 @@ def battleLogic(requiredStr,access,parameters):
 
     else: return True #if battle logic isn't on then we skip everything and return true for access logic
 
+def materialAccess(material,access,parameters):
+    match material:
+        case 'Dragon Crest Stone': #Used for Acidic Liquid and Sunlight Fang too
+            return (
+            #Silent Tower Access
+            (access.canDoubleJump() and access.canMove(24) and 
+                (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']))) or 
+            #Valley of Kings Access
+            (((access.canSwampWalk() or access.canUnderwater()) and ((
+                canAccessNorthSide(access, parameters) and 
+                templeOfGreatTreeOpen(access) and
+                access.past6() and 
+                access.canClimb()) or (
+                access.hasDiscovery('Graves of Ancient Heroes') or access.hasDiscovery('Sky Garden')))) or (
+            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22))
+            ) or 
+            #Octus Access
+            access.canDefeat('Octus Enterance') or 
+            #Lapis Mineral Vein Access
+            (access.canUnderwater() and ((access.canMove(11) and access.canClimb()) or access.hasDiscovery('Zephyr Hill'))) 
+            or access.hasDiscovery('Lapis Mineral Vein'))
+        case 'Essence Stone': #blue feather and dandale horn are also used on this as it's the same requirements
+            #Access to Vista Ridge from Eternia or access to all of Lodinia
+            return ((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or lodiniaToVista(access))
+        case 'Tectite Ore':
+            #Access to north side and Mountain Pinnacle Trail
+            return (access.hasDiscovery('Prismatic Mineral Vein') or (canAccessNorthSide(access,parameters) and access.past1()))
+        case 'Iron Ore':
+            return (coastNorthSideAccess(access,parameters) or access.hasAnyDiscovery(['Milky White Vein','Indigo Mineral Vein']))
+        case 'Underworld Parts':
+            #Octus Access
+            return access.canDefeat('Octus Enterance')
+        case 'Ancient Bone':
+            #Valley of Kings Access
+            return ((((access.canSwampWalk() or access.canUnderwater()) and ((
+                canAccessNorthSide(access, parameters) and 
+                templeOfGreatTreeOpen(access) and
+                access.past6() and 
+                access.canClimb()) or (
+                access.hasDiscovery('Graves of Ancient Heroes') or access.hasDiscovery('Sky Garden')))) or (
+            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22))
+            ) or (
+            #Eleftheria Access
+            (southSideOpen(access, parameters) and access.hasDina()) or 
+                access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse','Beehive'])) and 
+            access.canDoubleJump() and 
+            access.readNote1() and 
+            access.canDefeat('Gilkyra Encounter') or (
+            #Chasm Access
+            eterniaOpen(access,parameters) and access.past5())
+            )
+        case 'Ancient Hide':
+            #Temple of the Great Tree Access
+            return (((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or 
+                     lodiniaToVista(access)) or (
+            #Eleftheria Access
+            (southSideOpen(access, parameters) and access.hasDina()) or 
+                access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse','Beehive'])) and 
+            access.canDoubleJump() and 
+            access.readNote1() and 
+            access.canDefeat('Gilkyra Encounter') or (
+            #Chasm Access
+            eterniaOpen(access,parameters) and access.past5())
+            )
+        case 'Saurian Scale':
+            return canAccessNorthSide(access,parameters)
+        case 'Beast Parts':
+            return (canAccessNorthSide(access, parameters) and access.past1()) or access.hasDiscovery('Prismatic Mineral Vein')
+        case 'Accursed Shell':
+            return (southSideOpen(access, parameters) and access.past1() and access.canClimb()) or canAccessNorthSide(access,parameters)
+        case 'Razor Feather':
+            return access.canDefeat('Gargantula') or access.canDefeat('Lonbrigius')
+        case 'Thunder Claw':
+            #Towal Highway Access
+            return ((eterniaOpen(access,parameters) and access.hasDana()) or (
+            #Valley of Kings Access 
+            ((access.canSwampWalk() or access.canUnderwater()) and ((
+                canAccessNorthSide(access, parameters) and 
+                templeOfGreatTreeOpen(access) and
+                access.past6() and 
+                access.canClimb()) or (
+                access.hasDiscovery('Graves of Ancient Heroes') or access.hasDiscovery('Sky Garden')))) or (
+            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canMove(22))))
+        case 'Ancient Lumber':
+            #Temple of the Great Tree Access
+            return (((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or 
+                     lodiniaToVista(access)) or (
+            #Chasm Access
+            eterniaOpen(access,parameters) and access.past5()))
+        
 
 
 

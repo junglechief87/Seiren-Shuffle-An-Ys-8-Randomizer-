@@ -396,7 +396,11 @@ class access:
     return False
    
   def canDefeat(self,boss):
-    boss = boss + ' Defeated'
+    if boss != 'Octus Enterance':
+      boss = boss + ' Defeated'
+    else:
+      boss = 'Octus Entered'
+
     for item in self.inventoryObjects:
       if item.itemName == boss:
         return True
@@ -471,7 +475,56 @@ class access:
       return True
     else:
       return False
-  
+
+  def mapCompletion(self,requiredCompletion):
+    #making a list of specific items that contribute towards actual map completion
+    mapComplesionItems = ['Maphorash Defeated','Basileus Defeated','Doxa Griel Defeated','Oceanus Defeated',\
+                          'Coelacantos Defeated','Pirate Revenant Defeated','Carveros Defeated','Exmetal Defeated','Brachion Defeated','Giasburn Defeated',\
+                          'Avalodragil 2 Defeated','Kiergaard Weissman Defeated','Laspisus Defeated','Magamandra Defeated','Gargantula Defeated','Octus Entered'\
+                          'Lonbrigius Defeated','Clareon Defeated','Serpentus Defeated','Avalodragil Defeated','Byfteriza Defeated','Birdsong Rock','Cobalt Crag',\
+                          'Rainbow Falls','Metavolicalis','Parasequoia','Chimney Rock','Indigo Mineral Vein','Beached Remains','Field of Medicinal Herbs','Airs Cairn',\
+                          'Zephyr Hill','Lapis Mineral Vein','Beehive','Ship Graveyard','Hidden Pirate Storehouse','Magna Carpa','Prismatic Mineral Vein',\
+                          'Unicalamites','Breath Fountain','Ancient Tree','Sky Garden','Soundless Hall','Graves of Ancient Heroes','Milky White Vein','Gilkyra Encounter']
+    
+    count = 0
+    if self.canMove(6):
+      count += 1
+    if self.canMove(8):
+      count += 1
+    if self.canMove(10):
+      count += 1
+    if self.canMove(11):
+      count += 1
+    if self.canMove(12):
+      count += 1
+    if self.canMove(14):
+      count += 1
+    if self.canMove(15):
+      count += 1
+    if self.canMove(16):
+      count += 1
+    if self.canMove(18):
+      count += 1
+    if self.canMove(20):
+      count += 1
+    if self.canMove(21):
+      count += 1
+    if self.canMove(22):
+      count += 1
+    if self.canMove(23):
+      count += 1
+    if self.canMove(24):
+      count += 1
+
+    for item in mapComplesionItems:
+      if item in self.inventoryObjects:
+        count += 1
+    
+    if ((count/(len(mapComplesionItems)+14)) * 100) > requiredCompletion:
+      return True
+    else:
+      return False
+    
 class guiInput:
   def __init__(self):
     self.seed = None
