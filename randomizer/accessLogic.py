@@ -218,7 +218,7 @@ def octusAccess(access,parameters):
     return (battleLogic(340, access, parameters) and (
             (parameters.goal == 'Find Crew' and access.canMove(parameters.numOctus)) or
             (parameters.goal == 'Seiren Escape') or
-            (parameters.goal == 'Release the Psyches')))# and access.hasPsyches(parameters.numOctus))))
+            (parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numOctus))))
 
 def checkOctusOverlook(location, access, parameters):
     if not (access.canDefeat('Octus Enterance')):

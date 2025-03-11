@@ -1,6 +1,7 @@
 import csv
 import os.path
 import shared.classr as classr
+import random
 from shared.functions import *  
 from randomizer.crew import *
 from randomizer.shuffle import *
@@ -44,7 +45,6 @@ def rngPatcherMain(parameters):
                 script = ""
                 
             if location.locID == 429: #location ID 429 opening cutscene
-                print("opening")
                 patchFile = patchFile + buildStartParameters(location,parameters) 
                 patchFile = patchFile + manageEarlyGameParty(location)
                 patchFile = patchFile + soloStartingCharacterEvent(location) 
@@ -59,8 +59,9 @@ def rngPatcherMain(parameters):
                 patchFile = patchFile + buildSkillLocation(location,script)
             elif location.landmark:
                 patchFile = patchFile + buildLandmarks(location,script)
-            elif location.mapCheckID == 'Psyches':
-                patchFile = patchFile + buildPsyches(location,parameters)
+
+    if parameters.goal == 'Release the Psyches':
+        patchFile = patchFile + buildPsyches(shuffledLocations,parameters)
     patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
@@ -643,7 +644,7 @@ def shopUpgrades(location, vanillaScript = ''):
 
             SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] - 130))
             GetItem(ICON3D_AM_023, 1)
-            if( !(FLAG[GF_TBOX_DUMMY108] && !FLAG[GF_TBOX_DUMMY109]) )
+            if(!FLAG[GF_TBOX_DUMMY108] && !FLAG[GF_TBOX_DUMMY109])
             {{
                 EquipWeapon(DANA,ICON3D_WP_DANA_000)
                 GetItem(ICON3D_WP_DANA_000,1)
@@ -736,7 +737,7 @@ function "openTree"
         octusAccess ="""
 function "openTree"
 {{
-    if(ALLITEMWORK[ICON3D_972] >= {0} && !FLAG[GF_06MP6409_OPEN_GATE]) //ICON3D_972:junk item used for tracking
+    if(ALLITEMWORK[ICON3D_971] >= {0} && !FLAG[GF_06MP6409_OPEN_GATE]) //ICON3D_971:junk item used for tracking
     {{
         SetFlag(GF_06MP6409_OPEN_GATE, 1)
         CallFunc("mp6409:init")
@@ -785,7 +786,7 @@ function "goal"
         selectionSphereAccess ="""
 function "goal"
 {{
-    if(ALLITEMWORK[ICON3D_972] >= {0}) //ICON3D_972:junk item used for tracking
+    if(ALLITEMWORK[ICON3D_971] >= {0}) //ICON3D_971:junk item used for tracking
     {{
         // filler
     }}
@@ -1193,750 +1194,399 @@ def interceptUnlock():
 """
     return script
 
-#we're going to build our scripts for every location where psches could appear. If the boss isn't there then we build a function that does nothing. 
-#The hooks will work like any other: rng + locID
 #GF_TBOX_DUMMY112 is our flag for release the psyches so these won't get called outside this game mode.
-#Therefore we don't need to worry about these not being built outside that flag being on.
-#The calls will be an EventCue which could be a little awkward in larger environments when it triggers but this is the best way to make these work logically.
-#The random item given, ICON3D_972, is being used to track how many wardens have been fought. It doesn't show up in inventory and the game still tracks it, which isn't true for all unused junk items, so it can be an effective hidden counter.
-#I give it when the fight loads because it's easier to plug it in here rather than after every fight and the player is locked into the fight until they've won anyway.
-#I'm hijacking this to setup a unique version of this for Past Dana so she'll have bosses that make use of her gimmicks. Still figuring out how I want to handle some of this but this is a good starting place for testing. 
-def buildPsyches(location, parameters):
-    scriptName = buildLocScripts(location.locID,False)
-    callPrompt = ''
-    promptFight = ''
+#New version of this script hacks the checkpoint in Castaway Village and uses the boss flags for activation of the custom shop
+#The boss menu is essentially a custom shop, it uses Dina's jewel trade menu as a base, there are two version of it depending on game mode
+def buildPsyches(shuffledLocations, parameters):
 
-    if location.itemName == 'Psyches of the Sky Era\Braziers Fight(DANA)':
-        if parameters.charMode == 'Past Dana':
-            callPrompt = 'CallFunc("rng:brazierFight")'
-            promptFight = brazierFight()
-        else:
-            callPrompt = 'CallFunc("rng:uraFight")'
-            promptFight = uraFight(location.locID)
-    elif location.itemName == 'Psyches of the Insectoid Era\Stone Fight(DANA)':
-        if parameters.charMode == 'Past Dana':
-            callPrompt = 'CallFunc("rng:stoneFight")'
-            promptFight = stoneFight()
-        else:
-            callPrompt = 'CallFunc("rng:nestorFight")'
-            promptFight = nestorFight(location.locID)
-    elif location.itemName == 'Psyches of the Frozen Era\Clairvoyance Fight(DANA)':
-        if parameters.charMode == 'Past Dana':
-            callPrompt = 'CallFunc("rng:clairvoyanceFight")'
-            promptFight = clairvoyanceFight()
-        else:
-            callPrompt = 'CallFunc("rng:minosFight")'
-            promptFight = minosFight(location.locID)
-    elif location.itemName == 'Psyches of the Ocean Era\Frost Fight(DANA)':
-        if parameters.charMode == 'Past Dana':
-            callPrompt = 'CallFunc("rng:frostFight")'
-            promptFight = frostFight()
-        else:
-            callPrompt = 'CallFunc("rng:hydraFight")'
-            promptFight = hydraFight(location.locID)
-    elif location.itemName == 'Empty Psyches\Magma Fight(DANA)' and parameters.charMode == "Past Dana":
-        callPrompt = 'CallFunc("rng:magmaFight")'
-        promptFight = magmaFight()
+    bossFlagDict = {'Silent Tower': 'FLAG[GF_SUBEV_06_6413_KILL_BOSS]',
+                    'Octus Overlook': 'FLAG[GF_06MP6409_OPEN_GATE]',
+                    'Valley of Kings': 'FLAG[GF_TBOX_DUMMY080]',
+                    'Archeozoic Chasm': 'FLAG[GF_TBOX_DUMMY078]',
+                    'Pirate Ship Eleftheria': 'FLAG[GF_05MP0405_READ_REED]',
+                    'Baja Tower': 'FLAG[GF_05MP6329_KILL_BAHABOSS]',
+                    'Temple of the Great Tree': 'FLAG[GF_04MP6410_KILL_GUARDIAN]',
+                    'Mont Gendarme': 'FLAG[GF_03MP4341_KILL_ANCIENT]',
+                    'Schlamm Jungle': 'FLAG[GF_02MP2308_KILL_HIPPO]',
+                    'Eroded Valley': 'FLAG[GF_TBOX_DUMMY074]',
+                    'Towering Coral Forest': 'FLAG[GF_02MP1308_KILL_CHAMELEON]'}
+    bossCue = {'Hydra': ['LoadArg("map/mp6305b/mp6305b.arg")', 'EventCue("mp6305b:EV_RetryBoss")', 'MN_D_MP6305b', 'B112'],
+               'Minos': ['LoadArg("map/mp6306b/mp6306b.arg")', 'EventCue("mp6306b:EV_RetryBoss")', 'MN_D_MP6306b', 'B110'],
+               'Nestor': ['LoadArg("map/mp6307b/mp6307b.arg")', 'EventCue("mp6307b:EV_RetryBoss")', 'MN_D_MP6307b', 'B111'],
+               'Ura': ['LoadArg("map/mp6308b/mp6308b.arg")', 'EventCue("mp6308b:EV_RetryBoss")', 'MN_D_MP6308b', 'B008'],
+               'Le-Erythros': ['LoadArg("map/mp6409b/mp6409b.arg")', 'EventCue("mp6409b:EV_RetryBoss")', 'MN_D_MP6409B', 'b012'],
+               'Grazios': ['LoadArg("map/mp6519m/mp6519m.arg")', 'EventCue("mp6519m:EV_RetryBoss")', 'MN_D_MP6519M','B161'],
+               'Nebritia': ['LoadArg("map/mp6529m/mp6529m.arg")', 'EventCue("mp6529m:EV_RetryBoss")', 'MN_D_MP6529M','B162'],
+               'Argura': ['LoadArg("map/mp6539m/mp6539m.arg")', 'EventCue("mp6539m:EV_RetryBoss")', 'MN_D_MP6539M', 'B163'],
+               'Crusos': ['LoadArg("map/mp6549m/mp6549m.arg")', 'EventCue("mp6549m:EV_RetryBoss")', 'MN_D_MP6549M', 'B011'],
+               'Blasphima': ['LoadArg("map/mp6559m/mp6519m.arg")', 'EventCue("mp6559m:EV_RetryBoss")', 'MN_D_MP6559M', 'B164'],
+               'Le-Kyanos': ['LoadArg("map/mp6204m/mp6204m.arg")', 'EventCue("mp6204m:EV_Boss_Jump")', 'MN_F_MP6204M', 'B165']
+        }
+    
+
+    if parameters.charMode == 'Past Dana':
+        bossPool = ['Grazios','Nebritia','Argura','Crusos','Blasphima','Le-Kyanos']
     else:
-        callPrompt = """
-        SetStopFlag(STOPFLAG_TALK)
-        Message("No presence felt.")
-        WaitPrompt()
-        WaitCloseWindow()
-        ResetStopFlag(STOPFLAG_TALK)
-        """
-    psycheFunction = """
-    function "{0}"
+        bossPool = ['Hydra','Minos','Nestor','Ura','Le-Erythros']
+        
+    random.shuffle(bossPool)
+
+    for location in shuffledLocations:
+        if location.itemName == 'Psyches of the Sky Era\Braziers Fight(DANA)':
+            bossFight1 = bossFlagDict[location.locRegion]
+            bossLoc1 = location.locRegion
+        if location.itemName == 'Psyches of the Insectoid Era\Stone Fight(DANA)':
+            bossFight2 = bossFlagDict[location.locRegion]
+            bossLoc2 = location.locRegion
+        if location.itemName == 'Psyches of the Frozen Era\Clairvoyance Fight(DANA)':
+            bossFight3 = bossFlagDict[location.locRegion]
+            bossLoc3 = location.locRegion
+        if location.itemName == 'Psyches of the Ocean Era\Frost Fight(DANA)':
+            bossFight4 = bossFlagDict[location.locRegion]
+            bossLoc4 = location.locRegion
+        if location.itemName == 'Empty Psyches\Magma Fight(DANA)':
+            bossFight5 = bossFlagDict[location.locRegion]
+            bossLoc5 = location.locRegion
+
+    ### Past Dana Mode Bosses
+    if parameters.charMode == 'Past Dana':
+        bossCheckpoint = """
+    function "bossCheckpoint"
     {{
-        if(!FLAG[SF_BOSS_BATTLE] && !FLAG[GF_TBOX_DUMMY127])
+        SetStopFlag(STOPFLAG_TALK)
+        
+        SetFlag(TF_MENU_SELECT2, 0)
+        MenuReset()
+        MenuType(MENUTYPE_POPUP)
+        
+        //--------------------------------------------------------------------------------------
+
+        if({0} && !FLAG[GF_SUBEV_PAST_02_BOSS])
         {{
-            WaitFade()
-            Wait(20)
-            {1}
+            MenuAdd(10, "#2C{5}: Chamber of Braziers Guardian ({10})")	
         }}
+        else if(!{0} || FLAG[GF_SUBEV_PAST_02_BOSS])
+        {{
+            MenuAdd(11, "{5}: Chamber of Braziers Guardian({10})")	
+        }}
+
+        if({1} && !FLAG[GF_SUBEV_PAST_BOSS_B2])	
+        {{
+            MenuAdd(20, "#2C{6}: Chamber of Stone Guardian({11})")	
+        }}
+        else if(!{1} || FLAG[GF_SUBEV_PAST_BOSS_B2])
+        {{
+            MenuAdd(21, "{6}: Chamber of Stone Guardian({11})")	
+        }}
+        
+        if({2} && !FLAG[GF_SUBEV_PAST_BOSS_B3])	
+        {{
+            MenuAdd(30, "#2C{7}: Chamber of Clairvoyance Guardian({12})")	
+        }}
+        else if(!{2} || FLAG[GF_SUBEV_PAST_BOSS_B3])
+        {{
+            MenuAdd(31, "{7}: Chamber of Clairvoyance Guardian({12})")	
+        }}
+
+        if({3} && !FLAG[GF_SUBEV_PAST_BOSS_B4])	
+        {{
+            MenuAdd(40, "#2C{8}: Chamber of Frost Guardian({13})")	
+        }}
+        else if(!{3} || FLAG[GF_SUBEV_PAST_BOSS_B4])
+        {{
+            MenuAdd(41, "{8}: Chamber of Frost Guardian({13})")	
+        }}		
+
+        if({4} && !FLAG[GF_SUBEV_PAST_BOSS_B4])	
+        {{
+            MenuAdd(40, "#2C{9}: Chamber of Magma Guardian({14})")	
+        }}
+        else if(!{4} || FLAG[GF_SUBEV_PAST_BOSS_B4])
+        {{
+            MenuAdd(41, "{9}: Chamber of Magma Guardian({14})")	
+        }}			
+        //--------------------------------------------------------------------------------------
+        
+
+        MenuEnable( 11, 0)
+        MenuEnable( 21, 0)
+        MenuEnable( 31, 0)
+        MenuEnable( 41, 0)
+        MenuEnable( 51, 0)
+
+        MenuOpen( TF_MENU_SELECT2 , 283 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+        WaitMenu(0)
+        CloseMessage(6,0)
+        WaitCloseMessage(6)
+        MenuClose(10, 0)
+        
+        if(FLAG[TF_MENU_SELECT2] == 10)
+        {{
+            MenuClose(10, 0)
+            SetFlag(GF_TBOX_DUMMY127,1)
+            GetItem(ICON3D_971,1)
+            SetFlag(SF_PAST_MODE, 1)
+            {15}
+            {16}
+            //FadeIn(FADE_BLACK,FADE_NORMAL)
+            WaitFade()
+        }}
+        else if(FLAG[TF_MENU_SELECT2] == 20)
+        {{
+            MenuClose(10, 0)
+            SetFlag(GF_TBOX_DUMMY127,1)
+            GetItem(ICON3D_971,1)
+            SetFlag(SF_PAST_MODE, 1)
+            {17}
+            {18}
+            //FadeIn(FADE_BLACK,FADE_NORMAL)
+            WaitFade()
+        }}
+        else if(FLAG[TF_MENU_SELECT2] == 30)
+        {{
+            MenuClose(10, 0)
+            SetFlag(GF_TBOX_DUMMY127,1)
+            GetItem(ICON3D_971,1)
+            SetFlag(SF_PAST_MODE, 1)
+            {19}
+            {20}
+            //FadeIn(FADE_BLACK,FADE_NORMAL)
+            WaitFade()
+        }}
+        else if(FLAG[TF_MENU_SELECT2] == 40)
+        {{
+            MenuClose(10, 0)
+            SetFlag(GF_TBOX_DUMMY127,1)
+            GetItem(ICON3D_971,1)
+            SetFlag(SF_PAST_MODE, 1)
+            {21}
+            {22}
+            //FadeIn(FADE_BLACK,FADE_NORMAL)
+            WaitFade() 
+        }}
+        else if(FLAG[TF_MENU_SELECT2] == 50)
+        {{
+            MenuClose(10, 0)
+            SetFlag(GF_TBOX_DUMMY127,1)
+            GetItem(ICON3D_971,1)
+            SetFlag(SF_PAST_MODE, 1)
+            {23}
+            {24}
+            //FadeIn(FADE_BLACK,FADE_NORMAL)
+            WaitFade()
+        }}
+        ResetStopFlag(STOPFLAG_TALK)
+    
     }}
-    {2}
-    """
-    return psycheFunction.format(scriptName,callPrompt,promptFight)
 
-def brazierFight():
-    script = """
-    function "brazierFight"
-    {
-        if(!FLAG[GF_SUBEV_PAST_02_BOSS])
-        {
-            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            Message("The guardian of the Chamber of Braziers is near.")
-            WaitPrompt()
-            WaitCloseWindow()
-            SetFlag( TF_MENU_SELECT, 0 )
-            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-            
-            //──────────────────────
-            //　⇒支援要請を出す
-            if( FLAG[TF_MENU_SELECT] )
-            {
-                SetEnvSEPlayState(-1, 0)
-                FadeOut(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                
-                SetFlag( TF_MENU_SELECT, 1 )	
-            }
-            //	⇒やめる
-            else
-            {
-                
-                SetFlag( TF_MENU_SELECT, 0 )
-            }
-            //──────────────────────
-
-            if( FLAG[TF_MENU_SELECT] == 0 )
-            {
-                CrossFade(FADE_CROSS)
-                SetStopFlag(STOPFLAG_NOCHARACLIP)
-                
-                ResetPartyPos()
-                ResetFollowPoint()
-                
-                RestoreCamera(0,0)
-                ResetCameraObserver(0)
-                ResetCameraZPlane()
-                Wait(FADE_CROSS)
-                
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-            else
-            {
-                SetFlag(GF_TBOX_DUMMY127,1)
-                GetItem(ICON3D_972,1)
-                SetFlag(SF_PAST_MODE, 1)
-                LoadArg("map/mp6519m/mp6519m.arg")
-                EventCue("mp6519m:EV_RetryBoss")
-                //FadeIn(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-        }
-        else
-        {
-            SetStopFlag(STOPFLAG_TALK)
-            Message("No presence felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            ResetStopFlag(STOPFLAG_TALK)
-        }
-	}
+    {25}
 """
-    return script
-
-def stoneFight():
-    script = """
-    function "stoneFight"
-    {
-        if(!FLAG[GF_SUBEV_PAST_BOSS_B2])
-        {
-            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            Message("The guardian of the Chamber of Stone is near.")
-            WaitPrompt()
-            WaitCloseWindow()
-            SetFlag( TF_MENU_SELECT, 0 )
-            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-            
-            //──────────────────────
-            //　⇒支援要請を出す
-            if( FLAG[TF_MENU_SELECT] )
-            {
-                SetEnvSEPlayState(-1, 0)
-                FadeOut(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
+        bossReturn = """
+        function "bossReturn"
+        {{
+            if(WORK[WK_MAPNAMENO] == {0})
+            {{
+                SetFlag(GF_SUBEV_PAST_02_BOSS,1)
+                LoadArg("map/mp1201/mp1201.arg")
+		        EventCue("mp1201:EV_M01S080_ED")
+            }}
+            else if(WORK[WK_MAPNAMENO] == {1})
+            {{
+                SetFlag(GF_SUBEV_PAST_BOSS_B2,1)
+                LoadArg("map/mp1201/mp1201.arg")
+		        EventCue("mp1201:EV_M01S080_ED")
+            }}
+            else if(WORK[WK_MAPNAMENO] == {2})
+            {{
+                SetFlag(GF_SUBEV_PAST_BOSS_B3,1)
+                LoadArg("map/mp1201/mp1201.arg")
+		        EventCue("mp1201:EV_M01S080_ED")
+            }}
+            else if(WORK[WK_MAPNAMENO] == {3})
+            {{
+                SetFlag(GF_SUBEV_PAST_BOSS_B4,1)
+                LoadArg("map/mp1201/mp1201.arg")
+		        EventCue("mp1201:EV_M01S080_ED")
+            }}
+            else if(WORK[WK_MAPNAMENO] == {4})
+            {{
+                SetFlag(GF_SUBEV_PAST_BOSS_B5,1)
+                LoadArg("map/mp1201/mp1201.arg")
+		        EventCue("mp1201:EV_M01S080_ED")
+            }}
                 
-                SetFlag( TF_MENU_SELECT, 1 )	
-            }
-            //	⇒やめる
-            else
-            {
-                
-                SetFlag( TF_MENU_SELECT, 0 )
-            }
-            //──────────────────────
-
-            if( FLAG[TF_MENU_SELECT] == 0 )
-            {
-                CrossFade(FADE_CROSS)
-                SetStopFlag(STOPFLAG_NOCHARACLIP)
-                
-                ResetPartyPos()
-                ResetFollowPoint()
-                
-                RestoreCamera(0,0)
-                ResetCameraObserver(0)
-                ResetCameraZPlane()
-                Wait(FADE_CROSS)
-                
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-            else
-            {
-                SetFlag(GF_TBOX_DUMMY127,1)
-                GetItem(ICON3D_972,1)
-                SetFlag(SF_PAST_MODE, 1)
-                LoadArg("map/mp6529m/mp6529m.arg")
-                EventCue("mp6529m:EV_RetryBoss")
-                //FadeIn(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-        }
-        else
-        {
-            SetStopFlag(STOPFLAG_TALK)
-            Message("No presence felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            ResetStopFlag(STOPFLAG_TALK)
-        }
-	}
+        }}
 """
-    return script
+        bossReturn = bossReturn.format(bossCue[bossPool[0]][2], bossCue[bossPool[1]][2], bossCue[bossPool[2]][2], bossCue[bossPool[3]][2])
 
-def clairvoyanceFight():
-    script = """
-    function "clairvoyanceFight"
-    {
-        if(!FLAG[GF_SUBEV_PAST_BOSS_B3])
-        {
-            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            Message("The guardian of the Chamber of Clairvoyance is near.")
-            WaitPrompt()
-            WaitCloseWindow()
-            SetFlag( TF_MENU_SELECT, 0 )
-            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-            
-            //──────────────────────
-            //　⇒支援要請を出す
-            if( FLAG[TF_MENU_SELECT] )
-            {
-                SetEnvSEPlayState(-1, 0)
-                FadeOut(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                
-                SetFlag( TF_MENU_SELECT, 1 )	
-            }
-            //	⇒やめる
-            else
-            {
-                
-                SetFlag( TF_MENU_SELECT, 0 )
-            }
-            //──────────────────────
+        return bossCheckpoint.format(bossFight1,bossFight2,bossFight3,bossFight4,bossFight5,
+                                     bossLoc1,bossLoc2,bossLoc3,bossLoc4,bossLoc5,
+                                     bossPool[0],bossPool[1],bossPool[2],bossPool[3],bossPool[4],
+                                     bossCue[bossPool[0]][0],bossCue[bossPool[0]][1],bossCue[bossPool[1]][0],bossCue[bossPool[1]][1],
+                                     bossCue[bossPool[2]][0],bossCue[bossPool[2]][1],bossCue[bossPool[3]][0],bossCue[bossPool[3]][1],
+                                     bossCue[bossPool[4]][0],bossCue[bossPool[4]][1],
+                                     bossReturn)
+    
+    #### Standard Mode
 
-            if( FLAG[TF_MENU_SELECT] == 0 )
-            {
-                CrossFade(FADE_CROSS)
-                SetStopFlag(STOPFLAG_NOCHARACLIP)
-                
-                ResetPartyPos()
-                ResetFollowPoint()
-                
-                RestoreCamera(0,0)
-                ResetCameraObserver(0)
-                ResetCameraZPlane()
-                Wait(FADE_CROSS)
-                
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-            else
-            {
-                SetFlag(GF_TBOX_DUMMY127,1)
-                GetItem(ICON3D_972,1)
-                SetFlag(SF_PAST_MODE, 1)
-                LoadArg("map/mp6539m/mp6539m.arg")
-                EventCue("mp6539m:EV_RetryBoss")
-                //FadeIn(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-        }
-        else
-        {
-            SetStopFlag(STOPFLAG_TALK)
-            Message("No presence felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            ResetStopFlag(STOPFLAG_TALK)
-        }
-	}
-"""
-    return script
+    bossCheckpoint = """
+    function "bossCheckpoint"
+    {{
+        SetStopFlag(STOPFLAG_TALK)
+        
+        SetFlag(TF_MENU_SELECT2, 0)
+        MenuReset()
+        MenuType(MENUTYPE_POPUP)
+        
+        //--------------------------------------------------------------------------------------
 
-def frostFight():
-    script = """
-    function "frostFight"
-    {
-        if(!FLAG[GF_SUBEV_PAST_BOSS_B4])
-        {
-            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            Message("The guardian of the Chamber of Frost is near.")
-            WaitPrompt()
-            WaitCloseWindow()
-            SetFlag( TF_MENU_SELECT, 0 )
-            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-            
-            //──────────────────────
-            //　⇒支援要請を出す
-            if( FLAG[TF_MENU_SELECT] )
-            {
-                SetEnvSEPlayState(-1, 0)
-                FadeOut(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                
-                SetFlag( TF_MENU_SELECT, 1 )	
-            }
-            //	⇒やめる
-            else
-            {
-                
-                SetFlag( TF_MENU_SELECT, 0 )
-            }
-            //──────────────────────
+        if({0} && !FLAG[GF_06MP6305_TALK_HYDRA])
+        {{
+            MenuAdd(10, "#2C{4}: Ocean Warden({9})")	
+        }}
+        else if(!{0} || FLAG[GF_06MP6305_TALK_HYDRA])
+        {{
+            MenuAdd(11, "{4}: Ocean Warden({9})")	
+        }}
 
-            if( FLAG[TF_MENU_SELECT] == 0 )
-            {
-                CrossFade(FADE_CROSS)
-                SetStopFlag(STOPFLAG_NOCHARACLIP)
-                
-                ResetPartyPos()
-                ResetFollowPoint()
-                
-                RestoreCamera(0,0)
-                ResetCameraObserver(0)
-                ResetCameraZPlane()
-                Wait(FADE_CROSS)
-                
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-            else
-            {
-                SetFlag(GF_TBOX_DUMMY127,1)
-                GetItem(ICON3D_972,1)
-                SetFlag(SF_PAST_MODE, 1)
-                LoadArg("map/mp6549m/mp6549m.arg")
-                EventCue("mp6549m:EV_RetryBoss")
-                //FadeIn(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-        }
-        else
-        {
-            SetStopFlag(STOPFLAG_TALK)
-            Message("No presence felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            ResetStopFlag(STOPFLAG_TALK)
-        }
-	}
-"""
-    return script
+        if({1} && !FLAG[GF_06MP6306_TALK_MINOS])	
+        {{
+            MenuAdd(20, "#2C{5}: Frost Warden({10})")	
+        }}
+        else if(!{1} || FLAG[GF_06MP6306_TALK_MINOS])
+        {{
+            MenuAdd(21, "{5}: Frost Warden({10})")	
+        }}
+        
+        if({2} && !FLAG[GF_06MP6307_TALK_NESTOR])	
+        {{
+            MenuAdd(30, "#2C{6}: Insect Warden({11})")	
+        }}
+        else if(!{2} || FLAG[GF_06MP6307_TALK_NESTOR])
+        {{
+            MenuAdd(31, "{6}: Insect Warden({11})")	
+        }}
 
-def magmaFight():
-    script = """
-    function "magmaFight"
-    {
-        if(!FLAG[GF_SUBEV_PAST_BOSS_B5])
-        {
-            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            Message("The guardian of the Chamber of Magma is near.")
-            WaitPrompt()
-            WaitCloseWindow()
-            SetFlag( TF_MENU_SELECT, 0 )
-            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-            
-            //──────────────────────
-            //　⇒支援要請を出す
-            if( FLAG[TF_MENU_SELECT] )
-            {
-                SetEnvSEPlayState(-1, 0)
-                FadeOut(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                
-                SetFlag( TF_MENU_SELECT, 1 )	
-            }
-            //	⇒やめる
-            else
-            {
-                
-                SetFlag( TF_MENU_SELECT, 0 )
-            }
-            //──────────────────────
+        if({3} && !FLAG[GF_06MP6308_TALK_SARAI])	
+        {{
+            MenuAdd(40, "#2C{7}: Sky Warden({12})")	
+        }}
+        else if(!{3} || FLAG[GF_06MP6308_TALK_SARAI])
+        {{
+            MenuAdd(41, "{7}: Sky Warden({12})")	
+        }}			
+        //--------------------------------------------------------------------------------------
+        
 
-            if( FLAG[TF_MENU_SELECT] == 0 )
-            {
-                CrossFade(FADE_CROSS)
-                SetStopFlag(STOPFLAG_NOCHARACLIP)
-                
-                ResetPartyPos()
-                ResetFollowPoint()
-                
-                RestoreCamera(0,0)
-                ResetCameraObserver(0)
-                ResetCameraZPlane()
-                Wait(FADE_CROSS)
-                
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-            else
-            {
-                SetFlag(GF_TBOX_DUMMY127,1)
-                GetItem(ICON3D_972,1)
-                SetFlag(SF_PAST_MODE, 1)
-                LoadArg("map/mp6559m/mp6559m.arg")
-                EventCue("mp6559m:EV_RetryBoss")
-                //FadeIn(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-        }
-        else
-        {
-            SetStopFlag(STOPFLAG_TALK)
-            Message("No presence felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            ResetStopFlag(STOPFLAG_TALK)
-        }
-	}
-"""
-    return script
+        MenuEnable( 11, 0)
+        MenuEnable( 21, 0)
+        MenuEnable( 31, 0)
+        MenuEnable( 41, 0)
 
-def hydraFight(locationID):
-    script = """
-    function "hydraFight"
-    {
-        if(!FLAG[GF_06MP6305_TALK_HYDRA])
-        {
-            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            Message("The presence of the Ocean Warden can be felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            SetFlag( TF_MENU_SELECT, 0 )
-            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-            
-            //──────────────────────
-            //　⇒支援要請を出す
-            if( FLAG[TF_MENU_SELECT] )
-            {
-                SetEnvSEPlayState(-1, 0)
-                FadeOut(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                
-                SetFlag( TF_MENU_SELECT, 1 )	
-            }
-            //	⇒やめる
-            else
-            {
-                
-                SetFlag( TF_MENU_SELECT, 0 )
-            }
-            //──────────────────────
+        MenuOpen( TF_MENU_SELECT2 , 283 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+        WaitMenu(0)
+        CloseMessage(6,0)
+        WaitCloseMessage(6)
+        MenuClose(10, 0)
+        
+        if(FLAG[TF_MENU_SELECT2] == 10)
+        {{
+            MenuClose(10, 0)
+            SetFlag(GF_TBOX_DUMMY127,1)
+            GetItem(ICON3D_971,1)
+            {13}
+            {14}
+            //FadeIn(FADE_BLACK,FADE_NORMAL)
+            WaitFade()
+        }}
+        else if(FLAG[TF_MENU_SELECT2] == 20)
+        {{
+            MenuClose(10, 0)
+            SetFlag(GF_TBOX_DUMMY127,1)
+            GetItem(ICON3D_971,1)
+            {15}
+            {16}
+            //FadeIn(FADE_BLACK,FADE_NORMAL)
+            WaitFade()
+        }}
+        else if(FLAG[TF_MENU_SELECT2] == 30)
+        {{
+            MenuClose(10, 0)
+            SetFlag(GF_TBOX_DUMMY127,1)
+            GetItem(ICON3D_971,1)
+            {17}
+            {18}
+            //FadeIn(FADE_BLACK,FADE_NORMAL)
+            WaitFade()  
+        }}
+        else if(FLAG[TF_MENU_SELECT2] == 40)
+        {{
+            MenuClose(10, 0)
+            SetFlag(GF_TBOX_DUMMY127,1)
+            GetItem(ICON3D_971,1)
+            {19}
+            {20}
+            //FadeIn(FADE_BLACK,FADE_NORMAL)
+            WaitFade()  
+        }}
+        ResetStopFlag(STOPFLAG_TALK)
+    
+    }}
+    
+    function "levelScaling"
+    {{
+        {8}
+    }}
 
-            if( FLAG[TF_MENU_SELECT] == 0 )
-            {
-                CrossFade(FADE_CROSS)
-                SetStopFlag(STOPFLAG_NOCHARACLIP)
-                
-                ResetPartyPos()
-                ResetFollowPoint()
-                
-                RestoreCamera(0,0)
-                ResetCameraObserver(0)
-                ResetCameraZPlane()
-                Wait(FADE_CROSS)
-                
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-            else
-            {
-                SetFlag(GF_TBOX_DUMMY127,1)
-                GetItem(ICON3D_972,1)
-                LoadArg("map/mp6305b/mp6305b.arg")
-                EventCue("mp6305b:EV_RetryBoss")
-                //FadeIn(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-        }
-        else
-        {
-            SetStopFlag(STOPFLAG_TALK)
-            Message("No presence felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            ResetStopFlag(STOPFLAG_TALK)
-        }
-	}
+    {21}
 """
-    if locationID not in [617,618,619,620,621]:
-        script = script + """
-    function "warden1Scaling"
-    {
-        SetLevel("B112", 60)
-    }
+    bossReturn = """
+        function "bossReturn"
+        {{
+            if(WORK[WK_MAPNAMENO] == {0})
+            {{
+                LoadArg("map/mp6305/mp6305.arg")
+                EventCue("mp6305:EV_M06S143_ED")
+            }}
+            else if(WORK[WK_MAPNAMENO] == {1})
+            {{
+                LoadArg("map/mp6306/mp6306.arg")
+                EventCue("mp6306:EV_M06S163_ED")
+            }}
+            else if(WORK[WK_MAPNAMENO] == {2})
+            {{
+                LoadArg("map/mp6307/mp6307.arg")
+                EventCue("mp6307:EV_M06S183_ED")
+            }}
+            else if(WORK[WK_MAPNAMENO] == {3})
+            {{
+                LoadArg("map/mp6308/mp6308.arg")
+                EventCue("mp6308:EV_M06S203_ED")
+            }}  
+        }}
 """
-    else:
-        script = script + """
-    function "warden1Scaling"
-    {
-    }
-"""
-    return script
+    bossReturn = bossReturn.format(bossCue[bossPool[0]][2], bossCue[bossPool[1]][2], bossCue[bossPool[2]][2], bossCue[bossPool[3]][2])
 
-def minosFight(locationID):
-    script = """
-    function "minosFight"
-    {
-        if(!FLAG[GF_06MP6306_TALK_MINOS])
-        {
-            Message("The presence of the Frozen Warden can be felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            SetFlag( TF_MENU_SELECT, 0 )
-            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-            
-            //──────────────────────
-            //　⇒支援要請を出す
-            if( FLAG[TF_MENU_SELECT] )
-            {
-                SetEnvSEPlayState(-1, 0)
-                FadeOut(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                
-                SetFlag( TF_MENU_SELECT, 1 )	
-            }
-            //	⇒やめる
-            else
-            {
-                
-                SetFlag( TF_MENU_SELECT, 0 )
-            }
-            //──────────────────────
-
-            if( FLAG[TF_MENU_SELECT] == 0 )
-            {
-                CrossFade(FADE_CROSS)
-                SetStopFlag(STOPFLAG_NOCHARACLIP)
-                
-                ResetPartyPos()
-                ResetFollowPoint()
-                
-                RestoreCamera(0,0)
-                ResetCameraObserver(0)
-                ResetCameraZPlane()
-                Wait(FADE_CROSS)
-                
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-            else
-            {
-                SetFlag(GF_TBOX_DUMMY127,1)
-                GetItem(ICON3D_972,1)
-                LoadArg("map/mp6306b/mp6306b.arg")
-                EventCue("mp6306b:EV_RetryBoss")
-                //FadeIn(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-        }
-        else
-        {
-            SetStopFlag(STOPFLAG_TALK)
-            Message("No presence felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            ResetStopFlag(STOPFLAG_TALK)
-        }
-	}
-"""
-    if locationID not in [617,618,619,620,621]:
-        script = script + """
-    function "warden2Scaling"
-    {
-        SetLevel("B110", 60)
-    }
-"""
-    else:
-        script = script + """
-    function "warden2Scaling"
-    {
-    }
-"""
-    return script
-
-def nestorFight(locationID):
-    script = """
-    function "nestorFight"
-    {
-        if(!FLAG[GF_06MP6307_TALK_NESTOR])
-        {
-            Message("The presence of the Insect Warden can be felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            SetFlag( TF_MENU_SELECT, 0 )
-            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-            
-            //──────────────────────
-            //　⇒支援要請を出す
-            if( FLAG[TF_MENU_SELECT] )
-            {
-                SetEnvSEPlayState(-1, 0)
-                FadeOut(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                
-                SetFlag( TF_MENU_SELECT, 1 )	
-            }
-            //	⇒やめる
-            else
-            {
-                
-                SetFlag( TF_MENU_SELECT, 0 )
-            }
-            //──────────────────────
-
-            if( FLAG[TF_MENU_SELECT] == 0 )
-            {
-                CrossFade(FADE_CROSS)
-                SetStopFlag(STOPFLAG_NOCHARACLIP)
-                
-                ResetPartyPos()
-                ResetFollowPoint()
-                
-                RestoreCamera(0,0)
-                ResetCameraObserver(0)
-                ResetCameraZPlane()
-                Wait(FADE_CROSS)
-                
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-            else
-            {
-                SetFlag(GF_TBOX_DUMMY127,1)
-                GetItem(ICON3D_972,1)
-                LoadArg("map/mp6307b/mp6307b.arg")
-                EventCue("mp6307b:EV_RetryBoss")
-                //FadeIn(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-        }
-        else
-        {
-            SetStopFlag(STOPFLAG_TALK)
-            Message("No presence felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            ResetStopFlag(STOPFLAG_TALK)
-        }
-	}
-"""
-    if locationID not in [617,618,619,620,621]:
-        script = script + """
-    function "warden3Scaling"
-    {
-        SetLevel("B111", 60)
-    }
-"""
-    else:
-        script = script + """
-    function "warden3Scaling"
-    {
-    }
-"""
-    return script
-
-def uraFight(locationID):
-    script = """
-    function "uraFight"
-    {
-        if(!FLAG[GF_06MP6308_TALK_SARAI])
-        {
-            Message("The presence of the Sky Warden can be felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            SetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            SetFlag( TF_MENU_SELECT, 0 )
-            YesNoMenu(TF_MENU_SELECT,"#7CFight?",1)
-            
-            //──────────────────────
-            //　⇒支援要請を出す
-            if( FLAG[TF_MENU_SELECT] )
-            {
-                SetEnvSEPlayState(-1, 0)
-                FadeOut(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                
-                SetFlag( TF_MENU_SELECT, 1 )	
-            }
-            //	⇒やめる
-            else
-            {
-                
-                SetFlag( TF_MENU_SELECT, 0 )
-            }
-            //──────────────────────
-
-            if( FLAG[TF_MENU_SELECT] == 0 )
-            {
-                CrossFade(FADE_CROSS)
-                SetStopFlag(STOPFLAG_NOCHARACLIP)
-                
-                ResetPartyPos()
-                ResetFollowPoint()
-                
-                RestoreCamera(0,0)
-                ResetCameraObserver(0)
-                ResetCameraZPlane()
-                Wait(FADE_CROSS)
-                
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-            else
-            {
-                SetFlag(GF_TBOX_DUMMY127,1)
-                GetItem(ICON3D_972,1)
-                LoadArg("map/mp6308b/mp6308b.arg")
-                EventCue("mp6308b:EV_RetryBoss")
-                //FadeIn(FADE_BLACK,FADE_NORMAL)
-                WaitFade()
-                ResetStopFlag(STOPFLAG_SIMPLEEVENT2)
-            }
-        }
-        else
-        {
-            SetStopFlag(STOPFLAG_TALK)
-            Message("No presence felt.")
-            WaitPrompt()
-            WaitCloseWindow()
-            ResetStopFlag(STOPFLAG_TALK)
-        }
-	}
-"""
-    if locationID not in [617,618,619,620,621]:
-        script = script + """
-    function "warden4Scaling"
-    {
-        SetLevel("B008", 60)
-    }
-"""
-    else:
-        script = script + """
-    function "warden4Scaling"
-    {
-    }
+    levelScaling = """
+    SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
+    SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
 """
 
-    return script
+    if bossLoc1 != 'Octus Overlook':
+        levelScaling = levelScaling + "SetLevel(" + bossCue[bossPool[0]][3] + ", 60)\n"
+    if bossLoc2 != 'Octus Overlook':
+        levelScaling = levelScaling + "SetLevel(" + bossCue[bossPool[1]][3] + ", 60)\n"
+    if bossLoc3 != 'Octus Overlook':
+        levelScaling = levelScaling + "SetLevel(" + bossCue[bossPool[2]][3] + ", 60)\n"
+    if bossLoc4 != 'Octus Overlook':
+        levelScaling = levelScaling + "SetLevel(" + bossCue[bossPool[3]][3] + ", 60)\n"
+
+    return bossCheckpoint.format(bossFight1,bossFight2,bossFight3,bossFight4,
+                                     bossLoc1,bossLoc2,bossLoc3,bossLoc4,levelScaling,
+                                     bossPool[0],bossPool[1],bossPool[2],bossPool[3],
+                                     bossCue[bossPool[0]][0],bossCue[bossPool[0]][1],bossCue[bossPool[1]][0],bossCue[bossPool[1]][1],
+                                     bossCue[bossPool[2]][0],bossCue[bossPool[2]][1],bossCue[bossPool[3]][0],bossCue[bossPool[3]][1],
+                                     bossReturn)
 
 def buildLandmarks(location,script):
     scriptName = buildLocScripts(location.locID, False)

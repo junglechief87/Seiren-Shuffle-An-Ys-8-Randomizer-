@@ -425,7 +425,7 @@ def getCrewFlags(name):
     SetDiaryCharaFlag( DRCHA_DANA2, DRCHA_FLAG_INFO3, 1 )
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
 
-    if( FLAG[GF_TBOX_DUMMY108] && !FLAG[GF_TBOX_DUMMY109])
+    if(FLAG[GF_TBOX_DUMMY108] && !FLAG[GF_TBOX_DUMMY109])
     {
         GetItem(ICON3D_WP_DANA_005,1)
 	    EquipWeapon(DANA,ICON3D_WP_DANA_005)
