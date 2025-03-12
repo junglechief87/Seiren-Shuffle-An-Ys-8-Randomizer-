@@ -567,7 +567,9 @@ class guiInput:
     self.adventuringGearHints = None
     self.castawayHints = None
     self.foolishHints = None
-  
+    self.partyPool = None
+    self.infinityMode = None
+    
   def getSeed(self, seed):
     self.seed = int(seed)
 
@@ -594,7 +596,7 @@ class guiInput:
     self.silvia = silvia
     self.maphorash = maphorash
 
-  def getOtherToggles(self, intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients, northSideOpen):
+  def getOtherToggles(self, intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients, northSideOpen, infinityMode):
     self.intRewards = intRewards
     self.battleLogic = battleLogic
     self.progressiveSuperWeapons = superWeapons
@@ -602,6 +604,7 @@ class guiInput:
     self.extraFlameStones = extraFlameStones
     self.extraIngredients = extraIngredients
     self.northSideOpen = northSideOpen
+    self.infinityMode = infinityMode
 
   def getExpMult(self, expMult,expGrowth):
     self.expMult = expMult
@@ -614,7 +617,8 @@ class guiInput:
     self.originPhase = originPhase
     self.carePackage = carePackage
 
-  def getMiscSettings(self, shuffleBgm, essenceKeySanity, formerSanctuaryCrypt, hint, adventuringGearHints, castawayHints, foolishHints):
+  def getMiscSettings(self, shuffleBgm, essenceKeySanity, formerSanctuaryCrypt, hint, adventuringGearHints, castawayHints, foolishHints, 
+                      startAdol, startLaxia, startSahad, startHummel, startRicotta, startDana):
     self.shuffleBgm = shuffleBgm
     self.essenceKeySanity = essenceKeySanity
     self.formerSanctuaryCrypt = formerSanctuaryCrypt
@@ -622,6 +626,14 @@ class guiInput:
     self.adventuringGearHints = adventuringGearHints
     self.castawayHints = castawayHints
     self.foolishHints = foolishHints
+    
+    self.partyPool = []
+    if startAdol: self.partyPool.append('Adol')
+    if startLaxia: self.partyPool.append('Laxia')
+    if startSahad: self.partyPool.append('Sahad')
+    if startHummel: self.partyPool.append('Hummel')
+    if startRicotta: self.partyPool.append('Ricotta')
+    if startDana: self.partyPool.append('Dana')
     
 class interceptReward:
   def __init__(self,stage,rewards):

@@ -109,10 +109,28 @@ def canAccess(inventory, location, parameters):
         'Former Sanctuary Crypt - B4': checkFSC_B4,
         'Former Sanctuary Crypt - B5': checkFSC_B5,
         'Former Sanctuary Crypt - B6': checkFSC_B6,
+        'Former Sanctuary Crypt - Final Floor': checkFSC_Final,
     }
 
     return regionChecks.get(location.locRegion, alwaysFalse)(location, access, parameters)
 
+def checkFSC_Final(location, access, parameters):
+    if not (
+        FormerSanctuaryCryptOpen(access, parameters) and 
+        access.canDoubleJump() and
+        access.hasEssenceKeyStone(6) and 
+        access.canUndead() and
+        access.canSwampWalk() and 
+        battleLogic(450,access,parameters)
+    ):
+        return False
+
+    location_checks = {
+        'Entrance': lambda: 
+            (location.mapCheckID == 'Psyches' and access.canDefeat('Melaiduma') and parameters.goal == 'Release the Psyches'),
+    }
+
+    return location_checks.get(location.locName, lambda: False)()
 def checkFSC_B6(location, access, parameters):
     return (
         FormerSanctuaryCryptOpen(access, parameters) and 
@@ -217,7 +235,7 @@ def checkFSC_B1(location, access, parameters):
 def octusAccess(access,parameters):
     return (battleLogic(340, access, parameters) and (
             (parameters.goal == 'Find Crew' and access.canMove(parameters.numOctus)) or
-            (parameters.goal == 'Seiren Escape') or
+            (parameters.goal in ['Seiren Escape','Untouchable']) or
             (parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numOctus))))
 
 def checkOctusOverlook(location, access, parameters):
@@ -233,7 +251,8 @@ def checkOctusOverlook(location, access, parameters):
             (location.mapCheckID == 'Goal' and (
                 (parameters.goal == 'Find Crew' and access.canMove(parameters.numGoal)) or
                 (parameters.goal == 'Seiren Escape' and access.hasBoat() and access.hasMistilteinn() and access.hasChart()) or
-                (parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numGoal))
+                (parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numGoal))  or
+                (parameters.goal == 'Untouchable' and access.canDefeat('Melaiduma'))
             )) or (location.mapCheckID != 'Goal')
         )
     }
@@ -629,7 +648,7 @@ def checkSilentTower(location, access, parameters):
     location_checks = {
         'Second Basement': lambda: (
             (
-            location.mapCheckID in ['Maphorash', 'Maphorash Skill 1', 'Maphorash Skill 2', 'TBOX04'] and 
+            location.mapCheckID in ['Maphorash', 'Maphorash Skill', 'TBOX04'] and 
             battleLogic(380, access, parameters)
             ) or
             location.mapCheckID in ['TBOX01', 'TBOX02', 'TBOX03'] or

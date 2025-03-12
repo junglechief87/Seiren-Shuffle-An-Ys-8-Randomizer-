@@ -105,7 +105,7 @@ class SelectionSphereFrame(ctk.CTkFrame):
 
         self.goal_var = ctk.StringVar(value="Release the Psyches")
         self.goal_option_menu = ctk.CTkOptionMenu(self, variable=self.goal_var,
-                                                  values=["Release the Psyches", "Seiren Escape", "Find Crew"], 
+                                                  values=["Release the Psyches", "Seiren Escape", "Find Crew", "Untouchable"], 
                                                   command=self.goalChange)
         self.goal_option_menu.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
@@ -174,7 +174,7 @@ class SelectionSphereFrame(ctk.CTkFrame):
             self.goal_count_value_label.configure(text="24")
             self.octus_num_value_label.configure(text="18")
 
-        elif choice == "Seiren Escape":
+        elif choice in ["Seiren Escape", "Untouchable"]:
             # Disable both sliders and hide them, as well as value labels
             self.show_sliders(False)
 
@@ -404,6 +404,11 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.northsideOpen_checkbox = ctk.CTkCheckBox(self, text="North Side Open", variable=self.northsideOpen_var)
         self.northsideOpen_checkbox.grid(row=5, column=0, padx=5, pady=5, sticky="w")
 
+        # North side open checkbox
+        self.infinityMode_var = ctk.BooleanVar(value=False)
+        self.infinityMode_checkbox = ctk.CTkCheckBox(self, text="Infinity Mode", variable=self.infinityMode_var)
+        self.infinityMode_checkbox.grid(row=5, column=1, padx=5, pady=5, sticky="w")
+
 
     def update_examples(self):
         """ Update example labels dynamically based on the sliders' values. """
@@ -536,6 +541,77 @@ class MiscSettingsFrame(ctk.CTkFrame):
         self.adventuring_gear_hints = ctk.IntVar(value=1)
         self.castaway_hints = ctk.IntVar(value=3)
         self.foolish_location_hints = ctk.IntVar(value=5)
+
+        # Customize Button
+        self.party_pool_button = ctk.CTkButton(self, text="Customize Starting Characters", command=self.open_start_character_pool)
+        self.party_pool_button.grid(row=4, column=0, padx=5, pady=5, sticky="w")
+
+        # Initialize Party Variables
+        self.adol_var = ctk.BooleanVar(value=True)  # Default to True (checked)
+        self.laxia_var = ctk.BooleanVar(value=True)  # Default to True (checked)
+        self.sahad_var = ctk.BooleanVar(value=True)  # Default to True (checked)
+        self.hummel_var = ctk.BooleanVar(value=True)  # Default to True (checked)
+        self.ricotta_var = ctk.BooleanVar(value=True)  # Default to True (checked)
+        self.dana_var = ctk.BooleanVar(value=True)  # Default to True (checked)
+
+    def open_start_character_pool(self):
+        # Create popup window
+        popup = ctk.CTkToplevel(self)
+        popup.title("Starting Characters")
+        popup.geometry("400x150")
+        popup.grab_set()  # Make popup modal
+
+        # Configure grid layout
+        popup.grid_columnconfigure(1, weight=1)
+
+        # Disable checked character if they are the only characters selected
+        def selection_check():
+            char = 0
+            if self.adol_var.get():
+                char += 1
+            if self.laxia_var.get():
+                char += 1
+            if self.sahad_var.get():
+                char += 1
+            if self.hummel_var.get():
+                char += 1
+            if self.ricotta_var.get():
+                char += 1
+            if self.dana_var.get():
+                char += 1
+            
+            if char == 1:
+                if self.adol_var.get(): self.adol_checkbox.configure(state="disabled")
+                if self.laxia_var.get(): self.laxia_checkbox.configure(state="disabled")
+                if self.sahad_var.get(): self.sahad_checkbox.configure(state="disabled")
+                if self.hummel_var.get(): self.hummel_checkbox.configure(state="disabled")
+                if self.ricotta_var.get(): self.ricotta_checkbox.configure(state="disabled")
+                if self.dana_var.get(): self.dana_checkbox.configure(state="disabled")
+            else:
+                self.adol_checkbox.configure(state="normal")
+                self.laxia_checkbox.configure(state="normal")
+                self.sahad_checkbox.configure(state="normal")
+                self.hummel_checkbox.configure(state="normal")
+                self.ricotta_checkbox.configure(state="normal")
+                self.dana_checkbox.configure(state="normal")
+
+        # Build Checkboxes
+        self.adol_checkbox = ctk.CTkCheckBox(popup, text="Adol", command=selection_check, variable=self.adol_var)
+        self.laxia_checkbox = ctk.CTkCheckBox(popup, text="Laxia", command=selection_check, variable=self.laxia_var)
+        self.sahad_checkbox = ctk.CTkCheckBox(popup, text="Sahad", command=selection_check, variable=self.sahad_var)
+        self.hummel_checkbox = ctk.CTkCheckBox(popup, text="Hummel", command=selection_check, variable=self.hummel_var)
+        self.ricotta_checkbox = ctk.CTkCheckBox(popup, text="Ricotta", command=selection_check, variable=self.ricotta_var)
+        self.dana_checkbox = ctk.CTkCheckBox(popup, text="Dana", command=selection_check, variable=self.dana_var)
+        # Build Layout
+        self.adol_checkbox.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.laxia_checkbox.grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        self.sahad_checkbox.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.hummel_checkbox.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+        self.ricotta_checkbox.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        self.dana_checkbox.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+
+        # Close button
+        ctk.CTkButton(popup, text="Close", command=popup.destroy).grid(row=4, column=0, columnspan=3, pady=10)
 
     def open_hints_customization(self):
         # Create popup window
@@ -683,6 +759,7 @@ class App(ctk.CTk):
                 "exFlameStones": self.pacingModifiersFrame.ex_flame_stones_var.get(),
                 "extraIngredients": self.pacingModifiersFrame.extra_ingredients_var.get(),
                 "northsideOpen": self.pacingModifiersFrame.northsideOpen_var.get(),
+                "infinityMode": self.pacingModifiersFrame.infinityMode_var.get(),
                 
                 # Final Boss Settings
                 "finalBoss": self.finalBossSettingsFrame.final_boss_option.get(),
@@ -696,7 +773,13 @@ class App(ctk.CTk):
                 "hints": self.miscSettingsFrame.hints_var.get(),
                 "adventuringGearHints": self.miscSettingsFrame.adventuring_gear_hints.get(),
                 "castawayHints": self.miscSettingsFrame.castaway_hints.get(),
-                "foolishLocationHints": self.miscSettingsFrame.foolish_location_hints.get()
+                "foolishLocationHints": self.miscSettingsFrame.foolish_location_hints.get(),
+                "startAdol": self.miscSettingsFrame.adol_var.get(),
+                "startLaxia": self.miscSettingsFrame.laxia_var.get(),
+                "startSahad": self.miscSettingsFrame.sahad_var.get(),
+                "startHummer": self.miscSettingsFrame.hummel_var.get(),
+                "startRicotta": self.miscSettingsFrame.ricotta_var.get(),
+                "startDana": self.miscSettingsFrame.dana_var.get()
             }
 
             with open(SETTINGS_FILE, "w") as f:
@@ -777,6 +860,7 @@ class App(ctk.CTk):
             self.pacingModifiersFrame.ex_flame_stones_var.set(settings.get("exFlameStones", True))
             self.pacingModifiersFrame.extra_ingredients_var.set(settings.get("extraIngredients", True))
             self.pacingModifiersFrame.northsideOpen_var.set(settings.get("northsideOpen", False))
+            self.pacingModifiersFrame.infinityMode_var.set(settings.get("infinityMode", False))
 
             # Final Boss Settings
             final_boss = settings.get("finalBoss", "Theos de Endogram")
@@ -799,6 +883,18 @@ class App(ctk.CTk):
                 settings.get("castawayHints", 3))
             self.miscSettingsFrame.foolish_location_hints.set(
                 settings.get("foolishLocationHints", 5))
+            self.miscSettingsFrame.adol_var.set(
+                settings.get("startAdol", True))
+            self.miscSettingsFrame.laxia_var.set(
+                settings.get("startLaxia", True))
+            self.miscSettingsFrame.sahad_var.set(
+                settings.get("startSahad", True))
+            self.miscSettingsFrame.hummel_var.set(
+                settings.get("startHummer", True))
+            self.miscSettingsFrame.ricotta_var.set(
+                settings.get("startRicotta", True))
+            self.miscSettingsFrame.dana_var.set(
+                settings.get("startDana", True))
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load settings: {str(e)}")
@@ -843,7 +939,7 @@ class App(ctk.CTk):
             #print(settings)
             # Map CSV keys to GUI components
             key_mapping = {
-                'seed': (self.seedFrame.seed_var, 'set'),
+                'Seed': (self.seedFrame.seed_var, 'set'),
                 'Game Mode': (self.modeFrame.character_mode, 'set'),
                 'Shuffle Party': (self.shuffleLocationsFrame.party_var, 'set'),
                 'Shuffle Crew': (self.shuffleLocationsFrame.crew_var, 'set'),
@@ -868,6 +964,7 @@ class App(ctk.CTk):
                 'Extra Flame Stones': (self.pacingModifiersFrame.ex_flame_stones_var, 'set'),
                 'Recipes Come w\\ Ingredients': (self.pacingModifiersFrame.extra_ingredients_var, 'set'),
                 'North Side Open': (self.pacingModifiersFrame.northsideOpen_var, 'set'),
+                'Infinity Mode': (self.pacingModifiersFrame.infinityMode_var, 'set'),
                 'Final Boss': (self.finalBossSettingsFrame.final_boss_option, 'set'),
                 'Theos Start Phase': (self.finalBossSettingsFrame.theos_start_option, 'set'),
                 'Origin Start Phase': (self.finalBossSettingsFrame.origin_start_option, 'set'),
@@ -877,7 +974,13 @@ class App(ctk.CTk):
                 'Hints': (self.miscSettingsFrame.hints_var, 'set'),
                 'Adventuring Gear Hints': (self.miscSettingsFrame.adventuring_gear_hints, 'set_int'),
                 'Castaway Hints': (self.miscSettingsFrame.castaway_hints, 'set_int'),
-                'Foolish Location Hints': (self.miscSettingsFrame.foolish_location_hints, 'set_int')
+                'Foolish Location Hints': (self.miscSettingsFrame.foolish_location_hints, 'set_int'),
+                'Adol': (self.miscSettingsFrame.adol_var, 'set'),
+                'Laxia': (self.miscSettingsFrame.laxia_var, 'set'),
+                'Sahad': (self.miscSettingsFrame.sahad_var, 'set'),
+                'Hummel': (self.miscSettingsFrame.hummel_var, 'set'),
+                'Ricotta': (self.miscSettingsFrame.ricotta_var, 'set'),
+                'Dana': (self.miscSettingsFrame.dana_var, 'set')
             }
             
             # Apply settings to GUI with type handling
@@ -1041,6 +1144,7 @@ class App(ctk.CTk):
                 self.pacingModifiersFrame.ex_flame_stones_var.get(),
                 self.pacingModifiersFrame.extra_ingredients_var.get(),
                 self.pacingModifiersFrame.northsideOpen_var.get(),
+                self.pacingModifiersFrame.infinityMode_var.get()
             )
             
             # Experience Multipliers
@@ -1065,7 +1169,13 @@ class App(ctk.CTk):
                 self.miscSettingsFrame.hints_var.get(),
                 self.miscSettingsFrame.adventuring_gear_hints.get(),
                 self.miscSettingsFrame.castaway_hints.get(),
-                self.miscSettingsFrame.foolish_location_hints.get()
+                self.miscSettingsFrame.foolish_location_hints.get(),
+                self.miscSettingsFrame.adol_var.get(),
+                self.miscSettingsFrame.laxia_var.get(),
+                self.miscSettingsFrame.sahad_var.get(),
+                self.miscSettingsFrame.hummel_var.get(),
+                self.miscSettingsFrame.ricotta_var.get(),
+                self.miscSettingsFrame.dana_var.get()
             )
             
             # Execute main patcher and save

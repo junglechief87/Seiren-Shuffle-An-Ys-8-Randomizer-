@@ -9,13 +9,13 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     accessibleLocation = []
     progressionInventory = []
     win = False
-    spoilerLog = open('Ys_8_' + str(parameters.seed) + '.txt', 'w')
+    spoilerLog = open("Ys_8_" + str(parameters.seed) + ".txt", "w")
 
-    spoilerLog.write("Seed#: " + str(parameters.seed) + '\n')
-    spoilerLog.write('Goal: ' + parameters.goal + '\n')
-    spoilerLog.write('Number: ' + str(parameters.numGoal) + '\n')
-    spoilerLog.write('Goal count to open Octus: ' + str(parameters.numOctus))
-    spoilerLog.write('\n \n')
+    spoilerLog.write("Seed#: " + str(parameters.seed) + "\n")
+    spoilerLog.write("Goal: " + parameters.goal + "\n")
+    spoilerLog.write("Number: " + str(parameters.numGoal) + '\n')
+    spoilerLog.write("Goal count to open Octus: " + str(parameters.numOctus))
+    spoilerLog.write("\n \n")
     spoilerLog.write("Settings:\n")
     spoilerLog.write("Game Mode: " + str(parameters.charMode) + "\n")
     spoilerLog.write("Shuffle Party: " + str(parameters.shuffleParty) + "\n")
@@ -41,6 +41,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Extra Flame Stones: " + str(parameters.extraFlameStones) + "\n")
     spoilerLog.write("Recipes Come w\ Ingredients: " + str(parameters.extraIngredients) + "\n")
     spoilerLog.write("North Side Open: " + str(parameters.northSideOpen) + "\n")
+    spoilerLog.write("Infinity Mode: " + str(parameters.infinityMode) + "\n")
     spoilerLog.write("Final Boss: " + str(parameters.finalBoss) + "\n")
     spoilerLog.write("Theos Start Phase: " + str(parameters.theosPhase) + "\n")
     spoilerLog.write("Origin Start Phase: " + str(parameters.originPhase) + "\n")
@@ -51,6 +52,16 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Adventuring Gear Hints: " + str(parameters.adventuringGearHints) + "\n")
     spoilerLog.write("Castaway Hints: " + str(parameters.castawayHints) + "\n")
     spoilerLog.write("Foolish Location Hints: " + str(parameters.foolishHints) + "\n")
+    spoilerLog.write("Party Pool: \n")
+
+    fullParty = ['Adol','Laxia','Sahad','Hummel','Ricotta','Dana']
+    for char in fullParty:
+        if char in parameters.partyPool:
+            spoilerLog.write("\t" + str(char) + ": True\n")
+        else:
+            spoilerLog.write("\t" + str(char) + ": False\n")
+    
+    spoilerLog.write("\n")
     spoilerLog.write("Locations:\n")
 
     locationsSorted = sorted(shuffledLocations, key=lambda x: (x.locRegion, x.locName, x.mapCheckID))

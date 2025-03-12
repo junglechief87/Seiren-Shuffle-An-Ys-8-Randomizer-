@@ -723,7 +723,7 @@ function "openTree"
 """
         return octusAccess.format(str(parameters.numOctus))
     
-    elif parameters.goal == 'Seiren Escape':
+    elif parameters.goal in ['Seiren Escape','Untouchable']:
         octusAccess ="""
 function "openTree"
 {
@@ -798,7 +798,24 @@ function "goal"
 }}
 """
     
-    return selectionSphereAccess.format(str(parameters.numGoal))
+        return selectionSphereAccess.format(str(parameters.numGoal))
+
+    elif parameters.goal == 'Untouchable':
+        selectionSphereAccess ="""
+function "goal"
+{
+    if(FLAG[GF_SUBEV_UNTOUCHABLE])
+    {
+        // filler
+    }
+    else 
+    {
+        SetChrWork("LP_warpin_mp6310b", CWK_CHECKOFF, 1)
+        SetChrPos("b020",-100000.00f,0.00f,0.00f)
+    }
+}
+"""
+    return selectionSphereAccess
 
 #This sorts out our final boss settings.
 #First we figure out what phases we're doing then we run through our script that's called to start the final boss and what's used to call the ending cutscenes.
@@ -1209,7 +1226,8 @@ def buildPsyches(shuffledLocations, parameters):
                     'Mont Gendarme': 'FLAG[GF_03MP4341_KILL_ANCIENT]',
                     'Schlamm Jungle': 'FLAG[GF_02MP2308_KILL_HIPPO]',
                     'Eroded Valley': 'FLAG[GF_TBOX_DUMMY074]',
-                    'Towering Coral Forest': 'FLAG[GF_02MP1308_KILL_CHAMELEON]'}
+                    'Towering Coral Forest': 'FLAG[GF_02MP1308_KILL_CHAMELEON]',
+                    'Former Sanctuary Crypt - Final Floor': 'FLAG[GF_SUBEV_UNTOUCHABLE]'}
     bossCue = {'Hydra': ['LoadArg("map/mp6305b/mp6305b.arg")', 'EventCue("mp6305b:EV_RetryBoss")', 'MN_D_MP6305b', 'B112'],
                'Minos': ['LoadArg("map/mp6306b/mp6306b.arg")', 'EventCue("mp6306b:EV_RetryBoss")', 'MN_D_MP6306b', 'B110'],
                'Nestor': ['LoadArg("map/mp6307b/mp6307b.arg")', 'EventCue("mp6307b:EV_RetryBoss")', 'MN_D_MP6307b', 'B111'],
@@ -1220,7 +1238,8 @@ def buildPsyches(shuffledLocations, parameters):
                'Argura': ['LoadArg("map/mp6539m/mp6539m.arg")', 'EventCue("mp6539m:EV_RetryBoss")', 'MN_D_MP6539M', 'B163'],
                'Crusos': ['LoadArg("map/mp6549m/mp6549m.arg")', 'EventCue("mp6549m:EV_RetryBoss")', 'MN_D_MP6549M', 'B011'],
                'Blasphima': ['LoadArg("map/mp6559m/mp6519m.arg")', 'EventCue("mp6559m:EV_RetryBoss")', 'MN_D_MP6559M', 'B164'],
-               'Le-Kyanos': ['LoadArg("map/mp6204m/mp6204m.arg")', 'EventCue("mp6204m:EV_Boss_Jump")', 'MN_F_MP6204M', 'B165']
+               'Le-Kyanos': ['LoadArg("map/mp6204m/mp6204m.arg")', 'EventCue("mp6204m:EV_Boss_Jump")', 'MN_F_MP6204M', 'B165'],
+               'Melaiduma': ['LoadArg("map/mp6569/mp6569.arg")', 'EventCue("mp6569:EV_RetryBoss")', 'MN_D_MP6569', 'B170']
         }
     
 
@@ -1228,6 +1247,9 @@ def buildPsyches(shuffledLocations, parameters):
         bossPool = ['Grazios','Nebritia','Argura','Crusos','Blasphima','Le-Kyanos']
     else:
         bossPool = ['Hydra','Minos','Nestor','Ura','Le-Erythros']
+    
+    if not parameters.formerSanctuaryCrypt:
+        bossPool.append('Melaiduma')
         
     random.shuffle(bossPool)
 
@@ -1535,7 +1557,10 @@ def buildPsyches(shuffledLocations, parameters):
     
     function "levelScaling"
     {{
-        {8}
+        if(!FLAG[SF_INFINITY])
+        {{
+            {8}
+        }} 
     }}
 
     {21}
@@ -1571,16 +1596,17 @@ def buildPsyches(shuffledLocations, parameters):
     SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
     SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
 """
-
+    if 'Melaiduma' in [bossPool]:
+        levelScaling = levelScaling + 'SetLevel("B170", 80)\n'
     if bossLoc1 != 'Octus Overlook':
-        levelScaling = levelScaling + "SetLevel(" + bossCue[bossPool[0]][3] + ", 60)\n"
+        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[0]][3] + ', 60)\n'
     if bossLoc2 != 'Octus Overlook':
-        levelScaling = levelScaling + "SetLevel(" + bossCue[bossPool[1]][3] + ", 60)\n"
+        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[1]][3] + ', 60)\n'
     if bossLoc3 != 'Octus Overlook':
-        levelScaling = levelScaling + "SetLevel(" + bossCue[bossPool[2]][3] + ", 60)\n"
+        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[2]][3] + ', 60)\n'
     if bossLoc4 != 'Octus Overlook':
-        levelScaling = levelScaling + "SetLevel(" + bossCue[bossPool[3]][3] + ", 60)\n"
-
+        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[3]][3] + ', 60)\n'
+    
     return bossCheckpoint.format(bossFight1,bossFight2,bossFight3,bossFight4,
                                      bossLoc1,bossLoc2,bossLoc3,bossLoc4,levelScaling,
                                      bossPool[0],bossPool[1],bossPool[2],bossPool[3],

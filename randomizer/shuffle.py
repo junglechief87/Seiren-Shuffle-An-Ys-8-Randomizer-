@@ -177,7 +177,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     if parameters.shuffleParty and not parameters.charMode == 'Past Dana':
         #Select random party member as starting character
         for index,partyMember in enumerate(progressionInventory):
-            if partyMember.party:
+            if partyMember.party and partyMember.itemName in parameters.partyPool:
                 startingPartyMember = progressionInventory.pop(index)
                 break
 

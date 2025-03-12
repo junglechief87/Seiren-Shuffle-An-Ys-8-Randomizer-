@@ -73,6 +73,9 @@ def buildStartParameters(location,parameters):
     SetMapMarker( SMI_CHECKED_WARPPT, PAGE_F039, MARKER_CP_MP4111, -131, 587, 121, -131, 587, CP_MP4111, MN_F_MP4111, 0) 
     """
 
+    if parameters.infinityMode:
+        gameSettingFlags = gameSettingFlags + """
+        SetFlag(SF_INFINITY, 1)"""
         
     startParams = """
 function "startParameters"
@@ -492,8 +495,8 @@ function "startParameters"
     EquipCostume(ADOL, ICON3D_COS_ADOL_01, EQC_MAIN, EQC_MODE_EVDEFAULT)
     EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EQUIP)
     EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EVFORCE)
-    {1}
     {0}
+    {1}
     //We add strength to put the character's power in line with the rest of the cast for later joining characters and leave them without weapons until they hit the shop tier for their weapon.
     //Characters without weapons animate with their base weapons still.
     SetChrWork(HUMMEL,CWK_SUP_STR,(HUMMEL.CHRWORK[CWK_SUP_STR] + 18))
@@ -504,7 +507,7 @@ function "startParameters"
     {2}
 }}
 """
-    return startParams.format(startingCharacter,gameSettingFlags, pastDanaFlags)
+    return startParams.format(startingCharacter, gameSettingFlags, pastDanaFlags)
 
 def manageEarlyGameParty(location):
     match location.itemName:
