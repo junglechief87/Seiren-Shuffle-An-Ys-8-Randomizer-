@@ -404,11 +404,14 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.northsideOpen_checkbox = ctk.CTkCheckBox(self, text="North Side Open", variable=self.northsideOpen_var)
         self.northsideOpen_checkbox.grid(row=5, column=0, padx=5, pady=5, sticky="w")
 
-        # North side open checkbox
+        # Infinity Mode checkbox
         self.infinityMode_var = ctk.BooleanVar(value=False)
         self.infinityMode_checkbox = ctk.CTkCheckBox(self, text="Infinity Mode", variable=self.infinityMode_var)
         self.infinityMode_checkbox.grid(row=5, column=1, padx=5, pady=5, sticky="w")
 
+        # Customize Button
+        self.customize_button = ctk.CTkButton(self, text="Starting Loadout", command=self.open_starting_options)
+        self.customize_button.grid(row=5, column=2, padx=0, pady=0, columnspan=2)
 
     def update_examples(self):
         """ Update example labels dynamically based on the sliders' values. """
@@ -438,6 +441,64 @@ class PacingModifiersFrame(ctk.CTkFrame):
 
         # Doing this way to fix a problem where the frame would resize to adjust the extra digit in 10.04 as opposed to 9.04 (3 digits)... sad fix but a fix nonetheless 
         return f"{bossGrowthExample:.1f}" if bossGrowthExample >= 10 else f"{bossGrowthExample:.2f}"
+
+    def open_starting_options(self):
+        # Create popup window
+        popup = ctk.CTkToplevel(self)
+        popup.title("Starting Loadout")
+        popup.geometry("400x250")
+        popup.grab_set()  # Make popup modal
+
+        # Configure grid layout
+        popup.grid_columnconfigure(1, weight=1)
+
+        # Initialize variables
+        self.starting_level = ctk.IntVar(value=3)
+        self.shop_level = ctk.IntVar(value=0)
+        self.weapon_level = ctk.IntVar(value=0)
+        self.trade_shop_var = ctk.BooleanVar(value=False)
+        self.tailor_shop_var = ctk.BooleanVar(value=False)
+        self.craft_shop_var = ctk.BooleanVar(value=False)
+        self.medical_shop_var = ctk.BooleanVar(value=False)
+        self.discovery_shop_var = ctk.BooleanVar(value=False)
+
+        ctk.CTkLabel(popup, text="Starting Level:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
+        starting_level_slider = ctk.CTkSlider(popup, variable=self.starting_level, from_=1, to=99, number_of_steps=99)
+        starting_level_slider.grid(row=0, column=1, padx=10, pady=5, sticky="ew", columnspan=2)
+        ctk.CTkLabel(popup, textvariable=self.starting_level).grid(row=0, column=3, padx=10, pady=5)
+
+        ctk.CTkLabel(popup, text="Shop Level:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        shop_level_slider = ctk.CTkSlider(popup, variable=self.shop_level, from_=0, to=7, number_of_steps=8)
+        shop_level_slider.grid(row=1, column=1, padx=10, pady=5, sticky="ew", columnspan=2)
+        ctk.CTkLabel(popup, textvariable=self.shop_level).grid(row=1, column=3, padx=10, pady=5)
+
+        ctk.CTkLabel(popup, text="Weapon Level:").grid(row=2, column=0, padx=10, pady=5, sticky="w")
+        weapon_level_slider = ctk.CTkSlider(popup, variable=self.weapon_level, from_=0, to=7, number_of_steps=8)
+        weapon_level_slider.grid(row=2, column=1, padx=10, pady=5, sticky="ew", columnspan=2)
+        ctk.CTkLabel(popup, textvariable=self.weapon_level).grid(row=2, column=3, padx=10, pady=5)
+
+        # Dina Checkbox
+        self.trade_shop = ctk.CTkCheckBox(popup, text="Dina-Trade", variable=self.trade_shop_var)
+        self.trade_shop.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+
+        # Allison Checkbox
+        self.tailor_shop = ctk.CTkCheckBox(popup, text="Allison-Tailer", variable=self.tailor_shop_var)
+        self.tailor_shop.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+
+        # Euron Checkbox
+        self.craft_shop = ctk.CTkCheckBox(popup, text="Euron-Craft", variable=self.craft_shop_var)
+        self.craft_shop.grid(row=3, column=2, padx=5, pady=5, sticky="w")
+
+        # Licht Checkbox
+        self.medical_shop = ctk.CTkCheckBox(popup, text="Licht-Medicine", variable=self.medical_shop_var)
+        self.medical_shop.grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        
+        # Austen Checkbox
+        self.discovery_shop = ctk.CTkCheckBox(popup, text="Austen-Discovery", variable=self.discovery_shop_var)
+        self.discovery_shop.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+        
+        # Close button
+        ctk.CTkButton(popup, text="Close", command=popup.destroy).grid(row=5, column=0, columnspan=3, pady=10)
 
 class FinalBossSettingsFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -558,7 +619,7 @@ class MiscSettingsFrame(ctk.CTkFrame):
         # Create popup window
         popup = ctk.CTkToplevel(self)
         popup.title("Starting Characters")
-        popup.geometry("400x150")
+        popup.geometry("220x170")
         popup.grab_set()  # Make popup modal
 
         # Configure grid layout

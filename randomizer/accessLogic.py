@@ -39,7 +39,7 @@ def canAccessNorthSide(access, parameters):
         )
 
 def eterniaOpen(access,parameters):
-    return ((canAccessNorthSide(access, parameters) and access.past2()) or (access.past3() and (access.hasDana() or lodiniaToVista(access))))
+    return ((canAccessNorthSide(access, parameters) and access.past2()) or (access.past3() and (lodiniaToVista(access))))
 
 def templeOfGreatTreeOpen(access):
     return ( (access.past2() and access.past3()) or access.hasDana() )
@@ -1026,7 +1026,7 @@ def checkHeadwaterFalls(location, access, parameters):
         return False
 
     return (
-        location.mapCheckID == 'TBOX01' or
+        (location.mapCheckID == 'TBOX01' and access.canClimb()) or
         (location.mapCheckID != 'TBOX01' and access.hasDina())
     )
 
