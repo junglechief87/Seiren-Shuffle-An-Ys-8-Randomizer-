@@ -409,9 +409,34 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.infinityMode_checkbox = ctk.CTkCheckBox(self, text="Infinity Mode", variable=self.infinityMode_var)
         self.infinityMode_checkbox.grid(row=5, column=1, padx=5, pady=5, sticky="w")
 
-        # Customize Button
+        # Starting Loadout Button
         self.customize_button = ctk.CTkButton(self, text="Starting Loadout", command=self.open_starting_options)
         self.customize_button.grid(row=5, column=2, padx=0, pady=0, columnspan=2)
+
+        # Initialize variables
+        self.starting_level = ctk.IntVar(value=3)
+        self.shop_level = ctk.IntVar(value=0)
+        self.weapon_level = ctk.IntVar(value=0)
+        self.armor_level = ctk.IntVar(value=0)
+        self.trade_shop_var = ctk.BooleanVar(value=False)
+        self.tailor_shop_var = ctk.BooleanVar(value=False)
+        self.craft_shop_var = ctk.BooleanVar(value=False)
+        self.medical_shop_var = ctk.BooleanVar(value=False)
+        self.discovery_shop_var = ctk.BooleanVar(value=False)
+        self.all_recipes_var = ctk.BooleanVar(value=False)
+        self.max_ingredients_var = ctk.BooleanVar(value=False)
+        self.gear_slots_var = ctk.IntVar(value=1)
+        self.gloves_var = ctk.BooleanVar(value=False)
+        self.glow_stone_var = ctk.BooleanVar(value=False)
+        self.wing_var = ctk.BooleanVar(value=False)
+        self.float_shoes_var = ctk.BooleanVar(value=False)
+        self.hermits_scale_var = ctk.BooleanVar(value=False)
+        self.purifying_bell_var = ctk.BooleanVar(value=False)
+        self.gale_feather_var = ctk.BooleanVar(value=False)
+        self.windy_vestment_var = ctk.BooleanVar(value=False)
+        self.ares_seal_var = ctk.BooleanVar(value=False)
+        self.aeolus_urn_var = ctk.BooleanVar(value=False)
+        self.eagle_eye_orb_var = ctk.BooleanVar(value=False)
 
     def update_examples(self):
         """ Update example labels dynamically based on the sliders' values. """
@@ -446,28 +471,18 @@ class PacingModifiersFrame(ctk.CTkFrame):
         # Create popup window
         popup = ctk.CTkToplevel(self)
         popup.title("Starting Loadout")
-        popup.geometry("400x250")
+        popup.geometry("475x600")
         popup.grab_set()  # Make popup modal
 
         # Configure grid layout
         popup.grid_columnconfigure(1, weight=1)
-
-        # Initialize variables
-        self.starting_level = ctk.IntVar(value=3)
-        self.shop_level = ctk.IntVar(value=0)
-        self.weapon_level = ctk.IntVar(value=0)
-        self.trade_shop_var = ctk.BooleanVar(value=False)
-        self.tailor_shop_var = ctk.BooleanVar(value=False)
-        self.craft_shop_var = ctk.BooleanVar(value=False)
-        self.medical_shop_var = ctk.BooleanVar(value=False)
-        self.discovery_shop_var = ctk.BooleanVar(value=False)
 
         ctk.CTkLabel(popup, text="Starting Level:").grid(row=0, column=0, padx=10, pady=5, sticky="w")
         starting_level_slider = ctk.CTkSlider(popup, variable=self.starting_level, from_=1, to=99, number_of_steps=99)
         starting_level_slider.grid(row=0, column=1, padx=10, pady=5, sticky="ew", columnspan=2)
         ctk.CTkLabel(popup, textvariable=self.starting_level).grid(row=0, column=3, padx=10, pady=5)
 
-        ctk.CTkLabel(popup, text="Shop Level:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
+        ctk.CTkLabel(popup, text="Flame Stone Level:").grid(row=1, column=0, padx=10, pady=5, sticky="w")
         shop_level_slider = ctk.CTkSlider(popup, variable=self.shop_level, from_=0, to=7, number_of_steps=8)
         shop_level_slider.grid(row=1, column=1, padx=10, pady=5, sticky="ew", columnspan=2)
         ctk.CTkLabel(popup, textvariable=self.shop_level).grid(row=1, column=3, padx=10, pady=5)
@@ -477,28 +492,101 @@ class PacingModifiersFrame(ctk.CTkFrame):
         weapon_level_slider.grid(row=2, column=1, padx=10, pady=5, sticky="ew", columnspan=2)
         ctk.CTkLabel(popup, textvariable=self.weapon_level).grid(row=2, column=3, padx=10, pady=5)
 
-        # Dina Checkbox
-        self.trade_shop = ctk.CTkCheckBox(popup, text="Dina-Trade", variable=self.trade_shop_var)
-        self.trade_shop.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        ctk.CTkLabel(popup, text="Armor Level:").grid(row=3, column=0, padx=10, pady=5, sticky="w")
+        armor_level_slider = ctk.CTkSlider(popup, variable=self.armor_level, from_=0, to=8, number_of_steps=9)
+        armor_level_slider.grid(row=3, column=1, padx=10, pady=5, sticky="ew", columnspan=2)
+        ctk.CTkLabel(popup, textvariable=self.armor_level).grid(row=3, column=3, padx=10, pady=5)
 
-        # Allison Checkbox
-        self.tailor_shop = ctk.CTkCheckBox(popup, text="Allison-Tailer", variable=self.tailor_shop_var)
-        self.tailor_shop.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+        # Recipe Checkbox
+        self.all_recipes = ctk.CTkCheckBox(popup, text="All Recipes", variable=self.all_recipes_var)
+        self.all_recipes.grid(row=4, column=0, padx=5, pady=5, sticky="w")
+
+        # Max Ingredients
+        self.max_ingredients = ctk.CTkCheckBox(popup, text="Max Ingredients", variable=self.max_ingredients_var)
+        self.max_ingredients.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+
+        self.starting_shops = ctk.CTkLabel(popup, text="Shops", **FRAME_TITLE_STYLE)
+        self.starting_shops.grid(row=5, column=0, padx=5, pady=(5,0), sticky="w")
+        self.starting_shops_frame = ctk.CTkFrame(popup, fg_color="transparent")
+        self.starting_shops_frame.grid(row=6, column=0, sticky="w", columnspan=3)
+
+        # Dina Checkbox
+        self.trade_shop = ctk.CTkCheckBox(self.starting_shops_frame, text="Dina-Trade", variable=self.trade_shop_var)
+        self.trade_shop.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+
+        # Alison Checkbox
+        self.tailor_shop = ctk.CTkCheckBox(self.starting_shops_frame, text="Alison-Tailor", variable=self.tailor_shop_var)
+        self.tailor_shop.grid(row=1, column=1, padx=5, pady=5, sticky="w")
 
         # Euron Checkbox
-        self.craft_shop = ctk.CTkCheckBox(popup, text="Euron-Craft", variable=self.craft_shop_var)
-        self.craft_shop.grid(row=3, column=2, padx=5, pady=5, sticky="w")
+        self.craft_shop = ctk.CTkCheckBox(self.starting_shops_frame, text="Euron-Craft", variable=self.craft_shop_var)
+        self.craft_shop.grid(row=1, column=2, padx=5, pady=5, sticky="w")
 
         # Licht Checkbox
-        self.medical_shop = ctk.CTkCheckBox(popup, text="Licht-Medicine", variable=self.medical_shop_var)
-        self.medical_shop.grid(row=4, column=0, padx=5, pady=5, sticky="w")
+        self.medical_shop = ctk.CTkCheckBox(self.starting_shops_frame, text="Licht-Medicine", variable=self.medical_shop_var)
+        self.medical_shop.grid(row=2, column=0, padx=5, pady=5, sticky="w")
         
         # Austen Checkbox
-        self.discovery_shop = ctk.CTkCheckBox(popup, text="Austen-Discovery", variable=self.discovery_shop_var)
-        self.discovery_shop.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+        self.discovery_shop = ctk.CTkCheckBox(self.starting_shops_frame, text="Austen-Discovery", variable=self.discovery_shop_var)
+        self.discovery_shop.grid(row=2, column=1, padx=5, pady=5, sticky="w")
         
+        self.adventure_gear = ctk.CTkLabel(popup, text="Adventure Gear", **FRAME_TITLE_STYLE)
+        self.adventure_gear.grid(row=7, column=0, padx=5, pady=(5,0), sticky="w")
+        self.adventure_gear_frame = ctk.CTkFrame(popup, fg_color="transparent")
+        self.adventure_gear_frame.grid(row=8, column=0, sticky="w", columnspan=2)
+
+        # Adventure gear slots
+        self.adventure_gear_slots_label = ctk.CTkLabel(self.adventure_gear_frame, text="Adventure Gear Slots :")
+        self.adventure_gear_slots_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.gear_slots_option_menu = ctk.CTkOptionMenu(self.adventure_gear_frame, variable=self.gear_slots_var,values=['1', '2', '3', '4', '5', '6'])
+        self.gear_slots_option_menu.grid(row=1, column=1, padx=5, pady=5, sticky="w")
+
+        # Grip Gloves
+        self.gloves = ctk.CTkCheckBox(self.adventure_gear_frame, text="Grip Gloves", variable=self.gloves_var)
+        self.gloves.grid(row=2, column=0, padx=5, pady=5, sticky="w")
+
+        # Glow Stone
+        self.glow_stone = ctk.CTkCheckBox(self.adventure_gear_frame, text="Glow Stone", variable=self.glow_stone_var)
+        self.glow_stone.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+
+        # Floating Shoes
+        self.wing = ctk.CTkCheckBox(self.adventure_gear_frame, text="Floating Shoes", variable=self.wing_var)
+        self.wing.grid(row=2, column=2, padx=5, pady=5, sticky="w")
+
+        # Archaeopteryx Wing 
+        self.float_shoes = ctk.CTkCheckBox(self.adventure_gear_frame, text="Archaeopteryx Wing", variable=self.float_shoes_var)
+        self.float_shoes.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+
+        # Hermit's Scale
+        self.hermits_scale = ctk.CTkCheckBox(self.adventure_gear_frame, text="Hermit's Scale", variable=self.hermits_scale_var)
+        self.hermits_scale.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+
+        # Purifying Bell 
+        self.purifying_bell = ctk.CTkCheckBox(self.adventure_gear_frame, text="Purifying Bell ", variable=self.purifying_bell_var)
+        self.purifying_bell.grid(row=3, column=2, padx=5, pady=5, sticky="w")
+
+        # Gale Feather
+        self.gale_feather = ctk.CTkCheckBox(self.adventure_gear_frame, text="Gale Feather", variable=self.gale_feather_var)
+        self.gale_feather.grid(row=4, column=0, padx=5, pady=5, sticky="w")
+
+        # Windy Vestment
+        self.windy_vestment = ctk.CTkCheckBox(self.adventure_gear_frame, text="Windy Vestment", variable=self.windy_vestment_var)
+        self.windy_vestment.grid(row=4, column=1, padx=5, pady=5, sticky="w")
+
+        # War God Seal
+        self.ares_seal = ctk.CTkCheckBox(self.adventure_gear_frame, text="Ares Seal", variable=self.ares_seal_var)
+        self.ares_seal.grid(row=4, column=2, padx=5, pady=5, sticky="w")
+
+        # Aeolus Urn
+        self.aeolus_urn = ctk.CTkCheckBox(self.adventure_gear_frame, text="Aeolus Urn", variable=self.aeolus_urn_var)
+        self.aeolus_urn.grid(row=5, column=0, padx=5, pady=5, sticky="w")
+
+        # Eagle Eye Orb 
+        self.eagle_eye_orb = ctk.CTkCheckBox(self.adventure_gear_frame, text="Eagle Eye Orb", variable=self.eagle_eye_orb_var)
+        self.eagle_eye_orb.grid(row=5, column=1, padx=5, pady=5, sticky="w")
+
         # Close button
-        ctk.CTkButton(popup, text="Close", command=popup.destroy).grid(row=5, column=0, columnspan=3, pady=10)
+        ctk.CTkButton(popup, text="Close", command=popup.destroy).grid(row=9, column=0, columnspan=3, pady=10)
 
 class FinalBossSettingsFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -603,7 +691,7 @@ class MiscSettingsFrame(ctk.CTkFrame):
         self.castaway_hints = ctk.IntVar(value=3)
         self.foolish_location_hints = ctk.IntVar(value=5)
 
-        # Customize Button
+        # Starting Characters Button
         self.party_pool_button = ctk.CTkButton(self, text="Customize Starting Characters", command=self.open_start_character_pool)
         self.party_pool_button.grid(row=4, column=0, padx=5, pady=5, sticky="w")
 
@@ -743,7 +831,7 @@ class App(ctk.CTk):
         self.iconbitmap(icon_path)
 
         self.title('Seiren Shuffle (An Ys 8 Rando)')
-        self.geometry("1200x750+0+0")
+        self.geometry("1280x800+0+0")
         self.grid_columnconfigure((0, 1,), weight=1)
         self.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
         
@@ -840,7 +928,32 @@ class App(ctk.CTk):
                 "startSahad": self.miscSettingsFrame.sahad_var.get(),
                 "startHummer": self.miscSettingsFrame.hummel_var.get(),
                 "startRicotta": self.miscSettingsFrame.ricotta_var.get(),
-                "startDana": self.miscSettingsFrame.dana_var.get()
+                "startDana": self.miscSettingsFrame.dana_var.get(),
+
+                # starting loadout:
+                "startingLevel": self.pacingModifiersFrame.starting_level.get(),
+                "shopLevel": self.pacingModifiersFrame.shop_level.get(),
+                "weaponLevel": self.pacingModifiersFrame.weapon_level.get(),
+                "armorLevel": self.pacingModifiersFrame.armor_level.get(),
+                "tradeShop": self.pacingModifiersFrame.trade_shop_var.get(),
+                "tailorShop": self.pacingModifiersFrame.tailor_shop_var.get(),
+                "craftShop": self.pacingModifiersFrame.craft_shop_var.get(),
+                "medicalShop": self.pacingModifiersFrame.medical_shop_var.get(),
+                "discoveryShop": self.pacingModifiersFrame.discovery_shop_var.get(),
+                "allRecipes": self.pacingModifiersFrame.all_recipes_var.get(),
+                "maxIngredients": self.pacingModifiersFrame.max_ingredients_var.get(),
+                "gearSlots": self.pacingModifiersFrame.gear_slots_var.get(),
+                "gloves": self.pacingModifiersFrame.gloves_var.get(),
+                "glowStone": self.pacingModifiersFrame.glow_stone_var.get(),
+                "wing": self.pacingModifiersFrame.wing_var.get(),
+                "floatShoes": self.pacingModifiersFrame.float_shoes_var.get(),
+                "hermitsScale": self.pacingModifiersFrame.hermits_scale_var.get(),
+                "purifyingBell": self.pacingModifiersFrame.purifying_bell_var.get(),
+                "galeFeather": self.pacingModifiersFrame.gale_feather_var.get(),
+                "windyVestment": self.pacingModifiersFrame.windy_vestment_var.get(),
+                "aresSeal": self.pacingModifiersFrame.ares_seal_var.get(),
+                "aeolusUrn": self.pacingModifiersFrame.aeolus_urn_var.get(),
+                "eagleEyeOrb": self.pacingModifiersFrame.eagle_eye_orb_var.get()
             }
 
             with open(SETTINGS_FILE, "w") as f:
@@ -944,18 +1057,37 @@ class App(ctk.CTk):
                 settings.get("castawayHints", 3))
             self.miscSettingsFrame.foolish_location_hints.set(
                 settings.get("foolishLocationHints", 5))
-            self.miscSettingsFrame.adol_var.set(
-                settings.get("startAdol", True))
-            self.miscSettingsFrame.laxia_var.set(
-                settings.get("startLaxia", True))
-            self.miscSettingsFrame.sahad_var.set(
-                settings.get("startSahad", True))
-            self.miscSettingsFrame.hummel_var.set(
-                settings.get("startHummer", True))
-            self.miscSettingsFrame.ricotta_var.set(
-                settings.get("startRicotta", True))
-            self.miscSettingsFrame.dana_var.set(
-                settings.get("startDana", True))
+            self.miscSettingsFrame.adol_var.set(settings.get("startAdol", True))
+            self.miscSettingsFrame.laxia_var.set(settings.get("startLaxia", True))
+            self.miscSettingsFrame.sahad_var.set(settings.get("startSahad", True))
+            self.miscSettingsFrame.hummel_var.set(settings.get("startHummer", True))
+            self.miscSettingsFrame.ricotta_var.set(settings.get("startRicotta", True))
+            self.miscSettingsFrame.dana_var.set(settings.get("startDana", True))
+
+            # starting loadout:
+            self.pacingModifiersFrame.starting_level.set(settings.get("startingLevel", 3))
+            self.pacingModifiersFrame.shop_level.set(settings.get("shopLevel", 0))
+            self.pacingModifiersFrame.weapon_level.set(settings.get("weaponLevel", 0))
+            self.pacingModifiersFrame.armor_level.set(settings.get("armorLevel", 0))
+            self.pacingModifiersFrame.trade_shop_var.set(settings.get("tradeShop", False))
+            self.pacingModifiersFrame.tailor_shop_var.set(settings.get("tailorShop", False))
+            self.pacingModifiersFrame.craft_shop_var.set(settings.get("craftShop", False))
+            self.pacingModifiersFrame.medical_shop_var.set(settings.get("medicalShop", False))
+            self.pacingModifiersFrame.discovery_shop_var.set(settings.get("discoveryShop", False))
+            self.pacingModifiersFrame.all_recipes_var.set(settings.get("allRecipes", False))
+            self.pacingModifiersFrame.max_ingredients_var.set(settings.get("maxIngredients", False))
+            self.pacingModifiersFrame.gear_slots_var.set(settings.get("gearSlots", 1))
+            self.pacingModifiersFrame.gloves_var.set(settings.get("gloves", False))
+            self.pacingModifiersFrame.glow_stone_var.set(settings.get("glowStone", False))
+            self.pacingModifiersFrame.wing_var.set(settings.get("wing", False))
+            self.pacingModifiersFrame.float_shoes_var.set(settings.get("floatShoes", False))
+            self.pacingModifiersFrame.hermits_scale_var.set(settings.get("hermitsScale", False))
+            self.pacingModifiersFrame.purifying_bell_var.set(settings.get("purifyingBell", False))
+            self.pacingModifiersFrame.gale_feather_var.set(settings.get("galeFeather", False))
+            self.pacingModifiersFrame.windy_vestment_var.set(settings.get("windyVestment", False))
+            self.pacingModifiersFrame.ares_seal_var.set(settings.get("aresSeal", False))
+            self.pacingModifiersFrame.aeolus_urn_var.set(settings.get("aeolusUrn", False))
+            self.pacingModifiersFrame.eagle_eye_orb_var.set(settings.get("eagleEyeOrb", False))
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load settings: {str(e)}")
@@ -1000,7 +1132,7 @@ class App(ctk.CTk):
             #print(settings)
             # Map CSV keys to GUI components
             key_mapping = {
-                'Seed': (self.seedFrame.seed_var, 'set'),
+                'seed': (self.seedFrame.seed_var, 'set'),
                 'Game Mode': (self.modeFrame.character_mode, 'set'),
                 'Shuffle Party': (self.shuffleLocationsFrame.party_var, 'set'),
                 'Shuffle Crew': (self.shuffleLocationsFrame.crew_var, 'set'),
@@ -1041,7 +1173,30 @@ class App(ctk.CTk):
                 'Sahad': (self.miscSettingsFrame.sahad_var, 'set'),
                 'Hummel': (self.miscSettingsFrame.hummel_var, 'set'),
                 'Ricotta': (self.miscSettingsFrame.ricotta_var, 'set'),
-                'Dana': (self.miscSettingsFrame.dana_var, 'set')
+                'Dana': (self.miscSettingsFrame.dana_var, 'set'),
+                'Starting Level': (self.pacingModifiersFrame.starting_level, 'set_int'),
+                'Shop Level': (self.pacingModifiersFrame.shop_level, 'set_int'),
+                'Weapon Level': (self.pacingModifiersFrame.weapon_level, 'set_int'),
+                'Armor Level': (self.pacingModifiersFrame.armor_level, 'set_int'),
+                'Trade Shop': (self.pacingModifiersFrame.trade_shop_var, 'set'),
+                'Tailor Shop': (self.pacingModifiersFrame.tailor_shop_var, 'set'),
+                'Craft Shop': (self.pacingModifiersFrame.craft_shop_var, 'set'),
+                'Medical Shop': (self.pacingModifiersFrame.medical_shop_var, 'set'),
+                'Discovery Shop': (self.pacingModifiersFrame.discovery_shop_var, 'set'),
+                'All Recipes': (self.pacingModifiersFrame.all_recipes_var, 'set'),
+                'Max Ingredients': (self.pacingModifiersFrame.max_ingredients_var, 'set'),
+                'Adventure Gear Slots': (self.pacingModifiersFrame.gear_slots_var, 'set_int'),
+                'Grip Gloves': (self.pacingModifiersFrame.gloves_var, 'set'),
+                'Glow Stone': (self.pacingModifiersFrame.glow_stone_var, 'set'),
+                'Archaeopteryx Wing': (self.pacingModifiersFrame.wing_var, 'set'),
+                'Floating Shoes': (self.pacingModifiersFrame.float_shoes_var, 'set'),
+                "Hermit's Scale": (self.pacingModifiersFrame.hermits_scale_var, 'set'),
+                'Purifying Bell': (self.pacingModifiersFrame.purifying_bell_var, 'set'),
+                'Gale Feather': (self.pacingModifiersFrame.gale_feather_var, 'set'),
+                'Windy Vestment': (self.pacingModifiersFrame.windy_vestment_var, 'set'),
+                'Ares Seal': (self.pacingModifiersFrame.ares_seal_var, 'set'),
+                'Aeolus Urn': (self.pacingModifiersFrame.aeolus_urn_var, 'set'),
+                'Eagle Eye Orb': (self.pacingModifiersFrame.eagle_eye_orb_var, 'set')
             }
             
             # Apply settings to GUI with type handling
@@ -1239,6 +1394,32 @@ class App(ctk.CTk):
                 self.miscSettingsFrame.dana_var.get()
             )
             
+            # Starting Loadout
+            parameters.getStartingLoadout(
+                self.pacingModifiersFrame.starting_level.get(),
+                self.pacingModifiersFrame.shop_level.get(),
+                self.pacingModifiersFrame.weapon_level.get(),
+                self.pacingModifiersFrame.armor_level.get(),
+                self.pacingModifiersFrame.trade_shop_var.get(),
+                self.pacingModifiersFrame.tailor_shop_var.get(),
+                self.pacingModifiersFrame.craft_shop_var.get(),
+                self.pacingModifiersFrame.medical_shop_var.get(),
+                self.pacingModifiersFrame.discovery_shop_var.get(),
+                self.pacingModifiersFrame.all_recipes_var.get(),
+                self.pacingModifiersFrame.max_ingredients_var.get(),
+                self.pacingModifiersFrame.gear_slots_var.get(),
+                self.pacingModifiersFrame.gloves_var.get(),
+                self.pacingModifiersFrame.glow_stone_var.get(),
+                self.pacingModifiersFrame.wing_var.get(),
+                self.pacingModifiersFrame.float_shoes_var.get(),
+                self.pacingModifiersFrame.hermits_scale_var.get(),
+                self.pacingModifiersFrame.purifying_bell_var.get(),
+                self.pacingModifiersFrame.gale_feather_var.get(),
+                self.pacingModifiersFrame.windy_vestment_var.get(),
+                self.pacingModifiersFrame.ares_seal_var.get(),
+                self.pacingModifiersFrame.aeolus_urn_var.get(),
+                self.pacingModifiersFrame.eagle_eye_orb_var.get()
+            )
             # Execute main patcher and save
             rngPatcherMain(parameters)
             self.show_notification("Seed Generation Complete!")

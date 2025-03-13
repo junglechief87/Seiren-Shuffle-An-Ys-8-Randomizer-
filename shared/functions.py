@@ -194,10 +194,8 @@ def getIntRewards():
 
 def getCharacterJoinLv(character):
     lvScript = ''
-    startingLevel = 3
     for lv in range(1,100):
         if lv == 1:
-            lvScript = "\tSetLevel(" + character + "," + str(startingLevel) + ") \n"
             lvScript = lvScript + "\tif(LEADER.CHRWORK[CWK_LV] ==" + str(lv) + "){SetLevel(" + character + "," + str(lv) + ")} \n"
         elif lv == 99:
             lvScript = lvScript + "\telse{SetLevel(" + character + "," + str(lv) + ")} \n"

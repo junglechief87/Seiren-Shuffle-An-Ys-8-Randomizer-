@@ -180,8 +180,6 @@ def getCrewFlags(name):
     SetDiaryCharaFlag( DRCHA_KIERGAARD, DRCHA_FLAG_INFO1, 1 ) 
     SetDiaryCharaFlag( DRCHA_KIERGAARD, DRCHA_FLAG_INFO2, 1 ) 
     SetDiaryCharaFlag( DRCHA_KIERGAARD, DRCHA_FLAG_INFO3, 1 )
-    WaitPrompt()
-    WaitCloseWindow()
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )	
 """
         case "Kathleen": #vanilla function call on mp1201 script rng:0409

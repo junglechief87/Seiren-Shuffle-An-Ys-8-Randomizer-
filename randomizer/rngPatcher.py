@@ -1557,10 +1557,7 @@ def buildPsyches(shuffledLocations, parameters):
     
     function "levelScaling"
     {{
-        if(!FLAG[SF_INFINITY])
-        {{
-            {8}
-        }} 
+        {8} 
     }}
 
     {21}

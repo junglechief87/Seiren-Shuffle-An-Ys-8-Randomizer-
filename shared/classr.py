@@ -569,7 +569,30 @@ class guiInput:
     self.foolishHints = None
     self.partyPool = None
     self.infinityMode = None
-    
+    self.startingLevel = None
+    self.shopLevel = None
+    self.weaponLevel = None
+    self.armorLevel = None
+    self.tradeShop = None
+    self.tailorShop = None
+    self.craftShop = None
+    self.medicalShop = None
+    self.discoveryShop = None
+    self.allRecipes = None
+    self.maxIngredients = None
+    self.gearSlots = None
+    self.gloves = None
+    self.glowStone = None
+    self.wing = None
+    self.floatShoes = None
+    self.hermitsScale = None
+    self.purifyingBell = None
+    self.galeFeather = None
+    self.windyVestment = None
+    self.aresSeal = None
+    self.aeolusUrn = None
+    self.eagleEyeOrb = None
+
   def getSeed(self, seed):
     self.seed = int(seed)
 
@@ -634,7 +657,34 @@ class guiInput:
     if startHummel: self.partyPool.append('Hummel')
     if startRicotta: self.partyPool.append('Ricotta')
     if startDana: self.partyPool.append('Dana')
-    
+  
+  def getStartingLoadout(self, startingLevel,shopLevel,weaponLevel,armorLevel,tradeShop,tailorShop,craftShop,medicalShop,discoveryShop,
+                         allRecipes,maxIngredients,gearSlots,gloves,glowStone,wing,floatShoes,hermitsScale,purifyingBell,galeFeather,
+                         windyVestment,aresSeal,aeolusUrn,eagleEyeOrb):
+    self.startingLevel = int(startingLevel)
+    self.shopLevel = int(shopLevel)
+    self.weaponLevel = int(weaponLevel)
+    self.armorLevel = int(armorLevel)
+    self.tradeShop = tradeShop
+    self.tailorShop = tailorShop
+    self.craftShop = craftShop
+    self.medicalShop = medicalShop
+    self.discoveryShop = discoveryShop
+    self.allRecipes = allRecipes
+    self.maxIngredients = maxIngredients
+    self.gearSlots = int(gearSlots)
+    self.gloves = gloves
+    self.glowStone = glowStone
+    self.wing = wing
+    self.floatShoes = floatShoes
+    self.hermitsScale = hermitsScale
+    self.purifyingBell = purifyingBell
+    self.galeFeather = galeFeather
+    self.windyVestment = windyVestment
+    self.aresSeal = aresSeal
+    self.aeolusUrn = aeolusUrn
+    self.eagleEyeOrb = eagleEyeOrb
+
 class interceptReward:
   def __init__(self,stage,rewards):
     self.stage = stage

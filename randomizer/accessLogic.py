@@ -948,12 +948,9 @@ def schlammJungleFromField(location, access, parameters):
         'Small Passage': lambda: (
             access.hasDina() and 
                 (location.mapCheckID == 'TBOX02' or
-                (location.mapCheckID == 'TBOX01' and (
-                    (access.canSwampWalk() and access.canClimb()) or
-                    (access.canDoubleJump() and access.canClimb()))))
-        ),
+                (location.mapCheckID == 'TBOX01' and access.canClimb()))),
         'Muddy Passage': lambda: (
-                (location.mapCheckID == 'TBOX02' and access.hasDina() and (access.canSwampWalk() or access.canDoubleJump())) or
+                (location.mapCheckID == 'TBOX02' and ((access.canSwampWalk() and access.canClimb()) or access.canDoubleJump())) or
                 (location.mapCheckID == 'TBOX01')
         ),
         'End': lambda: access.canSwampWalk() and access.hasDina(),
@@ -1093,6 +1090,7 @@ def checkWaterfallGrotto(location, access, parameters):
     
     return (
         location.mapCheckID == 'Sister Nia Join' or
+        (location.mapCheckID == 'Landmark' and access.hasDiscovery('Milky White Vein')) or 
         (location.mapCheckID != 'Sister Nia Join' 
              and access.canSeeDark())
     )
