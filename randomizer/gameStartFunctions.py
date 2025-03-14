@@ -151,11 +151,21 @@ def buildStartParameters(location,parameters):
     SetFlag(GF_QS310_GET_ITEM2,1)
     SetFlag(GF_QS310_GET_ITEM3,1)
     SetFlag(GF_TBOX_DUMMY084,1)
+    if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
+    {
+        EquipWeapon(DANA,ICON3D_WP_DANA_001)
+        GetItem(ICON3D_WP_DANA_001,1)
+    }
     """
         if parameters.shopLevel in [6,7]:
             startingLoadout = startingLoadout + """
     SetFlag(GF_SHOP_RANK_5_07,1)
     SetFlag(GF_TBOX_DUMMY085,1)
+    if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
+    {
+        EquipWeapon(DANA,ICON3D_WP_DANA_002)
+        GetItem(ICON3D_WP_DANA_002,1)
+    }
     """
         if parameters.shopLevel == 7:
             startingLoadout = startingLoadout + """
@@ -165,6 +175,11 @@ def buildStartParameters(location,parameters):
     SetFlag(GF_TBOX_DUMMY086,1)
     SetFlag(GF_NPC_6_03_AFTER_INTERCEPT12,1)
     SetFlag(GF_06MP1201_GOTO_GEND,1)
+    if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
+    {
+        EquipWeapon(DANA,ICON3D_WP_DANA_003)
+        GetItem(ICON3D_WP_DANA_003,1)
+    }
     """
 
     if parameters.weaponLevel > 0:

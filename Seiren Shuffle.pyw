@@ -21,6 +21,8 @@ FRAME_TITLE_STYLE = {
 
 SETTINGS_FILE = "seirenShuffleSettings.json"
 
+ICON_PATH = "./shared/ysR Logo.ico"
+
 class SeedFrame(ctk.CTkFrame):
   def __init__(self, master, ):
     super().__init__(master)
@@ -473,6 +475,7 @@ class PacingModifiersFrame(ctk.CTkFrame):
         popup.title("Starting Loadout")
         popup.geometry("475x600")
         popup.grab_set()  # Make popup modal
+        popup.after(201, lambda: popup.iconbitmap(ICON_PATH))
 
         # Configure grid layout
         popup.grid_columnconfigure(1, weight=1)
@@ -709,6 +712,7 @@ class MiscSettingsFrame(ctk.CTkFrame):
         popup.title("Starting Characters")
         popup.geometry("220x170")
         popup.grab_set()  # Make popup modal
+        popup.after(201, lambda: popup.iconbitmap(ICON_PATH))
 
         # Configure grid layout
         popup.grid_columnconfigure(1, weight=1)
@@ -768,6 +772,7 @@ class MiscSettingsFrame(ctk.CTkFrame):
         popup.title("Hints Customization")
         popup.geometry("400x250")
         popup.grab_set()  # Make popup modal
+        popup.after(201, lambda: popup.iconbitmap(ICON_PATH))
 
         # Configure grid layout
         popup.grid_columnconfigure(1, weight=1)
@@ -827,8 +832,8 @@ class App(ctk.CTk):
 
         # Set window icon
         # os.path.dirname(os.path.realpath(sys.executable)) + "/shared/ysR Logo.ico"
-        icon_path = "./shared/ysR Logo.ico"
-        self.iconbitmap(icon_path)
+        
+        self.iconbitmap(ICON_PATH)
 
         self.title('Seiren Shuffle (An Ys 8 Rando)')
         self.geometry("1280x800+0+0")

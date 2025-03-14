@@ -665,6 +665,12 @@ def shopUpgrades(location, vanillaScript = ''):
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 5.",0,0)
             WaitPrompt()
             WaitCloseWindow()
+
+            if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
+            {{
+                EquipWeapon(DANA,ICON3D_WP_DANA_001)
+                GetItem(ICON3D_WP_DANA_001,1)
+            }}
         }}
         else if (!FLAG[GF_TBOX_DUMMY085])
         {{
@@ -677,6 +683,11 @@ def shopUpgrades(location, vanillaScript = ''):
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 6.",0,0)
             WaitPrompt()
             WaitCloseWindow()
+            if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
+            {{
+                EquipWeapon(DANA,ICON3D_WP_DANA_002)
+                GetItem(ICON3D_WP_DANA_002,1)
+            }}
         }}
         else if (!FLAG[GF_TBOX_DUMMY086])
         {{
@@ -693,6 +704,11 @@ def shopUpgrades(location, vanillaScript = ''):
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank MAX.",0,0)
             WaitPrompt()
             WaitCloseWindow()
+            if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
+            {{
+                EquipWeapon(DANA,ICON3D_WP_DANA_003)
+                GetItem(ICON3D_WP_DANA_003,1)
+            }}
         }}
         else
         {{
@@ -1237,7 +1253,7 @@ def buildPsyches(shuffledLocations, parameters):
                'Nebritia': ['LoadArg("map/mp6529m/mp6529m.arg")', 'EventCue("mp6529m:EV_RetryBoss")', 'MN_D_MP6529M','B162'],
                'Argura': ['LoadArg("map/mp6539m/mp6539m.arg")', 'EventCue("mp6539m:EV_RetryBoss")', 'MN_D_MP6539M', 'B163'],
                'Crusos': ['LoadArg("map/mp6549m/mp6549m.arg")', 'EventCue("mp6549m:EV_RetryBoss")', 'MN_D_MP6549M', 'B011'],
-               'Blasphima': ['LoadArg("map/mp6559m/mp6519m.arg")', 'EventCue("mp6559m:EV_RetryBoss")', 'MN_D_MP6559M', 'B164'],
+               'Blasphima': ['LoadArg("map/mp6559m/mp6559m.arg")', 'EventCue("mp6559m:EV_RetryBoss")', 'MN_D_MP6559M', 'B164'],
                'Le-Kyanos': ['LoadArg("map/mp6204m/mp6204m.arg")', 'EventCue("mp6204m:EV_Boss_Jump")', 'MN_F_MP6204M', 'B165'],
                'Melaiduma': ['LoadArg("map/mp6569/mp6569.arg")', 'EventCue("mp6569:EV_RetryBoss")', 'MN_D_MP6569', 'B170']
         }
@@ -1319,13 +1335,13 @@ def buildPsyches(shuffledLocations, parameters):
             MenuAdd(41, "{8}: Chamber of Frost Guardian({13})")	
         }}		
 
-        if({4} && !FLAG[GF_SUBEV_PAST_BOSS_B4])	
+        if({4} && !FLAG[GF_SUBEV_PAST_BOSS_B5])	
         {{
-            MenuAdd(40, "#2C{9}: Chamber of Magma Guardian({14})")	
+            MenuAdd(50, "#2C{9}: Chamber of Magma Guardian({14})")	
         }}
-        else if(!{4} || FLAG[GF_SUBEV_PAST_BOSS_B4])
+        else if(!{4} || FLAG[GF_SUBEV_PAST_BOSS_B5])
         {{
-            MenuAdd(41, "{9}: Chamber of Magma Guardian({14})")	
+            MenuAdd(51, "{9}: Chamber of Magma Guardian({14})")	
         }}			
         //--------------------------------------------------------------------------------------
         
@@ -1439,7 +1455,7 @@ def buildPsyches(shuffledLocations, parameters):
                 
         }}
 """
-        bossReturn = bossReturn.format(bossCue[bossPool[0]][2], bossCue[bossPool[1]][2], bossCue[bossPool[2]][2], bossCue[bossPool[3]][2])
+        bossReturn = bossReturn.format(bossCue[bossPool[0]][2], bossCue[bossPool[1]][2], bossCue[bossPool[2]][2], bossCue[bossPool[3]][2], bossCue[bossPool[4]][2])
 
         return bossCheckpoint.format(bossFight1,bossFight2,bossFight3,bossFight4,bossFight5,
                                      bossLoc1,bossLoc2,bossLoc3,bossLoc4,bossLoc5,
