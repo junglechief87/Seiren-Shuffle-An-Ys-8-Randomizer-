@@ -137,7 +137,7 @@ def buildStartParameters(location,parameters):
     SetFlag(GF_TBOX_DUMMY083,1)
     SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] - 130))
     GetItem(ICON3D_AM_023, 1)
-    if(!FLAG[GF_TBOX_DUMMY108] && !FLAG[GF_TBOX_DUMMY109])
+    if(!FLAG[GF_TBOX_DUMMY108] || FLAG[GF_TBOX_DUMMY109])
     {
         EquipWeapon(DANA,ICON3D_WP_DANA_000)
         GetItem(ICON3D_WP_DANA_000,1)
@@ -431,21 +431,21 @@ def buildStartParameters(location,parameters):
         
     if parameters.maxIngredients:
         startingLoadout = startingLoadout + """
-    GetItem(ICON3D_FD_SEA_SALT,99)
-    GetItem(ICON3D_FD_LAND_HONEY,99)
-    GetItem(ICON3D_FD_MEAT_01,99)
-    GetItem(ICON3D_FD_VG_CABBAGE,99)
-    GetItem(ICON3D_FD_MUSHROOM,99)
-    GetItem(ICON3D_FD_MEAT_03,99)
-    GetItem(ICON3D_FD_VG_CORN,99)
-    GetItem(ICON3D_FD_WHEAT,99)
-    GetItem(ICON3D_FD_LAND_EGG,99)
-    GetItem(ICON3D_FD_MEAT_02,99)
-    GetItem(ICON3D_FD_VG_TOMATO,99)
-    GetItem(ICON3D_FD_SEA_SHELLFISH,99)
-    GetItem(ICON3D_FD_VG_PUMPKIN,99)
-    GetItem(ICON3D_FD_VG_EGGPLANT,99)
-    GetItem(ICON3D_FD_VG_PAPRIKA,99)
+    GetItem(ICON3D_FD_SEA_SALT,999)
+    GetItem(ICON3D_FD_LAND_HONEY,999)
+    GetItem(ICON3D_FD_MEAT_01,999)
+    GetItem(ICON3D_FD_VG_CABBAGE,999)
+    GetItem(ICON3D_FD_MUSHROOM,999)
+    GetItem(ICON3D_FD_MEAT_03,999)
+    GetItem(ICON3D_FD_VG_CORN,999)
+    GetItem(ICON3D_FD_WHEAT,999)
+    GetItem(ICON3D_FD_LAND_EGG,999)
+    GetItem(ICON3D_FD_MEAT_02,999)
+    GetItem(ICON3D_FD_VG_TOMATO,999)
+    GetItem(ICON3D_FD_SEA_SHELLFISH,999)
+    GetItem(ICON3D_FD_VG_PUMPKIN,999)
+    GetItem(ICON3D_FD_VG_EGGPLANT,999)
+    GetItem(ICON3D_FD_VG_PAPRIKA,999)
     """
 
     startingLoadout = startingLoadout + "SetFlag(SF_ITEMSLOT_NUM," + str(parameters.gearSlots) + ") //Let's adventure books actually increase slots from the start of the game."

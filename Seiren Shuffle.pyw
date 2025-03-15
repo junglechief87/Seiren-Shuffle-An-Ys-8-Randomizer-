@@ -2,6 +2,7 @@ import customtkinter as ctk
 from tkinter import messagebox, filedialog
 import random
 import os.path
+from os import system
 import shared.classr as classr
 from randomizer.rngPatcher import *
 from patch.chestPatcher import *
@@ -9,6 +10,7 @@ from patch.miscPatches import *
 import json
 import time
 import threading
+import webbrowser
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("System")  # Can be System, Dark, Light
@@ -20,8 +22,8 @@ FRAME_TITLE_STYLE = {
 }
 
 SETTINGS_FILE = "seirenShuffleSettings.json"
-
 ICON_PATH = "./shared/ysR Logo.ico"
+VERSION_NUM = "3.4.0"
 
 class SeedFrame(ctk.CTkFrame):
   def __init__(self, master, ):
@@ -809,13 +811,23 @@ class CommandsFrame(ctk.CTkFrame):
         
         # Buttons
         self.saveSettingsButton = ctk.CTkButton(self, text="Save Settings", command=self.saveSettingsCallback)
-        self.saveSettingsButton.grid(row=1, column=0, padx=5, pady=5,)
+        self.saveSettingsButton.grid(row=1, column=0, padx=5, pady=5, sticky="w")
 
+        self.generate_seed_button = ctk.CTkButton(self, text="About", command=self.aboutPopup)
+        self.generate_seed_button.grid(row=1, column=1, padx=5, pady=5, sticky="e")
+
+        self.generate_seed_button = ctk.CTkButton(self, text="Open Readme", command=self.openReadme)
+        self.generate_seed_button.grid(row=1, column=2, padx=5, pady=5, sticky="w")
+
+    
         self.patch_files_button = ctk.CTkButton(self, text="Patch Files", command=self.patchFiles)
-        self.patch_files_button.grid(row=1, column=1, padx=5, pady=5,)
+        self.patch_files_button.grid(row=1, column=3, padx=5, pady=5)
 
         self.generate_seed_button = ctk.CTkButton(self, text="Generate Seed", command=self.generateSeed)
-        self.generate_seed_button.grid(row=1, column=2, padx=5, pady=5)
+        self.generate_seed_button.grid(row=1, column=4, padx=5, pady=5)
+
+        self.generate_seed_button = ctk.CTkButton(self, text="Launch Game", command=self.launchGame)
+        self.generate_seed_button.grid(row=1, column=5, padx=5, pady=5)
 
     def saveSettingsCallback(self):
         self.master.saveSettings()
@@ -825,6 +837,28 @@ class CommandsFrame(ctk.CTkFrame):
     
     def generateSeed(self):
         self.master.generate_seed_callback()
+    
+    def openReadme(self):
+        webbrowser.open('https://github.com/junglechief87/Seiren-Shuffle-An-Ys-8-Randomizer-#seiren-shuffle-an-ys-8-randomizer-')
+
+    def launchGame(self):
+        os.system("ys8.exe")
+    
+    def aboutPopup(self):
+        # Create popup window
+        popup = ctk.CTkToplevel(self)
+        popup.title("About")
+        popup.geometry("250x200")
+        popup.grab_set()  # Make popup modal
+        popup.after(201, lambda: popup.iconbitmap(ICON_PATH))
+
+        # Configure grid layout
+        popup.grid_columnconfigure(0, weight=1)
+        ctk.CTkLabel(popup, text=("Version " + VERSION_NUM)).grid(row=0, column=0, padx=10, pady=5, sticky="we")
+        ctk.CTkLabel(popup, text=("Credits:"), font=("Arial", 14, "bold")).grid(row=1, column=0, pady=5, sticky="we")
+        ctk.CTkLabel(popup, text=("JungleChief87")).grid(row=2, column=0, sticky="we")
+        ctk.CTkLabel(popup, text=("Ooiale")).grid(row=3, column=0, sticky="we")
+        ctk.CTkLabel(popup, text=("Ballistixx99")).grid(row=4, column=0, sticky="we")
 
 class App(ctk.CTk):
     def __init__(self):
@@ -1272,6 +1306,7 @@ class App(ctk.CTk):
         shuffle_frame = self.shuffleLocationsFrame
         boss_frame = self.finalBossSettingsFrame
         sphere_frame = self.selectionsphereFrame
+        misc_frame = self.miscSettingsFrame
         
         # Update skills and MK rewards checkboxes
         if mode == "Past Dana":
@@ -1287,7 +1322,9 @@ class App(ctk.CTk):
             boss_frame.origin_care_option.configure(state="disabled")
             boss_frame.origin_start_option.configure(state="disabled")
             boss_frame.theos_start_option.configure(state="disabled")
-            
+            # Disable starting character pool button
+            misc_frame.party_pool_button.configure(state = "disabled")
+
             # Handle goal count scaling
             if sphere_frame.goal_var.get() == "Release the Psyches":
                 sphere_frame.set_slider_range(sphere_frame.goal_count_scale, 1, 5)
@@ -1303,6 +1340,8 @@ class App(ctk.CTk):
                 boss_frame.final_boss_option.get() == "Both" else "disabled")
             boss_frame.origin_start_option.configure(state="normal")
             boss_frame.theos_start_option.configure(state="normal")
+            # Enable starting character pool button
+            misc_frame.party_pool_button.configure(state = "normal")
             
             # Reset goal count scaling
             if sphere_frame.goal_var.get() == "Release the Psyches":

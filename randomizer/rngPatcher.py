@@ -8,6 +8,8 @@ from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
 from patch.chestPatcher import *
 from randomizer.audioShuffle import *
+from patch.miscPatches import pastDanaFixes
+
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
 #We named our script file rng because we need something short, our script calls from the chests are limited to 8 characters so our standard format for script call is rng:(locID where locID is a 4 digit id).
@@ -16,8 +18,8 @@ patchFile = ''
 scpIncludeList = ['#include "inc/mons.h"','#include "inc/def.h"','#include "inc/efx.h"','#include "inc/flag.h"','#include "inc/se.h"',
                   '#include "inc/scr_inc.h"','#include "inc/3dicon.h"','#include "inc/skilldef.h"','#include "inc/vo.h"','#include "inc/temp/rng.h"'] #standard set of header files used in most Ys 8 .scp files
 genericMessage = " Obtained."
-crewMessage = " Joined the Village."
-partyMessage = " Joined the Party."
+crewMessage = " joined the Village."
+partyMessage = " joined the Party."
 skillMessage = " has learned skill #2C"
 landmarkMessage = ' discovered.'
 rngScriptFile = getLocFile('rng','script')
@@ -26,6 +28,13 @@ rngScriptFile = getLocFile('rng','script')
 def rngPatcherMain(parameters):
     global patchFile
     patchFile = ''
+    
+    if parameters.charMode == 'Past Dana':
+        global partyMessage 
+        partyMessage = " joined the Village."
+        pastDanaFixes(True)  
+    else:
+        pastDanaFixes(False)
 
     if parameters.shuffleBgm:
         randomize_bgmtbl(parameters.seed)
@@ -644,7 +653,7 @@ def shopUpgrades(location, vanillaScript = ''):
 
             SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] - 130))
             GetItem(ICON3D_AM_023, 1)
-            if(!FLAG[GF_TBOX_DUMMY108] && !FLAG[GF_TBOX_DUMMY109])
+            if(!FLAG[GF_TBOX_DUMMY108] || FLAG[GF_TBOX_DUMMY109])
             {{
                 EquipWeapon(DANA,ICON3D_WP_DANA_000)
                 GetItem(ICON3D_WP_DANA_000,1)
@@ -1422,6 +1431,7 @@ def buildPsyches(shuffledLocations, parameters):
         bossReturn = """
         function "bossReturn"
         {{
+            SetFlag( SF_BOSS_BATTLE, 0 )
             if(WORK[WK_MAPNAMENO] == {0})
             {{
                 SetFlag(GF_SUBEV_PAST_02_BOSS,1)
@@ -1581,6 +1591,7 @@ def buildPsyches(shuffledLocations, parameters):
     bossReturn = """
         function "bossReturn"
         {{
+            SetFlag( SF_BOSS_BATTLE, 0 )
             if(WORK[WK_MAPNAMENO] == {0})
             {{
                 LoadArg("map/mp6305/mp6305.arg")
