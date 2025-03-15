@@ -84,12 +84,6 @@ def buildStartParameters(location,parameters):
     if parameters.shopLevel > 0:
         if parameters.shopLevel in [1,2,3,4,5,6,7]:
             startingLoadout = startingLoadout + """
-    SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 41))
-    SetChrWork(RICOTTA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] + 33))
-    SetChrWork(HUMMEL,CWK_SUP_STR,(HUMMEL.CHRWORK[CWK_SUP_STR] - 18))
-    GetItem(ICON3D_WP_HUMMEL_000, 1)
-    GetItem(ICON3D_AM_021, 1)
-    EquipWeapon(HUMMEL,ICON3D_WP_HUMMEL_000)
     SetDiaryFlag( DF_JOIN_KATRIN, 1 ) //Footprint memo: Rescued Katrin.
     SetDiaryCharaFlag( DRCHA_KATRIN, DRCHA_FLAG_OPEN, 1 ) //Person memo: Register when joining (Katrin)
     SetDiaryCharaFlag( DRCHA_KATRIN, DRCHA_FLAG_INFO1, 1 ) 
@@ -112,11 +106,6 @@ def buildStartParameters(location,parameters):
     SetFlag(GF_02MP4309_KILL_SPIDER,1)
     SetFlag(GF_QS201_SHOP_ADD,1)
     SetFlag(GF_TBOX_DUMMY081,1)
-    SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 34))
-    SetChrWork(RICOTTA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] - 55))
-    GetItem(ICON3D_WP_RICOTTA_000, 1)
-    GetItem(ICON3D_AM_022, 1)
-    EquipWeapon(RICOTTA,ICON3D_WP_RICOTTA_000)
     """
         if parameters.shopLevel in [3,4,5,6,7]:
             startingLoadout = startingLoadout + """
@@ -125,23 +114,12 @@ def buildStartParameters(location,parameters):
     //The flag here is the trigger for speaking with Kathleen about the orichalcum and having new weapons made.
     //That event then trips the flag for being able to kill enemies flagged as Saurians.
     SetFlag(GF_03MP7401_GET_MATERIAL, 1)
-    //Hummel has no shop upgrade to get him this weapon tier and therefore cannot upgrade to it. So we'll give it to him when we hit this level so Hummel isn't stuck with a tier 2 weapon all game.
-    GetItem(ICON3D_WP_HUMMEL_002,1)
-    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_002)
     SetFlag(GF_TBOX_DUMMY082,1)
-    SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 47))
     """
         if parameters.shopLevel in [4,5,6,7]:
             startingLoadout = startingLoadout + """
     SetFlag(GF_SHOP_RANK_5_02,1)
     SetFlag(GF_TBOX_DUMMY083,1)
-    SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] - 130))
-    GetItem(ICON3D_AM_023, 1)
-    if(!FLAG[GF_TBOX_DUMMY108] || FLAG[GF_TBOX_DUMMY109])
-    {
-        EquipWeapon(DANA,ICON3D_WP_DANA_000)
-        GetItem(ICON3D_WP_DANA_000,1)
-    }
     """
         if parameters.shopLevel in [5,6,7]:
             startingLoadout = startingLoadout + """
@@ -151,21 +129,11 @@ def buildStartParameters(location,parameters):
     SetFlag(GF_QS310_GET_ITEM2,1)
     SetFlag(GF_QS310_GET_ITEM3,1)
     SetFlag(GF_TBOX_DUMMY084,1)
-    if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
-    {
-        EquipWeapon(DANA,ICON3D_WP_DANA_001)
-        GetItem(ICON3D_WP_DANA_001,1)
-    }
     """
         if parameters.shopLevel in [6,7]:
             startingLoadout = startingLoadout + """
     SetFlag(GF_SHOP_RANK_5_07,1)
     SetFlag(GF_TBOX_DUMMY085,1)
-    if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
-    {
-        EquipWeapon(DANA,ICON3D_WP_DANA_002)
-        GetItem(ICON3D_WP_DANA_002,1)
-    }
     """
         if parameters.shopLevel == 7:
             startingLoadout = startingLoadout + """
@@ -175,45 +143,86 @@ def buildStartParameters(location,parameters):
     SetFlag(GF_TBOX_DUMMY086,1)
     SetFlag(GF_NPC_6_03_AFTER_INTERCEPT12,1)
     SetFlag(GF_06MP1201_GOTO_GEND,1)
-    if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
-    {
-        EquipWeapon(DANA,ICON3D_WP_DANA_003)
-        GetItem(ICON3D_WP_DANA_003,1)
-    }
+    """
+
+    #setup base weapons
+    startingLoadout = startingLoadout + """
+    GetItem(ICON3D_WP_ADOL_000,1)
+    EquipWeapon(ADOL,ICON3D_WP_ADOL_000)
+    GetItem(ICON3D_WP_LAXIA_000, 1)
+    EquipWeapon(LAXIA,ICON3D_WP_LAXIA_000)
+    GetItem(ICON3D_WP_SAHAD_000, 1)
+    EquipWeapon(SAHAD,ICON3D_WP_SAHAD_000)
+    GetItem(ICON3D_986, 1)
+    EquipWeapon(DANA,ICON3D_986)
+    GetItem(ICON3D_990, 1)
+    EquipWeapon(RICOTTA,ICON3D_990)
+    GetItem(ICON3D_992, 1)
+    EquipWeapon(HUMMEL,ICON3D_992)
     """
 
     if parameters.weaponLevel > 0:
-        if parameters.weaponLevel == 7:
+        if parameters.weaponLevel in [1,2,3,4,5,6,7]:
             startingLoadout = startingLoadout + """
-    GetItem(ICON3D_WP_ADOL_007,1)
-    GetItem(ICON3D_WP_LAXIA_007,1)
-    GetItem(ICON3D_WP_SAHAD_007,1)
-    GetItem(ICON3D_WP_HUMMEL_006,1)
-    GetItem(ICON3D_WP_RICOTTA_005,1)
-    GetItem(ICON3D_WP_DANA_003,1)
-    EquipWeapon(ADOL,ICON3D_WP_ADOL_007)
-    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_007)
-    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_007)
-    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_006)
-    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_005)
-    EquipWeapon(DANA, ICON3D_WP_DANA_003)
+    GetItem(ICON3D_WP_ADOL_001,1)
+    GetItem(ICON3D_WP_LAXIA_001,1)
+    GetItem(ICON3D_WP_SAHAD_001,1)
+    EquipWeapon(ADOL,ICON3D_WP_ADOL_001)
+    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_001)
+    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_001)
+    GetItem(ICON3D_987, 1)
+    EquipWeapon(DANA,ICON3D_987)
+    GetItem(ICON3D_991, 1)
+    EquipWeapon(RICOTTA,ICON3D_991)
+    GetItem(ICON3D_WP_HUMMEL_000, 1)
+    EquipWeapon(HUMMEL,ICON3D_WP_HUMMEL_000)
     """
-        elif parameters.weaponLevel == 6:
+        if parameters.weaponLevel in [2,3,4,5,6,7]:
             startingLoadout = startingLoadout + """
-    GetItem(ICON3D_WP_ADOL_006,1)
-    GetItem(ICON3D_WP_LAXIA_006,1)
-    GetItem(ICON3D_WP_SAHAD_006,1)
-    GetItem(ICON3D_WP_HUMMEL_005,1)
-    GetItem(ICON3D_WP_RICOTTA_004,1)
-    GetItem(ICON3D_WP_DANA_002,1)
-    EquipWeapon(ADOL,ICON3D_WP_ADOL_006)
-    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_006)
-    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_006)
-    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_005)
-    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_004)
-    EquipWeapon(DANA, ICON3D_WP_DANA_002)
+    GetItem(ICON3D_WP_ADOL_002,1)
+    GetItem(ICON3D_WP_LAXIA_002,1)
+    GetItem(ICON3D_WP_SAHAD_002,1)
+    GetItem(ICON3D_WP_HUMMEL_001,1)
+    EquipWeapon(ADOL,ICON3D_WP_ADOL_002)
+    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_002)
+    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_002)
+    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_001)
+    GetItem(ICON3D_WP_RICOTTA_000, 1)
+    EquipWeapon(RICOTTA,ICON3D_WP_RICOTTA_000)
+    GetItem(ICON3D_988, 1)
+    EquipWeapon(DANA,ICON3D_988)
     """
-        elif parameters.weaponLevel == 5:
+        if parameters.weaponLevel in [3,4,5,6,7]:
+            startingLoadout = startingLoadout + """
+    GetItem(ICON3D_WP_ADOL_003,1)
+    GetItem(ICON3D_WP_LAXIA_003,1)
+    GetItem(ICON3D_WP_SAHAD_003,1)
+    GetItem(ICON3D_WP_HUMMEL_002,1)
+    GetItem(ICON3D_WP_RICOTTA_001,1)
+    EquipWeapon(ADOL,ICON3D_WP_ADOL_003)
+    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_003)
+    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_003)
+    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_002)
+    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_001)
+    GetItem(ICON3D_989, 1)
+    EquipWeapon(DANA,ICON3D_989)
+    """
+        if parameters.weaponLevel in [4,5,6,7]:
+            startingLoadout = startingLoadout + """
+    GetItem(ICON3D_WP_ADOL_004,1)
+    GetItem(ICON3D_WP_LAXIA_004,1)
+    GetItem(ICON3D_WP_SAHAD_004,1)
+    GetItem(ICON3D_WP_HUMMEL_003,1)
+    GetItem(ICON3D_WP_RICOTTA_002,1)
+    GetItem(ICON3D_WP_DANA_000,1)
+    EquipWeapon(ADOL,ICON3D_WP_ADOL_004)
+    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_004)
+    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_004)
+    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_003)
+    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_002)
+    EquipWeapon(DANA, ICON3D_WP_DANA_000)
+    """  
+        if parameters.weaponLevel in [5,6,7]:
             startingLoadout = startingLoadout + """
     GetItem(ICON3D_WP_ADOL_005,1)
     GetItem(ICON3D_WP_LAXIA_005,1)
@@ -228,78 +237,35 @@ def buildStartParameters(location,parameters):
     EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_003)
     EquipWeapon(DANA, ICON3D_WP_DANA_001)
     """
-        elif parameters.weaponLevel == 4:
+        if parameters.weaponLevel in [6,7]:
             startingLoadout = startingLoadout + """
-    GetItem(ICON3D_WP_ADOL_004,1)
-    GetItem(ICON3D_WP_LAXIA_004,1)
-    GetItem(ICON3D_WP_SAHAD_004,1)
-    GetItem(ICON3D_WP_HUMMEL_003,1)
-    GetItem(ICON3D_WP_RICOTTA_002,1)
-    GetItem(ICON3D_WP_DANA_000,1)
-    EquipWeapon(ADOL,ICON3D_WP_ADOL_004)
-    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_004)
-    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_004)
-    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_003)
-    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_002)
-    EquipWeapon(DANA, ICON3D_WP_DANA_000)
-
-    SetChrWork(DANA,CWK_SUP_STR,0)
-    SetChrWork(HUMMEL,CWK_SUP_STR,0)
-    SetChrWork(RICOTTA,CWK_SUP_STR,0)
+    GetItem(ICON3D_WP_ADOL_006,1)
+    GetItem(ICON3D_WP_LAXIA_006,1)
+    GetItem(ICON3D_WP_SAHAD_006,1)
+    GetItem(ICON3D_WP_HUMMEL_005,1)
+    GetItem(ICON3D_WP_RICOTTA_004,1)
+    GetItem(ICON3D_WP_DANA_002,1)
+    EquipWeapon(ADOL,ICON3D_WP_ADOL_006)
+    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_006)
+    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_006)
+    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_005)
+    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_004)
+    EquipWeapon(DANA, ICON3D_WP_DANA_002)
     """
-        elif parameters.weaponLevel == 3:
+        if parameters.weaponLevel == 7:
             startingLoadout = startingLoadout + """
-    GetItem(ICON3D_WP_ADOL_003,1)
-    GetItem(ICON3D_WP_LAXIA_003,1)
-    GetItem(ICON3D_WP_SAHAD_003,1)
-    GetItem(ICON3D_WP_HUMMEL_002,1)
-    GetItem(ICON3D_WP_RICOTTA_001,1)
-    EquipWeapon(ADOL,ICON3D_WP_ADOL_003)
-    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_003)
-    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_003)
-    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_002)
-    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_001)
-
-    SetChrWork(DANA,CWK_SUP_STR,0)
-    SetChrWork(HUMMEL,CWK_SUP_STR,0)
-    SetChrWork(RICOTTA,CWK_SUP_STR,0)
-
-    SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 130))
-    """
-        elif parameters.weaponLevel == 2:
-            startingLoadout = startingLoadout + """
-    GetItem(ICON3D_WP_ADOL_002,1)
-    GetItem(ICON3D_WP_LAXIA_002,1)
-    GetItem(ICON3D_WP_SAHAD_002,1)
-    GetItem(ICON3D_WP_HUMMEL_001,1)
-    EquipWeapon(ADOL,ICON3D_WP_ADOL_002)
-    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_002)
-    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_002)
-    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_001)
-
-    SetChrWork(DANA,CWK_SUP_STR,0)
-    SetChrWork(HUMMEL,CWK_SUP_STR,0)
-    SetChrWork(RICOTTA,CWK_SUP_STR,0)
-
-    SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 83))
-    SetChrWork(DANA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] + 98))
-    """
-        elif parameters.weaponLevel == 1:
-            startingLoadout = startingLoadout + """
-    GetItem(ICON3D_WP_ADOL_001,1)
-    GetItem(ICON3D_WP_LAXIA_001,1)
-    GetItem(ICON3D_WP_SAHAD_001,1)
-    EquipWeapon(ADOL,ICON3D_WP_ADOL_001)
-    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_001)
-    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_001)
-
-    SetChrWork(DANA,CWK_SUP_STR,0)
-    SetChrWork(HUMMEL,CWK_SUP_STR,0)
-    SetChrWork(RICOTTA,CWK_SUP_STR,0)
-
-    SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 49))
-    SetChrWork(DANA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] + 55))
-    SetChrWork(DANA,CWK_SUP_STR,(HUMMEL.CHRWORK[CWK_SUP_STR] + 68))
+    GetItem(ICON3D_WP_ADOL_007,1)
+    GetItem(ICON3D_WP_LAXIA_007,1)
+    GetItem(ICON3D_WP_SAHAD_007,1)
+    GetItem(ICON3D_WP_HUMMEL_006,1)
+    GetItem(ICON3D_WP_RICOTTA_005,1)
+    GetItem(ICON3D_WP_DANA_003,1)
+    EquipWeapon(ADOL,ICON3D_WP_ADOL_007)
+    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_007)
+    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_007)
+    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_006)
+    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_005)
+    EquipWeapon(DANA, ICON3D_WP_DANA_003)
     """
             
     if parameters.armorLevel > 0:
@@ -890,11 +856,6 @@ function "startParameters"
     EquipCostume(ADOL, ICON3D_COS_ADOL_01, EQC_MAIN, EQC_MODE_EVDEFAULT)
     EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EQUIP)
     EquipCostume(ADOL, -1, EQC_MAIN, EQC_MODE_EVFORCE)
-    //We add strength to put the character's power in line with the rest of the cast for later joining characters and leave them without weapons until they hit the shop tier for their weapon.
-    //Characters without weapons animate with their base weapons still.
-    SetChrWork(HUMMEL,CWK_SUP_STR,(HUMMEL.CHRWORK[CWK_SUP_STR] + 18))
-    SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 8))
-    SetChrWork(RICOTTA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] + 22))
     {0}
     {1}
     {2}

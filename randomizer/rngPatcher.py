@@ -588,13 +588,6 @@ def shopUpgrades(location, vanillaScript = ''):
             WaitPrompt()
             WaitCloseWindow()        
             {0}
-            
-            SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 41))
-            SetChrWork(RICOTTA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] + 33))
-            SetChrWork(HUMMEL,CWK_SUP_STR,(HUMMEL.CHRWORK[CWK_SUP_STR] - 18))
-            GetItem(ICON3D_WP_HUMMEL_000, 1)
-            GetItem(ICON3D_AM_021, 1)
-            EquipWeapon(HUMMEL,ICON3D_WP_HUMMEL_000)
         }}
         else if (!FLAG[GF_TBOX_DUMMY081])
         {{
@@ -609,12 +602,6 @@ def shopUpgrades(location, vanillaScript = ''):
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 2.",0,0)
             WaitPrompt()
             WaitCloseWindow()  
-
-            SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 34))
-            SetChrWork(RICOTTA,CWK_SUP_STR,(RICOTTA.CHRWORK[CWK_SUP_STR] - 55))
-            GetItem(ICON3D_WP_RICOTTA_000, 1)
-            GetItem(ICON3D_AM_022, 1)
-            EquipWeapon(RICOTTA,ICON3D_WP_RICOTTA_000)
         }}
         else if (!FLAG[GF_TBOX_DUMMY082])
         {{
@@ -623,9 +610,6 @@ def shopUpgrades(location, vanillaScript = ''):
             //The flag here is the trigger for speaking with Kathleen about the orichalcum and having new weapons made.
             //That event then trips the flag for being able to kill enemies flagged as Saurians.
             SetFlag(GF_03MP7401_GET_MATERIAL, 1)
-            //Hummel has no shop upgarde to get him this weapon tier and therefore cannot upgrade to it. So we'll give it to him when we hit this level so Hummel isn't stuck with a tier 2 weapon all game.
-            GetItem(ICON3D_WP_HUMMEL_002,1)
-            EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_002)
             SetFlag(GF_TBOX_DUMMY082,1)
             GetItem(ICON3D_HIIROKANE,1)
             GetItemMessageExPlus(ICON3D_HIIROKANE,1,{6},"{2}",0,0)
@@ -636,8 +620,6 @@ def shopUpgrades(location, vanillaScript = ''):
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 3.",0,0)
             WaitPrompt()
             WaitCloseWindow()
-
-            SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] + 47))
         }}
         else if (!FLAG[GF_TBOX_DUMMY083])
         {{
@@ -650,14 +632,6 @@ def shopUpgrades(location, vanillaScript = ''):
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 4.",0,0)
             WaitPrompt()
             WaitCloseWindow()
-
-            SetChrWork(DANA,CWK_SUP_STR,(DANA.CHRWORK[CWK_SUP_STR] - 130))
-            GetItem(ICON3D_AM_023, 1)
-            if(!FLAG[GF_TBOX_DUMMY108] || FLAG[GF_TBOX_DUMMY109])
-            {{
-                EquipWeapon(DANA,ICON3D_WP_DANA_000)
-                GetItem(ICON3D_WP_DANA_000,1)
-            }}
         }}
         else if (!FLAG[GF_TBOX_DUMMY084])
         {{
@@ -674,12 +648,6 @@ def shopUpgrades(location, vanillaScript = ''):
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 5.",0,0)
             WaitPrompt()
             WaitCloseWindow()
-
-            if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
-            {{
-                EquipWeapon(DANA,ICON3D_WP_DANA_001)
-                GetItem(ICON3D_WP_DANA_001,1)
-            }}
         }}
         else if (!FLAG[GF_TBOX_DUMMY085])
         {{
@@ -692,11 +660,6 @@ def shopUpgrades(location, vanillaScript = ''):
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank 6.",0,0)
             WaitPrompt()
             WaitCloseWindow()
-            if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
-            {{
-                EquipWeapon(DANA,ICON3D_WP_DANA_002)
-                GetItem(ICON3D_WP_DANA_002,1)
-            }}
         }}
         else if (!FLAG[GF_TBOX_DUMMY086])
         {{
@@ -713,11 +676,6 @@ def shopUpgrades(location, vanillaScript = ''):
             GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"Shops have been upgraded: Rank MAX.",0,0)
             WaitPrompt()
             WaitCloseWindow()
-            if(FLAG[GF_TBOX_DUMMY129]) \\if past dana mode her weapons will upgrade automatically
-            {{
-                EquipWeapon(DANA,ICON3D_WP_DANA_003)
-                GetItem(ICON3D_WP_DANA_003,1)
-            }}
         }}
         else
         {{

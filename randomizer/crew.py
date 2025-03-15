@@ -15,21 +15,6 @@ def getCrewFlags(name):
         SetFlag(SF_ADOL_JOINOK, 1)
         JoinParty(PARTY_ADOL)
     }
-    
-    GetItem(ICON3D_WP_ADOL_000,1)
-    EquipWeapon(ADOL,ICON3D_WP_ADOL_000)
-    
-    if( ITEMWORK[ICON3D_WP_ADOL_008] )
-    {
-        SetFlag(GF_ADOLWEAPON_BACKUP,(ADOL.CHRWORK[CWK_WEAPON]))
-        GetItem(ICON3D_WP_ADOL_008, 1)		
-	    EquipWeapon(ADOL, ICON3D_WP_ADOL_008)
-    }
-    else if( FLAG[GF_03MP1201_ALARM_INTERCEPT] )
-    {
-        GetItem(ICON3D_WP_ADOL_003, 1)		
-	    EquipWeapon(ADOL, ICON3D_WP_ADOL_003)
-    }
 
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {
@@ -57,15 +42,7 @@ def getCrewFlags(name):
     SetDiaryCharaFlag( DRCHA_LAXIA, DRCHA_FLAG_INFO1, 1 ) //Person memo: Additional information release 1 (Dogi)
     SetDiaryCharaFlag( DRCHA_LAXIA, DRCHA_FLAG_INFO2, 1 ) 
     SetDiaryCharaFlag( DRCHA_LAXIA, DRCHA_FLAG_INFO3, 1 )
-    GetItem(ICON3D_WP_LAXIA_000, 1)
-    EquipWeapon(LAXIA,ICON3D_WP_LAXIA_000)
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
-    
-    if( FLAG[GF_03MP1201_ALARM_INTERCEPT])
-    {
-        GetItem(ICON3D_WP_LAXIA_003, 1)		
-	    EquipWeapon(LAXIA, ICON3D_WP_LAXIA_003)
-    }
 
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {
@@ -116,16 +93,7 @@ def getCrewFlags(name):
     SetDiaryCharaFlag( DRCHA_SAHAD, DRCHA_FLAG_INFO1, 1 )
     SetDiaryCharaFlag( DRCHA_SAHAD, DRCHA_FLAG_INFO2, 1 )
     SetDiaryCharaFlag( DRCHA_SAHAD, DRCHA_FLAG_INFO3, 1 )
-    GetItem(ICON3D_WP_SAHAD_000, 1)
-    GetItem(ICON3D_AM_020, 1)
-    EquipWeapon(SAHAD,ICON3D_WP_SAHAD_000)
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
-
-    if( FLAG[GF_03MP1201_ALARM_INTERCEPT])
-    {
-        GetItem(ICON3D_WP_SAHAD_003, 1)		
-	    EquipWeapon(SAHAD, ICON3D_WP_SAHAD_003)
-    }
 
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {
@@ -315,12 +283,6 @@ def getCrewFlags(name):
     SetDiaryCharaFlag( DRCHA_RICOTTA, DRCHA_FLAG_INFO3, 1 )
     SetFlag( GF_FAME_POINT, (FLAG[GF_FAME_POINT] + 2) )
 
-    if( FLAG[GF_03MP1201_ALARM_INTERCEPT])
-    {
-        GetItem(ICON3D_WP_RICOTTA_001	, 1)
-	    EquipWeapon(RICOTTA, ICON3D_WP_RICOTTA_001)
-    }
-
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {
         CallFunc("rng:0528")
@@ -386,12 +348,6 @@ def getCrewFlags(name):
     SetDiaryCharaFlag( DRCHA_HUMMEL, DRCHA_FLAG_INFO1, 1 ) 
     SetDiaryCharaFlag( DRCHA_HUMMEL, DRCHA_FLAG_INFO2, 1 ) 
     SetDiaryCharaFlag( DRCHA_HUMMEL, DRCHA_FLAG_INFO3, 1 )
-    
-    if( FLAG[GF_03MP1201_ALARM_INTERCEPT] || FLAG[GF_TBOX_DUMMY082])
-    {
-        GetItem(ICON3D_WP_HUMMEL_002	, 1)
-	    EquipWeapon(HUMMEL, ICON3D_WP_HUMMEL_002)
-    }
 
     if(FLAG[GF_TBOX_DUMMY111]) //if skill shuffle is on
     {
