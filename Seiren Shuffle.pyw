@@ -110,7 +110,7 @@ class SelectionSphereFrame(ctk.CTkFrame):
         self.goal_var = ctk.StringVar(value="Release the Psyches")
         self.goal_option_menu = ctk.CTkOptionMenu(self, variable=self.goal_var,
                                                   values=["Release the Psyches", "Seiren Escape", "Find Crew", "Untouchable"], 
-                                                  command=self.goalChange)
+                                                  command=self.updateGoals)
         self.goal_option_menu.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
         # Goal Count Scale
@@ -138,7 +138,15 @@ class SelectionSphereFrame(ctk.CTkFrame):
         self.octus_num_value_label.grid(row=3, column=2, padx=5, pady=5, sticky="w")
 
         # Call goalChange once to initialize the GUI
-        self.goalChange(self.goal_var.get())
+        self.initializeGoal(self.goal_var.get())
+
+    def initializeGoal(self,choice):
+        self.goalChange(choice)
+
+    def updateGoals(self, choice):
+        self.goalChange(choice)
+        #certain settings needs locked to specific values based on goal choices
+        self.master.disable_enable_buttons(choice)
 
     def goalChange(self, choice):
         """ Update sliders and their ranges based on selected goal """
@@ -1352,6 +1360,24 @@ class App(ctk.CTk):
         # Update any dependent UI components
         self.update_idletasks()
     
+    def disable_enable_buttons(self, choice):
+        
+        pacingModifiersFrame = self.pacingModifiersFrame
+        shuffleLocationsFrame = self.shuffleLocationsFrame
+
+        pacingModifiersFrame.super_weapons_checkbox.configure(state="normal")
+        shuffleLocationsFrame.former_sanctuary_crypt_checkbox.configure(state="normal")
+        
+        if choice == "Seiren Escape":
+            pacingModifiersFrame.super_weapons_var.set(False)
+            pacingModifiersFrame.super_weapons_checkbox.configure(state="disabled")
+        elif choice == "Untouchable":
+            shuffleLocationsFrame.former_sanctuary_crypt_var.set(True) 
+            shuffleLocationsFrame.former_sanctuary_crypt_checkbox.configure(state="disabled")
+
+        # Update any dependent UI components
+        self.update_idletasks()
+
     def patch_files_callback(self):
         try:
             cleanChests()

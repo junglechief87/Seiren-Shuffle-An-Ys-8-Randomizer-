@@ -752,7 +752,7 @@ function "goal"
         selectionSphereAccess ="""
 function "goal"
 {
-    if(ALLITEMWORK[ICON3D_SHIP_PLAN] && ALLITEMWORK[ICON3D_SEIREN_CHART] && ALLITEMWORK[ICON3D_WP_ADOL_008])
+    if(ALLITEMWORK[ICON3D_SHIP_PLAN] && ALLITEMWORK[ICON3D_SEIREN_CHART] && FLAG[GF_TBOX_DUMMY071])
     {
         // filler
     }

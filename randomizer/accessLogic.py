@@ -23,7 +23,8 @@ def southSideOpen(access, parameters):
             access.hasDiscovery('Chimney Rock') or
             (((access.hasAnyDiscovery(['Milky White Vein','Indigo Mineral Vein']) or access.canDefeat('Gargantula'))) and access.canSeeDark()) or
             (access.hasDiscovery('Field of Medicinal Herbs') and access.canDefeat('Magamandra')) or
-            (access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']) and access.hasDina())
+            (access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']) and access.hasDina()) or
+            (access.hasDiscovery('Airs Cairn') and access.canMove(11))
         )
     
     def isNorthSideRoute():
@@ -1104,7 +1105,8 @@ def checkGreatRiverValley(location, access, parameters):
     location_checks = {
         'Cliffs': lambda: (
             (location.mapCheckID == 'TBOX01' and access.canSwampWalk()) or
-            (location.mapCheckID == 'TBOX02')
+            (location.mapCheckID == 'TBOX02') or 
+            (access.hasDiscovery('Airs Cairn') and access.canMove(11))
         ),
         'Falls': lambda: (
             (location.mapCheckID in ['TBOX01', 'TBOX02'] and access.canSwampWalk()) or
