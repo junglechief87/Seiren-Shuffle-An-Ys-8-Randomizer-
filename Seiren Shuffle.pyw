@@ -343,10 +343,10 @@ class PacingModifiersFrame(ctk.CTkFrame):
         
         self.experience_multiplier_scale = ctk.CTkSlider(self)
         self.experience_multiplier_scale.grid(row=1, column=1, padx=5, pady=5, sticky="ew", columnspan=3)
-        self.experience_multiplier_scale.configure(from_=0, to=10, number_of_steps=10, command=self.update_experience_multiplier)
-        self.experience_multiplier_scale.set(4)
+        self.experience_multiplier_scale.configure(from_=0, to=10, number_of_steps=20, command=self.update_experience_multiplier)
+        self.experience_multiplier_scale.set(4.0)
 
-        self.experience_multiplier_value = ctk.CTkLabel(self, text="4", width=25)
+        self.experience_multiplier_value = ctk.CTkLabel(self, text="4.0", width=25)
         self.experience_multiplier_value.grid(row=1, column=4, padx=(0, 5), pady=5, sticky="w")
         
         # Exp Mult Growth Rate (Slider)
@@ -356,9 +356,9 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.exp_mult_growth_rate_scale = ctk.CTkSlider(self)
         self.exp_mult_growth_rate_scale.grid(row=2, column=1, padx=5, pady=5, sticky="ew", columnspan=3)
         self.exp_mult_growth_rate_scale.configure(from_=0, to=10, number_of_steps=10, command=self.update_exp_mult_growth_rate)
-        self.exp_mult_growth_rate_scale.set(3)
+        self.exp_mult_growth_rate_scale.set(3.0)
 
-        self.exp_mult_growth_rate_value = ctk.CTkLabel(self, text="3", width=25) 
+        self.exp_mult_growth_rate_value = ctk.CTkLabel(self, text="3.0", width=25) 
         self.exp_mult_growth_rate_value.grid(row=2, column=4, padx=(0, 5), pady=5, sticky="w")
 
 
@@ -462,12 +462,12 @@ class PacingModifiersFrame(ctk.CTkFrame):
 
     # Update function for Experience Multiplier
     def update_experience_multiplier(self, value):
-        self.experience_multiplier_value.configure(text=f"{int(float(value))}")
+        self.experience_multiplier_value.configure(text=f"{float(value)}")
         self.update_examples()
 
     # Update function for Exp Mult Growth Rate
     def update_exp_mult_growth_rate(self, value):
-        self.exp_mult_growth_rate_value.configure(text=f"{int(float(value))}")
+        self.exp_mult_growth_rate_value.configure(text=f"{float(value)}")
         self.update_examples()
 
     def growthExample(self, bossCount):

@@ -36,11 +36,11 @@ def canAccessNorthSide(access, parameters):
     return  (access.canDefeat('Giasburn') or 
              parameters.northSideOpen or 
              access.hasAnyDiscovery(['Unicalamites','Breath Fountain','Ancient Tree','Prismatic Mineral Vein']) or 
-             (lodiniaToVista(access) and ((access.hasDana()) or (access.past3() and access.past2())))
+             ((lodiniaToVista(access) and access.canDoubleJump()) and ((access.hasDana()) or (access.past3() and access.past2())))
         )
 
 def eterniaOpen(access,parameters):
-    return ((canAccessNorthSide(access, parameters) and access.past2()) or (access.past3() and (lodiniaToVista(access))))
+    return ((canAccessNorthSide(access, parameters) and access.past2()) or (access.past3() and lodiniaToVista(access) and access.canDoubleJump()))
 
 def templeOfGreatTreeOpen(access):
     return ( (access.past2() and access.past3()) or access.hasDana() )
@@ -444,7 +444,7 @@ def checkVistaRidge(location, access, parameters):
         return False
 
     location_checks = {
-        'Vista Ridge Upper': lambda: access.canMove(21) and access.canDoubleJump(),
+        'Vista Ridge Upper': lambda: access.canMove(21) and access.canDoubleJump() and access.canClimb(),
         'Vista Ridge Lower': lambda: (
             access.canDefeat('Master Kong Hummel') and 
             battleLogic(240, access, parameters) and
@@ -706,7 +706,7 @@ def checkMontGendarmeNight(location, access, parameters):
 
 def checkTempleOfGreatTree(location, access, parameters):
     if not ((canAccessNorthSide(access, parameters) and 
-            templeOfGreatTreeOpen(access)) or lodiniaToVista(access)):
+            templeOfGreatTreeOpen(access)) or (lodiniaToVista(access) and access.canDoubleJump())):
         return False
 
     location_checks = {
@@ -1349,7 +1349,7 @@ def checkRicotta(location, access, parameters):
 
 def checkCastawayVillage(location, access, parameters):
     if location.mapCheckID in ['Silvia Skill 1', 'Silvia Skill 2', 'Silvia']:
-        return access.hasSilvia() and battleLogic(200, access, parameters)
+        return access.hasSilvia() and battleLogic(260, access, parameters)
     else:
         return True
 
@@ -1561,7 +1561,7 @@ def materialAccess(material,access,parameters):
             or access.hasDiscovery('Lapis Mineral Vein'))
         case 'Essence Stone': #blue feather and dandale horn are also used on this as it's the same requirements
             #Access to Vista Ridge from Eternia or access to all of Lodinia
-            return ((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or lodiniaToVista(access))
+            return ((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or (lodiniaToVista(access) and access.canDoubleJump()))
         case 'Tectite Ore':
             #Access to north side and Mountain Pinnacle Trail
             return (access.hasDiscovery('Prismatic Mineral Vein') or (canAccessNorthSide(access,parameters) and access.past1()))
@@ -1592,7 +1592,7 @@ def materialAccess(material,access,parameters):
         case 'Ancient Hide':
             #Temple of the Great Tree Access
             return (((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or 
-                     lodiniaToVista(access)) or (
+                     (lodiniaToVista(access) and access.canDoubleJump())) or (
             #Eleftheria Access
             (southSideOpen(access, parameters) and access.hasDina()) or 
                 access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse','Beehive'])) and 
@@ -1625,7 +1625,7 @@ def materialAccess(material,access,parameters):
         case 'Ancient Lumber':
             #Temple of the Great Tree Access
             return (((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or 
-                     lodiniaToVista(access)) or (
+                     (lodiniaToVista(access) and access.canDoubleJump())) or (
             #Chasm Access
             eterniaOpen(access,parameters) and access.past5()))
         

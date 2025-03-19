@@ -1945,6 +1945,7 @@ function "expMult"
 		SetFlag(GF_TBOX_DUMMY124,0)
 		SetFlag(GF_TBOX_DUMMY125,0)
 		SetFlag(GF_TBOX_DUMMY126,0)
+        
         CallFunc("rng:bossCheck")
     }}
 }}
@@ -2272,7 +2273,9 @@ function "expGrowth"
     
 }}
 """ 
-    return scripExpMult.format(parameters.expMult,parameters.expGrowth)
+    return scripExpMult.format(parameters.expMult*2,parameters.expGrowth) 
+#Since exp scaling is removed by making the game think that the player level == enemy level the enemy exp in game is actually half of what the monster library shows as the base in game
+#I'm multiplying by 2 here so the base exp that's being multiplied matches what the player sees in game
 
 
 

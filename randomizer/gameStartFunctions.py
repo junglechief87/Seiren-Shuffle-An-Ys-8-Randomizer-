@@ -442,6 +442,7 @@ def buildStartParameters(location,parameters):
     startParams = """
 function "startParameters"
 {{
+    SetStopFlag(STOPFLAG_EVENT)
     SetFlag(SF_ADOL_JOINOK, 0)
     SetFlag(SF_ADOL_JOINED, 0)
     CallFunc("rng:earlyGameParty")
@@ -862,6 +863,7 @@ function "startParameters"
     LoadArg("map/mp1201/mp1201.arg")
     EventCue("mp1201:EV_M01S070_ED")
     {3}
+    ResetStopFlag(STOPFLAG_EVENT)
 }}
 """
     return startParams.format(gameSettingFlags,startingCharacter,startingLoadout,pastDanaFlags)
