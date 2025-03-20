@@ -143,6 +143,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
 
     #We take the final list and do our playthrough using only the minimum required items
     print('building playthrough')
+    playthrough = classr.playthrough()
     win = False
     progressionInventory = []
     for location in progressionLocations:
@@ -156,6 +157,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         spoilerLog.write('{ \n')
         if sphere == 0:
             openingCutscene.writeSpoiler(spoilerLog)
+            playthrough.build(openingCutscene,sphere)
 
         while True:
             itemFound = 0
@@ -176,6 +178,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         while len(foundLocations) != 0:
             location = foundLocations.pop(0)
             location.writeSpoiler(spoilerLog)
+            playthrough.build(location,sphere)
             # label required hints
             if len(hints) > 0:
                 for hint in hints:

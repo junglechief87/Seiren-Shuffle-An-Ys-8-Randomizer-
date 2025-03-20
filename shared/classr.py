@@ -1,6 +1,17 @@
 from shared.functions import * 
 from randomizer.accessLogic import *
 
+class playthrough:
+  def __init__(self):
+    self.locations = {}
+
+  def build(self,location,sphere):
+    if sphere not in self.locations.keys():
+      self.locations[sphere] = []
+      self.locations[sphere].append(location)
+    else:
+      self.locations[sphere].append(location)
+  
 class location:
   def __init__(self,locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill,landmark):
     self.locID = locID
