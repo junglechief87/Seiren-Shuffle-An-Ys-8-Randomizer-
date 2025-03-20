@@ -723,7 +723,6 @@ class MiscSettingsFrame(ctk.CTkFrame):
         popup.geometry("220x170")
         popup.grab_set()  # Make popup modal
         popup.after(201, lambda: popup.iconbitmap(ICON_PATH))
-
         # Configure grid layout
         popup.grid_columnconfigure(1, weight=1)
 
@@ -772,10 +771,13 @@ class MiscSettingsFrame(ctk.CTkFrame):
         self.hummel_checkbox.grid(row=1, column=1, padx=5, pady=5, sticky="w")
         self.ricotta_checkbox.grid(row=2, column=1, padx=5, pady=5, sticky="w")
         self.dana_checkbox.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+        
+        # Initialize button state, needed if only one was selected last time the window was closed
+        selection_check()
 
         # Close button
         ctk.CTkButton(popup, text="Close", command=popup.destroy).grid(row=4, column=0, columnspan=3, pady=10)
-
+            
     def open_hints_customization(self):
         # Create popup window
         popup = ctk.CTkToplevel(self)

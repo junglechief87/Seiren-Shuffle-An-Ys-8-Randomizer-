@@ -368,14 +368,10 @@ def checkLodiniaMarshland(location, access, parameters):
 def checkLodiniaMarshlandFromEternalHill(location, access):
     location_checks = {
         'Entrance from Vista Ridge': lambda: (
-            access.past6() and (access.canSwampWalk() or access.canUnderwater()) and (
-            location.mapCheckID == 'TBOX01' or 
-            (location.mapCheckID in ['TBOX02', 'TBOX03'] and (access.canDoubleJump() or access.canSwampWalk())))
+            access.past6() and (access.canSwampWalk() or access.canUnderwater()) 
         ),
         'Near Submerged Cemetery': lambda: (
-            (access.canUnderwater() or access.canSwampWalk()) and 
-            (location.mapCheckID == 'TBOX01' or 
-            (location.mapCheckID == 'TBOX02' and access.canSwampWalk()))
+            (access.canUnderwater() or access.canSwampWalk())
         ),
         'Muddy Lake': lambda: access.canSwampWalk() and access.past6(),
         'Exit to Valley of Kings': lambda: (
@@ -392,15 +388,9 @@ def checkLodiniaMarshlandFromEternalHill(location, access):
 def checkLodiniaMarshlandFromSkyGarden(location, access):
     location_checks = {
         'Entrance from Vista Ridge': lambda: (
-            access.past6() and (access.canSwampWalk() or access.canUnderwater()) and (
-            location.mapCheckID == 'TBOX01' or 
-            (location.mapCheckID in ['TBOX02', 'TBOX03'] and (access.canDoubleJump() or access.canSwampWalk())))
+            access.past6() and (access.canSwampWalk() or access.canUnderwater())
         ),
-        'Near Submerged Cemetery': lambda: (
-            (access.canDoubleJump() or access.canSwampWalk()) and 
-            (location.mapCheckID == 'TBOX01' or 
-            (location.mapCheckID == 'TBOX02' and access.canSwampWalk()))
-        ),
+        'Near Submerged Cemetery': lambda: (access.canUnderwater() or access.canSwampWalk()),
         'Muddy Lake': lambda: access.past6() and access.canSwampWalk(),
         'Exit to Valley of Kings': lambda: (
             (access.canSwampWalk() or access.canUnderwater()) or (location.mapCheckID in ['Fermented Sap','Landmark'])
@@ -410,16 +400,8 @@ def checkLodiniaMarshlandFromSkyGarden(location, access):
 
 def checkLodiniaMarshlandFromCemetery(location, access):
     location_checks = {
-        'Entrance from Vista Ridge': lambda: (
-            access.past6() and (
-            location.mapCheckID == 'TBOX01' or 
-            (location.mapCheckID in ['TBOX02', 'TBOX03'] and (access.canDoubleJump() or access.canSwampWalk())))
-        ),
-        'Near Submerged Cemetery': lambda: (
-            (access.canDoubleJump() or access.canSwampWalk()) and 
-            (location.mapCheckID == 'TBOX01' or 
-            (location.mapCheckID == 'TBOX02' and access.canSwampWalk()))
-        ),
+        'Entrance from Vista Ridge': lambda: access.past6(),
+        'Near Submerged Cemetery': lambda: True,
         'Muddy Lake': lambda: access.past6() and access.canSwampWalk(),
         'Exit to Valley of Kings': lambda: (
             (access.canSwampWalk() or access.canUnderwater()) and 
