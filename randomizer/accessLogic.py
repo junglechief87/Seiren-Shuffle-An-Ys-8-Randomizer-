@@ -677,7 +677,11 @@ def checkMontGendarmeNight(location, access, parameters):
 
     def isValidCheckIfNorth(location, access):
         return (
-            location.locName != 'Upper Cliffs 2' 
+            location.locName not in ['Boss Arena','Upper Cliffs 2','Upper Cliffs 1','Mid-Boss Arena',
+                                     'Cliffside Midpoint','Outside Cabin','Northern Lower Cliffside Trail'] 
+                                     # This was added because there's a potential softlock when dropping into the Northern Lower Cliffside Trail without grip glvoes.
+                                     # The player is unable to return without them, therefore we will require them. 
+                                     # An event has been added to the entrance of this map to prevent the player from doing this without the gloves.
             or access.canClimb()
         )
 
@@ -1189,9 +1193,8 @@ def coralForestFromRoaringSeashore(location, access, parameters):
     location_checks = {
         'Entrance': lambda: True,
         'Walkways': lambda: (
-            (location.mapCheckID == 'TBOX06') or
             (location.mapCheckID == 'TBOX03' and (access.canClimb() or access.canDoubleJump())) or
-            (location.mapCheckID in ['TBOX04', 'TBOX05'])
+            (location.mapCheckID != 'TBOX03')
         ),
         'Midpoint': lambda: True,
         'After Mid-Boss': lambda: (
