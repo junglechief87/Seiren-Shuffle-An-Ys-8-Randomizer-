@@ -58,7 +58,7 @@ def shuffleLocations(parameters):
             shuffledLocations.append(vanillaLocations.pop(0))
 
     random.shuffle(preShuffleLoc)
-    fillShuffledLocations(inventory,preShuffleLoc,shuffledLocations,parameters)
+    fillShuffledLocations(inventory,preShuffleLoc,shuffledLocations,parameters,blacklistRegion)
 
     return shuffledLocations
 
@@ -83,9 +83,6 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
     accessibleInventory = []
     accessibleLocation = []
     progressionBanList = progressionBans(parameters)
-
-    if not parameters.formerSanctuaryCrypt:
-        blacklistRegion.append('Former Sanctuary Crypt')
 
     for item in inventory:
         # If former sanctuary crypt is on, Essence key stones are progression
@@ -213,7 +210,8 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
 
         #loop through locations and test if the player can access them. If they can access them then queue the location to be filled and remove from pool
         for index,location in enumerate(fillLocations):
-            if ( parameters.essenceKeySanity or ( (itemToPlace.itemID != 703) or (location.locRegion.find('Former Sanctuary Crypt') == 0) ) ) and canAccess(accessibleInventory,fillLocations[index],parameters) and location.locID not in progressionBanList:
+            if ( parameters.essenceKeySanity or ( (itemToPlace.itemID != 703) or (location.locRegion.find('Former Sanctuary Crypt') == 0) ) ) and \
+                canAccess(accessibleInventory,fillLocations[index],parameters) and location.locID not in progressionBanList:
                 fillLocation = fillLocations.pop(index)
                 filledLocation = combineShuffledLocAndItem(fillLocation, itemToPlace)
                 shuffledLocations.append(filledLocation)
