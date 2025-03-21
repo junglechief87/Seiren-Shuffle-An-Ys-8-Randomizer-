@@ -16,7 +16,8 @@ Installation should be pretty simple.
 
 
 ## Settings
-![settings example](https://i.imgur.com/SPa1Dkt.png)
+![settings example](https://github.com/junglechief87/Seiren-Shuffle-An-Ys-8-Randomizer-/blob/main/shared/Main%20Interface.png?raw=true)
+
 ### Seed: 
 This is the unique identifier for the randomization of your playthrough. Seeds with the same settings and number here should generate the same playthrough.
 
@@ -96,7 +97,8 @@ And it also means that you may need to explore the North Side while underlevelle
 
 **Infinity Mode**: This activates Infinity Mode in the game. This is a New Game+ modes that drastically scales up enemy levels. It is recommended you upgrade your starting loadout drastically with this setting on. The lowest level enemies are in the mid-60s and the highest level enemy is 120 with this flag set.
 
-**Starting Loadout**: This extra menu lets you start the game with a variety of helpful tools. 
+**Starting Loadout**: This extra menu lets you start the game with a variety of helpful tools.
+![settings example](https://github.com/junglechief87/Seiren-Shuffle-An-Ys-8-Randomizer-/blob/main/shared/Starting%20Loadout.png?raw=true)
   - *Starting Level*: Fairly self explanatory, lets you set the level for your initial scharacter, default is 3.
   - *Flame Stone Level*: Let's you set the forge level for Kathrine and also upgrades any other shops similarly.
   - *Weapon Level*: Starts the player with weapons of the equivalent forge level instead of needing to upgrade to them.
