@@ -75,7 +75,7 @@ def findSkill(niceItem,character):
             if item.itemName.find(characterSkill) > -1:
                 return index
                 
-def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters):
+def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,blacklistRegion):
     progressionInventory = [] #progression items only
     niceItems = [] #nice to have items that will always exist in the world but don't contain logic
     junkItems = [] #filler items, not all will be placed. Some new progression items, like the Dana past event trigger items, will take their place in the pool of vanilla items.
