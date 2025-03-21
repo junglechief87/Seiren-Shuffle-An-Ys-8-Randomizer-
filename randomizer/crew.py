@@ -68,6 +68,7 @@ def getCrewFlags(name):
 """
         case "Little Paro": #vanilla function call on mp1201 script rng:0424
             flag = """
+    SetFlag(SF_RESERVE15_JOINOK,1)
     SetDiaryCharaFlag( DRCHA_PARO, DRCHA_FLAG_INFO1, 1 ) 
     SetDiaryCharaFlag( DRCHA_PARO, DRCHA_FLAG_OPEN, 1 ) //Person memo: Register when joining (Little Paro) -> (Patch 1.01) Move after name is known
     SetDiaryCharaFlag( DRCHA_PARO, DRCHA_FLAG_INFO2, 1 )

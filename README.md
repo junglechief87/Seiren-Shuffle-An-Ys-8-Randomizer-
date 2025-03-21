@@ -25,7 +25,7 @@ This setting changes what characters you will be controlling on your playthrough
 
  - **Standard**: The playable characters are the 6 default ones: Adol, Laxia, Sahad, Hummel, Ricotta, and Dana.  
 
- - **Past Dana**: The playthrough will start with Past Dana as well as Gratika and Luminous. No additional skills can be learned aside from the 4 starting ones. You will also start with the Pierce Medal and Strike Medal in your inventory since all 3 Danas hit with Slash type.
+ - **Past Dana**: The playthrough will start with Past Dana as well as Gratika and Luminous. No additional skills can be learned aside from the 4 starting ones. You will also start with the Pierce Medal and Strike Medal in your inventory since all 3 Danas hit with Slash type. Io will always be her final boss.
 
 ### Selection Sphere Access:
 This sets the goal for your seed and the required amount. The goal and the required number are used to determine when the player will gain access to the Selection Sphere, the game's final room that leads to the final boss. 
@@ -34,9 +34,11 @@ This sets the goal for your seed and the required amount. The goal and the requi
 
 **Seiren Escape**: This is essentially finding three specific items scattered between the checks. Those items are *Seiren Nautical Chart*, *Ship Blueprints*, and *Mistilteinn*. The goal number does nothing here and is disabled with this setting.
 
-**Release the Psyches**: This mode sets the goal to beating x of 4 of the Wardens of Evolution to gain access to the Selection Sphere. When this mode is active the Wardens most likely will not appear in their default areas. Each major boss arena has a chance for one of the Wardens to be inside it. After the bosses are defeated there will be a short delay while standing in the area and the player will get a prompt letting them know if a Warden is there, if one is within that arena then a prompt will appear offering a chance to fight them or refuse if you still need to prep. To make the prompt reappear just exit and reenter the area. Note that due to the Eleftheria boss arena not being permanent the map where the warden fight triggers is the Eleftheria entrance once the treasure chest in the boss arena has been opened. 
+**Release the Psyches**: This mode sets the goal to beating x of 4 of the Wardens of Evolution to gain access to the Selection Sphere. The Wardens can be any of the original 4 or Le-Kyanos or Melaiduma if Former Sanctuary Crypt is turned off. For Past Dana it's the chamber guardians, Le-Erythos or Melaiduma with the same condition. To access the bosses interact with the checkpoint crystal in Castaway Village, there you can see which Wardens are required to win, the boss you'll be fighting at each loaction is in paranthesis and the location or the major boss required to unlock the fight is listed first. When the specified boss is defeated the option on the crystal will become selectable. 
 
-**Goal count to open Octus**: This sets the number of goal items required to open up the entrance to the Tree of Origin, the Tree of Origin is a powerful grinding location with a ton of easy mini bosses and a lot of fast checks if "Octus Paths Opened" is turned on. This setting is disabled under the "Seiren Escape" option.
+**Untouchable**: This setting is pretty simple: reach the bottom of the Former Sanctuary Crypt and defeat Melaiduma to unlock the final boss in the Selection Sphere. This setting forces Former Sanctuary Crypt on. The goal number does nothing here and is disabled with this setting.
+
+**Goal count to open Octus**: This sets the number of goal items required to open up the entrance to the Tree of Origin, the Tree of Origin is a powerful grinding location with a ton of easy mini bosses and a lot of fast checks if "Octus Paths Opened" is turned on. This setting is disabled under the "Seiren Escape" and "Untouchable" options. 
 
 ### Shuffle Locations:
 **Shuffle Castaways**: This sets whether or not the castaways, the other people stranded on the island that you're searching for that aren't party members, will be included in the shuffle. With this off they will be acquired in their original locations. (Note the rando alters the original game behavior so you never lose castaways regardless of this setting).
@@ -44,6 +46,8 @@ This sets the goal for your seed and the required amount. The goal and the requi
 **Shuffle Party**: This sets whether or not the part members will be included in the shuffle. With this off they will be acquired in their original locations. (Note the rando alters the original game behavior so you never lose party members regardless of this setting).
 
 **Skills w/ Boss Bonuses**: This setting adds two checks to every boss, with the exception for some of the mini bosses in places like Octus, and then removes skill learning from the game. These extra boss checks are added to the pool to facilitate the skills that are now added to the item pool. Skills can be found at any location.
+
+**Discovery-Sanity**: This setting puts the landmarks in the pool, the landmarks themselves also become checks. Finding a landmark unlocks the ability to warp to it on the map. This mode drastically changes logic and movement around the world.
 
 ### Progression Placement Modifiers:
 These are settings that modify how much players may need to do of certain activities other than running around the island and exploring. These settings only affect where progression items will land, other useful non-progression items, could still land in the spots you have turned off.
@@ -90,6 +94,21 @@ These are settings that help with the pacing of the rando. Like most randos Seir
 **North Side Open**: The playthrough will start with the Crystal Checkpoint to Temple Approach unlocked. This means that completing Mt Gendarme is no longer mandatory to access the North Side.
 And it also means that you may need to explore the North Side while underlevelled.  
 
+**Infinity Mode**: This activates Infinity Mode in the game. This is a New Game+ modes that drastically scales up enemy levels. It is recommended you upgrade your starting loadout drastically with this setting on. The lowest level enemies are in the mid-60s and the highest level enemy is 120 with this flag set.
+
+**Starting Loadout**: This extra menu lets you start the game with a variety of helpful tools. 
+  - *Starting Level*: Fairly self explanatory, lets you set the level for your initial scharacter, default is 3.
+  - *Flame Stone Level*: Let's you set the forge level for Kathrine and also upgrades any other shops similarly.
+  - *Weapon Level*: Starts the player with weapons of the equivalent forge level instead of needing to upgrade to them.
+  - *Armor Level*: Similar to above but there's an extra level to start with the Pure Orichalcum armor.
+  - *All Recipes*: Let's the player start with every recipe known.
+  - *Max Ingredients*: Starts the player with a stack of 999 or 99 on Inferno of every item required to make a recipe. 
+  - *Dina-Trade*: Starts the player with Dina's shop unlocked and Dina as a crew member.
+  - *Alison-Tailor*: Starts the game with Alison shop unlocked and Alison as a crew member.
+  - *Euron-Craft*: Starts the player with Euron's shop unlocked and Euron as a crew member.
+  - *Licht-Medicine*: Starts the game with Licht's shop unlocked and Licht as a crew member.
+  - *Adventure Gear*: Lets the player start with any selected Adventure Gear and set the number of slots for gear as well.
+
 ### Final Boss Settings:
 **Final Boss**: Sets which boss will be the final one, Theos, Origin, or both. If set to both the fights happen consecutively.  
 
@@ -109,6 +128,8 @@ And it also means that you may need to explore the North Side while underlevelle
   The only hintable Adventuring Gears are the ones that lock progression and the Gale Feather
   - *Castaway Hints*: Hints the Region where you will find a mentioned Castaway.
   - *Foolish Location Hints*: Hints a region where you will not find any progression items.
+
+**Customize Starting Characters**: Lets the player set which starting characters they're allowed to get. Setting only one in the pool guarantees that is the starting character.
 
 ## New Progression Items
 The randomizer features a variety of new progression items that are meant to take story gated events and turn them into item gated events to improve the overall experience of the rando. 
@@ -133,6 +154,8 @@ The randomizer features a variety of new progression items that are meant to tak
 
 - The *Ship Blueprints* repair the boat that leads to Solitude Island.
 
+- Characters that didn't have early game weapons now have them and will recieve these weapons for free from Kathleen at the appropriate shop levels, assuming they aren't a downgrade.
+
 ## Other Notes for Progression
 A couple quick notes that might not be immediately obvious.
 
@@ -144,7 +167,6 @@ The player can still access the *enhance* feature for weapons before getting Kat
 - *Alison* is access to the tailor.
 - *Euron* is access to both showing the map for map completion rewards and accessory craft.
 - *Austin* is access to rewards for finding discoveries.
-- *Little Paro* doesn't count toward overall village numbers. In the original game Shoebill and Master Kong didn't either but I used some of the extra Castaway allocations to make them count. However I was one short to make Paro count and Paro is a small bird so it honestly makes sense he wouldn't be help moving large objects.
 - *Octus Overlook* is open from the start of the game and if it can be reached then it can be entered, only Selection Sphere access is tied to the goal.
 - The vanilla *Licht* check leads to the whole sequence that ends in the Kiergaard boss fight. Defeating Kiergaard gives the player the vanilla Quina joining event check.
 - Defeating *Avalodragil* normally triggers the events that have the vanilla Dogi and Paro joining events along with the Fishing Rod check. These are rewarded after the boss fight instead. Normally Barbaros would join here too but his join event was moved to after the end of Waterdrop Cave for balance reasons (There would have been no reason to fight the boss otherwise).
