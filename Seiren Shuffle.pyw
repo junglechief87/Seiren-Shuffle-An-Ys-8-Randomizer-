@@ -23,7 +23,7 @@ FRAME_TITLE_STYLE = {
 
 SETTINGS_FILE = "seirenShuffleSettings.json"
 ICON_PATH = "./shared/ysR Logo.ico"
-VERSION_NUM = "3.4.0"
+VERSION_NUM = "3.5.1"
 
 class SeedFrame(ctk.CTkFrame):
   def __init__(self, master, ):
