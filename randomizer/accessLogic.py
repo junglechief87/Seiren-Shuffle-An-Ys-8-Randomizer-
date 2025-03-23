@@ -122,13 +122,18 @@ def checkFSC_Final(location, access, parameters):
         access.hasEssenceKeyStone(6) and 
         access.canUndead() and
         access.canSwampWalk() and 
-        battleLogic(450,access,parameters)
+        battleLogic(390,access,parameters) # 450 is not possible yet?
     ):
         return False
 
+    if location.mapCheckID == "Melaiduma": #Getting the access.canDefeat("melaiduma")
+        return True
+
     location_checks = {
-        'Entrance': lambda: 
-            (location.mapCheckID == 'Psyches' and access.canDefeat('Melaiduma') and parameters.goal == 'Release the Psyches'),
+        'Boss Arena': lambda: (
+            access.canDefeat('Melaiduma') and 
+            (parameters.goal == 'Release the Psyches' if location.mapCheckID == 'Psyches' else True)
+        ),
     }
 
     return location_checks.get(location.locName, lambda: False)()
