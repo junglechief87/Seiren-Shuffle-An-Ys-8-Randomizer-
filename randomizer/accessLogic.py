@@ -768,6 +768,18 @@ def checkCavernOfTheAncientKing(location, access, parameters):
 def checkWesternFootOfGendarme(location, access, parameters):
     return (access.canMove(11) and access.canSwampWalk()) or access.hasDiscovery('Airs Cairn')
 
+def mishyRewards(location,access):
+    food_checks = {
+            'Food 2': lambda: access.canCook(1),
+            'Food 4': lambda: access.canCook(2),
+            'Food 6': lambda: access.canCook(3),
+            'Food 8': lambda: access.canCook(4),
+            'Food 10': lambda: access.canCook(5),
+            'Food 12': lambda: access.canCook(6)
+        }
+    
+    return food_checks.get(location.mapCheckID, lambda: False)()
+
 def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
     if location.mapCheckID in ['Giasburn Skill 1', 'Giasburn Skill 2', 'Giasburn']: 
         return battleLogic(230, access, parameters) and access.hasFlameStones(3)
@@ -776,17 +788,6 @@ def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
         return False
     
     # If you come from northside, you can already defeat giasburn => can defeat avalodragil 2
-    if location.locName == 'Mishy Rewards':
-        food_checks = {
-            'Food 2': lambda: access.canCook(1),
-            'Food 4': lambda: access.canCook(2),
-            'Food 6': lambda: access.canCook(3),
-            'Food 8': lambda: access.canCook(4),
-            'Food 10': lambda: access.canCook(5),
-            'Food 12': lambda: access.canCook(6)
-        }
-        return food_checks.get(location.mapCheckID, lambda: False)()
-
     location_checks = {
         'Entrance': lambda: True,
         'Southern Lower Cliffside Trail': lambda: True,
@@ -803,7 +804,8 @@ def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
             ) or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
              battleLogic(340, access, parameters))
-        )
+            ),
+        'Mishy Rewards': lambda: mishyRewards(location,access) # Moved here because it was making the logic think food was required for gendarme access
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -816,17 +818,6 @@ def checkMontGendarme(location, access, parameters):
 
     if not (southSideOpen(access, parameters) and access.past1() and access.canClimb()):
         return False
-
-    if location.locName == 'Mishy Rewards' and access.canDefeat('Avalodragil 2'):
-        food_checks = {
-            'Food 2': lambda: access.canCook(1),
-            'Food 4': lambda: access.canCook(2),
-            'Food 6': lambda: access.canCook(3),
-            'Food 8': lambda: access.canCook(4),
-            'Food 10': lambda: access.canCook(5),
-            'Food 12': lambda: access.canCook(6)
-        }
-        return food_checks.get(location.mapCheckID, lambda: False)()
 
     location_checks = {
         'Entrance': lambda: True,
@@ -846,7 +837,8 @@ def checkMontGendarme(location, access, parameters):
              access.canDefeat('Giasburn')) or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
              battleLogic(340, access, parameters) and access.canDefeat('Giasburn'))
-        )
+             ),
+        'Mishy Rewards': lambda: access.canDefeat('Avalodragil 2') and mishyRewards(location,access)
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -880,8 +872,8 @@ def checkOddRockCoast(location, access, parameters):
     )
 
 def checkSchlammJungle(location, access, parameters):
-    if access.hasDiscovery('Field of Medicinal Herbs'):
-        return schlammJungleFromField(location, access, parameters)
+    if access.hasDiscovery('Field of Medicinal Herbs') and schlammJungleFromField(location, access, parameters):
+        return True
     
     if not (southSideOpen(access, parameters) and access.hasDina()):
         return False
@@ -1126,11 +1118,11 @@ def checkRoaringSeashore(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkToweringCoralForest(location, access, parameters):
-    if access.hasDiscovery('Rainbow Falls'):
-        return coralForestFromRainbowFalls(location, access, parameters)
+    if access.hasDiscovery('Rainbow Falls') and coralForestFromRainbowFalls(location, access, parameters):
+        return True
 
-    if (access.hasDiscovery('Metavolicalis') or (access.canMove(14) and access.hasDiscovery('Parasequoia'))):
-        return coralForestFromRoaringSeashore(location, access, parameters)
+    if (access.hasDiscovery('Metavolicalis') or (access.canMove(14) and access.hasDiscovery('Parasequoia'))) and coralForestFromRoaringSeashore(location, access, parameters):
+        return True
 
     if not (coastNorthSideAccess(access, parameters)):
         return False

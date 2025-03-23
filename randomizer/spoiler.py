@@ -130,7 +130,6 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     progressionLocations.append(openingCutscene)
     while True:
         removed = False
-        locIndex = 0
         for locIndex,location in enumerate(progressionLocations):
             itemToTest = progressionLocations.pop(locIndex)
             beatable = testSeed(progressionLocations,parameters)
