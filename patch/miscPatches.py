@@ -90,7 +90,7 @@ def pastDanaFixes(enable):
     if enable:
         disableVanish[0xD739:0xD73D] = [0x5F,0x4F,0x46,0x46] #Spells _OFF so it's easy to find in the file, changes the function name so it won't be able to call it from the enemy script
     else:
-        disableVanish[0xD739:0xD739] = [0x00,0x00,0x00,0x00] #Restores original script name
+        disableVanish[0xD739:0xD73D] = [0x00,0x00,0x00,0x00] #Restores original script name
 
     writeBufferIntoFile(originOfLife,disableVanish)
 

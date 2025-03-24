@@ -1509,11 +1509,6 @@ def battleLogic(requiredStr,access,parameters):
         if accStr < foundAccStr:
             accStr = foundAccStr
 
-        print(weaponStr + armorStr + armStr + accStr)
-        print(weaponStr)
-        print(armorStr)
-        print(armStr)
-        print(accStr)
         if requiredStr >= 150:
             if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2):
                 return True
