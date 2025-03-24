@@ -122,7 +122,7 @@ def checkFSC_Final(location, access, parameters):
         access.hasEssenceKeyStone(6) and 
         access.canUndead() and
         access.canSwampWalk() and 
-        battleLogic(390,access,parameters) # 450 is not possible yet?
+        battleLogic(425,access,parameters) # 450 is not possible yet?
     ):
         return False
 
@@ -1509,6 +1509,11 @@ def battleLogic(requiredStr,access,parameters):
         if accStr < foundAccStr:
             accStr = foundAccStr
 
+        print(weaponStr + armorStr + armStr + accStr)
+        print(weaponStr)
+        print(armorStr)
+        print(armStr)
+        print(accStr)
         if requiredStr >= 150:
             if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2):
                 return True

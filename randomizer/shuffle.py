@@ -98,7 +98,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
             item.progression = True
 
         # If battle logic is on, make specific items progression
-        if parameters.battleLogic and item.itemID in [155, 171, 156, 542, 157, 169, 172, 271, 727, 548, 209, 436, 720]:
+        if parameters.battleLogic and item.itemID in [155, 171, 156, 542, 157, 169, 172, 271, 727, 548, 209, 436, 720, 13, 9]:
             item.progression = True
 
         # Make 'Empty Psyches\Magma Fight(DANA)' item progression only if in Past Dana mode with Release the Psyches goal

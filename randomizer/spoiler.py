@@ -195,6 +195,8 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.flush()
     spoilerLog.close()
 
+    return playthrough #returning this though not doing anything with it yet.
+
 def testSeed(progressionLocations,parameters):
     progressionInventory = []
     progressionLocationsToTest = []

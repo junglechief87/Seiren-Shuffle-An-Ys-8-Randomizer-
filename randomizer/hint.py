@@ -420,6 +420,7 @@ def generateHint(hints, parameters):
     exe_dir = os.path.dirname(sys.executable)
     csv_path = os.path.join(exe_dir, 'text', 'en', 'quest.csv')
     flag = "// Start of hints\n"
+    quest_ind = '[QUEST]'
 
     try:
         try:
@@ -427,6 +428,14 @@ def generateHint(hints, parameters):
                 lines = file.readlines()
         except FileNotFoundError:
             lines = []
+
+        # This is to comment out vanilla quest text from the board, while still preserving the file. 
+        # Quests don't do anything in the rando except a couple of the flags are useful for some events
+        # This makes the presentation a little cleaner.
+        for index,line in enumerate(lines):
+            if quest_ind in line and line[0] != '/':
+                newline = '//' + line
+                lines[index] = newline
 
         # Locate the flag (created this to preserve the quest.csv file structure)
         if flag in lines:
