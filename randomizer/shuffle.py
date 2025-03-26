@@ -153,7 +153,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
             for locIndex,location in enumerate(fillLocations):
                 if location.mapCheckID == 'Psyches' and not (psycheToPlace.progression and (location.locID in progressionBanList or 
                                                                                             (location.locRegion == 'Octus Overlook' and
-                                                                                             psycheInOctus > parameters.numOctus))):
+                                                                                             psycheInOctus >= parameters.numOctus))):
                     if location.locRegion == 'Octus Overlook':
                         psycheInOctus += 1
                     psycheToFill = fillLocations.pop(locIndex)
