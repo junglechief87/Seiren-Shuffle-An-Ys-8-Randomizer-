@@ -7,6 +7,7 @@ import shared.classr as classr
 from randomizer.rngPatcher import *
 from patch.chestPatcher import *
 from patch.miscPatches import *
+from patch.fileManagement import *
 import json
 import time
 import threading
@@ -22,8 +23,19 @@ FRAME_TITLE_STYLE = {
 }
 
 SETTINGS_FILE = "seirenShuffleSettings.json"
-ICON_PATH = "./shared/ysR Logo.ico"
 VERSION_NUM = "3.5.1"
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+ 
+    return os.path.join(base_path, relative_path)
+
+ICON_PATH = resource_path("./shared/ysR Logo.ico")
 
 class SeedFrame(ctk.CTkFrame):
   def __init__(self, master, ):
@@ -703,6 +715,7 @@ class MiscSettingsFrame(ctk.CTkFrame):
         self.adventuring_gear_hints = ctk.IntVar(value=1)
         self.castaway_hints = ctk.IntVar(value=3)
         self.foolish_location_hints = ctk.IntVar(value=5)
+        self.pirate_memo_hints = ctk.BooleanVar(value=False)
 
         # Starting Characters Button
         self.party_pool_button = ctk.CTkButton(self, text="Customize Starting Characters", command=self.open_start_character_pool)
@@ -807,8 +820,12 @@ class MiscSettingsFrame(ctk.CTkFrame):
         slider3.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
         ctk.CTkLabel(popup, textvariable=self.foolish_location_hints).grid(row=2, column=2, padx=10, pady=5)
 
+        # Memo Hints Button
+        self.memo_checkbox = ctk.CTkCheckBox(popup, text="Pirate Memo Hints", variable=self.pirate_memo_hints)
+        self.memo_checkbox.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
+
         # Close button
-        ctk.CTkButton(popup, text="Close", command=popup.destroy).grid(row=3, column=0, columnspan=3, pady=10)
+        ctk.CTkButton(popup, text="Close", command=popup.destroy).grid(row=4, column=0, columnspan=3, pady=10)
 
 class CommandsFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -829,18 +846,23 @@ class CommandsFrame(ctk.CTkFrame):
         self.generate_seed_button = ctk.CTkButton(self, text="Open Readme", command=self.openReadme)
         self.generate_seed_button.grid(row=1, column=2, padx=5, pady=5, sticky="w")
 
-    
-        self.patch_files_button = ctk.CTkButton(self, text="Patch Files", command=self.patchFiles)
+        self.patch_files_button = ctk.CTkButton(self, text="Restore Original Files", command=self.restoreFiles)
         self.patch_files_button.grid(row=1, column=3, padx=5, pady=5)
 
+        self.patch_files_button = ctk.CTkButton(self, text="Patch Files", command=self.patchFiles)
+        self.patch_files_button.grid(row=1, column=4, padx=5, pady=5)
+
         self.generate_seed_button = ctk.CTkButton(self, text="Generate Seed", command=self.generateSeed)
-        self.generate_seed_button.grid(row=1, column=4, padx=5, pady=5)
+        self.generate_seed_button.grid(row=1, column=5, padx=5, pady=5)
 
         self.generate_seed_button = ctk.CTkButton(self, text="Launch Game", command=self.launchGame)
-        self.generate_seed_button.grid(row=1, column=5, padx=5, pady=5)
+        self.generate_seed_button.grid(row=1, column=6, padx=5, pady=5)
 
     def saveSettingsCallback(self):
         self.master.saveSettings()
+
+    def restoreFiles(self):
+        self.master.restore_files_callback()
 
     def patchFiles(self):
         self.master.patch_files_callback()
@@ -972,6 +994,7 @@ class App(ctk.CTk):
                 "adventuringGearHints": self.miscSettingsFrame.adventuring_gear_hints.get(),
                 "castawayHints": self.miscSettingsFrame.castaway_hints.get(),
                 "foolishLocationHints": self.miscSettingsFrame.foolish_location_hints.get(),
+                "pirateMemoHints": self.miscSettingsFrame.pirate_memo_hints.get(),
                 "startAdol": self.miscSettingsFrame.adol_var.get(),
                 "startLaxia": self.miscSettingsFrame.laxia_var.get(),
                 "startSahad": self.miscSettingsFrame.sahad_var.get(),
@@ -1106,6 +1129,7 @@ class App(ctk.CTk):
                 settings.get("castawayHints", 3))
             self.miscSettingsFrame.foolish_location_hints.set(
                 settings.get("foolishLocationHints", 5))
+            self.miscSettingsFrame.pirate_memo_hints.set(settings.get("pirateMemoHints",False))
             self.miscSettingsFrame.adol_var.set(settings.get("startAdol", True))
             self.miscSettingsFrame.laxia_var.set(settings.get("startLaxia", True))
             self.miscSettingsFrame.sahad_var.set(settings.get("startSahad", True))
@@ -1217,6 +1241,7 @@ class App(ctk.CTk):
                 'Adventuring Gear Hints': (self.miscSettingsFrame.adventuring_gear_hints, 'set_int'),
                 'Castaway Hints': (self.miscSettingsFrame.castaway_hints, 'set_int'),
                 'Foolish Location Hints': (self.miscSettingsFrame.foolish_location_hints, 'set_int'),
+                'Pirate Memo Hints': (self.miscSettingsFrame.pirate_memo_hints, 'set'),
                 'Adol': (self.miscSettingsFrame.adol_var, 'set'),
                 'Laxia': (self.miscSettingsFrame.laxia_var, 'set'),
                 'Sahad': (self.miscSettingsFrame.sahad_var, 'set'),
@@ -1380,8 +1405,16 @@ class App(ctk.CTk):
         # Update any dependent UI components
         self.update_idletasks()
 
+    def restore_files_callback(self):
+        try:
+            restoreOriginalGameFiles()
+        except Exception as e:
+            messagebox.showerror("Error", f"Backup files don't exist: {str(e)}")
+
     def patch_files_callback(self):
         try:
+            copyOriginalGameFiles()
+            downloadFiles()
             cleanChests()
             miscFixes()
             self.show_notification("Patch Complete!")
@@ -1389,7 +1422,17 @@ class App(ctk.CTk):
             messagebox.showerror("Error", f"Patching failed: {str(e)}")
 
     def generate_seed_callback(self):
+            
         try:
+            explosivePlant = parent_directory + "/chr/enemy/m0660/m0660.mtb"
+            plantRespawn = readFileIntoBuffer(explosivePlant)
+
+            # this is the last file edited by the patcher
+            # if it's not equal to what the patcher sets it to then the files aren't yet patched 
+            print(plantRespawn[0xE05])
+            if plantRespawn[0xE05] != 0x3C: 
+                raise Exception("Files not yet patched!")
+            
             parameters = classr.guiInput()
             # Get all parameters from GUI components
             parameters.getSeed(self.seedFrame.seed_var.get())
@@ -1458,6 +1501,7 @@ class App(ctk.CTk):
                 self.miscSettingsFrame.adventuring_gear_hints.get(),
                 self.miscSettingsFrame.castaway_hints.get(),
                 self.miscSettingsFrame.foolish_location_hints.get(),
+                self.miscSettingsFrame.pirate_memo_hints.get(),
                 self.miscSettingsFrame.adol_var.get(),
                 self.miscSettingsFrame.laxia_var.get(),
                 self.miscSettingsFrame.sahad_var.get(),

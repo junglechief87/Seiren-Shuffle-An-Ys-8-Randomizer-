@@ -58,9 +58,9 @@ def shuffleLocations(parameters):
             shuffledLocations.append(vanillaLocations.pop(0))
 
     random.shuffle(preShuffleLoc)
-    fillShuffledLocations(inventory,preShuffleLoc,shuffledLocations,parameters,blacklistRegion)
+    shuffledLocations, playthrough, playthroughAllProgression = fillShuffledLocations(inventory,preShuffleLoc,shuffledLocations,parameters,blacklistRegion)
 
-    return shuffledLocations
+    return shuffledLocations, playthrough, playthroughAllProgression
 
 #these functions take locations and item lists and find the index of the specified characters skills and starting skills for locations.
 def findStartSkillSlot(fillLocations,character):
@@ -112,6 +112,8 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
             elif item.itemID == 13:
                 item.itemName = 'Broken Spirit Ring'
 
+        if parameters.memoHints and item.itemID in [750,751,752,753,754,755,760,761,762,763] and not item.progression:
+            item.nice = True
 
     #pull out progression items to place first for easier processing
     #for release the psyches goal we need to pull those into their own list too
@@ -153,7 +155,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
             for locIndex,location in enumerate(fillLocations):
                 if location.mapCheckID == 'Psyches' and not (psycheToPlace.progression and (location.locID in progressionBanList or 
                                                                                             (location.locRegion == 'Octus Overlook' and
-                                                                                             psycheInOctus > parameters.numOctus))):
+                                                                                             psycheInOctus >= parameters.numOctus))):
                     if location.locRegion == 'Octus Overlook':
                         psycheInOctus += 1
                     psycheToFill = fillLocations.pop(locIndex)
@@ -263,16 +265,17 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
             chestsToCopy[3].locID = 179
             shuffledLocations.append(chestsToCopy[3])
 
-    hints = []
-    if parameters.hint:
-        hints = createHints(shuffledLocations, parameters)    
-
-    #Passing the hints list to the generateSpoiler to label the required hints (based on the spoiler log playthough)
-    generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests, hints)
+    playthrough, playthroughAllProgression = generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests)
     #This function will be responsible for clearing hints in case hints are toggled off
-    generateHint(hints, parameters)
+    hints['standard'] = []
+    hints['memo'] = []
+    if parameters.hint:
+        hints = createHints(shuffledLocations, parameters, playthrough)   
+    
+    generateHint(hints['standard'], parameters, hintType = 'quest')
+    generateHint(hints['memo'], parameters, hintType = 'memo')
         
-    return shuffledLocations
+    return shuffledLocations, playthrough, playthroughAllProgression
 
 def progressionBans(parameters):
     locationBans =[]
@@ -342,7 +345,7 @@ def progressionBans(parameters):
 
     locationBans = addLocations(locationsToAdd,locationBans)
 
-    if not parameters.maphorash:
+    if not parameters.Mephorash:
         locationsToAdd = [532,533,617,268]
 
     locationBans = addLocations(locationsToAdd,locationBans)

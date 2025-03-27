@@ -69,7 +69,7 @@ These are settings that modify how much players may need to do of certain activi
 
 **Silvia**: Sets whether Silvia can block progression. This only refers to the optional boss fight.
 
-**Maphorash**: Sets whether Maphorash can block progression. Maphorash is the highest level optional fight in the game and the Silent Tower is high requirement location.
+**Mephorash**: Sets whether Mephorash can block progression. Mephorash is the highest level optional fight in the game and the Silent Tower is high requirement location.
 
 **Former Sanctuary Crypt**: Sets whether Former Sanctuary Crypt is added to the item pool. If turned off the dungeon is closed. All essence key stones are placed within the dungeon unless Essence Key Sanity is on.
 

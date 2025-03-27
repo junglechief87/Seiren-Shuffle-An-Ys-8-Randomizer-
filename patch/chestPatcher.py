@@ -79,7 +79,6 @@ def clearBytes(byteArray,startOffset,clearType):
 
 #places item in the chest
 def fillChest(location,itemID,quantity):
-    
     itemIDOffset = 9
     quantityOffset = 15
     jingleOffset = 27

@@ -8,7 +8,7 @@ from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
 from patch.chestPatcher import *
 from randomizer.audioShuffle import *
-from patch.miscPatches import pastDanaFixes
+from patch.miscPatches import pastDanaFixes, randomizeOctoBosses
 
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
@@ -39,7 +39,7 @@ def rngPatcherMain(parameters):
     if parameters.shuffleBgm:
         randomize_bgmtbl(parameters.seed)
 
-    shuffledLocations = shuffleLocations(parameters) #shuffle and fill functions run from this call
+    shuffledLocations, playthrough, playthroughAllProgression = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
     for inc in scpIncludeList:
         patchFile = patchFile + inc + '\n'
@@ -71,10 +71,16 @@ def rngPatcherMain(parameters):
 
     if parameters.goal == 'Release the Psyches':
         patchFile = patchFile + buildPsyches(shuffledLocations,parameters)
+    patchFile = patchFile + bossScaling(playthroughAllProgression,parameters)
     patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
     patchFile = patchFile + octusGoal(parameters)
+    if parameters.openOctusPaths:
+        patchFile = patchFile + octoBosses(parameters)
+    else:
+        #this is to restore the original values
+        randomizeOctoBosses(parameters)
     patchFile = patchFile + goal(parameters)
     patchFile = patchFile + endingHandler(parameters)
     with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string
@@ -170,6 +176,8 @@ function "{0}"
         script = script + buildBoat
     elif location.itemID in [569,570,571,572,573,574,575,576,577,578,579] and parameters.extraIngredients: #item IDs for recipes
         script = script + recipeIngredients(location.itemID)
+    elif location.itemID in [750,751,752,753,754,755,760,761,762,763] and parameters.memoHints:
+        script = script + memoHints(location.itemID)
         
     message = genericMessage
     script =  script + vanillaScript #append the original chest scripts to the end of the function
@@ -193,10 +201,6 @@ function "{0}"
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
-//    GetItem({1},{2})
-//    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
-//    WaitPrompt()
-//    WaitCloseWindow()
     {5}
    ResetStopFlag(STOPFLAG_TALK)
 }}
@@ -276,7 +280,7 @@ def buildSkillLocation(location,script):
     itemIcon = -1
     itemQuantity = 1
     itemSE = 'ITEMMSG_SE_NORMAL'
-    skillInfo = getSkillInfo(location.itemName) #retuns tuple: character,skill name,character name
+    skillInfo = getSkillInfo(location.itemName) #returns tuple: character,skill name,character name
     characterName = skillInfo[2]
     message = "#4C" + characterName + skillMessage + skillInfo[1] + "#4C."
     character = skillInfo[0]
@@ -404,6 +408,29 @@ def recipeIngredients(itemID):
         GetItem(ICON3D_FD_VG_PUMPKIN,4)
         """
         return ingredients
+
+def memoHints(itemID):
+    match itemID:
+        case 750:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_01)\n"
+        case 751:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_02)\n"
+        case 752:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_03)\n"
+        case 753:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_04)\n"
+        case 754:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_05)\n"
+        case 755:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_06)\n"
+        case 760:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_01)\n"
+        case 761:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_02)\n"
+        case 762:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_03)\n"
+        case 763:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_04)\n"
     
 #The glow stone will now trigger this script from the chest that has it. This unlocks night explorations.
 def makeGlowStoneUseful():
@@ -800,6 +827,19 @@ function "goal"
 """
     return selectionSphereAccess
 
+def octoBosses(parameters):
+    random.seed(parameters.seed)
+    octoBossAliases = ['"ev_mons01"','"ev_mons02"','"ev_mons03"','"ev_mons04"','"ev_mons05"','"ev_mons06"','"ev_mons07"','"ev_mons08"','"ev_mons09"','"ev_mons10"']
+
+    script = '\tfunction "setOctoBossLevels"\n\t{\n'
+    for boss in octoBossAliases:
+        bossLevel = random.randrange(65,75)
+        script = script + '\t\tSetChrWorkGroup(' + boss + ', CWK_LV, ' + str(bossLevel) + ')\n'
+    script = script + '\t}\n'
+
+    randomizeOctoBosses(parameters)
+
+    return script
 #This sorts out our final boss settings.
 #First we figure out what phases we're doing then we run through our script that's called to start the final boss and what's used to call the ending cutscenes.
 #if we're only doing theos then the theos start script calls theos and the ending script calls the ending cutscene.
@@ -1540,7 +1580,7 @@ def buildPsyches(shuffledLocations, parameters):
     
     }}
     
-    function "levelScaling"
+    function "wardenScaling"
     {{
         {8} 
     }}
@@ -1575,28 +1615,100 @@ def buildPsyches(shuffledLocations, parameters):
 """
     bossReturn = bossReturn.format(bossCue[bossPool[0]][2], bossCue[bossPool[1]][2], bossCue[bossPool[2]][2], bossCue[bossPool[3]][2])
 
-    levelScaling = """
+    wardenScaling = """
     SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
     SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
 """
     if 'Melaiduma' in [bossPool]:
-        levelScaling = levelScaling + 'SetLevel("B170", 80)\n'
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(B170, CWK_LV, 80)\n'
     if bossLoc1 != 'Octus Overlook':
-        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[0]][3] + ', 60)\n'
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV , 60)\n'
     if bossLoc2 != 'Octus Overlook':
-        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[1]][3] + ', 60)\n'
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV , 60)\n'
     if bossLoc3 != 'Octus Overlook':
-        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[2]][3] + ', 60)\n'
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 60)\n'
     if bossLoc4 != 'Octus Overlook':
-        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[3]][3] + ', 60)\n'
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 60)\n'
     
     return bossCheckpoint.format(bossFight1,bossFight2,bossFight3,bossFight4,
-                                     bossLoc1,bossLoc2,bossLoc3,bossLoc4,levelScaling,
+                                     bossLoc1,bossLoc2,bossLoc3,bossLoc4,wardenScaling,
                                      bossPool[0],bossPool[1],bossPool[2],bossPool[3],
                                      bossCue[bossPool[0]][0],bossCue[bossPool[0]][1],bossCue[bossPool[1]][0],bossCue[bossPool[1]][1],
                                      bossCue[bossPool[2]][0],bossCue[bossPool[2]][1],bossCue[bossPool[3]][0],bossCue[bossPool[3]][1],
                                      bossReturn)
 
+def bossScaling(playthroughAllProgression,parameters):
+    bossLevels = [5,7,13,14,20,23,26,28,29,32,35,40,43,45,48,51,53,58,60,60,80]
+    bossIDs = {'Byfteriza': 'M0111',
+               'Avalodragil': 'B150',
+               'Serpentus': 'B100',
+               'Clareon': 'B000',
+               'Lonbrigius': 'B101B',
+               'Gargantula': 'B001',
+               'Magamandra': 'B102',
+               'Laspisus': 'B002',
+               'Kiergaard Weissman': 'B152',
+               'Avalodragil 2': 'B154',
+               'Giasburn': 'B003',
+               'Brachion': 'B006',
+               'Exmetal': 'B104',
+               'Carveros': 'B004',
+               'Pirate Revenant': 'B103',
+               'Coelacantos': 'B106',
+               'Oceanus': 'B007',
+               'Doxa Griel': 'B105',
+               'Basileus': 'B005',
+               'Mephorash': 'B153',
+               'Silvia': 'B155',}
+    remainingBosses = []
+    finalBossLevels = []
+
+    if not parameters.goal == 'Untouchable': # Make sure Melaiduma's level and ID are in the pool if he's not the goal
+        bossLevels.append(99) 
+        bossIDs['Melaiduma'] = 'B170' 
+
+    # built out a list of IDs for us to track what bosses aren't in the pool
+    for boss in bossIDs.keys():
+            remainingBosses.append(bossIDs.get(boss))
+
+    random.seed(parameters.seed)
+    # process bosses that are accessible before the goal in the seed and assign them levels in ascending order as the playthrough should have them in order
+    for boss in playthroughAllProgression.bosses:
+        if boss.mapCheckID in bossIDs.keys():
+            bossID = bossIDs.get(boss.mapCheckID)
+            finalBossLevels.append([remainingBosses.pop(remainingBosses.index(bossID)),bossLevels.pop(0)])
+    
+    # bosses post goal have their levels shuffled from among the remaining levels in the boss level pool
+    random.shuffle(bossLevels)
+    for bossID in remainingBosses:
+        finalBossLevels.append([bossID,bossLevels.pop(0)])
+
+    fscBosses = ''
+    script = '\tfunction "bossScaling"\n\t{\n'
+    for boss in finalBossLevels:
+        script = script + '\t\tSetChrWorkGroup(' + boss[0] + ', CWK_LV, ' + str(boss[1]) + ')\n'
+        #handling special cases for bosses with forms or minions
+        if boss[0] == 'B005':
+            script = script + '\t\tSetChrWorkGroup(M0644, CWK_LV, ' + str(boss[1]) + ')\n'
+        if boss[0] == 'B101B':
+            script = script + '\t\tSetChrWorkGroup(B101, CWK_LV, ' + str(boss[1]) + ')\n'
+        if boss[0] == 'B170': # set FSC bosses relative to Melaiduma if Melaiduma is scaled
+            fscBosses = (f'\n\tfunction "fscBosses"\n'
+                         f'\t{{\n'
+                         f'\t\tSetChrWorkGroup(B103,	CWK_LV,	' + str(max(1,boss[1]-10)) + ')\n'
+                         f'\t\tSetChrWorkGroup(B006,	CWK_LV,	' + str(max(1,boss[1]-12)) + ')\n'
+                         f'\t\tSetChrWorkGroup(B001,	CWK_LV,	' + str(max(1,boss[1]-14)) + ')\n'
+                         f'\t\tSetChrWorkGroup(B105,	CWK_LV,	' + str(max(1,boss[1]-16)) + ')\n'
+                         f'\t\tSetChrWorkGroup(B161,	CWK_LV,	' + str(max(1,boss[1]-18)) + ')\n'
+                         f'\t}}\n')
+                        
+    script = script + '\t}'
+
+    print(script)
+    return script + fscBosses
+
+
+        
 def buildLandmarks(location,script):
     scriptName = buildLocScripts(location.locID, False)
     itemIcon = -1

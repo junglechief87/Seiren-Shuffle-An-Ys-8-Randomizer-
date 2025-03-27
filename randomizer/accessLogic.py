@@ -122,7 +122,7 @@ def checkFSC_Final(location, access, parameters):
         access.hasEssenceKeyStone(6) and 
         access.canUndead() and
         access.canSwampWalk() and 
-        battleLogic(425,access,parameters) # 450 is not possible yet?
+        battleLogic(425,access,parameters, scaled = (not parameters.goal == 'Untouchable')) 
     ):
         return False
 
@@ -309,7 +309,7 @@ def checkValleyOfKings(location, access, parameters):
         'Valley of Kings - Camp': lambda: access.hasDina(),
         'Entrance': lambda: True,
         'Northern Lower Level': lambda: True,
-        'Mid-Boss Arena': lambda: access.canUndead() and battleLogic(270, access, parameters),
+        'Mid-Boss Arena': lambda: access.canUndead() and battleLogic(270, access, parameters, scaled=True),
         'Stairway (Statue Doors)': lambda: access.canUndead(),
         'End': lambda: (
             access.canUndead() and 
@@ -317,7 +317,7 @@ def checkValleyOfKings(location, access, parameters):
             location.mapCheckID in ['TBOX03', 'TBOX04'])
         ),
         'Boss Arena': lambda: (
-            battleLogic(330, access, parameters) and access.canUndead() and 
+            battleLogic(330, access, parameters, scaled=True) and access.canUndead() and 
             (location.mapCheckID != 'Psyches' or 
             (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Basileus')))
         ),
@@ -465,9 +465,9 @@ def checkArcheozoicChasm(location, access, parameters):
         'Sunken Eternia Ruins East': lambda: access.canUnderwater(),
         'Boss Arena': lambda: (
             (location.mapCheckID != 'Psyches' and 
-            battleLogic(320, access, parameters) and 
+            battleLogic(320, access, parameters, scaled=True) and 
             access.canUnderwater()) or 
-            (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Oceanus'))
+            (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters, ) and access.canDefeat('Oceanus'))
         ),
     }
 
@@ -540,7 +540,7 @@ def checkPirateShipEleftheria(location, access, parameters):
         'Accessway': lambda: True,
         'Crew Quarters': lambda: True,
         'Deck': lambda: (
-            battleLogic(260, access, parameters) and 
+            battleLogic(260, access, parameters, scaled=True) and 
             ((location.mapCheckID != 'Psyches') or 
             (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Pirate Revenant')))
         ),
@@ -593,11 +593,11 @@ def checkBajaTower(location, access, parameters):
     location_checks = {
         'Second Floor': lambda: True,
         'Third Floor': lambda: location.mapCheckID != 'TBOX03' or access.canDoubleJump(),
-        'Mid-Boss Arena': lambda: battleLogic(230, access, parameters),
+        'Mid-Boss Arena': lambda: battleLogic(230, access, parameters, scaled=True),
         'Fifth Floor': lambda: access.canDoubleJump(),
         'Sixth Floor': lambda: access.canDoubleJump(),
         'Boss Arena': lambda: (
-            battleLogic(280, access, parameters) and access.canDoubleJump() and 
+            battleLogic(280, access, parameters, scaled=True) and access.canDoubleJump() and 
             (location.mapCheckID != 'Psyches' or (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Carveros')))
         ),
         'Top Floor': lambda: access.canDefeat('Carveros')
@@ -636,14 +636,14 @@ def checkSilentTower(location, access, parameters):
     location_checks = {
         'Second Basement': lambda: (
             (
-            location.mapCheckID in ['Maphorash', 'Maphorash Skill', 'TBOX04'] and 
-            battleLogic(380, access, parameters)
+            location.mapCheckID in ['Mephorash', 'Mephorash Skill', 'TBOX04'] and 
+            battleLogic(380, access, parameters, scaled=True)
             ) or
             location.mapCheckID in ['TBOX01', 'TBOX02', 'TBOX03'] or
             (
             location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
             battleLogic(340, access, parameters) and 
-            access.canDefeat('Maphorash')
+            access.canDefeat('Mephorash')
             )
         ),
         'First Basement': lambda: True
@@ -710,7 +710,7 @@ def checkTempleOfGreatTree(location, access, parameters):
             ) or 
             (
             location.mapCheckID != 'Psyches' and 
-            battleLogic(230,access,parameters)
+            battleLogic(230,access,parameters,scaled=True)
             )
         ),
         'Great Tree Garden': lambda: (access.canDefeat('Brachion') and 
@@ -787,7 +787,7 @@ def mishyRewards(location,access):
 
 def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
     if location.mapCheckID in ['Giasburn Skill 1', 'Giasburn Skill 2', 'Giasburn']: 
-        return battleLogic(230, access, parameters) and access.hasFlameStones(3)
+        return battleLogic(230, access, parameters)
     
     if not access.canDefeat('Giasburn'):
         return False
@@ -835,7 +835,7 @@ def checkMontGendarme(location, access, parameters):
         'Upper Cliffs 2': lambda: access.canDefeat('Avalodragil 2'),
         'Boss Arena': lambda: (
             (location.mapCheckID in ['Giasburn Skill 1', 'Giasburn Skill 2', 'Giasburn'] and 
-             battleLogic(230, access, parameters) and access.hasFlameStones(3)) or
+             battleLogic(230, access, parameters)) or
             (location.mapCheckID in ['Master Kong Skill Laxia', 'Master Kong Laxia'] and 
              access.hasLaxia() and 
              access.canDefeat('Master Kong Dana') and 
@@ -891,7 +891,7 @@ def checkSchlammJungle(location, access, parameters):
         ),
         'North of Entrance': lambda: access.canClimb(),
         'Midpoint': lambda: access.canSwampWalk() or access.canDoubleJump(),
-        'Mid-Boss Arena': lambda: battleLogic(100, access, parameters),
+        'Mid-Boss Arena': lambda: battleLogic(100, access, parameters, scaled=True),
         'Small Passage': lambda: (
             access.canDefeat('Magamandra') and (
                 (location.mapCheckID == 'TBOX02' and (access.canSwampWalk() or access.canDoubleJump())) or
@@ -909,7 +909,7 @@ def checkSchlammJungle(location, access, parameters):
         ),
         'End': lambda: access.canSwampWalk() and access.canDefeat('Magamandra'),
         'Boss Arena': lambda: (
-            battleLogic(100, access, parameters) and access.canDefeat('Magamandra') and access.canSwampWalk() and (
+            battleLogic(100, access, parameters, scaled=True) and access.canDefeat('Magamandra') and access.canSwampWalk() and (
                 (location.mapCheckID != 'Psyches') or
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
                  battleLogic(340, access, parameters) and access.canDefeat('Laspisus'))
@@ -939,7 +939,7 @@ def schlammJungleFromField(location, access, parameters):
         ),
         'End': lambda: access.canSwampWalk() and access.hasDina(),
         'Boss Arena': lambda: (
-            battleLogic(100, access, parameters) and access.hasDina() and access.canSwampWalk() and (
+            battleLogic(100, access, parameters, scaled=True) and access.hasDina() and access.canSwampWalk() and (
                 (location.mapCheckID != 'Psyches') or
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
                  battleLogic(340, access, parameters) and access.canDefeat('Laspisus'))
@@ -1031,14 +1031,14 @@ def checkErodedValley(location, access, parameters):
         'Entrance': lambda: True,
         'Cave': lambda: True,
         'Dark Passage': lambda: access.canSeeDark() and battleLogic(155, access, parameters),
-        'Mid-Boss Arena': lambda: battleLogic(60, access, parameters),
+        'Mid-Boss Arena': lambda: battleLogic(60, access, parameters, scaled=True),
         'Webbed Walkways': lambda: (access.canDefeat('Lonbrigius') or access.canDefeat('Gargantula')) and (
             (location.mapCheckID == 'TBOX03' and access.canSeeDark()) or 
             (location.mapCheckID != 'TBOX03')
         ),
         'End': lambda: access.canSeeDark() and (access.canDefeat('Lonbrigius') or access.canDefeat('Gargantula')),
         'Boss Arena': lambda: (
-            battleLogic(75, access, parameters) and 
+            battleLogic(75, access, parameters, scaled=True) and 
             access.canSeeDark() and 
             (access.canDefeat('Lonbrigius') or access.hasDiscovery('Beached Remains')) and (
                 (location.mapCheckID != 'Psyches') or
@@ -1139,13 +1139,14 @@ def checkToweringCoralForest(location, access, parameters):
             (location.mapCheckID in ['TBOX04', 'TBOX05'])
         ),
         'Midpoint': lambda: True,
+        'Mid-Boss Arena': lambda: battleLogic(0, access, parameters, scaled=True),
         'After Mid-Boss': lambda: (
             location.mapCheckID == 'Corpse' or (location.mapCheckID != 'Corpse' and access.canClimb())
         ),
         'Rainbow Falls': lambda: access.canClimb(),
         'End': lambda: access.canClimb(),
         'Boss Arena': lambda: (
-            battleLogic(30, access, parameters) and access.canClimb() and (
+            battleLogic(30, access, parameters, scaled=True) and access.canClimb() and (
                 location.mapCheckID != 'Psyches' or 
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
                  battleLogic(340, access, parameters) and access.canDefeat('Clareon'))
@@ -1164,13 +1165,14 @@ def coralForestFromRainbowFalls(location, access, parameters):
             (location.mapCheckID in ['TBOX04', 'TBOX05'])
         ),
         'Midpoint': lambda: True,
+        'Mid-Boss Arena': lambda: battleLogic(0, access, parameters, scaled=True),
         'After Mid-Boss': lambda: True,
         'Rainbow Falls': lambda: (
             location.mapCheckID == ['TBOX01','Landmark'] or access.canClimb()
             ),
         'End': lambda: access.canClimb(),
         'Boss Arena': lambda: (
-            battleLogic(30, access, parameters) and access.canClimb() and (
+            battleLogic(30, access, parameters, scaled=True) and access.canClimb() and (
                 location.mapCheckID != 'Psyches' or 
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
                  battleLogic(340, access, parameters) and access.canDefeat('Clareon'))
@@ -1182,7 +1184,7 @@ def coralForestFromRainbowFalls(location, access, parameters):
 
 def coralForestFromRoaringSeashore(location, access, parameters):
     if location.mapCheckID in ['Clareon Skill 1', 'Clareon Skill 2', 'Clareon']: 
-        return battleLogic(30, access, parameters)
+        return battleLogic(30, access, parameters, scaled=True)
     
     if not access.canDefeat('Clareon'):
         return False
@@ -1194,6 +1196,7 @@ def coralForestFromRoaringSeashore(location, access, parameters):
             (location.mapCheckID != 'TBOX03')
         ),
         'Midpoint': lambda: True,
+        'Mid-Boss Arena': lambda: battleLogic(0, access, parameters, scaled=True),
         'After Mid-Boss': lambda: (
             location.mapCheckID == 'Corpse' or (location.mapCheckID != 'Corpse' and access.canClimb())
         ),
@@ -1352,7 +1355,7 @@ def checkWhiteSandCape(location, access, parameters):
 
     return location_checks.get(location.locName, lambda: False)()
 
-def battleLogic(requiredStr,access,parameters):
+def battleLogic(requiredStr,access,parameters,**kwargs):
     #if battle logic isn't turned on we just skip this entire calculation and return true. 
     #battle logic is based entirely off current strength. 
     if parameters.battleLogic:
@@ -1360,6 +1363,43 @@ def battleLogic(requiredStr,access,parameters):
         armorStr = 0
         armStr = 0
         accStr = 0
+        
+        scaled = kwargs.get('scaled', False)
+        
+        if scaled:
+            bossCount = access.bossCount()
+            if bossCount >= 21:
+                requiredStr = 425
+            elif bossCount == 20:
+                requiredStr = 380
+            elif bossCount == 19:
+                requiredStr = 330
+            elif bossCount == 18:
+                requiredStr = 320
+            elif bossCount == 17:
+                requiredStr = 280
+            elif bossCount == 16:
+                requiredStr = 270
+            elif bossCount in [14,15]:
+                requiredStr = 260
+            elif bossCount == 13:
+                requiredStr = 250
+            elif bossCount in [10,11,12]:
+                requiredStr = 230
+            elif bossCount == 9:
+                requiredStr = 140 
+            elif bossCount in [7,8]:
+                requiredStr = 120
+            elif bossCount == 6:
+                requiredStr = 100
+            elif bossCount == 5:
+                requiredStr = 75
+            elif bossCount == 4:
+                requiredStr = 60
+            elif bossCount == 3:
+                requiredStr = 30
+            else:
+                return True
 
         #weapon strength is based on rounded averages of accessible weapons at their base levels.
         #some basic checks will be made to make sure materials can be farmed as well
@@ -1509,12 +1549,28 @@ def battleLogic(requiredStr,access,parameters):
         if accStr < foundAccStr:
             accStr = foundAccStr
 
-        print(weaponStr + armorStr + armStr + accStr)
-        print(weaponStr)
-        print(armorStr)
-        print(armStr)
-        print(accStr)
-        if requiredStr >= 150:
+
+        if requiredStr >= 350:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(6) and access.hasStrRecipe():
+                return True
+            else: return False
+        elif requiredStr >= 300:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(5) and access.hasStrRecipe():
+                return True
+            else: return False
+        elif requiredStr >= 250:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(3):
+                return True
+            else: return False
+        elif requiredStr >= 230:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2) and access.hasFlameStones(3):
+                return True
+            else: return False
+        elif requiredStr >= 200:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2) and access.hasFlameStones(2):
+                return True
+            else: return False
+        elif requiredStr >= 150:
             if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2):
                 return True
             else: return False

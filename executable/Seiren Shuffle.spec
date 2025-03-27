@@ -3,9 +3,9 @@
 a = Analysis(
     ['../Seiren Shuffle.pyw'],
     pathex=[],
-    binaries=[],
+    binaries=[('../shared/ysR Logo.ico','shared/')],
     datas=[('../shared/','shared/'),('../randomizer/','randomizer/'),('../patch/','patch/')],
-    hiddenimports=['soundfile'],
+    hiddenimports=['soundfile','fsspec'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -21,8 +21,8 @@ exe = EXE(pyz,
           a.datas,
           name='Seiren Shuffle',
           icon='../shared/ysR Logo.ico',
-          debug=False,
+          debug=True,
           strip=False,
           upx=False,
           runtime_tmpdir=None,
-          console=False )
+          console=True )

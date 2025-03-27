@@ -3,15 +3,23 @@ from randomizer.accessLogic import *
 
 class playthrough:
   def __init__(self):
-    self.locations = {}
+    self.locations = []
+    self.locIDList = []
+    self.regions = []
+    self.bosses = []
 
   def build(self,location,sphere):
-    if sphere not in self.locations.keys():
-      self.locations[sphere] = []
-      self.locations[sphere].append(location)
-    else:
-      self.locations[sphere].append(location)
-  
+    location.sphere = sphere
+    location.isHinted = False
+    self.locations.append(location)
+    self.locIDList.append(location.locID)
+
+    if location.locRegion not in self.regions:
+      self.regions.append(location.locRegion)
+
+    if 'Defeated' in location.itemName:
+      self.bosses.append(location) 
+
 class location:
   def __init__(self,locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill,landmark):
     self.locID = locID
@@ -392,6 +400,18 @@ class access:
     strength = accStrList[0] + accStrList[1]
     return strength
   
+  def hasStrRecipe(self):
+    for item in self.inventoryObjects:
+      if item.itemID in [579,571]: # Recipe Book/Great Pumpkin Pie, Recipe Book/Colorful Meuniere
+        return True
+    return False
+  
+  def hasStunRecipe(self):
+    for item in self.inventoryObjects:
+      if item.itemID in [579,571]: # Recipe Book/Great Pumpkin Pie, Recipe Book/Colorful Meuniere
+        return True
+    return False
+  
   def hasAlison(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Alison':
@@ -491,7 +511,7 @@ class access:
 
   def mapCompletion(self,requiredCompletion):
     #making a list of specific items that contribute towards actual map completion
-    mapComplesionItems = ['Maphorash Defeated','Basileus Defeated','Doxa Griel Defeated','Oceanus Defeated',\
+    mapComplesionItems = ['Mephorash Defeated','Basileus Defeated','Doxa Griel Defeated','Oceanus Defeated',\
                           'Coelacantos Defeated','Pirate Revenant Defeated','Carveros Defeated','Exmetal Defeated','Brachion Defeated','Giasburn Defeated',\
                           'Avalodragil 2 Defeated','Kiergaard Weissman Defeated','Laspisus Defeated','Magamandra Defeated','Gargantula Defeated','Octus Entered'\
                           'Lonbrigius Defeated','Clareon Defeated','Serpentus Defeated','Avalodragil Defeated','Byfteriza Defeated','Birdsong Rock','Cobalt Crag',\
@@ -537,7 +557,21 @@ class access:
       return True
     else:
       return False
+  
+  def bossCount(self):
+    boss = ['Mephorash Defeated','Basileus Defeated','Doxa Griel Defeated','Oceanus Defeated','Coelacantos Defeated',\
+            'Pirate Revenant Defeated','Carveros Defeated','Exmetal Defeated','Brachion Defeated','Giasburn Defeated',\
+            'Avalodragil 2 Defeated','Kiergaard Weissman Defeated','Laspisus Defeated','Magamandra Defeated',\
+            'Gargantula Defeated','Lonbrigius Defeated','Clareon Defeated','Serpentus Defeated','Byfteriza Defeated',\
+            'Avalodragil Defeated', 'Melaiduma Defeated','Silvia Defeated']
     
+    count = 0
+
+    for item in boss:
+      if item in self.inventoryObjects:
+        count+=1
+    return count
+  
 class guiInput:
   def __init__(self):
     self.seed = None
@@ -556,7 +590,7 @@ class guiInput:
     self.dogiRewards = None
     self.mkRewards = None
     self.silvia = None
-    self.maphorash = None
+    self.Mephorash = None
     self.formerSanctuaryCrypt = None
     self.intRewards = None
     self.expMult = None
@@ -603,6 +637,7 @@ class guiInput:
     self.aresSeal = None
     self.aeolusUrn = None
     self.eagleEyeOrb = None
+    self.memoHints = None
 
   def getSeed(self, seed):
     self.seed = int(seed)
@@ -619,7 +654,7 @@ class guiInput:
     self.shuffleSkills = skills
     self.discoverySanity = discoverySanity
   
-  def getProgressionMods(self, jewels,fish,disc,map,food,dogiRewards,mkRewards,silvia,maphorash):
+  def getProgressionMods(self, jewels,fish,disc,map,food,dogiRewards,mkRewards,silvia,Mephorash):
     self.jewelTrades = jewels
     self.fishTrades = fish
     self.discoveries = disc
@@ -628,7 +663,7 @@ class guiInput:
     self.dogiRewards = dogiRewards
     self.mkRewards = mkRewards
     self.silvia = silvia
-    self.maphorash = maphorash
+    self.Mephorash = Mephorash
 
   def getOtherToggles(self, intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients, northSideOpen, infinityMode):
     self.intRewards = intRewards
@@ -652,7 +687,7 @@ class guiInput:
     self.carePackage = carePackage
 
   def getMiscSettings(self, shuffleBgm, essenceKeySanity, formerSanctuaryCrypt, hint, adventuringGearHints, castawayHints, foolishHints, 
-                      startAdol, startLaxia, startSahad, startHummel, startRicotta, startDana):
+                      memoHints, startAdol, startLaxia, startSahad, startHummel, startRicotta, startDana):
     self.shuffleBgm = shuffleBgm
     self.essenceKeySanity = essenceKeySanity
     self.formerSanctuaryCrypt = formerSanctuaryCrypt
@@ -660,6 +695,7 @@ class guiInput:
     self.adventuringGearHints = adventuringGearHints
     self.castawayHints = castawayHints
     self.foolishHints = foolishHints
+    self.memoHints = memoHints
     
     self.partyPool = []
     if startAdol: self.partyPool.append('Adol')
