@@ -970,8 +970,8 @@ class App(ctk.CTk):
                 "discoveries": self.progressionPlacementModifiersFrame.discoveries_option_menu.get(),
                 
                 # Pacing Modifiers
-                "experienceMultiplier": int(self.pacingModifiersFrame.experience_multiplier_scale.get()),
-                "expMultGrowthRate": int(self.pacingModifiersFrame.exp_mult_growth_rate_scale.get()),
+                "experienceMultiplier": float(self.pacingModifiersFrame.experience_multiplier_scale.get()),
+                "expMultGrowthRate": float(self.pacingModifiersFrame.exp_mult_growth_rate_scale.get()),
                 "intRewards": self.pacingModifiersFrame.int_rewards_var.get(),
                 "battleLogic": self.pacingModifiersFrame.battle_logic_var.get(),
                 "superWeapons": self.pacingModifiersFrame.super_weapons_var.get(),

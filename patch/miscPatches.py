@@ -25,7 +25,7 @@ def miscFixes():
         fileBytes = writeStringToBytes(fileBytes,hiveLoc + monsFlagsOffset,'---------P-------')
         fileBytes = writeStringToBytes(fileBytes,hiveLoc + monsScriptOffset,'m0225:m0225')
     
-    writeBufferIntoFile(fileBytes)
+    writeBufferIntoFile(locFile,fileBytes)
     
     #executable patches
     exeBytes = readFileIntoBuffer(YS8)
@@ -65,9 +65,9 @@ def randomizeOctoBosses(parameters):
         'M0890':{'script':'m0890:m0890', 'data':'m0890/m0890'},
         }
     
-    monsIDOffset = 26
-    monsScriptOffset = 92
-
+    monsIDOffset = 29
+    monsScriptOffset = 91
+    print("randomizing octo bosses 1")
     #values specific to octus1 map
     dataOffsets = [837,869]
     eventOffsets = [5484,5647]
@@ -76,17 +76,19 @@ def randomizeOctoBosses(parameters):
     for index,octoMon in enumerate(octus1Mons):
         octoMonLoc = octus1bytes.find(octoMon.encode('utf-8'))
         if parameters.openOctusPaths:
-            selectedOctoMon = random.choice(octoMonData.keys())
+            selectedOctoMon = random.choice(list(octoMonData.items()))
+            print(selectedOctoMon)
         else:
             #this is to restore the original values
             selectedOctoMon = octoMonData[index+8]
-        octus1bytes = writeStringToBytes(octus1bytes, dataOffsets[index], octoMonData[selectedOctoMon['data']])
-        octus1bytes = writeStringToBytes(octus1bytes, octoMonLoc + monsIDOffset,selectedOctoMon)
-        octus1bytes = writeStringToBytes(octus1bytes, octoMonLoc + monsScriptOffset,octoMonData[selectedOctoMon['script']])
-        octus1bytes = writeStringToBytes(octus1bytes, eventOffsets[index], octoMonData[selectedOctoMon['script']])
+        octus1bytes = writeStringToBytes(octus1bytes, dataOffsets[index], selectedOctoMon[1]['data'])
+        octus1bytes = writeStringToBytes(octus1bytes, octoMonLoc + monsIDOffset, selectedOctoMon[0])
+        octus1bytes = writeStringToBytes(octus1bytes, octoMonLoc + monsScriptOffset, selectedOctoMon[1]['script'])
+        octus1bytes = writeStringToBytes(octus1bytes, eventOffsets[index], selectedOctoMon[1]['script'])
 
     writeBufferIntoFile(octus1,octus1bytes)
 
+    print("randomizing octo bosses 2")
     #values specific to octus2 map
     dataOffsets = [837,869,901]
     eventOffsets = [7426,7589,7752]
@@ -95,14 +97,15 @@ def randomizeOctoBosses(parameters):
     for index,octoMon in enumerate(octus2Mons):
         octoMonLoc = octus2bytes.find(octoMon.encode('utf-8'))
         if parameters.openOctusPaths:
-            selectedOctoMon = random.choice(octoMonData.keys())
+            selectedOctoMon = random.choice(list(octoMonData.items()))
+            print(selectedOctoMon)
         else:
             #this is to restore the original values
             selectedOctoMon = octoMonData[index]
-        octus2bytes = writeStringToBytes(octus2bytes, dataOffsets[index], octoMonData[selectedOctoMon['data']])
-        octus2bytes = writeStringToBytes(octus2bytes, octoMonLoc + monsIDOffset,selectedOctoMon)
-        octus2bytes = writeStringToBytes(octus2bytes, octoMonLoc + monsScriptOffset,octoMonData[selectedOctoMon['script']])
-        octus2bytes = writeStringToBytes(octus2bytes, eventOffsets[index], octoMonData[selectedOctoMon['script']])
+        octus2bytes = writeStringToBytes(octus2bytes, dataOffsets[index], selectedOctoMon[1]['data'])
+        octus2bytes = writeStringToBytes(octus2bytes, octoMonLoc + monsIDOffset, selectedOctoMon[0])
+        octus2bytes = writeStringToBytes(octus2bytes, octoMonLoc + monsScriptOffset, selectedOctoMon[1]['script'])
+        octus2bytes = writeStringToBytes(octus2bytes, eventOffsets[index], selectedOctoMon[1]['script'])
     
     writeBufferIntoFile(octus2,octus2bytes)
 
@@ -114,14 +117,15 @@ def randomizeOctoBosses(parameters):
     for index,octoMon in enumerate(octus3Mons):
         octoMonLoc = octus3bytes.find(octoMon.encode('utf-8'))
         if parameters.openOctusPaths:
-            selectedOctoMon = random.choice(octoMonData.keys())
+            selectedOctoMon = random.choice(list(octoMonData.items()))
+            print(selectedOctoMon)
         else:
             #this is to restore the original values
             selectedOctoMon = octoMonData[index+3]
-        octus3bytes = writeStringToBytes(octus3bytes, dataOffsets[index], octoMonData[selectedOctoMon['data']])
-        octus3bytes = writeStringToBytes(octus3bytes, octoMonLoc + monsIDOffset,selectedOctoMon)
-        octus3bytes = writeStringToBytes(octus3bytes, octoMonLoc + monsScriptOffset,octoMonData[selectedOctoMon['script']])
-        octus3bytes = writeStringToBytes(octus3bytes, eventOffsets[index], octoMonData[selectedOctoMon['script']])
+        octus3bytes = writeStringToBytes(octus3bytes, dataOffsets[index], selectedOctoMon[1]['data'])
+        octus3bytes = writeStringToBytes(octus3bytes, octoMonLoc + monsIDOffset, selectedOctoMon[0])
+        octus3bytes = writeStringToBytes(octus3bytes, octoMonLoc + monsScriptOffset, selectedOctoMon[1]['script'])
+        octus3bytes = writeStringToBytes(octus3bytes, eventOffsets[index], selectedOctoMon[1]['script'])
     
     writeBufferIntoFile(octus3,octus3bytes)
 
@@ -133,14 +137,15 @@ def randomizeOctoBosses(parameters):
     for index,octoMon in enumerate(octus4Mons):
         octoMonLoc = octus4bytes.find(octoMon.encode('utf-8'))
         if parameters.openOctusPaths:
-            selectedOctoMon = random.choice(octoMonData.keys())
+            selectedOctoMon = random.choice(list(octoMonData.items()))
+            print(selectedOctoMon)
         else:
             #this is to restore the original values
             selectedOctoMon = octoMonData[index+6]
-        octus4bytes = writeStringToBytes(octus4bytes, dataOffsets[index], octoMonData[selectedOctoMon['data']])
-        octus4bytes = writeStringToBytes(octus4bytes, octoMonLoc + monsIDOffset,selectedOctoMon)
-        octus4bytes = writeStringToBytes(octus4bytes, octoMonLoc + monsScriptOffset,octoMonData[selectedOctoMon['script']])
-        octus4bytes = writeStringToBytes(octus4bytes, eventOffsets[index], octoMonData[selectedOctoMon['script']])
+        octus4bytes = writeStringToBytes(octus4bytes, dataOffsets[index], selectedOctoMon[1]['data'])
+        octus4bytes = writeStringToBytes(octus4bytes, octoMonLoc + monsIDOffset,selectedOctoMon[0])
+        octus4bytes = writeStringToBytes(octus4bytes, octoMonLoc + monsScriptOffset, selectedOctoMon[1]['script'])
+        octus4bytes = writeStringToBytes(octus4bytes, eventOffsets[index], selectedOctoMon[1]['script'])
     
     writeBufferIntoFile(octus4,octus4bytes)
 

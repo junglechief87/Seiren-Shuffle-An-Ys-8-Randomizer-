@@ -267,8 +267,8 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
 
     playthrough, playthroughAllProgression = generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests)
     #This function will be responsible for clearing hints in case hints are toggled off
-    hints['standard'] = []
-    hints['memo'] = []
+    hints = {'standard': [], 'memo': []}
+    print(hints)
     if parameters.hint:
         hints = createHints(shuffledLocations, parameters, playthrough)   
     

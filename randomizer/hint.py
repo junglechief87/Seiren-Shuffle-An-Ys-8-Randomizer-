@@ -233,6 +233,7 @@ def createHints(shuffledLocations, parameters, playthrough):
     selected_memo_gear = usefulAdventuringGearLocs[numberOfAdventureGearLocs:numberOfAdventureGearLocs+2]
     selected_memo_castaway = castawayLocs[numberOfCastawayLocs:numberOfCastawayLocs+2]
 
+    memoHints = []
     if parameters.memoHints:
         memoHints = (
         selected_boss_locs

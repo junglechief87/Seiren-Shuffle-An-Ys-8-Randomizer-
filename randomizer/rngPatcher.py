@@ -176,7 +176,8 @@ function "{0}"
         script = script + buildBoat
     elif location.itemID in [569,570,571,572,573,574,575,576,577,578,579] and parameters.extraIngredients: #item IDs for recipes
         script = script + recipeIngredients(location.itemID)
-    elif location.itemID in [750,751,752,753,754,755,760,761,762,763] and parameters.memoHints:
+    
+    if location.itemID in [750,751,752,753,754,755,760,761,762,763] and parameters.memoHints:
         script = script + memoHints(location.itemID)
         
     message = genericMessage
@@ -834,7 +835,7 @@ def octoBosses(parameters):
     script = '\tfunction "setOctoBossLevels"\n\t{\n'
     for boss in octoBossAliases:
         bossLevel = random.randrange(65,75)
-        script = script + '\t\tSetChrWorkGroup(' + boss + ', CWK_LV, ' + str(bossLevel) + ')\n'
+        script = script + '\t\tSetLevel(' + boss + ', ' + str(bossLevel) + ')\n'
     script = script + '\t}\n'
 
     randomizeOctoBosses(parameters)
