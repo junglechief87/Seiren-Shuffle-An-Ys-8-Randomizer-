@@ -1409,26 +1409,31 @@ def battleLogic(requiredStr,access,parameters,**kwargs):
             weaponStr = 290
         elif access.hasFlameStones(7) and materialAccess('Dragon Crest Stone',access,parameters):
             weaponStr = 270
-        elif access.hasFlameStones(6) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters)): 
+        elif access.hasFlameStones(6) and ((materialAccess('Essence Stone',access,parameters) and 
+                                            materialAccess('Iron Ore',access,parameters) and 
+                                            materialAccess('Tectite Ore',access,parameters)) or
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina())): 
             weaponStr = 240
-        elif access.hasFlameStones(5) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters)): 
+        elif access.hasFlameStones(5) and ((materialAccess('Essence Stone',access,parameters) and 
+                                            materialAccess('Iron Ore',access,parameters) and 
+                                            materialAccess('Tectite Ore',access,parameters)) or 
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina())): 
             weaponStr = 210
-        elif access.hasFlameStones(4) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters) or
-                                           materialAccess('Tectite Ore',access,parameters)): 
+        elif access.hasFlameStones(4) and ((materialAccess('Essence Stone',access,parameters) and access.hasDine()) or 
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina()) or
+                                           (materialAccess('Iron Ore',access,parameters) and 
+                                            materialAccess('Tectite Ore',access,parameters))): 
             weaponStr = 180
         elif access.hasFlameStones(3): 
             weaponStr = 150
-        elif access.hasFlameStones(2) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters) or
-                                           materialAccess('Tectite Ore',access,parameters) or
+        elif access.hasFlameStones(2) and ((materialAccess('Essence Stone',access,parameters) and access.hasDine()) or 
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina()) or
+                                           (materialAccess('Tectite Ore',access,parameters) and access.hasDina()) or
                                            materialAccess('Iron Ore',access,parameters)): 
             weaponStr = 100
-        elif access.hasFlameStones(1) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters) or
-                                           materialAccess('Tectite Ore',access,parameters) or
+        elif access.hasFlameStones(1) and ((materialAccess('Essence Stone',access,parameters) and access.hasDine()) or 
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina()) or
+                                           (materialAccess('Tectite Ore',access,parameters) and access.hasDina()) or
                                            materialAccess('Iron Ore',access,parameters)): 
             weaponStr = 50
         
@@ -1477,7 +1482,7 @@ def battleLogic(requiredStr,access,parameters,**kwargs):
             armStr = 30
         elif access.hasFlameStones(6) and access.hasEuron() and materialAccess('Saurian Scale',access,parameters) and materialAccess('Ancient Hide',access,parameters):
             armStr = 20
-        elif access.hasFlameStones(4) and access.hasEuron() and materialAccess('Dragon Crest Stone',access,parameters) and materialAccess('Essence Stone',access,parameters): 
+        elif access.hasFlameStones(4) and access.hasEuron() and materialAccess('Dragon Crest Stone',access,parameters) and materialAccess('Dandale Horn',access,parameters): 
             armStr = 10
 
         if armStr < foundArmStr:
@@ -1512,16 +1517,16 @@ def battleLogic(requiredStr,access,parameters,**kwargs):
                 otherAcc.append(10) #lightning stone
             if materialAccess('Thunder Claw',access,parameters) and materialAccess('Beast Parts',access,parameters):
                 bladeRings.append(30) #Blade Ring 3
-            if materialAccess('Essence Stone',access,parameters) and materialAccess('Tectite Ore',access,parameters):
+            if materialAccess('Dandale Stone',access,parameters) and materialAccess('Tectite Ore',access,parameters):
                 otherAcc.append(10) #crow stone
             if materialAccess('Tectite Ore',access,parameters) and materialAccess('Ancient Lumber',access,parameters):
                 otherAcc.append(10) #snake stone
         if access.hasEuron and access.hasFlameStones(5):
             if southSideOpen(access, parameters):
                 dragonAcc.append(10) #dragon pauldron
-            if materialAccess('Essence Stone',access,parameters):
+            if materialAccess('Dandale Stone',access,parameters):
                 dragonAcc.append(20) #dragon stone
-            if materialAccess('Essence Stone',access,parameters) and materialAccess('Dragon Crest Stone',access,parameters):
+            if materialAccess('Dandale Stone',access,parameters) and materialAccess('Dragon Crest Stone',access,parameters):
                 fenrirAcc.append(15) #fenrir stone
                 pyriosAcc.append(15) #pyrios stone
                 otherAcc.append(10) #nature talisman
@@ -1588,28 +1593,51 @@ def materialAccess(material,access,parameters):
             #Silent Tower Access
             (access.canDoubleJump() and access.canMove(24) and 
                 (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']))) or 
-            #Valley of Kings Access
-            (((access.canSwampWalk() or access.canUnderwater()) and ((
-                canAccessNorthSide(access, parameters) and 
-                templeOfGreatTreeOpen(access) and
-                access.past6() and 
-                access.canClimb()) or (
-                (access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.hasDiscovery('Sky Garden')))) or (
-            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
-            ) or 
+            #Pangai Plains Night
+            (canAccessNorthSide(access,parameters) and access.canSeeDark()) or
             #Octus Access
             access.canDefeat('Octus Enterance') or 
             #Lapis Mineral Vein Access
             (access.canUnderwater() and ((access.canMove(11) and access.canClimb()) or access.hasDiscovery('Zephyr Hill'))) 
-            or access.hasDiscovery('Lapis Mineral Vein'))
-        case 'Essence Stone': #blue feather and dandale horn are also used on this as it's the same requirements
+            or access.hasDiscovery('Lapis Mineral Vein') or
+            #Eternal Hill
+            (
+            canAccessNorthSide(access, parameters) and 
+            templeOfGreatTreeOpen(access) and
+            access.past6() and 
+            (access.canSwampWalk() or access.canUnderwater()) and 
+            access.past7()) 
+            or access.hasDiscovery('Graves of Ancient Heroes')                    
+            )
+        case 'Dandale Horn': #blue feather is also used on this as it's the same requirements
             #Access to Vista Ridge from Eternia or access to all of Lodinia
             return ((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or (lodiniaToVista(access) and access.canDoubleJump()))
+        case 'Essence Stone':
+            # East Coast Cave Access
+            return (((southSideOpen(access, parameters) and access.hasDina() and access.canDoubleJump()) or 
+            access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse'])  or 
+            (access.hasDiscovery('Beehive') and access.canDoubleJump())) or
+            # Underground Water Vein
+            ((access.canUnderwater() and ((access.canMove(11) and access.canClimb()) or access.hasDiscovery('Zephyr Hill'))) 
+            or access.hasDiscovery('Lapis Mineral Vein')) or
+            # Stone Pillar Wind Cave
+            (canAccessNorthSide(access, parameters) and access.canMove(18)) or
+            # Baja Tower
+            (eterniaOpen(access,parameters) and access.past4() and access.hasDana() and access.canClimb()) or
+            # Archeozoic Chasm
+            (eterniaOpen(access,parameters) and access.past5()) or 
+            # Silent Tower
+            (access.canDoubleJump() and (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])) and access.canMove(24))
+            )
         case 'Tectite Ore':
-            #Access to north side and Mountain Pinnacle Trail
-            return (access.hasDiscovery('Prismatic Mineral Vein') or (canAccessNorthSide(access,parameters) and access.past1()))
+            #Access to Mountain Pinnacle Trail, north side, gendarme, or western foot of gendarme
+            return (access.hasDiscovery('Prismatic Mineral Vein') or 
+                    (canAccessNorthSide(access,parameters)) or
+                    (access.canClimb() and southSideOpen(access, parameters) and access.past1()) or
+                    (access.canMove(11) and access.canSwampWalk()) or access.hasDiscovery('Airs Cairn')
+)
         case 'Iron Ore':
-            return (coastNorthSideAccess(access,parameters) or access.hasAnyDiscovery(['Milky White Vein','Indigo Mineral Vein']))
+            return (coastNorthSideAccess(access,parameters) or access.hasAnyDiscovery(['Milky White Vein','Indigo Mineral Vein','Lapis Mineral Vein']))
         case 'Underworld Parts':
             #Octus Access
             return access.canDefeat('Octus Enterance')
@@ -1670,19 +1698,10 @@ def materialAccess(material,access,parameters):
             return (((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or 
                      (lodiniaToVista(access) and access.canDoubleJump())) or (
             #Chasm Access
-            eterniaOpen(access,parameters) and access.past5()))
-        
-
-
-
-        
-
-    
-
-    
-        
-
-    
-            
-    
-    
+            eterniaOpen(access,parameters) and access.past5()) or
+            # lapis mineral vein
+            (access.hasDiscovery('Lapis Mineral Vein')) or
+            # Stone Pillar Wind Cave
+            (canAccessNorthSide(access, parameters) and access.canMove(18)) or
+            # Silent Tower
+            (access.canDoubleJump() and (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])) and access.canMove(24)))

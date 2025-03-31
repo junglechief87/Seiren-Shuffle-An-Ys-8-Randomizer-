@@ -1416,6 +1416,7 @@ class App(ctk.CTk):
             copyOriginalGameFiles()
             downloadFiles()
             cleanChests()
+            makeResourceDropsGuaraneteed()
             miscFixes()
             self.show_notification("Patch Complete!")
         except Exception as e:

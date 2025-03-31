@@ -413,25 +413,25 @@ def recipeIngredients(itemID):
 def memoHints(itemID):
     match itemID:
         case 750:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_01)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_01,1)\n"
         case 751:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_02)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_02,1)\n"
         case 752:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_03)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_03,1)\n"
         case 753:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_04)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_04,1)\n"
         case 754:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_05)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_05,1)\n"
         case 755:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_06)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_06,1)\n"
         case 760:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_01)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_01,1)\n"
         case 761:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_02)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_02,1)\n"
         case 762:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_03)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_03,1)\n"
         case 763:
-            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_04)\n"
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_04,1)\n"
     
 #The glow stone will now trigger this script from the chest that has it. This unlocks night explorations.
 def makeGlowStoneUseful():
@@ -1705,7 +1705,6 @@ def bossScaling(playthroughAllProgression,parameters):
                         
     script = script + '\t}'
 
-    print(script)
     return script + fscBosses
 
 

@@ -243,8 +243,6 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
         shuffledLocations.append(filledLocation)
         placedItems+=1
 
-
-
     #after everything is done take the chests from the great river valley shoreline and valley of kings camp at dawn and set them equal to the normal time of day version then
     #add them back to list.
     for index,location in enumerate(shuffledLocations):
@@ -268,7 +266,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
     playthrough, playthroughAllProgression = generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests)
     #This function will be responsible for clearing hints in case hints are toggled off
     hints = {'standard': [], 'memo': []}
-    print(hints)
+
     if parameters.hint:
         hints = createHints(shuffledLocations, parameters, playthrough)   
     

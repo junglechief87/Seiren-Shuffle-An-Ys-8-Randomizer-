@@ -67,7 +67,7 @@ def randomizeOctoBosses(parameters):
     
     monsIDOffset = 29
     monsScriptOffset = 91
-    print("randomizing octo bosses 1")
+
     #values specific to octus1 map
     dataOffsets = [837,869]
     eventOffsets = [5484,5647]
@@ -77,10 +77,10 @@ def randomizeOctoBosses(parameters):
         octoMonLoc = octus1bytes.find(octoMon.encode('utf-8'))
         if parameters.openOctusPaths:
             selectedOctoMon = random.choice(list(octoMonData.items()))
-            print(selectedOctoMon)
         else:
             #this is to restore the original values
-            selectedOctoMon = octoMonData[index+8]
+            selectedOctoMon = tuple(octoMonData.items())[index+8]
+            print(selectedOctoMon)
         octus1bytes = writeStringToBytes(octus1bytes, dataOffsets[index], selectedOctoMon[1]['data'])
         octus1bytes = writeStringToBytes(octus1bytes, octoMonLoc + monsIDOffset, selectedOctoMon[0])
         octus1bytes = writeStringToBytes(octus1bytes, octoMonLoc + monsScriptOffset, selectedOctoMon[1]['script'])
@@ -88,7 +88,6 @@ def randomizeOctoBosses(parameters):
 
     writeBufferIntoFile(octus1,octus1bytes)
 
-    print("randomizing octo bosses 2")
     #values specific to octus2 map
     dataOffsets = [837,869,901]
     eventOffsets = [7426,7589,7752]
@@ -98,10 +97,9 @@ def randomizeOctoBosses(parameters):
         octoMonLoc = octus2bytes.find(octoMon.encode('utf-8'))
         if parameters.openOctusPaths:
             selectedOctoMon = random.choice(list(octoMonData.items()))
-            print(selectedOctoMon)
         else:
             #this is to restore the original values
-            selectedOctoMon = octoMonData[index]
+            selectedOctoMon = tuple(octoMonData.items())[index]
         octus2bytes = writeStringToBytes(octus2bytes, dataOffsets[index], selectedOctoMon[1]['data'])
         octus2bytes = writeStringToBytes(octus2bytes, octoMonLoc + monsIDOffset, selectedOctoMon[0])
         octus2bytes = writeStringToBytes(octus2bytes, octoMonLoc + monsScriptOffset, selectedOctoMon[1]['script'])
@@ -118,10 +116,9 @@ def randomizeOctoBosses(parameters):
         octoMonLoc = octus3bytes.find(octoMon.encode('utf-8'))
         if parameters.openOctusPaths:
             selectedOctoMon = random.choice(list(octoMonData.items()))
-            print(selectedOctoMon)
         else:
             #this is to restore the original values
-            selectedOctoMon = octoMonData[index+3]
+            selectedOctoMon = tuple(octoMonData.items())[index+3]
         octus3bytes = writeStringToBytes(octus3bytes, dataOffsets[index], selectedOctoMon[1]['data'])
         octus3bytes = writeStringToBytes(octus3bytes, octoMonLoc + monsIDOffset, selectedOctoMon[0])
         octus3bytes = writeStringToBytes(octus3bytes, octoMonLoc + monsScriptOffset, selectedOctoMon[1]['script'])
@@ -138,10 +135,9 @@ def randomizeOctoBosses(parameters):
         octoMonLoc = octus4bytes.find(octoMon.encode('utf-8'))
         if parameters.openOctusPaths:
             selectedOctoMon = random.choice(list(octoMonData.items()))
-            print(selectedOctoMon)
         else:
             #this is to restore the original values
-            selectedOctoMon = octoMonData[index+6]
+            selectedOctoMon = tuple(octoMonData.items())[index+6]
         octus4bytes = writeStringToBytes(octus4bytes, dataOffsets[index], selectedOctoMon[1]['data'])
         octus4bytes = writeStringToBytes(octus4bytes, octoMonLoc + monsIDOffset,selectedOctoMon[0])
         octus4bytes = writeStringToBytes(octus4bytes, octoMonLoc + monsScriptOffset, selectedOctoMon[1]['script'])
@@ -223,6 +219,43 @@ def pastDanaFixes(enable):
 
     writeBufferIntoFile(theos, disableBind)
 
+def makeResourceDropsGuaraneteed():
+    resourcePointDropTable = parent_directory + "/text/itempt.tbb"
+    makeDropsGuaranteed = readFileIntoBuffer(resourcePointDropTable)
+    resourceStrings = ['ICON3D_MT_N1_STONE','ICON3D_MT_N1_WOOD','ICON3D_MT_N1_FLOWER']
+    viableRewards = {'ICON3D_MT_N1_STONE':['ICON3D_MT_N2_STONE','ICON3D_MT_N3_STONE','ICON3D_MT_N4_STONE','ICON3D_MT_R2_STONE','ICON3D_MT_R4_STONE'],
+                     'ICON3D_MT_N1_WOOD': ['ICON3D_MT_N2_WOOD','ICON3D_MT_N3_WOOD','ICON3D_MT_N4_WOOD','ICON3D_MT_R2_WOOD','ICON3D_MT_R4_WOOD'],
+                     'ICON3D_MT_N1_FLOWER': ['ICON3D_MT_N2_FLOWER','ICON3D_MT_N3_FLOWER','ICON3D_MT_N4_FLOWER','ICON3D_MT_R1_FLOWER','ICON3D_MT_R3_FLOWER','ICON3D_MT_R5_FLOWER']}
+    
+    for resourceString in resourceStrings:
+        currentPos = 1263
+        while makeDropsGuaranteed.find(resourceString.encode('utf-8'), currentPos) != -1:
+            bottomTierResourceIndex = makeDropsGuaranteed.find(resourceString.encode('utf-8'), currentPos)
+            stringSize = len(resourceString)
+            currentPos = currentPos + stringSize
+            
+            # process higher tier rewards values
+            higherTierResourceOffset = makeDropsGuaranteed[bottomTierResourceIndex+stringSize:].find('ICON3D_'.encode('utf-8')) + stringSize
+            higherTierResourceIndex = higherTierResourceOffset + bottomTierResourceIndex
+            higherTierResourceValue = makeDropsGuaranteed[higherTierResourceIndex:higherTierResourceIndex+stringSize]
+
+            # process rare rewards values
+            rareResourceOffset = makeDropsGuaranteed[higherTierResourceIndex+stringSize:].find('ICON3D_'.encode('utf-8')) + stringSize
+            rareResourceIndex = rareResourceOffset + higherTierResourceIndex
+            rareResourceValue = makeDropsGuaranteed[rareResourceIndex:rareResourceIndex+stringSize]
+            
+            # write new values and make adjustments for special cases
+            if higherTierResourceValue.decode('utf-8') in viableRewards[resourceString]:
+                print(higherTierResourceValue.decode('utf-8'))
+                makeDropsGuaranteed[bottomTierResourceIndex:bottomTierResourceIndex+stringSize] = higherTierResourceValue
+                
+            if rareResourceValue.decode('utf-8') in viableRewards[resourceString]:
+                print(rareResourceValue.decode('utf-8'))
+                makeDropsGuaranteed[higherTierResourceIndex:higherTierResourceIndex+stringSize] = rareResourceValue
+                
+
+    writeBufferIntoFile(resourcePointDropTable,makeDropsGuaranteed)
+
 def readFileIntoBuffer(path):
     with open(path,"rb") as buffer:
         while (curByte := buffer.read()):
@@ -235,4 +268,4 @@ def writeBufferIntoFile(path,array):
         buffer.write(array)
         buffer.close()
     
-    
+makeResourceDropsGuaraneteed()
