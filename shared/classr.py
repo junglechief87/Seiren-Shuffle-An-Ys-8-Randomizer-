@@ -594,7 +594,6 @@ class guiInput:
     self.formerSanctuaryCrypt = None
     self.intRewards = None
     self.expMult = None
-    self.expGrowth = None
     self.battleLogic = None
     self.progressiveSuperWeapons = None
     self.openOctusPaths = None
@@ -675,10 +674,8 @@ class guiInput:
     self.northSideOpen = northSideOpen
     self.infinityMode = infinityMode
 
-  def getExpMult(self, expMult,expGrowth):
+  def getExpMult(self, expMult):
     self.expMult = expMult
-    expGrowth = expGrowth/100 + 1 #converting to growth rate percent(eg. if set to 5 convert to 1.05)
-    self.expGrowth = expGrowth
 
   def getFinalBoss(self, finalBoss,theosPhase,originPhase,carePackage):
     self.finalBoss = finalBoss

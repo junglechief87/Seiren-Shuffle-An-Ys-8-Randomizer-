@@ -7,6 +7,7 @@ from shared.functions import *
 
 YS8 = getExecutable()
 parent_directory = os.path.join(os.path.dirname(sys.executable))
+testdir = os.curdir
 
 #right now this is only to get rid of some logically problematic beehives but could do more later
 def miscFixes():
@@ -27,7 +28,7 @@ def miscFixes():
     
     writeBufferIntoFile(locFile,fileBytes)
     
-    #executable patches
+    """ #executable patches
     exeBytes = readFileIntoBuffer(YS8)
 
     # remove exp level scaling
@@ -36,7 +37,7 @@ def miscFixes():
     exeBytes[0x29B632:0x29B634] = [0x29,0xC9] #convert opcode sub ecx, ebp to sub ecx, ecx
     exeBytes[0x29B665:0x29B667] = [0x29,0xC0] #convert opcode sub eax, ebp to sub eax, eax
 
-    writeBufferIntoFile(YS8,exeBytes)
+    writeBufferIntoFile(YS8,exeBytes) """
     
     # speeds up respawn time of exploding plants to reduce downtime in Oceanus fight
     explosivePlant = parent_directory + "/chr/enemy/m0660/m0660.mtb"
@@ -80,7 +81,6 @@ def randomizeOctoBosses(parameters):
         else:
             #this is to restore the original values
             selectedOctoMon = tuple(octoMonData.items())[index+8]
-            print(selectedOctoMon)
         octus1bytes = writeStringToBytes(octus1bytes, dataOffsets[index], selectedOctoMon[1]['data'])
         octus1bytes = writeStringToBytes(octus1bytes, octoMonLoc + monsIDOffset, selectedOctoMon[0])
         octus1bytes = writeStringToBytes(octus1bytes, octoMonLoc + monsScriptOffset, selectedOctoMon[1]['script'])
@@ -246,15 +246,40 @@ def makeResourceDropsGuaraneteed():
             
             # write new values and make adjustments for special cases
             if higherTierResourceValue.decode('utf-8') in viableRewards[resourceString]:
-                print(higherTierResourceValue.decode('utf-8'))
                 makeDropsGuaranteed[bottomTierResourceIndex:bottomTierResourceIndex+stringSize] = higherTierResourceValue
                 
             if rareResourceValue.decode('utf-8') in viableRewards[resourceString]:
-                print(rareResourceValue.decode('utf-8'))
                 makeDropsGuaranteed[higherTierResourceIndex:higherTierResourceIndex+stringSize] = rareResourceValue
                 
 
     writeBufferIntoFile(resourcePointDropTable,makeDropsGuaranteed)
+
+def newExpMult(parameters):
+    statusFileLoc = testdir + '/text/en/status.csv'
+    defaultExpValues = {'ADOL':500000,'LAXIA':450000,'SAHAD':550000,'HUMMEL':420000,'RICOTTA':480000,'DANA':520000}
+
+    with open (statusFileLoc, 'r', encoding='utf-8') as csvFile:
+        statusFile = csv.DictReader(csvFile,delimiter='\t',lineterminator='\n',strict=True)
+        newStatusFile = []
+        fieldNames = []
+        for row in statusFile:
+            # csv doesn't read in field names until it begins reading rows. 
+            # so to gather the field names for later use we need to do it during the first iteration of the loop.
+            if len(fieldNames) == 0:
+                fieldNames = statusFile.fieldnames
+            if row['キャラＩＤ'] in defaultExpValues.keys():
+                #Since exp scaling is removed by making the game think that the player level == enemy level the enemy exp in game is actually half of what the monster library shows as the base in game
+                #I'm multiplying by 2 here so the base exp that's being multiplied matches what the player sees in game
+                row['EXPMAX'] = int(defaultExpValues[row['キャラＩＤ']] / (parameters.expMult))
+            newStatusFile.append(row)
+        csvFile.close()
+
+        with open (statusFileLoc, 'w', encoding='utf-8') as csvFile:
+            writer = csv.DictWriter(csvFile,fieldNames,delimiter='\t',lineterminator='\n',strict=True)
+            writer.writeheader()
+            writer.writerows(newStatusFile)
+            csvFile.close()
+    
 
 def readFileIntoBuffer(path):
     with open(path,"rb") as buffer:
@@ -267,5 +292,3 @@ def writeBufferIntoFile(path,array):
     with open(path,"wb") as buffer:
         buffer.write(array)
         buffer.close()
-    
-makeResourceDropsGuaraneteed()

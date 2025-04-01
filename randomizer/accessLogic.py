@@ -1419,19 +1419,19 @@ def battleLogic(requiredStr,access,parameters,**kwargs):
                                             materialAccess('Tectite Ore',access,parameters)) or 
                                            (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina())): 
             weaponStr = 210
-        elif access.hasFlameStones(4) and ((materialAccess('Essence Stone',access,parameters) and access.hasDine()) or 
+        elif access.hasFlameStones(4) and ((materialAccess('Essence Stone',access,parameters) and access.hasDina()) or 
                                            (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina()) or
                                            (materialAccess('Iron Ore',access,parameters) and 
                                             materialAccess('Tectite Ore',access,parameters))): 
             weaponStr = 180
         elif access.hasFlameStones(3): 
             weaponStr = 150
-        elif access.hasFlameStones(2) and ((materialAccess('Essence Stone',access,parameters) and access.hasDine()) or 
+        elif access.hasFlameStones(2) and ((materialAccess('Essence Stone',access,parameters) and access.hasDina()) or 
                                            (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina()) or
                                            (materialAccess('Tectite Ore',access,parameters) and access.hasDina()) or
                                            materialAccess('Iron Ore',access,parameters)): 
             weaponStr = 100
-        elif access.hasFlameStones(1) and ((materialAccess('Essence Stone',access,parameters) and access.hasDine()) or 
+        elif access.hasFlameStones(1) and ((materialAccess('Essence Stone',access,parameters) and access.hasDina()) or 
                                            (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina()) or
                                            (materialAccess('Tectite Ore',access,parameters) and access.hasDina()) or
                                            materialAccess('Iron Ore',access,parameters)): 

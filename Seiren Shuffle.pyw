@@ -360,38 +360,6 @@ class PacingModifiersFrame(ctk.CTkFrame):
 
         self.experience_multiplier_value = ctk.CTkLabel(self, text="4.0", width=25)
         self.experience_multiplier_value.grid(row=1, column=4, padx=(0, 5), pady=5, sticky="w")
-        
-        # Exp Mult Growth Rate (Slider)
-        self.exp_mult_growth_rate_label = ctk.CTkLabel(self, text="Exp Mult Growth Rate (%): ")
-        self.exp_mult_growth_rate_label.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
-        
-        self.exp_mult_growth_rate_scale = ctk.CTkSlider(self)
-        self.exp_mult_growth_rate_scale.grid(row=2, column=1, padx=5, pady=5, sticky="ew", columnspan=3)
-        self.exp_mult_growth_rate_scale.configure(from_=0, to=10, number_of_steps=10, command=self.update_exp_mult_growth_rate)
-        self.exp_mult_growth_rate_scale.set(3.0)
-
-        self.exp_mult_growth_rate_value = ctk.CTkLabel(self, text="3.0", width=25) 
-        self.exp_mult_growth_rate_value.grid(row=2, column=4, padx=(0, 5), pady=5, sticky="w")
-
-
-        # Example of the exp growth
-        self.title = ctk.CTkLabel(self, text="Examples", fg_color="transparent")
-        self.title.grid(row=0, column=5, padx=(5,5), pady=(5, 0))
-
-        self.example_2_boss_label = ctk.CTkLabel(self, text="2 bosses: " + self.growthExample(2) + "x")
-        self.example_2_boss_label.grid(row=1, column=5, padx=(5,5), )
-        
-        self.example_3_boss_label = ctk.CTkLabel(self, text="3 bosses: " + self.growthExample(3) + "x")
-        self.example_3_boss_label.grid(row=2, column=5, padx=(5,5), )
-        
-        self.example_5_boss_label = ctk.CTkLabel(self, text="5 bosses: " + self.growthExample(5) + "x")
-        self.example_5_boss_label.grid(row=3, column=5, padx=(5,5), )
-
-        self.example_8_boss_label = ctk.CTkLabel(self, text="8 bosses: " + self.growthExample(8) + "x")
-        self.example_8_boss_label.grid(row=4, column=5, padx=(5,5), )
-
-        self.update_examples()
-    
 
         # Additional Intercept Rewards Checkbox
         self.int_rewards_var = ctk.BooleanVar(value=True)
@@ -461,36 +429,8 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.ares_seal_var = ctk.BooleanVar(value=False)
         self.aeolus_urn_var = ctk.BooleanVar(value=False)
         self.eagle_eye_orb_var = ctk.BooleanVar(value=False)
-
-    def update_examples(self):
-        """ Update example labels dynamically based on the sliders' values. """
-        self.example_2_boss_label.configure(text=f"2 bosses: {self.growthExample(2)}x")
-        self.example_3_boss_label.configure(text=f"3 bosses: {self.growthExample(3)}x")
-        self.example_5_boss_label.configure(text=f"5 bosses: {self.growthExample(5)}x")
-        self.example_8_boss_label.configure(text=f"8 bosses: {self.growthExample(8)}x")
-
-        # Update UI immediately
-        self.update_idletasks()
-
-    # Update function for Experience Multiplier
     def update_experience_multiplier(self, value):
         self.experience_multiplier_value.configure(text=f"{float(value)}")
-        self.update_examples()
-
-    # Update function for Exp Mult Growth Rate
-    def update_exp_mult_growth_rate(self, value):
-        self.exp_mult_growth_rate_value.configure(text=f"{float(value)}")
-        self.update_examples()
-
-    def growthExample(self, bossCount):
-        baseExpMult = float(self.experience_multiplier_scale.get())
-        expMultGrowth = float(self.exp_mult_growth_rate_scale.get())
-
-        bossGrowthExample = baseExpMult * (pow((1 + expMultGrowth / 100), int(bossCount)))
-
-        # Doing this way to fix a problem where the frame would resize to adjust the extra digit in 10.04 as opposed to 9.04 (3 digits)... sad fix but a fix nonetheless 
-        return f"{bossGrowthExample:.1f}" if bossGrowthExample >= 10 else f"{bossGrowthExample:.2f}"
-
     def open_starting_options(self):
         # Create popup window
         popup = ctk.CTkToplevel(self)
@@ -971,7 +911,6 @@ class App(ctk.CTk):
                 
                 # Pacing Modifiers
                 "experienceMultiplier": float(self.pacingModifiersFrame.experience_multiplier_scale.get()),
-                "expMultGrowthRate": float(self.pacingModifiersFrame.exp_mult_growth_rate_scale.get()),
                 "intRewards": self.pacingModifiersFrame.int_rewards_var.get(),
                 "battleLogic": self.pacingModifiersFrame.battle_logic_var.get(),
                 "superWeapons": self.pacingModifiersFrame.super_weapons_var.get(),
@@ -1090,14 +1029,9 @@ class App(ctk.CTk):
 
             # Pacing Modifiers
             exp_mult = settings.get("experienceMultiplier", 4)
-            growth_rate = settings.get("expMultGrowthRate", 3)            
-            # Convert to float and force update
+           
+            # Convert to float
             self.pacingModifiersFrame.experience_multiplier_scale.set(float(exp_mult))
-            self.pacingModifiersFrame.exp_mult_growth_rate_scale.set(float(growth_rate))
-            # Update labels and examples
-            self.pacingModifiersFrame.update_experience_multiplier(exp_mult)
-            self.pacingModifiersFrame.update_exp_mult_growth_rate(growth_rate)
-            self.pacingModifiersFrame.update_examples()
 
             self.pacingModifiersFrame.int_rewards_var.set(settings.get("intRewards", True))
             self.pacingModifiersFrame.battle_logic_var.set(settings.get("battleLogic", True))
@@ -1223,7 +1157,6 @@ class App(ctk.CTk):
                 'Former Sanctuary Crypt': (self.shuffleLocationsFrame.former_sanctuary_crypt_var, 'set'),
                 'Additional Intercept Rewards': (self.pacingModifiersFrame.int_rewards_var, 'set'),
                 'Experience Multiplier': (self.pacingModifiersFrame.experience_multiplier_scale, 'set'),
-                'Exp Mult Growth Rate (%)': (self.pacingModifiersFrame.exp_mult_growth_rate_scale, 'set'),
                 'Battle Logic': (self.pacingModifiersFrame.battle_logic_var, 'set'),
                 'Progressive Super Weapons': (self.pacingModifiersFrame.super_weapons_var, 'set'),
                 'Open Octus Paths': (self.pacingModifiersFrame.open_paths_var, 'set'),
@@ -1315,11 +1248,6 @@ class App(ctk.CTk):
             # Pacing Modifiers
             exp_mult = float(settings.get("Experience Multiplier", 4))
             self.pacingModifiersFrame.experience_multiplier_scale.set(exp_mult)
-            self.pacingModifiersFrame.update_experience_multiplier(exp_mult)
-            
-            growth_rate = float(settings.get("Exp Mult Growth Rate (%)", 3))
-            self.pacingModifiersFrame.exp_mult_growth_rate_scale.set(growth_rate)
-            self.pacingModifiersFrame.update_exp_mult_growth_rate(growth_rate)
 
             # Force UI updates
             self.selectionsphereFrame.update_idletasks()
@@ -1481,8 +1409,7 @@ class App(ctk.CTk):
             
             # Experience Multipliers
             parameters.getExpMult(
-                float(self.pacingModifiersFrame.experience_multiplier_scale.get()),
-                float(self.pacingModifiersFrame.exp_mult_growth_rate_scale.get())
+                float(self.pacingModifiersFrame.experience_multiplier_scale.get())
             )
             
             # Final Boss Settings
