@@ -429,8 +429,10 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.ares_seal_var = ctk.BooleanVar(value=False)
         self.aeolus_urn_var = ctk.BooleanVar(value=False)
         self.eagle_eye_orb_var = ctk.BooleanVar(value=False)
+
     def update_experience_multiplier(self, value):
         self.experience_multiplier_value.configure(text=f"{float(value)}")
+
     def open_starting_options(self):
         # Create popup window
         popup = ctk.CTkToplevel(self)
@@ -1096,6 +1098,11 @@ class App(ctk.CTk):
             self.pacingModifiersFrame.aeolus_urn_var.set(settings.get("aeolusUrn", False))
             self.pacingModifiersFrame.eagle_eye_orb_var.set(settings.get("eagleEyeOrb", False))
 
+            self.pacingModifiersFrame.update_experience_multiplier(exp_mult)
+            self.disable_enable_buttons(goal)
+            self.selectionsphereFrame.update_idletasks()
+            self.pacingModifiersFrame.update_idletasks()
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load settings: {str(e)}")
 
@@ -1250,14 +1257,13 @@ class App(ctk.CTk):
             self.pacingModifiersFrame.experience_multiplier_scale.set(exp_mult)
 
             # Force UI updates
+            self.pacingModifiersFrame.update_experience_multiplier(exp_mult)
+            self.disable_enable_buttons(goal)
             self.selectionsphereFrame.update_idletasks()
-            self.pacingModifiersFrame.update_examples()
+            self.pacingModifiersFrame.update_idletasks()
 
             # Update final boss dependencies
             self.finalBossSettingsFrame.finalBossChange(settings.get("Final Boss", "Theos de Endogram"))
-
-            # Update examples in pacing modifiers
-            self.pacingModifiersFrame.update_examples()
 
             self.show_notification("Seed imported successfully!")
 

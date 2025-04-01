@@ -1396,7 +1396,7 @@ def battleLogic(requiredStr,access,parameters,**kwargs):
                 requiredStr = 75
             elif bossCount == 4:
                 requiredStr = 60
-            elif bossCount == 3:
+            elif bossCount in [2,3]:
                 requiredStr = 30
             else:
                 return True

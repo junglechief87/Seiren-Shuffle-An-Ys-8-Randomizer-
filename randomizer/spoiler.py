@@ -34,7 +34,6 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Former Sanctuary Crypt: " + str(parameters.formerSanctuaryCrypt) + "\n")
     spoilerLog.write("Additional Intercept Rewards: " + str(parameters.intRewards) + "\n")
     spoilerLog.write("Experience Multiplier: " + str(parameters.expMult) + "\n")
-    spoilerLog.write("Exp Mult Growth Rate (%): " + str(int((parameters.expGrowth - 1)*100)) + "\n")
     spoilerLog.write("Battle Logic: " + str(parameters.battleLogic) + "\n")
     spoilerLog.write("Progressive Super Weapons: " + str(parameters.progressiveSuperWeapons) + "\n")
     spoilerLog.write("Open Octus Paths: " + str(parameters.openOctusPaths) + "\n")

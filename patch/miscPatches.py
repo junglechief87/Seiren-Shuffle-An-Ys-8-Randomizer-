@@ -7,7 +7,6 @@ from shared.functions import *
 
 YS8 = getExecutable()
 parent_directory = os.path.join(os.path.dirname(sys.executable))
-testdir = os.curdir
 
 #right now this is only to get rid of some logically problematic beehives but could do more later
 def miscFixes():
@@ -28,16 +27,22 @@ def miscFixes():
     
     writeBufferIntoFile(locFile,fileBytes)
     
-    """ #executable patches
+    #executable patches
     exeBytes = readFileIntoBuffer(YS8)
 
-    # remove exp level scaling
+    """
+    # remove exp level scaling: old but might be useful in the future so commenting it out
     exeBytes[0x29B61C:0x29B61E] = [0x29,0xC9] #convert opcode sub ecx, ebp to sub ecx, ecx
     exeBytes[0x29B64F:0x29B651] = [0x29,0xC9] #convert opcode sub ecx, ebp to sub ecx, ecx
     exeBytes[0x29B632:0x29B634] = [0x29,0xC9] #convert opcode sub ecx, ebp to sub ecx, ecx
     exeBytes[0x29B665:0x29B667] = [0x29,0xC0] #convert opcode sub eax, ebp to sub eax, eax
-
-    writeBufferIntoFile(YS8,exeBytes) """
+    """
+    # Caps min exp to enemy base exp
+    exeBytes[0x28FCFC:0x28FD05] = [0xF3,0x0F,0x10,0x05,0xDC,0x83,0x31,0x00]
+    exeBytes[0x28FD0E:0x28FD17] = [0xF3,0x0F,0x10,0x05,0xCA,0x83,0x31,0x00]
+    exeBytes[0x29B698:0x29B6A1] = [0xF3,0x0F,0x10,0x05,0x40,0xCA,0x30,0x00]
+    
+    writeBufferIntoFile(YS8,exeBytes)
     
     # speeds up respawn time of exploding plants to reduce downtime in Oceanus fight
     explosivePlant = parent_directory + "/chr/enemy/m0660/m0660.mtb"
@@ -255,8 +260,13 @@ def makeResourceDropsGuaraneteed():
     writeBufferIntoFile(resourcePointDropTable,makeDropsGuaranteed)
 
 def newExpMult(parameters):
-    statusFileLoc = testdir + '/text/en/status.csv'
-    defaultExpValues = {'ADOL':500000,'LAXIA':450000,'SAHAD':550000,'HUMMEL':420000,'RICOTTA':480000,'DANA':520000}
+    statusFileLoc = parent_directory + '/text/en/status.csv'
+    defaultExpValues = {'ADOL': {'EXPMIN':100, 'EXPMAX':500000},
+                        'LAXIA':{'EXPMIN':95, 'EXPMAX':450000},
+                        'SAHAD':{'EXPMIN':105, 'EXPMAX':550000},
+                        'HUMMEL':{'EXPMIN':90, 'EXPMAX':420000},
+                        'RICOTTA':{'EXPMIN':97, 'EXPMAX':480000},
+                        'DANA':{'EXPMIN':102, 'EXPMAX':520000}}
 
     with open (statusFileLoc, 'r', encoding='utf-8') as csvFile:
         statusFile = csv.DictReader(csvFile,delimiter='\t',lineterminator='\n',strict=True)
@@ -270,7 +280,8 @@ def newExpMult(parameters):
             if row['キャラＩＤ'] in defaultExpValues.keys():
                 #Since exp scaling is removed by making the game think that the player level == enemy level the enemy exp in game is actually half of what the monster library shows as the base in game
                 #I'm multiplying by 2 here so the base exp that's being multiplied matches what the player sees in game
-                row['EXPMAX'] = int(defaultExpValues[row['キャラＩＤ']] / (parameters.expMult))
+                row['EXPMIN'] = int(defaultExpValues[row['キャラＩＤ']]['EXPMIN'] / (parameters.expMult))
+                row['EXPMAX'] = int(defaultExpValues[row['キャラＩＤ']]['EXPMAX'] / (parameters.expMult))
             newStatusFile.append(row)
         csvFile.close()
 

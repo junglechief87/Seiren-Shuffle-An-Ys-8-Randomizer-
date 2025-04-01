@@ -72,7 +72,6 @@ def rngPatcherMain(parameters):
     if parameters.goal == 'Release the Psyches':
         patchFile = patchFile + buildPsyches(shuffledLocations,parameters)
     patchFile = patchFile + bossScaling(playthroughAllProgression,parameters)
-    patchFile = patchFile + expMult(parameters)
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
     patchFile = patchFile + octusGoal(parameters)
@@ -86,6 +85,8 @@ def rngPatcherMain(parameters):
     with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string
         fileToPatch.write(patchFile)
         fileToPatch.close()
+
+    expMult(parameters)
 
 #function used for all non-person item function generation
 def genericItemMessage(location,vanillaScript,parameters):    
