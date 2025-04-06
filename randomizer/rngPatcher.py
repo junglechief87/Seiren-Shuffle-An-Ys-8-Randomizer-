@@ -38,6 +38,8 @@ def rngPatcherMain(parameters):
 
     if parameters.shuffleBgm:
         randomize_bgmtbl(parameters.seed)
+    else:
+        restore_original_bgm()
 
     shuffledLocations = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
