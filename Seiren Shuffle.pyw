@@ -1384,6 +1384,7 @@ class App(ctk.CTk):
         try:
             cleanChests()
             miscFixes()
+            AddWarpToFSCCrystal()
             self.show_notification("Patch Complete!")
         except Exception as e:
             messagebox.showerror("Error", f"Patching failed: {str(e)}")
