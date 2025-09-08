@@ -71,7 +71,7 @@ def rngPatcherMain(parameters):
 
     if parameters.goal == 'Release the Psyches':
         patchFile = patchFile + buildPsyches(shuffledLocations,parameters)
-    patchFile = patchFile + bossScaling(playthroughAllProgression,parameters)
+    patchFile, finalNonGoalBossLevel = patchFile + bossScaling(playthroughAllProgression,parameters)
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
     patchFile = patchFile + octusGoal(parameters)
@@ -81,7 +81,7 @@ def rngPatcherMain(parameters):
         #this is to restore the original values
         randomizeOctoBosses(parameters)
     patchFile = patchFile + goal(parameters)
-    patchFile = patchFile + endingHandler(parameters)
+    patchFile = patchFile + endingHandler(parameters,finalNonGoalBossLevel)
     with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string
         fileToPatch.write(patchFile)
         fileToPatch.close()
@@ -848,13 +848,38 @@ def octoBosses(parameters):
 #if we're doing both then the ending cutscene script instead calls origin.
 #if we're only doing origin then the theos start script calls the origin boss fight.
 #for Past Dana we only load the Io fight
-def endingHandler(parameters):
+def endingHandler(parameters, finalNonGoalBossLevel):
+    finalBossLevel = finalNonGoalBossLevel + 2
+
+    if parameters.charMode != 'Past Dana':
+        finalBossLevel = finalBossLevel + 2
+    if parameters.goal == 'Untouchable':
+        finalBossLevel = 80
+    if parameters.goal == 'release the psyches':
+        finalBossLevel = finalBossLevel + 2*parameters.numGoal
+    
+    finalBossLevelScript = """
+    function "finalBossLevel"
+    {
+        SetChrWorkGroup(B020, CWK_LV, {0})
+        SetChrWorkGroup(B021, CWK_LV, {0})
+        SetChrWorkGroup(B021IVY, CWK_LV, {0})
+        SetChrWorkGroup(B022, CWK_LV, {0})
+        SetChrWorkGroup(B023, CWK_LV, {0})
+        SetChrWorkGroup(B024, CWK_LV, {0})
+        SetChrWorkGroup(B025, CWK_LV, {0})
+        SetChrWorkGroup(B009, CWK_LV, {1})
+        SetChrWorkGroup(B010, CWK_LV, {1})
+        SetChrWorkGroup(B030, CWK_LV, {0})
+    }
+    """
+    finalBossLevelScript = finalBossLevelScript.format(str(finalBossLevel), str(finalBossLevel + 1))
 
     if parameters.charMode == 'Past Dana':
         ioFightLoad = """
     function "finalBoss"
     {
-        LoadArg("map/mp6569m/mp6569m.arg")
+        LoadArg("map/mp6569m/c.arg")
 	    EventCue("mp6569m:EV_RetryBoss")
     }
     """
@@ -950,7 +975,7 @@ def endingHandler(parameters):
     """
         ending1 = ending1.format(originPhase,package)
 
-    return theosStartScript + ending1
+    return theosStartScript + ending1 + finalBossLevelScript
 
 #This flag was original tripped by the chest event from the chest on the Docks of East Coast Cave. Now it has been moved to the note that was originally in that chest.
 def pirateShipDocks():
@@ -1621,17 +1646,65 @@ def buildPsyches(shuffledLocations, parameters):
     SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
     SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
 """
+    lowAccessReqs = ['Towering Coral Forest','Eroded Valley']
+    midAccessReqs = ['Schlamm Jungle','Mont Gendarme','Temple of the Great Tree']
+    highAccessReqs = ['Baja Tower','Pirate Ship Eleftheria','Archeozoic Chasm','Valley of Kings','Silent Tower']
+
     if 'Melaiduma' in [bossPool]:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(B170, CWK_LV, 80)\n'
-    if bossLoc1 != 'Octus Overlook':
+
+    if bossLoc1 in lowAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV , 30)\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 30)\n'
+    elif bossLoc1 in midAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV , 40)\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 40)\n'
+    elif bossLoc1 in highAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV , 60)\n'
-    if bossLoc2 != 'Octus Overlook':
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 60)\n'
+    else:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV , 70)\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 70)\n'
+
+    if bossLoc2 in lowAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV , 30)\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 30)\n'
+    elif bossLoc2 in midAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV , 40)\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 40)\n'
+    elif bossLoc2 in highAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV , 60)\n'
-    if bossLoc3 != 'Octus Overlook':
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 60)\n'
-    if bossLoc4 != 'Octus Overlook':
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 60)\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 60)\n'
+    else:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV , 70)\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 70)\n'
     
+    if bossLoc3 in lowAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 30)\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 30)\n'
+    elif bossLoc3 in midAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 40)\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 40)\n'
+    elif bossLoc3 in highAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 60)\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 60)\n'
+    else:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 70)\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 70)\n'
+
+    if bossLoc4 in lowAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 30)\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 30)\n'
+    elif bossLoc4 in midAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 40)\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 40)\n'
+    elif bossLoc4 in highAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 60)\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 60)\n'
+    else:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 70)\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 70)\n'
+
     return bossCheckpoint.format(bossFight1,bossFight2,bossFight3,bossFight4,
                                      bossLoc1,bossLoc2,bossLoc3,bossLoc4,wardenScaling,
                                      bossPool[0],bossPool[1],bossPool[2],bossPool[3],
@@ -1640,7 +1713,7 @@ def buildPsyches(shuffledLocations, parameters):
                                      bossReturn)
 
 def bossScaling(playthroughAllProgression,parameters):
-    bossLevels = [5,7,13,14,20,23,26,28,29,32,35,40,43,45,48,51,53,58,60,60,80]
+    bossLevels = [7,5,13,14,20,23,26,28,29,32,35,40,43,45,48,51,53,58,60,60,80]
     bossIDs = {'Byfteriza': 'M0111',
                'Avalodragil': 'B150',
                'Serpentus': 'B100',
@@ -1669,7 +1742,14 @@ def bossScaling(playthroughAllProgression,parameters):
         bossLevels.append(99) 
         bossIDs['Melaiduma'] = 'B170' 
 
-    # built out a list of IDs for us to track what bosses aren't in the pool
+    if not parameters.goal == 'Release the Psyches': # Make sure the Psyches' levels and IDs are in the pool if they aren't the goal
+        bossLevels.extend([67,70,73,75])
+        bossIDs['Psyche-Hydra'] = 'B112'
+        bossIDs['Psyche-Minos'] = 'B110'
+        bossIDs['Psyche-Nestor'] = 'B111'
+        bossIDs['Psyche-Ura'] = 'B008'
+
+    # build out a list of IDs for us to track what bosses aren't in the pool
     for boss in bossIDs.keys():
             remainingBosses.append(bossIDs.get(boss))
 
@@ -1678,7 +1758,9 @@ def bossScaling(playthroughAllProgression,parameters):
     for boss in playthroughAllProgression.bosses:
         if boss.mapCheckID in bossIDs.keys():
             bossID = bossIDs.get(boss.mapCheckID)
+            finalNonGoalBossLevel = bossLevels[0]
             finalBossLevels.append([remainingBosses.pop(remainingBosses.index(bossID)),bossLevels.pop(0)])
+            
     
     # bosses post goal have their levels shuffled from among the remaining levels in the boss level pool
     random.shuffle(bossLevels)
@@ -1706,7 +1788,7 @@ def bossScaling(playthroughAllProgression,parameters):
                         
     script = script + '\t}'
 
-    return script + fscBosses
+    return script + fscBosses, finalNonGoalBossLevel
 
 
         

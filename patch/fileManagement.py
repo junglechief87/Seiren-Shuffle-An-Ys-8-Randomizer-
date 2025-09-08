@@ -13,7 +13,7 @@ folders = ['script/',
 
 def copyOriginalGameFiles():
     try:
-        shutil.copytree(src=parent_directory, dst=copiedFiles, ignore=shutil.ignore_patterns('Seiren Shuffle.exe','Original Game Files'), dirs_exist_ok=False)
+        shutil.copytree(src=parent_directory, dst=copiedFiles, ignore=shutil.ignore_patterns('Seiren Shuffle.exe','Original Game Files','seirenShuffleSettings.json'), dirs_exist_ok=False)
     except:
         """do nothing if the files already exist"""
 

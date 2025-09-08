@@ -705,7 +705,7 @@ def checkTempleOfGreatTree(location, access, parameters):
         'Temple Boss Arena': lambda: (
             (
             location.mapCheckID == 'Psyches' and 
-            battleLogic(340, access, parameters) and 
+            battleLogic(240, access, parameters) and 
             access.canDefeat('Brachion')
             ) or 
             (
@@ -808,7 +808,7 @@ def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
              access.canDefeat('Master Kong Dana')
             ) or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-             battleLogic(340, access, parameters))
+             battleLogic(240, access, parameters))
             ),
         'Mishy Rewards': lambda: mishyRewards(location,access) # Moved here because it was making the logic think food was required for gendarme access
     }
@@ -841,7 +841,7 @@ def checkMontGendarme(location, access, parameters):
              access.canDefeat('Master Kong Dana') and 
              access.canDefeat('Giasburn')) or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-             battleLogic(340, access, parameters) and access.canDefeat('Giasburn'))
+             battleLogic(240, access, parameters) and access.canDefeat('Giasburn'))
              ),
         'Mishy Rewards': lambda: access.canDefeat('Avalodragil 2') and mishyRewards(location,access)
     }
@@ -912,7 +912,7 @@ def checkSchlammJungle(location, access, parameters):
             battleLogic(100, access, parameters, scaled=True) and access.canDefeat('Magamandra') and access.canSwampWalk() and (
                 (location.mapCheckID != 'Psyches') or
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
-                 battleLogic(340, access, parameters) and access.canDefeat('Laspisus'))
+                 battleLogic(240, access, parameters) and access.canDefeat('Laspisus'))
             )
         )
     }
@@ -942,7 +942,7 @@ def schlammJungleFromField(location, access, parameters):
             battleLogic(100, access, parameters, scaled=True) and access.hasDina() and access.canSwampWalk() and (
                 (location.mapCheckID != 'Psyches') or
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
-                 battleLogic(340, access, parameters) and access.canDefeat('Laspisus'))
+                 battleLogic(240, access, parameters) and access.canDefeat('Laspisus'))
             )
         )
     }
@@ -1043,7 +1043,7 @@ def checkErodedValley(location, access, parameters):
             (access.canDefeat('Lonbrigius') or access.hasDiscovery('Beached Remains')) and (
                 (location.mapCheckID != 'Psyches') or
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(340, access, parameters) and 
+                 battleLogic(140, access, parameters) and 
                  access.canDefeat('Gargantula')
                 )
             )
@@ -1149,7 +1149,7 @@ def checkToweringCoralForest(location, access, parameters):
             battleLogic(30, access, parameters, scaled=True) and access.canClimb() and (
                 location.mapCheckID != 'Psyches' or 
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(340, access, parameters) and access.canDefeat('Clareon'))
+                 battleLogic(140, access, parameters) and access.canDefeat('Clareon'))
             )
         )
     }
@@ -1175,7 +1175,7 @@ def coralForestFromRainbowFalls(location, access, parameters):
             battleLogic(30, access, parameters, scaled=True) and access.canClimb() and (
                 location.mapCheckID != 'Psyches' or 
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(340, access, parameters) and access.canDefeat('Clareon'))
+                 battleLogic(140, access, parameters) and access.canDefeat('Clareon'))
             )
         )
     }
@@ -1208,7 +1208,7 @@ def coralForestFromRoaringSeashore(location, access, parameters):
         'End': lambda: True,
         'Boss Arena': lambda: (
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(340, access, parameters))
+                 battleLogic(140, access, parameters))
             )
     }
     return location_checks.get(location.locName, lambda: False)()
