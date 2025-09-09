@@ -1341,18 +1341,66 @@ class App(ctk.CTk):
 
     def restore_files_callback(self):
         try:
+            progress = ctk.CTkToplevel(self)
+            progress.title("Patching Progress")
+            progress.geometry("280x140")
+            progress.grab_set()  # Make popup modal
+            progress.after(201, lambda: progress.iconbitmap(ICON_PATH))
+            progress.wait_visibility()
+            progress.lift()  # Bring to front
+
+            progressLabel = ctk.CTkLabel(progress, text="Patching in progress, please wait...")
+            progressLabel.grid(row=0, column=0, padx=10, pady=10)
+            progressBar = ctk.CTkProgressBar(progress, mode="determinate", determinate_speed = 50)
+            progressBar.grid(row=1, column=0, padx=10, pady=10, sticky="we")
+            self.update()
+
+            progressBar.set(0)
+            self.update()
             restoreOriginalGameFiles()
+            progressBar.step()
+            self.update()
+            self.show_notification("Restore Complete!")
+
         except Exception as e:
             messagebox.showerror("Error", f"Backup files don't exist: {str(e)}")
 
     def patch_files_callback(self):
         try:
+            progress = ctk.CTkToplevel(self)
+            progress.title("Patching Progress")
+            progress.geometry("280x140")
+            progress.grab_set()  # Make popup modal
+            progress.after(201, lambda: progress.iconbitmap(ICON_PATH))
+            progress.wait_visibility()
+            progress.lift()  # Bring to front
+
+            progressLabel = ctk.CTkLabel(progress, text="Patching in progress, please wait...")
+            progressLabel.grid(row=0, column=0, padx=10, pady=10)
+            progressBar = ctk.CTkProgressBar(progress, mode="determinate", determinate_speed = 10)
+            progressBar.grid(row=1, column=0, padx=10, pady=10, sticky="we")
+            self.update()
+
+            progressBar.set(0)
+            self.update()
             copyOriginalGameFiles()
+            progressBar.step()
+            self.update()
             downloadFiles()
+            progressBar.step()
+            self.update()
             cleanChests()
+            progressBar.step()
+            self.update()
             makeResourceDropsGuaraneteed()
+            progressBar.step()
+            self.update()
             miscFixes()
+            progressBar.step()
+            self.update()
+
             self.show_notification("Patch Complete!")
+
         except Exception as e:
             messagebox.showerror("Error", f"Patching failed: {str(e)}")
 
