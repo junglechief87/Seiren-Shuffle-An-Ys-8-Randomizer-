@@ -383,7 +383,7 @@ class PacingModifiersFrame(ctk.CTkFrame):
 
         # Extra Flames Stones Checkbox
         self.ex_flame_stones_var = ctk.BooleanVar(value=True)
-        self.ex_flame_stones_checkbox = ctk.CTkCheckBox(self, text="Extra Flames Stones", variable=self.ex_flame_stones_var)
+        self.ex_flame_stones_checkbox = ctk.CTkCheckBox(self, text="Extra Flame Stones", variable=self.ex_flame_stones_var)
         self.ex_flame_stones_checkbox.grid(row=4, column=1, padx=5, pady=5, sticky="w")
 
         # Recipes Come w/ Ingredients Checkbox
@@ -1361,6 +1361,7 @@ class App(ctk.CTk):
             progressBar.step()
             self.update()
             self.show_notification("Restore Complete!")
+            progress.destroy()
 
         except Exception as e:
             messagebox.showerror("Error", f"Backup files don't exist: {str(e)}")
@@ -1382,24 +1383,29 @@ class App(ctk.CTk):
             self.update()
 
             progressBar.set(0)
+            progressLabel.configure(text="Backing up original game files...")
             self.update()
             copyOriginalGameFiles()
             progressBar.step()
+            progressLabel.configure(text="Downloading files...")
             self.update()
             downloadFiles()
             progressBar.step()
+            progressLabel.configure(text="Cleaning chests...")
             self.update()
             cleanChests()
             progressBar.step()
+            progressLabel.configure(text="Patching game files...")
             self.update()
             makeResourceDropsGuaraneteed()
             progressBar.step()
+            progressLabel.configure(text="Final patches...")
             self.update()
             miscFixes()
             progressBar.step()
             self.update()
-
             self.show_notification("Patch Complete!")
+            progress.destroy()
 
         except Exception as e:
             messagebox.showerror("Error", f"Patching failed: {str(e)}")

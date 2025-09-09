@@ -71,7 +71,10 @@ def rngPatcherMain(parameters):
 
     if parameters.goal == 'Release the Psyches':
         patchFile = patchFile + buildPsyches(shuffledLocations,parameters)
-    patchFile, finalNonGoalBossLevel = patchFile + bossScaling(playthroughAllProgression,parameters)
+    bossScalingScript, finalNonGoalBossLevel = bossScaling(playthroughAllProgression,parameters)
+    print(finalNonGoalBossLevel)
+    print(bossScalingScript)
+    patchFile = patchFile + bossScalingScript
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
     patchFile = patchFile + octusGoal(parameters)
@@ -860,7 +863,7 @@ def endingHandler(parameters, finalNonGoalBossLevel):
     
     finalBossLevelScript = """
     function "finalBossLevel"
-    {
+    {{
         SetChrWorkGroup(B020, CWK_LV, {0})
         SetChrWorkGroup(B021, CWK_LV, {0})
         SetChrWorkGroup(B021IVY, CWK_LV, {0})
@@ -871,7 +874,7 @@ def endingHandler(parameters, finalNonGoalBossLevel):
         SetChrWorkGroup(B009, CWK_LV, {1})
         SetChrWorkGroup(B010, CWK_LV, {1})
         SetChrWorkGroup(B030, CWK_LV, {0})
-    }
+    }}
     """
     finalBossLevelScript = finalBossLevelScript.format(str(finalBossLevel), str(finalBossLevel + 1))
 
@@ -883,7 +886,7 @@ def endingHandler(parameters, finalNonGoalBossLevel):
 	    EventCue("mp6569m:EV_RetryBoss")
     }
     """
-        return ioFightLoad
+        return ioFightLoad + finalBossLevelScript
     
     if parameters.theosPhase == 'First':
         theosPhase = ''
