@@ -356,7 +356,7 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.experience_multiplier_scale = ctk.CTkSlider(self)
         self.experience_multiplier_scale.grid(row=1, column=1, padx=5, pady=5, sticky="ew", columnspan=3)
         self.experience_multiplier_scale.configure(from_=0, to=10, number_of_steps=20, command=self.update_experience_multiplier)
-        self.experience_multiplier_scale.set(4.0)
+        self.experience_multiplier_scale.set(3.0)
 
         self.experience_multiplier_value = ctk.CTkLabel(self, text="4.0", width=25)
         self.experience_multiplier_value.grid(row=1, column=4, padx=(0, 5), pady=5, sticky="w")

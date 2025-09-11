@@ -266,7 +266,17 @@ def newExpMult(parameters):
                         'SAHAD':{'EXPMIN':105, 'EXPMAX':550000},
                         'HUMMEL':{'EXPMIN':90, 'EXPMAX':420000},
                         'RICOTTA':{'EXPMIN':97, 'EXPMAX':480000},
-                        'DANA':{'EXPMIN':102, 'EXPMAX':520000}}
+                        'DANA':{'EXPMIN':102, 'EXPMAX':520000},}
+    
+    monsterNestExpValues = {'G0001':{'EXPMIN':300, 'EXPMAX':300},
+                        'G0002':{'EXPMIN':310, 'EXPMAX':310},
+                        'G0003':{'EXPMIN':320, 'EXPMAX':320},
+                        'G0004':{'EXPMIN':330, 'EXPMAX':330},
+                        'G0005':{'EXPMIN':340, 'EXPMAX':340},
+                        'G0006':{'EXPMIN':350, 'EXPMAX':350},
+                        'G0007':{'EXPMIN':360, 'EXPMAX':360},
+                        'G0008':{'EXPMIN':370, 'EXPMAX':370},
+                        'G0009':{'EXPMIN':380, 'EXPMAX':380},}
 
     with open (statusFileLoc, 'r', encoding='utf-8') as csvFile:
         statusFile = csv.DictReader(csvFile,delimiter='\t',lineterminator='\n',strict=True)
@@ -278,10 +288,11 @@ def newExpMult(parameters):
             if len(fieldNames) == 0:
                 fieldNames = statusFile.fieldnames
             if row['キャラＩＤ'] in defaultExpValues.keys():
-                #Since exp scaling is removed by making the game think that the player level == enemy level the enemy exp in game is actually half of what the monster library shows as the base in game
-                #I'm multiplying by 2 here so the base exp that's being multiplied matches what the player sees in game
                 row['EXPMIN'] = int(defaultExpValues[row['キャラＩＤ']]['EXPMIN'] / (parameters.expMult))
                 row['EXPMAX'] = int(defaultExpValues[row['キャラＩＤ']]['EXPMAX'] / (parameters.expMult))
+            if row['キャラＩＤ'] in monsterNestExpValues.keys():
+                row['EXPMIN'] = int(monsterNestExpValues[row['キャラＩＤ']]['EXPMIN'])
+                row['EXPMAX'] = int(monsterNestExpValues[row['キャラＩＤ']]['EXPMAX'])
             newStatusFile.append(row)
         csvFile.close()
 

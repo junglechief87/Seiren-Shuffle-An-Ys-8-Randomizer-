@@ -72,14 +72,12 @@ def rngPatcherMain(parameters):
     if parameters.goal == 'Release the Psyches':
         patchFile = patchFile + buildPsyches(shuffledLocations,parameters)
     bossScalingScript, finalNonGoalBossLevel = bossScaling(playthroughAllProgression,parameters)
-    print(finalNonGoalBossLevel)
-    print(bossScalingScript)
     patchFile = patchFile + bossScalingScript
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
     patchFile = patchFile + octusGoal(parameters)
     if parameters.openOctusPaths:
-        patchFile = patchFile + octoBosses(parameters)
+        patchFile = patchFile + octoBosses(parameters, finalNonGoalBossLevel)
     else:
         #this is to restore the original values
         randomizeOctoBosses(parameters)
@@ -832,14 +830,17 @@ function "goal"
 """
     return selectionSphereAccess
 
-def octoBosses(parameters):
+def octoBosses(parameters, finalNonGoalBossLevel):
     random.seed(parameters.seed)
     octoBossAliases = ['"ev_mons01"','"ev_mons02"','"ev_mons03"','"ev_mons04"','"ev_mons05"','"ev_mons06"','"ev_mons07"','"ev_mons08"','"ev_mons09"','"ev_mons10"']
-
+    HPmod = round(finalNonGoalBossLevel/80,2)
     script = '\tfunction "setOctoBossLevels"\n\t{\n'
     for boss in octoBossAliases:
         bossLevel = random.randrange(65,75)
         script = script + '\t\tSetLevel(' + boss + ', ' + str(bossLevel) + ')\n'
+        script = script + '\t\SetChrWork(' + boss + ', CWK_MAXHP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP] * '+ HPmod +'))\n'
+        script = script + '\t\SetChrWork(' + boss + ', CWK_HP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP]))\n'
+        script = script + '\t\SetChrWorkGroup(' + boss + ', CWK_EXPMUL, 1.5f)\n'
     script = script + '\t}\n'
 
     randomizeOctoBosses(parameters)
@@ -1286,7 +1287,7 @@ def buildPsyches(shuffledLocations, parameters):
                'Minos': ['LoadArg("map/mp6306b/mp6306b.arg")', 'EventCue("mp6306b:EV_RetryBoss")', 'MN_D_MP6306b', 'B110'],
                'Nestor': ['LoadArg("map/mp6307b/mp6307b.arg")', 'EventCue("mp6307b:EV_RetryBoss")', 'MN_D_MP6307b', 'B111'],
                'Ura': ['LoadArg("map/mp6308b/mp6308b.arg")', 'EventCue("mp6308b:EV_RetryBoss")', 'MN_D_MP6308b', 'B008'],
-               'Le-Erythros': ['LoadArg("map/mp6409b/mp6409b.arg")', 'EventCue("mp6409b:EV_RetryBoss")', 'MN_D_MP6409B', 'b012'],
+               'Le-Erythros': ['LoadArg("map/mp6409b/mp6409b.arg")', 'EventCue("mp6409b:EV_RetryBoss")', 'MN_D_MP6409B', 'B012'],
                'Grazios': ['LoadArg("map/mp6519m/mp6519m.arg")', 'EventCue("mp6519m:EV_RetryBoss")', 'MN_D_MP6519M','B161'],
                'Nebritia': ['LoadArg("map/mp6529m/mp6529m.arg")', 'EventCue("mp6529m:EV_RetryBoss")', 'MN_D_MP6529M','B162'],
                'Argura': ['LoadArg("map/mp6539m/mp6539m.arg")', 'EventCue("mp6539m:EV_RetryBoss")', 'MN_D_MP6539M', 'B163'],
@@ -1657,11 +1658,11 @@ def buildPsyches(shuffledLocations, parameters):
         wardenScaling = wardenScaling + 'SetChrWorkGroup(B170, CWK_LV, 80)\n'
 
     if bossLoc1 in lowAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV , 30)\n'
-        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 30)\n'
-    elif bossLoc1 in midAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV , 40)\n'
         if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 40)\n'
+    elif bossLoc1 in midAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV , 50)\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 50)\n'
     elif bossLoc1 in highAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV , 60)\n'
         if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 60)\n'
@@ -1670,11 +1671,11 @@ def buildPsyches(shuffledLocations, parameters):
         if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 70)\n'
 
     if bossLoc2 in lowAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV , 30)\n'
-        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 30)\n'
-    elif bossLoc2 in midAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV , 40)\n'
         if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 40)\n'
+    elif bossLoc2 in midAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV , 50)\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 50)\n'
     elif bossLoc2 in highAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV , 60)\n'
         if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 60)\n'
@@ -1683,11 +1684,11 @@ def buildPsyches(shuffledLocations, parameters):
         if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 70)\n'
     
     if bossLoc3 in lowAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 30)\n'
-        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 30)\n'
-    elif bossLoc3 in midAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 40)\n'
         if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 40)\n'
+    elif bossLoc3 in midAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 50)\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 50)\n'
     elif bossLoc3 in highAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV , 60)\n'
         if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 60)\n'
@@ -1696,11 +1697,11 @@ def buildPsyches(shuffledLocations, parameters):
         if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 70)\n'
 
     if bossLoc4 in lowAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 30)\n'
-        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 30)\n'
-    elif bossLoc4 in midAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 40)\n'
         if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 40)\n'
+    elif bossLoc4 in midAccessReqs:
+        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 50)\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 50)\n'
     elif bossLoc4 in highAccessReqs:
         wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV , 60)\n'
         if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, 60)\n'

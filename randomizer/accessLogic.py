@@ -1556,19 +1556,19 @@ def battleLogic(requiredStr,access,parameters,**kwargs):
 
 
         if requiredStr >= 350:
-            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(6) and access.hasStrRecipe():
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(6) and quickGrind(access,parameters) and access.hasStrRecipe():
                 return True
             else: return False
         elif requiredStr >= 300:
-            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(5) and access.hasStrRecipe():
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(5) and quickGrind(access,parameters) and access.hasStrRecipe():
                 return True
             else: return False
         elif requiredStr >= 250:
-            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(3):
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(3) and quickGrind(access,parameters):
                 return True
             else: return False
         elif requiredStr >= 230:
-            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2) and access.hasFlameStones(3):
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2) and access.hasFlameStones(3) and quickGrind(access,parameters):
                 return True
             else: return False
         elif requiredStr >= 200:
@@ -1585,6 +1585,10 @@ def battleLogic(requiredStr,access,parameters,**kwargs):
             else: return False
 
     else: return True #if battle logic isn't on then we skip everything and return true for access logic
+
+def quickGrind(access,parameters):
+    return (access.memoCheck(2) or ((access.canClimb() and southSideOpen(access, parameters) and access.past1()) or (access.canDefeat('Giasburn') and access.canClimb())) or \
+                        (coastNorthSideAccess(access, parameters) and access.canSeeDark()) or checkPangaiaPlainsNight(location=None,access=access,parameters=parameters))
 
 def materialAccess(material,access,parameters):
     match material:
