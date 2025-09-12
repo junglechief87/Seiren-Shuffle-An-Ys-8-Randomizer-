@@ -227,10 +227,13 @@ def pastDanaFixes(enable):
 def makeResourceDropsGuaraneteed():
     resourcePointDropTable = parent_directory + "/text/itempt.tbb"
     makeDropsGuaranteed = readFileIntoBuffer(resourcePointDropTable)
-    resourceStrings = ['ICON3D_MT_N1_STONE','ICON3D_MT_N1_WOOD','ICON3D_MT_N1_FLOWER']
+    resourceStrings = ['ICON3D_MT_N1_STONE','ICON3D_MT_N1_WOOD','ICON3D_MT_N1_FLOWER', 'ICON3D_US_MANGO','ICON3D_US_BERRY','ICON3D_US_DRAGONFRUIT']
     viableRewards = {'ICON3D_MT_N1_STONE':['ICON3D_MT_N2_STONE','ICON3D_MT_N3_STONE','ICON3D_MT_N4_STONE','ICON3D_MT_R2_STONE','ICON3D_MT_R4_STONE'],
                      'ICON3D_MT_N1_WOOD': ['ICON3D_MT_N2_WOOD','ICON3D_MT_N3_WOOD','ICON3D_MT_N4_WOOD','ICON3D_MT_R2_WOOD','ICON3D_MT_R4_WOOD'],
-                     'ICON3D_MT_N1_FLOWER': ['ICON3D_MT_N2_FLOWER','ICON3D_MT_N3_FLOWER','ICON3D_MT_N4_FLOWER','ICON3D_MT_R1_FLOWER','ICON3D_MT_R3_FLOWER','ICON3D_MT_R5_FLOWER']}
+                     'ICON3D_MT_N1_FLOWER': ['ICON3D_MT_N2_FLOWER','ICON3D_MT_N3_FLOWER','ICON3D_MT_N4_FLOWER','ICON3D_MT_R1_FLOWER','ICON3D_MT_R3_FLOWER','ICON3D_MT_R5_FLOWER'],
+                     'ICON3D_US_MANGO': ['ICON3D_US_MANGO_S'],
+                     'ICON3D_US_BERRY': ['ICON3D_US_BERRY_S'],
+                     'ICON3D_US_DRAGONFRUIT': ['ICON3D_US_DRAGONFRUIT_S']}
     
     for resourceString in resourceStrings:
         currentPos = 1263

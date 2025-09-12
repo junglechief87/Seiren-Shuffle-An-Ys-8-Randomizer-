@@ -1342,14 +1342,14 @@ class App(ctk.CTk):
     def restore_files_callback(self):
         try:
             progress = ctk.CTkToplevel(self)
-            progress.title("Patching Progress")
-            progress.geometry("280x140")
+            progress.title("Restore Progress")
+            progress.geometry("240x140")
             progress.grab_set()  # Make popup modal
             progress.after(201, lambda: progress.iconbitmap(ICON_PATH))
             progress.wait_visibility()
             progress.lift()  # Bring to front
 
-            progressLabel = ctk.CTkLabel(progress, text="Patching in progress, please wait...")
+            progressLabel = ctk.CTkLabel(progress, text="Restore in progress, please wait...")
             progressLabel.grid(row=0, column=0, padx=10, pady=10)
             progressBar = ctk.CTkProgressBar(progress, mode="determinate", determinate_speed = 50)
             progressBar.grid(row=1, column=0, padx=10, pady=10, sticky="we")
@@ -1370,7 +1370,7 @@ class App(ctk.CTk):
         try:
             progress = ctk.CTkToplevel(self)
             progress.title("Patching Progress")
-            progress.geometry("280x140")
+            progress.geometry("240x140")
             progress.grab_set()  # Make popup modal
             progress.after(201, lambda: progress.iconbitmap(ICON_PATH))
             progress.wait_visibility()
