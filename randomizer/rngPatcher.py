@@ -834,13 +834,14 @@ def octoBosses(parameters, finalNonGoalBossLevel):
     random.seed(parameters.seed)
     octoBossAliases = ['"ev_mons01"','"ev_mons02"','"ev_mons03"','"ev_mons04"','"ev_mons05"','"ev_mons06"','"ev_mons07"','"ev_mons08"','"ev_mons09"','"ev_mons10"']
     HPmod = round(finalNonGoalBossLevel/80,2)
+    EXPMod = round((140)/finalNonGoalBossLevel,1)
     script = '\tfunction "setOctoBossLevels"\n\t{\n'
     for boss in octoBossAliases:
         bossLevel = random.randrange(65,75)
         script = script + '\t\tSetLevel(' + boss + ', ' + str(bossLevel) + ')\n'
-        script = script + '\t\SetChrWork(' + boss + ', CWK_MAXHP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP] * '+ HPmod +'))\n'
-        script = script + '\t\SetChrWork(' + boss + ', CWK_HP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP]))\n'
-        script = script + '\t\SetChrWorkGroup(' + boss + ', CWK_EXPMUL, 1.5f)\n'
+        script = script + '\t\tSetChrWork(' + boss + ', CWK_MAXHP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+        script = script + '\t\tSetChrWork(' + boss + ', CWK_HP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP]))\n'
+        script = script + '\t\tSetChrWorkGroup(' + boss + ', CWK_EXPMUL, ' + EXPMod + 'f)\n'
     script = script + '\t}\n'
 
     randomizeOctoBosses(parameters)
@@ -1326,8 +1327,8 @@ def buildPsyches(shuffledLocations, parameters):
             bossLoc5 = location.locRegion
 
     wardenScaling = """
-    SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
-    SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
+        SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
+        SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
 """
     lowAccessReqs = ['Towering Coral Forest','Eroded Valley']
     midAccessReqs = ['Schlamm Jungle','Mont Gendarme','Temple of the Great Tree']
@@ -1342,73 +1343,73 @@ def buildPsyches(shuffledLocations, parameters):
         lowLevelWarden = lowLevelWarden - 5
         midLevelWarden = midLevelWarden - 5
         highLevelWarden = highLevelWarden - 5
-        maxLevelRange = maxLevelRange - 5
+        maxLevelRange = maxLevelRange - 5 
 
     if bossLoc1 in lowAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + lowLevelWarden + ')\n'
-        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + lowLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
     elif bossLoc1 in midAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + midLevelWarden + ')\n'
-        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + midLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
     elif bossLoc1 in highAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + highLevelWarden + ')\n'
-        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + highLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
     else:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + maxLevelRange + ')\n'
-        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + maxLevelRange + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
 
     if bossLoc2 in lowAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + lowLevelWarden + ')\n'
-        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + lowLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
     elif bossLoc2 in midAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + midLevelWarden + ')\n'
-        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + midLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
     elif bossLoc2 in highAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + highLevelWarden + ')\n'
-        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + highLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
     else:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + maxLevelRange + ')\n'
-        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + maxLevelRange + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
     
     if bossLoc3 in lowAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + lowLevelWarden + ')\n'
-        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + lowLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
     elif bossLoc3 in midAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + midLevelWarden + ')\n'
-        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + midLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
     elif bossLoc3 in highAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + highLevelWarden + ')\n'
-        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + highLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
     else:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + maxLevelRange + ')\n'
-        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + maxLevelRange + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
 
     if bossLoc4 in lowAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + lowLevelWarden + ')\n'
-        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + lowLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
     elif bossLoc4 in midAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + midLevelWarden + ')\n'
-        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + midLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
     elif bossLoc4 in highAccessReqs:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + highLevelWarden + ')\n'
-        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + highLevelWarden + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
     else:
-        wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + maxLevelRange + ')\n'
-        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + maxLevelRange + ')\n'
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
 
     if parameters.charMode == 'Past Dana':
         if bossLoc5 in lowAccessReqs:
-            wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + lowLevelWarden + ')\n'
-            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + lowLevelWarden + ')\n'
+            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
         elif bossLoc5 in midAccessReqs:
-            wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + midLevelWarden + ')\n'
-            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + midLevelWarden + ')\n'
+            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
         elif bossLoc5 in highAccessReqs:
-            wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + highLevelWarden + ')\n'
-            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + highLevelWarden + ')\n'
+            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
         else:
-            wardenScaling = wardenScaling + 'SetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + maxLevelRange + ')\n'
-            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + 'SetChrWorkGroup(B008BIT, CWK_LV, ' + maxLevelRange + ')\n'
+            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
 
 
     ### Past Dana Mode Bosses
@@ -1542,8 +1543,13 @@ def buildPsyches(shuffledLocations, parameters):
     
     }}
 
+    function "wardenScaling"
+    {{
+        {26} 
+    }}
+    
     {25}
-    {26}
+
 """
         bossReturn = """
         function "bossReturn"

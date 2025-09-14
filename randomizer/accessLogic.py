@@ -972,9 +972,9 @@ def checkUndergroundWaterVein(location, access, parameters):
     location_checks = {
         'Lapis Mineral Vein': lambda: True,
         'Submerged Area': lambda: (
-            (location.mapCheckID in ['TBOX01','TBOX02'] and access.canUnderwater()) or
+            (location.mapCheckID in ['TBOX01','TBOX03'] and access.canUnderwater()) or
             (location.mapCheckID == 'Driftage' and access.canUnderwater() and access.canClimb()) or
-            (location.mapCheckID not in ['TBOX01','TBOX02','Driftage'])
+            (location.mapCheckID not in ['TBOX01','TBOX03','Driftage'])
         ),
     }
     return location_checks.get(location.locName, lambda: False)()
@@ -1245,10 +1245,10 @@ def checkCalmInlet(location, access, parameters):
 
 def checkIntercept(location, access, parameters):
     stage_logic = {
-        'Stage 2': lambda: access.memoCheck(1) and battleLogic(30, access, parameters),
-        'Stage 3': lambda: access.memoCheck(1) and battleLogic(75, access, parameters),
-        'Stage 5': lambda: access.memoCheck(1) and battleLogic(120, access, parameters),
-        'Stage 7': lambda: access.memoCheck(1) and access.hasFlameStones(3),
+        'Stage 2': lambda: access.memoCheck(1) and (battleLogic(30, access, parameters) and access.partySize()) or battleLogic(80, access, parameters),
+        'Stage 3': lambda: access.memoCheck(1) and (battleLogic(75, access, parameters) and access.partySize()) or battleLogic(110, access, parameters),
+        'Stage 5': lambda: access.memoCheck(1) and (battleLogic(120, access, parameters) and access.partySize()) or battleLogic(140, access, parameters),
+        'Stage 7': lambda: access.memoCheck(1) and access.hasFlameStones(3) and access.partySize(2),
         'Stage 9': lambda: access.memoCheck(3) and access.hasFlameStones(3) and battleLogic(200, access, parameters),
     }
 

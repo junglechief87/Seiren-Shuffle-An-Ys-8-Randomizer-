@@ -239,13 +239,18 @@ def makeResourceDropsGuaraneteed():
         currentPos = 1263
         while makeDropsGuaranteed.find(resourceString.encode('utf-8'), currentPos) != -1:
             bottomTierResourceIndex = makeDropsGuaranteed.find(resourceString.encode('utf-8'), currentPos)
+
             stringSize = len(resourceString)
             currentPos = currentPos + stringSize
             
             # process higher tier rewards values
             higherTierResourceOffset = makeDropsGuaranteed[bottomTierResourceIndex+stringSize:].find('ICON3D_'.encode('utf-8')) + stringSize
             higherTierResourceIndex = higherTierResourceOffset + bottomTierResourceIndex
-            higherTierResourceValue = makeDropsGuaranteed[higherTierResourceIndex:higherTierResourceIndex+stringSize]
+
+            if resourceString in ['ICON3D_US_MANGO','ICON3D_US_BERRY','ICON3D_US_DRAGONFRUIT']:
+                higherTierResourceValue = makeDropsGuaranteed[higherTierResourceIndex:higherTierResourceIndex+stringSize+2]
+            else:
+                higherTierResourceValue = makeDropsGuaranteed[higherTierResourceIndex:higherTierResourceIndex+stringSize]
 
             # process rare rewards values
             rareResourceOffset = makeDropsGuaranteed[higherTierResourceIndex+stringSize:].find('ICON3D_'.encode('utf-8')) + stringSize
@@ -254,12 +259,14 @@ def makeResourceDropsGuaraneteed():
             
             # write new values and make adjustments for special cases
             if higherTierResourceValue.decode('utf-8') in viableRewards[resourceString]:
-                makeDropsGuaranteed[bottomTierResourceIndex:bottomTierResourceIndex+stringSize] = higherTierResourceValue
+                if resourceString in ['ICON3D_US_MANGO','ICON3D_US_BERRY','ICON3D_US_DRAGONFRUIT']:
+                    makeDropsGuaranteed[higherTierResourceIndex+stringSize+2:higherTierResourceIndex+stringSize+5] = [0x00,0x39,0x39] # maximize odds since we can't change file size
+                else:
+                    makeDropsGuaranteed[bottomTierResourceIndex:bottomTierResourceIndex+stringSize] = higherTierResourceValue
                 
             if rareResourceValue.decode('utf-8') in viableRewards[resourceString]:
                 makeDropsGuaranteed[higherTierResourceIndex:higherTierResourceIndex+stringSize] = rareResourceValue
                 
-
     writeBufferIntoFile(resourcePointDropTable,makeDropsGuaranteed)
 
 def newExpMult(parameters):
