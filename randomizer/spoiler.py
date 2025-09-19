@@ -85,13 +85,21 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         else:
             spoilerLog.write("\t" + str(char) + ": False\n")
     
+    locationsSorted = sorted(shuffledLocations, key=lambda x: (x.locRegion, x.locName, x.mapCheckID))
+    spoilerLog.write("\n")
+    spoilerLog.write("Entrance Shuffle: " + str(parameters.entranceShuffle) + "\n")
+
+    for location in locationsSorted:
+        if location.entrance or location.exit:
+            location.writeSpoiler(spoilerLog)
+
     spoilerLog.write("\n")
     spoilerLog.write("Locations:\n")
 
-    locationsSorted = sorted(shuffledLocations, key=lambda x: (x.locRegion, x.locName, x.mapCheckID))
     for location in locationsSorted:
         #location.printSpoiler()
-        location.writeSpoiler(spoilerLog)
+        if not location.entrance and not location.exit:
+            location.writeSpoiler(spoilerLog)
 
     playthroughAllProgression = classr.playthrough()
 

@@ -21,7 +21,7 @@ class playthrough:
       self.bosses.append(location) 
 
 class location:
-  def __init__(self,locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill,landmark):
+  def __init__(self,locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill,landmark,entrance,exit):
     self.locID = locID
     self.mapID = mapID
     self.locRegion = locRegion
@@ -39,6 +39,8 @@ class location:
     self.script = script
     self.skill = skill
     self.landmark = landmark
+    self.entrance = entrance
+    self.exit = exit
 
   def printSpoiler(self):
     print("\t" + self.locRegion + '-' + self.locName + '(' + self.mapCheckID + '): ' + self.itemName + '(' + str(self.itemID) + ')x' + str(self.quantity))
@@ -74,6 +76,8 @@ class inventory(location):
     self.item = location.item
     self.skill = location.skill
     self.landmark = location.landmark
+    self.entrance = location.entrance
+    self.exit = location.exit
 
 class access:
   def __init__(self, inventoryObjects, parameters):
@@ -429,16 +433,19 @@ class access:
     return False
    
   def canDefeat(self,boss):
-    if boss != 'Octus Enterance':
-      boss = boss + ' Defeated'
-    else:
-      boss = 'Octus Entered'
+    boss = boss + ' Defeated'
 
     for item in self.inventoryObjects:
       if item.itemName == boss:
         return True
     return False
   
+  def canEnter(self,dungeonEntrance):
+    for item in self.inventoryObjects:
+      if item.itemName == dungeonEntrance:
+        return True
+    return False
+
   def hasSkyPsyches(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Psyches of the Sky Era':
@@ -607,6 +614,7 @@ class guiInput:
     self.shuffleBgm = None
     self.essenceKeySanity = None
     self.discoverySanity = None
+    self.entranceShuffle = None
     self.hint = None
     self.adventuringGearHints = None
     self.castawayHints = None
@@ -647,11 +655,13 @@ class guiInput:
     self.numOctus = int(numOctus)
     self.charMode = charMode
     
-  def getShuffleLocations(self, party,crew,skills,discoverySanity):
+  def getShuffleLocations(self, party,crew,skills,discoverySanity,entranceShuffle):
     self.shuffleParty = party
     self.shuffleCrew = crew
     self.shuffleSkills = skills
     self.discoverySanity = discoverySanity
+    self.entranceShuffle = entranceShuffle
+
   
   def getProgressionMods(self, jewels,fish,disc,map,food,dogiRewards,mkRewards,silvia,Mephorash):
     self.jewelTrades = jewels

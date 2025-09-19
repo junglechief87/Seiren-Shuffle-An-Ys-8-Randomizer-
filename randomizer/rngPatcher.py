@@ -841,7 +841,7 @@ def octoBosses(parameters, finalNonGoalBossLevel):
         script = script + '\t\tSetLevel(' + boss + ', ' + str(bossLevel) + ')\n'
         script = script + '\t\tSetChrWork(' + boss + ', CWK_MAXHP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
         script = script + '\t\tSetChrWork(' + boss + ', CWK_HP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP]))\n'
-        script = script + '\t\tSetChrWorkGroup(' + boss + ', CWK_EXPMUL, ' + EXPMod + 'f)\n'
+        script = script + '\t\tSetChrWorkGroup(' + boss + ', CWK_EXPMUL, ' + str(EXPMod) + 'f)\n'
     script = script + '\t}\n'
 
     randomizeOctoBosses(parameters)

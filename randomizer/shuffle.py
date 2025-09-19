@@ -19,6 +19,8 @@ def shuffleLocations(parameters):
     inventory = [] #list of all items in the shuffle pool
     preShuffleLoc = [] #locations only, pulled out and ready for shuffling
     shuffledLocations = [] #finalized list of locations and items at the location
+    entrances = [] #list of entrances to be shuffled if entrance shuffle is on
+    exits = [] #list of exits to be shuffled if entrance shuffle is on
     chestsToCopy = []
 
     if not parameters.formerSanctuaryCrypt:
@@ -42,7 +44,12 @@ def shuffleLocations(parameters):
             vanillaLocations.pop(0)
         elif parameters.goal == 'Release the Psyches' and vanillaLocations[0].mapCheckID in ['Psyche-Ura','Psyche-Nestor','Psyche-Minos','Psyche-Hydra']: #if goal is release the psyches discard warden bosses, their defeats will be tracked with the psyches
             vanillaLocations.pop(0)
-        elif not vanillaLocations[0].crew and not vanillaLocations[0].party and not vanillaLocations[0].item and not vanillaLocations[0].skill and not vanillaLocations[0].landmark and vanillaLocations[0].mapCheckID not in ['Psyches']: #if the location has no randomizable property don't randomize it, mostly used for bosses
+        elif vanillaLocations[0].entrance and parameters.entranceShuffle:
+            entrances.append(vanillaLocations.pop(0))
+        elif vanillaLocations[0].exit and parameters.entranceShuffle:
+            exits.append(vanillaLocations.pop(0))
+        elif not vanillaLocations[0].crew and not vanillaLocations[0].party and not vanillaLocations[0].item \
+            and not vanillaLocations[0].skill and not vanillaLocations[0].landmark and vanillaLocations[0].mapCheckID not in ['Psyches']: #if the location has no randomizable property don't randomize it, mostly used for bosses. This will also catch entrances when not shuffled.
             shuffledLocations.append(vanillaLocations.pop(0))
         elif vanillaLocations[0].mapCheckID != 'Goal':
             locToBeShuffled = vanillaLocations.pop(0)
@@ -56,6 +63,12 @@ def shuffleLocations(parameters):
         else:
             #for locations not being shuffled go ahead and add them to the finalized list of shuffled locations
             shuffledLocations.append(vanillaLocations.pop(0))
+
+    if parameters.entranceShuffle:
+        shuffledEntrances = shuffleEntrancesAndExits(entrances,exits,parameters.northSideOpen,parameters.discoverySanity)
+
+        for entrance in shuffledEntrances:
+            shuffledLocations.append(entrance)
 
     random.shuffle(preShuffleLoc)
     shuffledLocations, playthrough, playthroughAllProgression = fillShuffledLocations(inventory,preShuffleLoc,shuffledLocations,parameters,blacklistRegion)
@@ -366,7 +379,138 @@ def addLocations(locationsToAdd,locationBans):
 
     return locationBans
 
+def shuffleEntrancesAndExits(entrances,exits,northSideOpen,discoverySanity):
+    shuffledEntrances = []
+    itemizedEntrances = []
+    entranceLocations = []
+    itemizedExits = []
+    exitLocations = []
+    shuffledExits = []
+    print("Shuffling Entrances and Exits")
+    
+    #keep shuffling until we get a valid configuration
+    while not feasibilityCheck(shuffledEntrances,northSideOpen,discoverySanity):
+        shuffledEntrances.clear()
 
+        for entrance in entrances:
+            itemizedEntrances.append(classr.inventory(entrance))
+            entranceLocations.append(classr.shuffledLocation(entrance))
+            
+        random.shuffle(itemizedEntrances)
+        while len(itemizedEntrances) != 0:
+            entranceToPlace = itemizedEntrances.pop(0)
+            entranceToFill = entranceLocations.pop(0)
+            filledEntrance = combineShuffledLocAndItem(entranceToFill,entranceToPlace)
+            shuffledEntrances.append(filledEntrance)
+
+        for entrance in shuffledEntrances:
+            print("Entrance: " + entrance.locName + " in " + entrance.locRegion + '-' + entrance.mapCheckID + " leads to " + entrance.itemName)
+
+    for exit in exits:
+            print(exit.locName)
+            itemizedExits.append(classr.inventory(exit))
+            exitLocations.append(classr.shuffledLocation(exit))
+
+    #entrance mapCheckID:exit itemName pairs for identifying connected entrances and exits
+    entranceExitItemPairs = {'Octus Entrance':'Temple of the Great Tree - Great Tree Garden', 
+                         'Towering Coral Forest Front Entrance':'Nameless Coast - Camp',
+                         'Towering Coral Forest Back Entrance':'Roaring Seashore - Metavolicalis', 
+                         'Schlamm Jungle Front Entrance':'Beast Hills - Camp South',
+                         'Schlamm Jungle Back Entrance':'Odd Rock Coast - Odd Rock Coast',
+                         'Waterdrop Cave Entrance':'Calm Inlet - Castaway Village Area',
+                         'Eroded Valley Front Entrance':'Beast Hills - Camp North',
+                         'Eroded Valley Back Entrance':'Sunrise Beach - Sunrise Beach',
+                         'Pirate Ship Eleftheria Entrance':'East Coast Cave - East Coast Cave',
+                         'Mont Gendarme Front Entrance':'Primordial Passage - Camp',
+                         'Mont Gendarme Back Entrance':'Mountain Pinnacle Trail - Top',
+                         'Baja Tower Entrance':'Towal Highway - Camp',
+                         'Archeozoic Chasm Entrance':'The Ruins of Eternia - Palace Ruins',
+                         'Valley of Kings Entrance':'Valley of Kings - Camp',}
+    
+    #entrance itemName:exit mapCheckID pairs for identifying connected entrances and exits
+    entranceItemExitPairs = {'Octus Dungeon':'Exit to Temple of the Great Tree', 
+                         'Towering Coral Forest Dungeon Front':'Exit to Nameless Coast',
+                         'Towering Coral Forest Dungeon Back':'Exit to Roaring Seashore', 
+                         'Schlamm Jungle Dungeon Front':'Exit to Beast Hills South',
+                         'Schlamm Jungle Dungeon Back':'Exit to Odd Rock Coast',
+                         'Waterdrop Cave Dungeon':'Exit to Calm Inlet',
+                         'Eroded Valley Dungeon Front':'Exit to Beast Hills North',
+                         'Eroded Valley Dungeon Back':'Exit to Sunrise Beach',
+                         'Pirate Ship Eleftheria Dungeon':'Exit to East Coast Cave',
+                         'Mont Gendarme Dungeon Front':'Exit to Primordial Passage',
+                         'Mont Gendarme Dungeon Back':'Exit to Mountain Pinnacle Trail',
+                         'Baja Tower Dungeon':'Exit to Towal Highway',
+                         'Archeozoic Chasm Dungeon':'Exit to The Ruins of Eternia',
+                         'Valley of Kings Dungeon':'Exit to Valley of Kings - Camp',}
+    
+    for entrance in shuffledEntrances:
+        print("Entrance: " + entrance.locName + " in " + entrance.locRegion + '-' + entrance.mapCheckID + " leads to " + entrance.itemName)
+        exitLocation = findPairedExitLocation(entranceItemExitPairs[entrance.itemName],exitLocations)
+        exitItem = findPairedExitItem(entranceExitItemPairs[entrance.mapCheckID],itemizedExits)
+        shuffledExits.append(combineShuffledLocAndItem(exitLocation,exitItem))
+
+    for exit in shuffledExits:
+        shuffledEntrances.append(exit)
+
+    return shuffledEntrances
+
+def findPairedExitLocation(exitName,exitLocations):
+    for exit in exitLocations:
+        print(exit.mapCheckID)
+        print(exitName)
+        if exit.mapCheckID == exitName:
+            return exit
+                    
+def findPairedExitItem(itemName,itemizedExits):
+    for item in itemizedExits:
+        print(item.itemName)
+        print(itemName)
+        if item.itemName == itemName:
+            return item
         
+def feasibilityCheck(shuffledEntrances,northSideOpen,discoverySanity):
+    northsideEntrances = ['Octus Entrance','Mont Gendarme Back Entrance','Baja Tower Entrance','Archeozoic Chasm Entrance','Valley of Kings Entrance']
+    connectedChecks = {'Towering Coral Forest Dungeon Front':'Towering Coral Forest Dungeon Back',
+                       'Towering Coral Forest Dungeon Back':'Towering Coral Forest Dungeon Front',
+                       'Schlamm Jungle Dungeon Front':'Schlamm Jungle Dungeon Back',
+                       'Schlamm Jungle Dungeon Back':'Schlamm Jungle Dungeon Front',
+                       'Eroded Valley Dungeon Front':'Eroded Valley Dungeon Back',
+                       'Eroded Valley Dungeon Back':'Eroded Valley Dungeon Front',
+                       'Mont Gendarme Dungeon Front':'Mont Gendarme Dungeon Back',
+                       'Mont Gendarme Dungeon Back':'Mont Gendarme Dungeon Front',}
+    isolatedEntrances = ['Schlamm Jungle Back Entrance']
+    isolatedEntrancesNoLandmarks = ['Schlamm Jungle Back Entrance','Towering Coral Forest Back Entrance','Eroded Valley Back Entrance']
+    northSideAccess = False
+    noIsolatedAreas = False
 
+    if northSideOpen or discoverySanity:
+        northSideAccess = True
 
+    for entrance in shuffledEntrances:
+        if entrance.mapCheckID in northsideEntrances and not northSideAccess and entrance.itemName in connectedChecks:
+            for connectedEntrance in shuffledEntrances:
+                if connectedChecks[entrance.itemName] == connectedEntrance.itemName and connectedEntrance.mapCheckID not in northsideEntrances\
+                    and connectedEntrance.mapCheckID not in isolatedEntrances:
+                    northSideAccess = True
+                    break
+        if entrance.mapCheckID in isolatedEntrances and entrance.itemName in connectedChecks and discoverySanity:
+            noIsolatedAreas = True
+
+        if entrance.mapCheckID in isolatedEntrancesNoLandmarks and entrance.itemName in connectedChecks and not discoverySanity:
+            for connectedEntrance in shuffledEntrances:
+                if connectedChecks[entrance.itemName] == connectedEntrance.itemName and connectedEntrance.mapCheckID not in isolatedEntrancesNoLandmarks:
+                    noIsolatedAreas = True
+                    break
+                elif connectedChecks[entrance.itemName] == connectedEntrance.itemName and connectedEntrance.mapCheckID in isolatedEntrancesNoLandmarks:
+                    noIsolatedAreas = False
+                    break
+        elif entrance.mapCheckID in isolatedEntrancesNoLandmarks and entrance.itemName not in connectedChecks:
+            noIsolatedAreas = False
+            break
+    
+    print("North Side Access: " + str(northSideAccess))
+    print("No Isolated Areas: " + str(noIsolatedAreas))
+
+    return northSideAccess and noIsolatedAreas
+        
+                    

@@ -263,30 +263,35 @@ class ShuffleLocationsFrame(ctk.CTkFrame):
         self.landmark_checkbox = ctk.CTkCheckBox(self, text="Discovery-Sanity", variable=self.landmark_var)
         self.landmark_checkbox.grid(row=2, column=0, padx=5, pady=5, sticky="w")
 
+        #Dungeon Entrance Shuffle
+        self.entrance_var = ctk.BooleanVar(value=False)  # Default to False (unchecked)
+        self.entrance_checkbox = ctk.CTkCheckBox(self, text="Dungeon Entrance Shuffle", variable=self.entrance_var)
+        self.entrance_checkbox.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+
         # Dogi Intercept Rewards Checkbox
         self.dogi_intercept_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.dogi_intercept_checkbox = ctk.CTkCheckBox(self, text="Dogi Intercept Rewards", variable=self.dogi_intercept_var)
-        self.dogi_intercept_checkbox.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        self.dogi_intercept_checkbox.grid(row=2, column=2, padx=5, pady=5, sticky="w")
 
         # Master Kong Rewards Checkbox
         self.mk_rewards_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.mk_rewards_checkbox = ctk.CTkCheckBox(self, text="Master Kong Rewards", variable=self.mk_rewards_var)
-        self.mk_rewards_checkbox.grid(row=2, column=2, padx=5, pady=5, sticky="w")
+        self.mk_rewards_checkbox.grid(row=3, column=0, padx=5, pady=5, sticky="w")
 
         # Silvia Checkbox
         self.silvia_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.silvia_checkbox = ctk.CTkCheckBox(self, text="Silvia", variable=self.silvia_var)
-        self.silvia_checkbox.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.silvia_checkbox.grid(row=3, column=1, padx=5, pady=5, sticky="w")
 
         # Mephorash Checkbox
         self.mephorash_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.mephorash_checkbox = ctk.CTkCheckBox(self, text="Mephorash", variable=self.mephorash_var)
-        self.mephorash_checkbox.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+        self.mephorash_checkbox.grid(row=3, column=2, padx=5, pady=5, sticky="w")
 
         # Former Sanctuary Crypt Checkbox
         self.former_sanctuary_crypt_var = ctk.BooleanVar(value=False)  # Default to False (unchecked)
         self.former_sanctuary_crypt_checkbox = ctk.CTkCheckBox(self, text="Former Sanctuary Crypt", variable=self.former_sanctuary_crypt_var)
-        self.former_sanctuary_crypt_checkbox.grid(row=3, column=2, padx=5, pady=5, sticky="w")
+        self.former_sanctuary_crypt_checkbox.grid(row=4, column=0, padx=5, pady=5, sticky="w")
 
 class ProgressionPlacementModifiersFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -898,6 +903,7 @@ class App(ctk.CTk):
                 "party": self.shuffleLocationsFrame.party_var.get(),
                 "skills": self.shuffleLocationsFrame.skills_var.get(),
                 "discovery-Sanity": self.shuffleLocationsFrame.landmark_var.get(),
+                "entranceShuffle": self.shuffleLocationsFrame.entrance_var.get(),
                 "dogiIntercept": self.shuffleLocationsFrame.dogi_intercept_var.get(),
                 "mkRewards": self.shuffleLocationsFrame.mk_rewards_var.get(),
                 "silvia": self.shuffleLocationsFrame.silvia_var.get(),
@@ -1011,6 +1017,7 @@ class App(ctk.CTk):
             self.shuffleLocationsFrame.party_var.set(settings.get("party", True))
             self.shuffleLocationsFrame.skills_var.set(settings.get("skills", True))
             self.shuffleLocationsFrame.landmark_var.set(settings.get("discovery-Sanity", True))
+            self.shuffleLocationsFrame.entrance_var.set(settings.get("entranceShuffle", False))
             self.shuffleLocationsFrame.dogi_intercept_var.set(settings.get("dogiIntercept", True))
             self.shuffleLocationsFrame.mk_rewards_var.set(settings.get("mkRewards", True))
             self.shuffleLocationsFrame.silvia_var.set(settings.get("silvia", True))
@@ -1152,6 +1159,7 @@ class App(ctk.CTk):
                 'Shuffle Crew': (self.shuffleLocationsFrame.crew_var, 'set'),
                 'Skills w/ Boss Bonuses': (self.shuffleLocationsFrame.skills_var, 'set'),
                 'Discovery-Sanity': (self.shuffleLocationsFrame.landmark_var, 'set'),
+                'Entrance Shuffle': (self.shuffleLocationsFrame.entrance_var, 'set'),
                 'Jewel Trades': (self.progressionPlacementModifiersFrame.jewel_trade_option_menu, 'set'),
                 'Discoveries': (self.progressionPlacementModifiersFrame.discoveries_option_menu, 'set'),
                 'Map Completion': (self.progressionPlacementModifiersFrame.map_completion_option_menu, 'set'),
@@ -1439,7 +1447,8 @@ class App(ctk.CTk):
                 self.shuffleLocationsFrame.party_var.get(),
                 self.shuffleLocationsFrame.crew_var.get(),
                 self.shuffleLocationsFrame.skills_var.get(),
-                self.shuffleLocationsFrame.landmark_var.get()
+                self.shuffleLocationsFrame.landmark_var.get(),
+                self.shuffleLocationsFrame.entrance_var.get()
             )
             
             # Progression Modifiers
