@@ -2668,7 +2668,7 @@ enum {
 	GF_TBOX_DUMMY128, //Remove monolith flag from tower top
 	GF_TBOX_DUMMY129, //Past Dana Mode
 	GF_TBOX_DUMMY130, //Used for hints
-	GF_TBOX_DUMMY131, //Load zone from temple approach -> pinnacle
+	GF_TBOX_DUMMY131, //Check for primordial passage
 	//repurposing the next several to seperate discovery events from the game flags, finding item version of discoveries will still use the old GF which is what Austin counts for discovery totals
 	GF_TBOX_DUMMY132, //Birdsong Rock event
 	GF_TBOX_DUMMY133, //Cobalt Crag event

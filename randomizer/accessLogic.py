@@ -22,11 +22,10 @@ def southSideOpen(access, parameters):
             (onlyNorthCoastAccess(access) and (access.canMove(8) or access.canDoubleJump())) or
             access.hasDiscovery('Chimney Rock') or
             (access.hasDiscovery('Milky White Vein') and access.canSeeDark()) or
-            (access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']) and access.hasDina()) or
+            (access.hasAnyDiscovery(['Beehive','Ship Graveyard']) and access.hasDina()) or
             (access.hasDiscovery('Airs Cairn') and access.canMove(11)) or
             (access.canEnter('Beast Hills - Camp North')) or
-            (access.canEnter('Beast Hills - Camp South') and access.hasDina()) or
-            (access.hasDina() and access.canDefeat('Gilkyra Encounter'))
+            ((access.canEnter('Beast Hills - Camp South') or access.canEnter('Nostalgia Cape - Nostalgia Cape')) and access.hasDina())
         )
     
     def isNorthSideRoute():
@@ -43,7 +42,9 @@ def canAccessNorthSide(access, parameters):
         )
 
 def eterniaOpen(access,parameters):
-    return ((canAccessNorthSide(access, parameters) and access.past2()) or (access.past3() and lodiniaToVista(access) and access.canDoubleJump())) or (access.canEnter('Temple of the Great Tree - Great Tree Garden') and access.past3()) or (access.canEnter('The Ruins of Eternia - Palace Ruins'))
+    return ((canAccessNorthSide(access, parameters) and access.past2()) or (access.past3() and lodiniaToVista(access) and access.canDoubleJump())) or \
+        (access.canEnter('Temple of the Great Tree - Great Tree Garden') and access.past3()) or (access.canEnter('The Ruins of Eternia - Palace Ruins') and access.past5()) or \
+        (access.hasDana() and access.canEnter('Towal Highway - Camp'))
 
 def templeOfGreatTreeOpen(access):
     return ( (access.past2() and access.past3()) or access.hasDana()) or access.canEnter('Temple of the Great Tree - Great Tree Garden')
@@ -523,7 +524,7 @@ def monasteryBackhalfChests(location):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkPirateShipEleftheria(location, access, parameters):
-    if not (access.canEnter('Pirate Ship Eleftheria Dungeon')):
+    if not (access.canDefeat('Gilkyra Encounter') and access.readNote1() and access.canDoubleJump()):
         return False
 
     location_checks = {
@@ -545,12 +546,7 @@ def checkPirateShipEleftheria(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkEastCoastCave(location, access, parameters):
-    if access.canEnter('East Coast Cave - East Coast Cave') and checkEastCoastCaveFromBack(location, access, parameters):
-        return True
-    
-    if not ((southSideOpen(access, parameters) and access.hasDina() and access.canDoubleJump()) or 
-            access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse'])  or 
-            (access.hasDiscovery('Beehive') and access.canDoubleJump())):
+    if not (access.canEnter('East Coast Cave Dungeon') or access.hasDiscovery('Hidden Pirate Storehouse')):
         return False
 
     location_checks = {
@@ -558,21 +554,7 @@ def checkEastCoastCave(location, access, parameters):
         (
             (location.mapCheckID in ['TBOX01', 'TBOX03'] and access.canDoubleJump() and access.canDefeat('Gilkyra Encounter')) or 
             (location.mapCheckID == 'Gilkyra Encounter' and battleLogic(170, access, parameters)) or
-            (location.mapCheckID in ['TBOX02','Landmark']) or
-            (location.mapCheckID == 'Pirate Ship Eleftheria Entrance' and access.canDefeat('Gilkyra Encounter') and access.readNote1() and access.canDoubleJump())
-        )
-    }
-
-    return location_checks.get(location.locName, lambda: False)()
-
-def checkEastCoastCaveFromBack(location, access, parameters):
-    location_checks = {
-        'East Coast Cave': lambda: 
-        (
-            (location.mapCheckID in ['TBOX01', 'TBOX03'] and access.readNote1()) or 
-            (location.mapCheckID == 'Gilkyra Encounter' and battleLogic(170, access, parameters) and access.readNote1()) or
-            (location.mapCheckID in ['TBOX02','Landmark'] and access.canDefeat('Gilkyra Encounter')) or
-            (location.mapCheckID == 'Pirate Ship Eleftheria Entrance' and access.readNote1())
+            (location.mapCheckID in ['TBOX02','Landmark'])
         )
     }
 
@@ -580,15 +562,16 @@ def checkEastCoastCaveFromBack(location, access, parameters):
 
 def checkNostalgiaCape(location, access, parameters):
     if not ((southSideOpen(access, parameters) and access.hasDina() and access.canDoubleJump()) or 
-            access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse']) or 
+            access.hasDiscovery('Ship Graveyard') or 
             (access.hasDiscovery('Beehive') and access.canDoubleJump()) or
-            access.canDefeat('Gilkyra Encounter')):
+            access.canDefeat('Gilkyra Encounter') or
+            access.canEnter('Nostalgia Cape - Nostalgia Cape')):
         return False
 
     location_checks = {
         'Nostalgia Cape': lambda: (
             (location.mapCheckID == 'Ed Join' and access.canMove(16)) or
-            (location.mapCheckID in ['TBOX01','Driftage','Landmark'])
+            (location.mapCheckID in ['TBOX01','Driftage','Landmark','East Coast Cave Entrance'])
         )
     }
 
@@ -614,17 +597,17 @@ def checkBajaTower(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkTowalHighway(location, access, parameters):
-    if not (
+    if not ((
         eterniaOpen(access,parameters) and 
         access.hasDana()
-        ) or access.canEnter('Towal Highway - Camp'):
+        ) or access.canEnter('Towal Highway - Camp')):
         return False
     
     if location.mapCheckID == 'Katthew Join' and not access.canClimb():
         # with northSideOpen, its possible to not have grip gloves on north side now
         return False
     
-    if location.mapCheckID == 'Baja Tower Entrance' and not (access.canClimb() or access.canEnter('Towal Highway - Camp')) and not access.past4():
+    if location.mapCheckID == 'Baja Tower Entrance' and ((not access.canClimb() and not access.past4()) or not access.canEnter('Towal Highway - Camp')):
         # with northSideOpen, its possible to not have grip gloves on north side now
         return False
     
@@ -1002,7 +985,7 @@ def schlammJungleFromBack(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkLonghornCoast(location, access, parameters):
-    if not ((southSideOpen(access, parameters) and access.hasDina()) or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']) or access.canDefeat('Gilkyra Encounter')):
+    if not ((southSideOpen(access, parameters) and access.hasDina()) or access.hasAnyDiscovery(['Beehive','Ship Graveyard']) or access.canEnter('Nostalgia Cape - Nostalgia Cape')):
         return False
 
     location_checks = {
@@ -1131,7 +1114,7 @@ def checkBeastHills(location, access, parameters):
     location_checks = {
         'Valley (Where Hummel Joins)': lambda: True,
         'Collapsed Cliff': lambda: (
-            (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])) and (
+            (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard']) or access.canEnter('Nostalgia Cape - Nostalgia Cape')) and (
                 (location.mapCheckID == 'TBOX03' and access.canMove(15)) or
                 (location.mapCheckID != 'TBOX03')
             )),

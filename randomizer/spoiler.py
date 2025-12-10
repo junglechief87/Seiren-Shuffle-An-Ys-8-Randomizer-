@@ -89,8 +89,10 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("\n")
     spoilerLog.write("Entrance Shuffle: " + str(parameters.entranceShuffle) + "\n")
 
+    entrances = []
     for location in locationsSorted:
         if location.entrance or location.exit:
+            entrances.append(location)
             location.writeSpoiler(spoilerLog)
 
     spoilerLog.write("\n")
@@ -204,7 +206,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.flush()
     spoilerLog.close()
 
-    return playthrough, playthroughAllProgression
+    return playthrough, playthroughAllProgression, entrances
 
 def testSeed(progressionLocations,parameters):
     progressionInventory = []

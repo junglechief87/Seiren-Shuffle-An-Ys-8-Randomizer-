@@ -71,9 +71,9 @@ def shuffleLocations(parameters):
             shuffledLocations.append(entrance)
 
     random.shuffle(preShuffleLoc)
-    shuffledLocations, playthrough, playthroughAllProgression = fillShuffledLocations(inventory,preShuffleLoc,shuffledLocations,parameters,blacklistRegion)
+    shuffledLocations, playthrough, playthroughAllProgression, entrances = fillShuffledLocations(inventory,preShuffleLoc,shuffledLocations,parameters,blacklistRegion)
 
-    return shuffledLocations, playthrough, playthroughAllProgression
+    return shuffledLocations, playthrough, playthroughAllProgression, entrances
 
 #these functions take locations and item lists and find the index of the specified characters skills and starting skills for locations.
 def findStartSkillSlot(fillLocations,character):
@@ -276,7 +276,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
             chestsToCopy[3].locID = 179
             shuffledLocations.append(chestsToCopy[3])
 
-    playthrough, playthroughAllProgression = generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests)
+    playthrough, playthroughAllProgression, entrances = generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests)
     #This function will be responsible for clearing hints in case hints are toggled off
     hints = {'standard': [], 'memo': []}
 
@@ -420,7 +420,7 @@ def shuffleEntrancesAndExits(entrances,exits,northSideOpen,discoverySanity):
                          'Waterdrop Cave Entrance':'Calm Inlet - Castaway Village Area',
                          'Eroded Valley Front Entrance':'Beast Hills - Camp North',
                          'Eroded Valley Back Entrance':'Sunrise Beach - Sunrise Beach',
-                         'Pirate Ship Eleftheria Entrance':'East Coast Cave - East Coast Cave',
+                         'East Coast Cave Entrance':'Nostalgia Cape - Nostalgia Cape',
                          'Mont Gendarme Front Entrance':'Primordial Passage - Camp',
                          'Mont Gendarme Back Entrance':'Mountain Pinnacle Trail - Top',
                          'Baja Tower Entrance':'Towal Highway - Camp',
@@ -436,7 +436,7 @@ def shuffleEntrancesAndExits(entrances,exits,northSideOpen,discoverySanity):
                          'Waterdrop Cave Dungeon':'Exit to Calm Inlet',
                          'Eroded Valley Dungeon Front':'Exit to Beast Hills North',
                          'Eroded Valley Dungeon Back':'Exit to Sunrise Beach',
-                         'Pirate Ship Eleftheria Dungeon':'Exit to East Coast Cave',
+                         'East Coast Cave Dungeon':'Exit to Nostalgia Cape',
                          'Mont Gendarme Dungeon Front':'Exit to Primordial Passage',
                          'Mont Gendarme Dungeon Back':'Exit to Mountain Pinnacle Trail',
                          'Baja Tower Dungeon':'Exit to Towal Highway',

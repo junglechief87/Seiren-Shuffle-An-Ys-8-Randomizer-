@@ -9,6 +9,7 @@ from randomizer.gameStartFunctions import *
 from patch.chestPatcher import *
 from randomizer.audioShuffle import *
 from patch.miscPatches import pastDanaFixes, randomizeOctoBosses, newExpMult
+from randomizer.buildEntrances import *
 
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
@@ -39,7 +40,7 @@ def rngPatcherMain(parameters):
     if parameters.shuffleBgm:
         randomize_bgmtbl(parameters.seed)
 
-    shuffledLocations, playthrough, playthroughAllProgression = shuffleLocations(parameters) #shuffle and fill functions run from this call
+    shuffledLocations, playthrough, playthroughAllProgression, entrances = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
     for inc in scpIncludeList:
         patchFile = patchFile + inc + '\n'
@@ -83,6 +84,8 @@ def rngPatcherMain(parameters):
         randomizeOctoBosses(parameters)
     patchFile = patchFile + goal(parameters)
     patchFile = patchFile + endingHandler(parameters,finalNonGoalBossLevel)
+    if parameters.entranceShuffle:
+        patchFile = patchFile + buildEntrances(entrances)
     with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string
         fileToPatch.write(patchFile)
         fileToPatch.close()
@@ -465,7 +468,7 @@ def danaPastEvents(pastItem):
         script = """
     if(!FLAG[GF_03MP1101_LEAVE_CAMP] ) //primordial passage access
     {
-        SetFlag(GF_TBOX_DUMMY131, 1) // activate load zone to pinnacle from temple approach
+        SetFlag(GF_TBOX_DUMMY131, 1) // activate load zone to pinnacle from temple approach, moved to primordial passage post entrance shuffle
         SetFlag(GF_03MP1101_LEAVE_CAMP,1)
         GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"The path up The Mountain is open.",0,0)
         WaitPrompt()
