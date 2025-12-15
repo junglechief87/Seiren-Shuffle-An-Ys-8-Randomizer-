@@ -43,6 +43,10 @@ def buildStartParameters(location,parameters):
         SetSkillShortCut(PARTY_DANA,	ATKSKILL_SQUARE,	SKILL_DANA_SP_A2)	//蒼輪舞踏
         SetSkillShortCut(PARTY_DANA,	ATKSKILL_TRIANGLE,	SKILL_DANA_SP_C4)	//竜気
     """
+    if parameters.entranceShuffle:
+        gameSettingFlags = gameSettingFlags + """
+    SetFlag(GF_TBOX_DUMMY114,1)
+    """
     if parameters.progressiveSuperWeapons:
         gameSettingFlags = gameSettingFlags + """
     SetFlag(GF_TBOX_DUMMY109,1)
