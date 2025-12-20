@@ -12,6 +12,7 @@ import json
 import time
 import threading
 import webbrowser
+import traceback
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("System")  # Can be System, Dark, Light
@@ -1538,6 +1539,7 @@ class App(ctk.CTk):
             self.show_notification("Seed Generation Complete!")
             
         except Exception as e:
+            traceback.print_exc()
             messagebox.showerror("Error", f"Seed generation failed: {str(e)}")
     
     def show_notification(self, message, color = "#90ee90"):

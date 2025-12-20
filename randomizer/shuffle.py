@@ -71,9 +71,9 @@ def shuffleLocations(parameters):
             shuffledLocations.append(entrance)
 
     random.shuffle(preShuffleLoc)
-    shuffledLocations, playthrough, playthroughAllProgression, entrances = fillShuffledLocations(inventory,preShuffleLoc,shuffledLocations,parameters,blacklistRegion)
+    shuffledLocations, playthrough, playthroughAllProgression = fillShuffledLocations(inventory,preShuffleLoc,shuffledLocations,parameters,blacklistRegion)
 
-    return shuffledLocations, playthrough, playthroughAllProgression, entrances
+    return shuffledLocations, playthrough, playthroughAllProgression
 
 #these functions take locations and item lists and find the index of the specified characters skills and starting skills for locations.
 def findStartSkillSlot(fillLocations,character):
@@ -276,7 +276,7 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
             chestsToCopy[3].locID = 179
             shuffledLocations.append(chestsToCopy[3])
 
-    playthrough, playthroughAllProgression, entrances = generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests)
+    playthrough, playthroughAllProgression = generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests)
     #This function will be responsible for clearing hints in case hints are toggled off
     hints = {'standard': [], 'memo': []}
 

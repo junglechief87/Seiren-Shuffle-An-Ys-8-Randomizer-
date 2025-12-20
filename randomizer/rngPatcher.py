@@ -40,7 +40,7 @@ def rngPatcherMain(parameters):
     if parameters.shuffleBgm:
         randomize_bgmtbl(parameters.seed)
 
-    shuffledLocations, playthrough, playthroughAllProgression, entrances = shuffleLocations(parameters) #shuffle and fill functions run from this call
+    shuffledLocations, playthrough, playthroughAllProgression = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
     for inc in scpIncludeList:
         patchFile = patchFile + inc + '\n'
@@ -84,8 +84,9 @@ def rngPatcherMain(parameters):
         randomizeOctoBosses(parameters)
     patchFile = patchFile + goal(parameters)
     patchFile = patchFile + endingHandler(parameters,finalNonGoalBossLevel)
+    print(entrances)
     if parameters.entranceShuffle:
-        patchFile = patchFile + buildEntrances(entrances)
+        patchFile = patchFile + buildEntrances()
     with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string
         fileToPatch.write(patchFile)
         fileToPatch.close()

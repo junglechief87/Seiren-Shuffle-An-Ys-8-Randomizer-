@@ -1,6 +1,8 @@
 import shared.classr as classr
 from randomizer.accessLogic import *
 
+entrances = []
+
 def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests):
     sphere = 0
     newInventory = []
@@ -89,7 +91,6 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("\n")
     spoilerLog.write("Entrance Shuffle: " + str(parameters.entranceShuffle) + "\n")
 
-    entrances = []
     for location in locationsSorted:
         if location.entrance or location.exit:
             entrances.append(location)
@@ -109,7 +110,6 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         if location.locName == 'Opening Cutscene':
             openingCutscene = location
             progressionInventory.append(location)
-
             playthroughAllProgression.build(location,sphere)
         else:
             accessibleLocation.append(location)
@@ -118,6 +118,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Playthrough:\n")
     print('Beginning playthrough')
     #We build an initial list of progression items on the way to the goal
+    attempt = 0
     while len(accessibleLocation) != 0 and not win:
         while True:
             itemFound = 0
@@ -137,6 +138,11 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
 
             if itemFound == 0 or win: break
         
+        for location in accessibleLocation:
+            location.printSpoiler()
+        attempt +=1
+        if attempt >= 500: #Added this safety check in case there are other bugs in initial progression generation
+            raise Exception('Too many progression attempts, something is wrong with the logic')
         while len(newInventory) != 0:
             progressionInventory.append(newInventory.pop(0))
 
@@ -206,7 +212,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.flush()
     spoilerLog.close()
 
-    return playthrough, playthroughAllProgression, entrances
+    return playthrough, playthroughAllProgression
 
 def testSeed(progressionLocations,parameters):
     progressionInventory = []
