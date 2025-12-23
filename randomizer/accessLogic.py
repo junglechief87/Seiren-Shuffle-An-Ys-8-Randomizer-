@@ -9,7 +9,7 @@ def onlyNorthCoastAccess(access):
         return (
         access.canMove(6) or access.canClimb() or 
         access.hasAnyDiscovery(['Birdsong Rock','Rainbow Falls']) or 
-        access.canDefeat('Clareon')
+        access.canEnter('Nameless Coast - Camp')
         )
 
 def coastNorthSideAccess(access,parameters):
@@ -21,36 +21,40 @@ def southSideOpen(access, parameters):
         return (
             (onlyNorthCoastAccess(access) and (access.canMove(8) or access.canDoubleJump())) or
             access.hasDiscovery('Chimney Rock') or
-            (((access.hasAnyDiscovery(['Milky White Vein','Indigo Mineral Vein']) or access.canDefeat('Gargantula'))) and access.canSeeDark()) or
-            (access.hasDiscovery('Field of Medicinal Herbs') and access.canDefeat('Magamandra')) or
-            (access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']) and access.hasDina()) or
-            (access.hasDiscovery('Airs Cairn') and access.canMove(11))
+            (access.hasDiscovery('Milky White Vein') and access.canSeeDark()) or
+            (access.hasAnyDiscovery(['Beehive','Ship Graveyard']) and access.hasDina()) or
+            (access.hasDiscovery('Airs Cairn') and access.canMove(11)) or
+            (access.canEnter('Beast Hills - Camp North')) or
+            ((access.canEnter('Beast Hills - Camp South') or access.canEnter('Nostalgia Cape - Nostalgia Cape')) and access.hasDina())
         )
     
     def isNorthSideRoute():
-        return access.canDefeat('Giasburn') and access.past1()
+        return access.canEnter('Primordial Passage - Camp') and access.past1()
     
     return isSouthSideRoute() or isNorthSideRoute()
 
 def canAccessNorthSide(access, parameters):
-    return  (access.canDefeat('Giasburn') or 
+    return  (access.canEnter('Mountain Pinnacle Trail - Top') or 
              parameters.northSideOpen or 
              access.hasAnyDiscovery(['Unicalamites','Breath Fountain','Ancient Tree','Prismatic Mineral Vein']) or 
-             ((lodiniaToVista(access) and access.canDoubleJump()) and ((access.hasDana()) or (access.past3() and access.past2())))
+             (((lodiniaToVista(access) and access.canDoubleJump()) or access.canEnter('Temple of the Great Tree - Great Tree Garden')) and ((access.hasDana()) or (access.past3() and access.past2()))) or
+             ((access.canEnter('Towal Highway - Camp') and access.hasDana()) and (access.past3() or access.past2()))
         )
 
 def eterniaOpen(access,parameters):
-    return ((canAccessNorthSide(access, parameters) and access.past2()) or (access.past3() and lodiniaToVista(access) and access.canDoubleJump()))
+    return ((canAccessNorthSide(access, parameters) and access.past2()) or (access.past3() and lodiniaToVista(access) and access.canDoubleJump())) or \
+        (access.canEnter('Temple of the Great Tree - Great Tree Garden') and access.past3()) or (access.canEnter('The Ruins of Eternia - Palace Ruins') and access.past5()) or \
+        (access.hasDana() and access.canEnter('Towal Highway - Camp'))
 
 def templeOfGreatTreeOpen(access):
-    return ( (access.past2() and access.past3()) or access.hasDana() )
+    return ( (access.past2() and access.past3()) or access.hasDana()) or access.canEnter('Temple of the Great Tree - Great Tree Garden')
 
 def FormerSanctuaryCryptOpen(access, parameters):
     return (
-        eterniaOpen(access,parameters) and 
+        eterniaOpen(access,parameters) and
         access.hasDina() and
-        access.canSeeDark() and 
-        access.hasJadePendant() and 
+        access.canSeeDark() and
+        access.hasJadePendant() and
         battleLogic(390, access, parameters)
     )
 
@@ -122,7 +126,7 @@ def checkFSC_Final(location, access, parameters):
         access.hasEssenceKeyStone(6) and 
         access.canUndead() and
         access.canSwampWalk() and 
-        battleLogic(425,access,parameters) # 450 is not possible yet?
+        battleLogic(425,access,parameters, scaled = (not parameters.goal == 'Untouchable')) 
     ):
         return False
 
@@ -239,16 +243,16 @@ def checkFSC_B1(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def octusAccess(access,parameters):
-    return (battleLogic(340, access, parameters) and (
-            (parameters.goal == 'Find Crew' and access.canMove(parameters.numOctus)) or
+    return ((parameters.goal == 'Find Crew' and access.canMove(parameters.numOctus)) or
             (parameters.goal in ['Seiren Escape','Untouchable']) or
-            (parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numOctus))))
+            (parameters.goal == 'Release the Psyches' and access.hasPsyches(parameters.numOctus)))
 
 def checkOctusOverlook(location, access, parameters):
-    if not (access.canDefeat('Octus Enterance')):
+    if not (access.canEnter('Octus Dungeon') and battleLogic(340, access, parameters)):
         return False
     
     location_checks = {
+        'Entrance': lambda: True,
         'Path of the Frozen Era': lambda: True,
         'Path of the Ocean Era': lambda: True,
         'Path of the Sky Era': lambda: True,
@@ -266,13 +270,14 @@ def checkOctusOverlook(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkEternalHill(location, access, parameters):
-    return (
-        canAccessNorthSide(access, parameters) and 
+    return ((
+        (canAccessNorthSide(access, parameters) and 
         templeOfGreatTreeOpen(access) and
         access.past6() and 
-        (access.canSwampWalk() or access.canUnderwater()) and 
+        (access.canSwampWalk() or access.canUnderwater())) or
+        access.canEnter('Valley of Kings - Camp')) and 
         access.past7()
-    ) or access.hasDiscovery('Graves of Ancient Heroes')
+        ) or access.hasDiscovery('Graves of Ancient Heroes')
 
 def checkSolitudeIsland(location, access, parameters):
     return access.hasBoat() or access.hasDiscovery('Magna Carpa')
@@ -283,7 +288,7 @@ def checkSubmergedCemetery(location, access, parameters):
         canAccessNorthSide(access, parameters) and
         templeOfGreatTreeOpen(access) and
         access.past6()) or ((
-        access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or (access.hasDiscovery('Sky Garden'))))) or 
+        access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or (access.hasDiscovery('Sky Garden')) or (access.canEnter('Valley of Kings - Camp'))))) or 
         access.hasDiscovery('Soundless Hall')):
         return False 
     
@@ -294,22 +299,13 @@ def checkSubmergedCemetery(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkValleyOfKings(location, access, parameters):
-    if not (
-        ((access.canSwampWalk() or access.canUnderwater()) and ((
-            canAccessNorthSide(access, parameters) and 
-            templeOfGreatTreeOpen(access) and
-            access.past6() and 
-            access.canClimb()) or (
-            (access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.hasDiscovery('Sky Garden')))) or (
-        access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
-        ):
+    if not access.canEnter('Valley of Kings Dungeon'):
         return False
 
     location_checks = {
-        'Valley of Kings - Camp': lambda: access.hasDina(),
         'Entrance': lambda: True,
         'Northern Lower Level': lambda: True,
-        'Mid-Boss Arena': lambda: access.canUndead() and battleLogic(270, access, parameters),
+        'Mid-Boss Arena': lambda: access.canUndead() and battleLogic(270, access, parameters, scaled=True),
         'Stairway (Statue Doors)': lambda: access.canUndead(),
         'End': lambda: (
             access.canUndead() and 
@@ -317,7 +313,7 @@ def checkValleyOfKings(location, access, parameters):
             location.mapCheckID in ['TBOX03', 'TBOX04'])
         ),
         'Boss Arena': lambda: (
-            battleLogic(330, access, parameters) and access.canUndead() and 
+            battleLogic(330, access, parameters, scaled=True) and access.canUndead() and 
             (location.mapCheckID != 'Psyches' or 
             (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Basileus')))
         ),
@@ -332,8 +328,8 @@ def checkValleyOfKings(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkLodiniaMarshland(location, access, parameters):
-    if (access.hasDiscovery('Graves of Ancient Heroes') and access.past7() and 
-        checkLodiniaMarshlandFromEternalHill(location, access)):
+    if (((access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.canEnter('Valley of Kings - Camp')) and 
+        checkLodiniaMarshlandFromBack(location, access)):
         return True
     
     if (access.hasDiscovery('Sky Garden') and checkLodiniaMarshlandFromSkyGarden(location, access)):
@@ -366,11 +362,12 @@ def checkLodiniaMarshland(location, access, parameters):
                 (location.mapCheckID not in ['Fermented Sap','Landmark'])
             )
         ),
+        'Valley of Kings - Camp': lambda: access.hasDina() or location.mapCheckID == 'Valley of Kings Entrance'
     }
 
     return location_checks.get(location.locName, lambda: False)()
 
-def checkLodiniaMarshlandFromEternalHill(location, access):
+def checkLodiniaMarshlandFromBack(location, access):
     location_checks = {
         'Entrance from Vista Ridge': lambda: (
             access.past6() and (access.canSwampWalk() or access.canUnderwater()) 
@@ -387,6 +384,7 @@ def checkLodiniaMarshlandFromEternalHill(location, access):
                 (location.mapCheckID not in ['Fermented Sap','Landmark'])
             )
         ),
+        'Valley of Kings - Camp': lambda: access.hasDina() or location.mapCheckID == 'Valley of Kings Entrance'
     }
     return location_checks.get(location.locName, lambda: False)()
 
@@ -400,6 +398,7 @@ def checkLodiniaMarshlandFromSkyGarden(location, access):
         'Exit to Valley of Kings': lambda: (
             (access.canSwampWalk() or access.canUnderwater()) or (location.mapCheckID in ['Fermented Sap','Landmark'])
         ),
+        'Valley of Kings - Camp': lambda: access.hasDina() or location.mapCheckID == 'Valley of Kings Entrance'
     }
     return location_checks.get(location.locName, lambda: False)()
 
@@ -416,13 +415,14 @@ def checkLodiniaMarshlandFromCemetery(location, access):
                 (location.mapCheckID not in ['Fermented Sap','Landmark'])
             )
         ),
+        'Valley of Kings - Camp': lambda: access.hasDina() or location.mapCheckID == 'Valley of Kings Entrance'
     }
     return location_checks.get(location.locName, lambda: False)()
 
 def lodiniaToVista(access):
     return (access.past6() and  (
         ((access.canSwampWalk() or access.canUnderwater()) and ((
-        access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or (access.hasDiscovery('Sky Garden')))) or (
+        access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or (access.hasDiscovery('Sky Garden')) or (access.canEnter('Valley of Kings - Camp')))) or (
         access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))))
    
      
@@ -442,7 +442,7 @@ def checkVistaRidge(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkArcheozoicChasm(location, access, parameters):
-    if not (eterniaOpen(access,parameters) and access.past5()):
+    if not access.canEnter('Archeozoic Chasm Dungeon'):
         return False
 
     location_checks = {
@@ -465,9 +465,9 @@ def checkArcheozoicChasm(location, access, parameters):
         'Sunken Eternia Ruins East': lambda: access.canUnderwater(),
         'Boss Arena': lambda: (
             (location.mapCheckID != 'Psyches' and 
-            battleLogic(320, access, parameters) and 
+            battleLogic(320, access, parameters, scaled=True) and 
             access.canUnderwater()) or 
-            (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Oceanus'))
+            (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters, ) and access.canDefeat('Oceanus'))
         ),
     }
 
@@ -524,11 +524,7 @@ def monasteryBackhalfChests(location):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkPirateShipEleftheria(location, access, parameters):
-    if not (
-            access.canDoubleJump() and 
-            access.readNote1() and 
-            access.canDefeat('Gilkyra Encounter')
-    ):
+    if not (access.canDefeat('Gilkyra Encounter') and access.readNote1() and access.canDoubleJump()):
         return False
 
     location_checks = {
@@ -540,7 +536,7 @@ def checkPirateShipEleftheria(location, access, parameters):
         'Accessway': lambda: True,
         'Crew Quarters': lambda: True,
         'Deck': lambda: (
-            battleLogic(260, access, parameters) and 
+            battleLogic(260, access, parameters, scaled=True) and 
             ((location.mapCheckID != 'Psyches') or 
             (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Pirate Revenant')))
         ),
@@ -550,9 +546,7 @@ def checkPirateShipEleftheria(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkEastCoastCave(location, access, parameters):
-    if not ((southSideOpen(access, parameters) and access.hasDina() and access.canDoubleJump()) or 
-            access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse'])  or 
-            (access.hasDiscovery('Beehive') and access.canDoubleJump())):
+    if not (access.canEnter('East Coast Cave Dungeon') or access.hasDiscovery('Hidden Pirate Storehouse')):
         return False
 
     location_checks = {
@@ -560,7 +554,7 @@ def checkEastCoastCave(location, access, parameters):
         (
             (location.mapCheckID in ['TBOX01', 'TBOX03'] and access.canDoubleJump() and access.canDefeat('Gilkyra Encounter')) or 
             (location.mapCheckID == 'Gilkyra Encounter' and battleLogic(170, access, parameters)) or
-            (location.mapCheckID in ['TBOX02','Landmark'])
+            (location.mapCheckID in ['TBOX02','Landmark','Exit to Nostalgia Cape'])
         )
     }
 
@@ -568,36 +562,33 @@ def checkEastCoastCave(location, access, parameters):
 
 def checkNostalgiaCape(location, access, parameters):
     if not ((southSideOpen(access, parameters) and access.hasDina() and access.canDoubleJump()) or 
-            access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse']) or 
-            (access.hasDiscovery('Beehive') and access.canDoubleJump())):
+            access.hasDiscovery('Ship Graveyard') or 
+            (access.hasDiscovery('Beehive') and access.canDoubleJump()) or
+            access.canDefeat('Gilkyra Encounter') or
+            access.canEnter('Nostalgia Cape - Nostalgia Cape')):
         return False
 
     location_checks = {
         'Nostalgia Cape': lambda: (
             (location.mapCheckID == 'Ed Join' and access.canMove(16)) or
-            (location.mapCheckID in ['TBOX01', 'Driftage','Landmark'])
+            (location.mapCheckID in ['TBOX01','Driftage','Landmark','East Coast Cave Entrance'])
         )
     }
 
     return location_checks.get(location.locName, lambda: False)()
 
 def checkBajaTower(location, access, parameters):
-    if not  (
-        eterniaOpen(access,parameters) and
-        access.past4() and 
-        access.hasDana() and
-        access.canClimb() #Adding this because of northSideOpen
-    ):
+    if not access.canEnter('Baja Tower Dungeon'):
         return False
 
     location_checks = {
         'Second Floor': lambda: True,
         'Third Floor': lambda: location.mapCheckID != 'TBOX03' or access.canDoubleJump(),
-        'Mid-Boss Arena': lambda: battleLogic(230, access, parameters),
-        'Fifth Floor': lambda: access.canDoubleJump(),
-        'Sixth Floor': lambda: access.canDoubleJump(),
+        'Mid-Boss Arena': lambda: battleLogic(230, access, parameters, scaled=True),
+        'Fifth Floor': lambda: access.canDoubleJump() and access.canClimb(),
+        'Sixth Floor': lambda: access.canDoubleJump() and access.canClimb(),
         'Boss Arena': lambda: (
-            battleLogic(280, access, parameters) and access.canDoubleJump() and 
+            battleLogic(280, access, parameters, scaled=True) and access.canDoubleJump() and access.canClimb() and 
             (location.mapCheckID != 'Psyches' or (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Carveros')))
         ),
         'Top Floor': lambda: access.canDefeat('Carveros')
@@ -606,17 +597,19 @@ def checkBajaTower(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkTowalHighway(location, access, parameters):
-    if not (
+    if not ((
         eterniaOpen(access,parameters) and 
         access.hasDana()
-        ):
+        ) or access.canEnter('Towal Highway - Camp')):
         return False
     
-    if location.mapCheckID == 'Katthew Join' and not access.canClimb():
-        # with northSideOpen, its possible to not have grip gloves on north side now
-        return False
+    location_checks = {
+        'Cliff Overlooking Chasm': lambda: True,
+        'Baja Tower Approach': lambda: location.mapCheckID == 'Katthew Join' and access.canClimb() or location.mapCheckID != 'Katthew Join',
+        'Towal Highway - Camp': lambda: location.mapCheckID == 'Baja Tower Entrance' and ((access.canClimb() and access.past4()) or access.canEnter('Towal Highway - Camp'))
+    }
 
-    return True
+    return location_checks.get(location.locName, lambda: False)()
 
 def checkStonePillarWindCave(location, access, parameters):
     if not (canAccessNorthSide(access, parameters) and access.canMove(18)):
@@ -630,20 +623,20 @@ def checkStonePillarWindCave(location, access, parameters):
         return True
 
 def checkSilentTower(location, access, parameters):
-    if not (access.canDoubleJump() and (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])) and access.canMove(24)):
+    if not (access.canDoubleJump() and (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']) or access.canDefeat('Gilkyra Encounter')) and access.canMove(24)):
         return False
 
     location_checks = {
         'Second Basement': lambda: (
             (
-            location.mapCheckID in ['Maphorash', 'Maphorash Skill', 'TBOX04'] and 
-            battleLogic(380, access, parameters)
+            location.mapCheckID in ['Mephorash', 'Mephorash Skill', 'TBOX04'] and 
+            battleLogic(380, access, parameters, scaled=True)
             ) or
             location.mapCheckID in ['TBOX01', 'TBOX02', 'TBOX03'] or
             (
             location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
             battleLogic(340, access, parameters) and 
-            access.canDefeat('Maphorash')
+            access.canDefeat('Mephorash')
             )
         ),
         'First Basement': lambda: True
@@ -652,7 +645,7 @@ def checkSilentTower(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkWaterAndWoodHills(location, access, parameters):
-    if not ((access.hasDina() and southSideOpen(access, parameters)) or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])):
+    if not ((access.hasDina() and southSideOpen(access, parameters)) or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']) or access.canDefeat('Gilkyra Encounter')):
         return False
 
     location_checks = {
@@ -676,7 +669,7 @@ def checkMontGendarmeNight(location, access, parameters):
 
     def isNorthSideRoute():
         return (
-            access.canDefeat('Giasburn') and 
+            access.canEnter('Primordial Passage - Camp') and 
             isValidCheckIfNorth(location, access)
         )
 
@@ -705,17 +698,17 @@ def checkTempleOfGreatTree(location, access, parameters):
         'Temple Boss Arena': lambda: (
             (
             location.mapCheckID == 'Psyches' and 
-            battleLogic(340, access, parameters) and 
+            battleLogic(240, access, parameters) and 
             access.canDefeat('Brachion')
             ) or 
             (
             location.mapCheckID != 'Psyches' and 
-            battleLogic(230,access,parameters)
+            battleLogic(230,access,parameters,scaled=True)
             )
         ),
         'Great Tree Garden': lambda: (access.canDefeat('Brachion') and 
-                                     ((location.mapCheckID != 'Octus Enterance') or (
-                                      location.mapCheckID == 'Octus Enterance' and octusAccess(access,parameters)))),
+                                     ((location.mapCheckID != 'Octus Entrance') or (
+                                      location.mapCheckID == 'Octus Entrance' and octusAccess(access,parameters)))),
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -730,7 +723,7 @@ def checkRuinsOfEternia(location, access, parameters):
         'Residence': lambda: (
             location.mapCheckID == 'TBOX02' and access.past6()
         ) or location.mapCheckID == 'TBOX01',
-        'Palace Ruins': lambda: True,
+        'Palace Ruins': lambda: (location.mapCheckID == 'Archeozoic Chasm Entrance' and access.past5()) or location.mapCheckID != 'Archeozoic Chasm Entrance',
         'Central Stupa': lambda: True
     }
 
@@ -765,7 +758,7 @@ def checkTitisPrimevalForest(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
     
 def checkMountainPinnacleTrail(location, access, parameters):
-    return (canAccessNorthSide(access, parameters) and access.past1()) or access.hasDiscovery('Prismatic Mineral Vein')
+    return canAccessNorthSide(access, parameters)
 
 def checkCavernOfTheAncientKing(location, access, parameters):
     return (access.canMove(11) and access.canSwampWalk()) or access.hasDiscovery('Airs Cairn')
@@ -787,7 +780,10 @@ def mishyRewards(location,access):
 
 def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
     if location.mapCheckID in ['Giasburn Skill 1', 'Giasburn Skill 2', 'Giasburn']: 
-        return battleLogic(230, access, parameters) and access.hasFlameStones(3)
+        return battleLogic(230, access, parameters, scaled=True)
+    
+    if location.mapCheckID == 'Exit to Mountain Pinnacle Trail':
+        return True
     
     if not access.canDefeat('Giasburn'):
         return False
@@ -808,7 +804,7 @@ def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
              access.canDefeat('Master Kong Dana')
             ) or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-             battleLogic(340, access, parameters))
+             battleLogic(240, access, parameters))
             ),
         'Mishy Rewards': lambda: mishyRewards(location,access) # Moved here because it was making the logic think food was required for gendarme access
     }
@@ -817,31 +813,30 @@ def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
     
 
 def checkMontGendarme(location, access, parameters):
-    if ((access.hasDiscovery('Prismatic Mineral Vein') or (canAccessNorthSide(access,parameters) and access.past1())) and 
-        checkMontGendarmeWhenNorthSideOpen(location, access, parameters)):
+    if access.canEnter('Mont Gendarme Dungeon Back') and checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
         return True
 
-    if not (southSideOpen(access, parameters) and access.past1() and access.canClimb()):
+    if not access.canEnter('Mont Gendarme Dungeon Front'):
         return False
 
     location_checks = {
         'Entrance': lambda: True,
         'Southern Lower Cliffside Trail': lambda: True,
         'Northern Lower Cliffside Trail': lambda: True,
-        'Outside Cabin': lambda: True,
-        'Cliffside Midpoint': lambda: True,
-        'Mid-Boss Arena': lambda: battleLogic(140, access, parameters),
+        'Outside Cabin': lambda: access.canClimb(),
+        'Cliffside Midpoint': lambda: access.canClimb(),
+        'Mid-Boss Arena': lambda: battleLogic(140, access, parameters, scaled=True) and access.canClimb(),
         'Upper Cliffs 1': lambda: access.canDefeat('Avalodragil 2'),
         'Upper Cliffs 2': lambda: access.canDefeat('Avalodragil 2'),
         'Boss Arena': lambda: (
             (location.mapCheckID in ['Giasburn Skill 1', 'Giasburn Skill 2', 'Giasburn'] and 
-             battleLogic(230, access, parameters) and access.hasFlameStones(3)) or
+             battleLogic(230, access, parameters)) or
             (location.mapCheckID in ['Master Kong Skill Laxia', 'Master Kong Laxia'] and 
              access.hasLaxia() and 
              access.canDefeat('Master Kong Dana') and 
              access.canDefeat('Giasburn')) or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-             battleLogic(340, access, parameters) and access.canDefeat('Giasburn'))
+             battleLogic(240, access, parameters, scaled=True) and access.canDefeat('Giasburn'))
              ),
         'Mishy Rewards': lambda: access.canDefeat('Avalodragil 2') and mishyRewards(location,access)
     }
@@ -858,21 +853,22 @@ def checkPrimordialPassage(location, access, parameters):
     
     def isNorthSideRoute():
         return (
-            access.canDefeat('Giasburn') and 
+            access.canEnter('Primordial Passage - Camp') and 
             access.past1()
         )
     
     return isSouthSideRoute() or isNorthSideRoute()
 
 def checkOddRockCoast(location, access, parameters):
-    if not (access.canDefeat('Laspisus')):
+    if not (access.canEnter('Odd Rock Coast - Odd Rock Coast')):
         return False
 
     return (
         (location.mapCheckID in ['Master Kong Skill Dana', 'Master Kong Dana'] and battleLogic(200, access, parameters) 
         and access.hasDana() 
         and access.canDefeat('Master Kong Sahad')) or
-        (location.mapCheckID not in ['Master Kong Skill Dana', 'Master Kong Dana'] 
+        (location.mapCheckID == 'Schlamm Jungle Back Entrance') or
+        (location.mapCheckID not in ['Master Kong Skill Dana', 'Master Kong Dana','Schlamm Jungle Back Entrance'] 
         and battleLogic(120, access, parameters))
     )
 
@@ -880,18 +876,21 @@ def checkSchlammJungle(location, access, parameters):
     if access.hasDiscovery('Field of Medicinal Herbs') and schlammJungleFromField(location, access, parameters):
         return True
     
-    if not (southSideOpen(access, parameters) and access.hasDina()):
+    if (access.canEnter('Schlamm Jungle Dungeon Back') and schlammJungleFromBack(location, access, parameters)):
+        return True
+    
+    if not access.canEnter('Schlamm Jungle Dungeon Front'):
         return False
 
     location_checks = {
         'Entrance': lambda: (
             (location.mapCheckID == 'TBOX03' and (access.canSwampWalk() or access.canDoubleJump())) or
             (location.mapCheckID == 'TBOX02' and access.canClimb()) or
-            (location.mapCheckID in ['TBOX01', 'Euron Join'])
+            (location.mapCheckID in ['TBOX01', 'Euron Join', 'Exit to Beast Hills South'])
         ),
         'North of Entrance': lambda: access.canClimb(),
         'Midpoint': lambda: access.canSwampWalk() or access.canDoubleJump(),
-        'Mid-Boss Arena': lambda: battleLogic(100, access, parameters),
+        'Mid-Boss Arena': lambda: battleLogic(100, access, parameters, scaled=True),
         'Small Passage': lambda: (
             access.canDefeat('Magamandra') and (
                 (location.mapCheckID == 'TBOX02' and (access.canSwampWalk() or access.canDoubleJump())) or
@@ -909,10 +908,10 @@ def checkSchlammJungle(location, access, parameters):
         ),
         'End': lambda: access.canSwampWalk() and access.canDefeat('Magamandra'),
         'Boss Arena': lambda: (
-            battleLogic(100, access, parameters) and access.canDefeat('Magamandra') and access.canSwampWalk() and (
+            battleLogic(100, access, parameters, scaled=True) and access.canDefeat('Magamandra') and access.canSwampWalk() and (
                 (location.mapCheckID != 'Psyches') or
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
-                 battleLogic(340, access, parameters) and access.canDefeat('Laspisus'))
+                 battleLogic(240, access, parameters) and access.canDefeat('Laspisus'))
             )
         )
     }
@@ -924,11 +923,11 @@ def schlammJungleFromField(location, access, parameters):
         'Entrance': lambda: (
             (location.mapCheckID == 'TBOX03' and (access.canSwampWalk() or access.canDoubleJump()) and access.canDefeat('Magamandra')) or
             (location.mapCheckID == 'TBOX02' and access.canClimb() and access.canDefeat('Magamandra')) or
-            (location.mapCheckID in ['TBOX01', 'Euron Join'] and access.canDefeat('Magamandra'))
+            (location.mapCheckID in ['TBOX01', 'Euron Join', 'Exit to Beast Hills South'] and access.canDefeat('Magamandra'))
         ),
         'North of Entrance': lambda: (access.canClimb() and access.canDefeat('Magamandra')),
         'Midpoint': lambda: ((access.canSwampWalk() or access.canDoubleJump()) and access.canDefeat('Magamandra')),
-        'Mid-Boss Arena': lambda: (battleLogic(100, access, parameters) and access.hasDina()),
+        'Mid-Boss Arena': lambda: (battleLogic(100, access, parameters, scaled=True) and access.hasDina()),
         'Small Passage': lambda: (
             access.hasDina() and 
                 (location.mapCheckID == 'TBOX02' or
@@ -939,18 +938,52 @@ def schlammJungleFromField(location, access, parameters):
         ),
         'End': lambda: access.canSwampWalk() and access.hasDina(),
         'Boss Arena': lambda: (
-            battleLogic(100, access, parameters) and access.hasDina() and access.canSwampWalk() and (
+            battleLogic(100, access, parameters, scaled=True) and access.hasDina() and access.canSwampWalk() and (
                 (location.mapCheckID != 'Psyches') or
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
-                 battleLogic(340, access, parameters) and access.canDefeat('Laspisus'))
+                 battleLogic(240, access, parameters) and access.canDefeat('Laspisus'))
             )
         )
     }
 
     return location_checks.get(location.locName, lambda: False)()
 
+def schlammJungleFromBack(location, access, parameters):
+    if location.mapCheckID == 'Exit to Odd Rock Coast':
+        return True
+    
+    if location.mapCheckID in ['Laspisus Skill 1', 'Laspisus Skill 2', 'Laspisus'] and access.canSwampWalk(): 
+        return battleLogic(100, access, parameters, scaled=True)
+    
+    if not access.canDefeat('Laspisus'):
+        return False
+    
+    location_checks = {
+        'Entrance': lambda: access.canSwampWalk() and (
+            (location.mapCheckID == 'TBOX03' and access.canDefeat('Magamandra')) or
+            (location.mapCheckID == 'TBOX02' and access.canClimb() and access.canDefeat('Magamandra')) or
+            (location.mapCheckID in ['TBOX01', 'Euron Join', 'Exit to Beast Hills South'] and access.canDefeat('Magamandra'))
+        ),
+        'North of Entrance': lambda: access.canSwampWalk() and (access.canClimb() and access.canDefeat('Magamandra')),
+        'Midpoint': lambda: (access.canSwampWalk() and access.canDefeat('Magamandra')),
+        'Mid-Boss Arena': lambda: access.canSwampWalk() and (battleLogic(100, access, parameters, scaled=True) and access.hasDina()),
+        'Small Passage': lambda: access.canSwampWalk() and (
+            access.hasDina() and 
+                (location.mapCheckID == 'TBOX02' or
+                (location.mapCheckID == 'TBOX01' and access.canClimb()))),
+        'Muddy Passage': lambda: access.canSwampWalk() and (
+                (location.mapCheckID == 'TBOX02' and (access.canClimb() or access.canDoubleJump())) or
+                (location.mapCheckID == 'TBOX01')
+        ),
+        'End': lambda: True,
+        'Boss Arena': lambda: (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
+                 battleLogic(240, access, parameters) and access.canDefeat('Laspisus'))
+    }
+
+    return location_checks.get(location.locName, lambda: False)()
+
 def checkLonghornCoast(location, access, parameters):
-    if not ((southSideOpen(access, parameters) and access.hasDina()) or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])):
+    if not ((southSideOpen(access, parameters) and access.hasDina()) or access.hasAnyDiscovery(['Beehive','Ship Graveyard']) or access.canEnter('Nostalgia Cape - Nostalgia Cape')):
         return False
 
     location_checks = {
@@ -972,9 +1005,9 @@ def checkUndergroundWaterVein(location, access, parameters):
     location_checks = {
         'Lapis Mineral Vein': lambda: True,
         'Submerged Area': lambda: (
-            (location.mapCheckID in ['TBOX01','TBOX02'] and access.canUnderwater()) or
+            (location.mapCheckID in ['TBOX01','TBOX03'] and access.canUnderwater()) or
             (location.mapCheckID == 'Driftage' and access.canUnderwater() and access.canClimb()) or
-            (location.mapCheckID not in ['TBOX01','TBOX02','Driftage'])
+            (location.mapCheckID not in ['TBOX01','TBOX03','Driftage'])
         ),
     }
     return location_checks.get(location.locName, lambda: False)()
@@ -1012,7 +1045,7 @@ def checkHeadwaterFalls(location, access, parameters):
     )
 
 def checkSunriseBeach(location, access, parameters):
-    if not (access.canDefeat('Gargantula') or access.hasDiscovery('Beached Remains')):
+    if not (access.canEnter('Sunrise Beach - Sunrise Beach') or access.hasDiscovery('Beached Remains')):
         return False
     
     location_checks = {
@@ -1024,30 +1057,50 @@ def checkSunriseBeach(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkErodedValley(location, access, parameters):
-    if not (southSideOpen(access, parameters)):
+    if (access.canEnter('Eroded Valley Dungeon Back') and checkErodedValleyFromBack(location, access, parameters)):
+        return True
+    
+    if not (access.canEnter('Eroded Valley Dungeon Front')):
         return False
 
     location_checks = {
         'Entrance': lambda: True,
         'Cave': lambda: True,
-        'Dark Passage': lambda: access.canSeeDark() and battleLogic(155, access, parameters),
-        'Mid-Boss Arena': lambda: battleLogic(60, access, parameters),
-        'Webbed Walkways': lambda: (access.canDefeat('Lonbrigius') or access.canDefeat('Gargantula')) and (
+        'Dark Passage': lambda: access.canSeeDark() and (battleLogic(155, access, parameters) or location.mapCheckID == 'Landmark'),
+        'Mid-Boss Arena': lambda: battleLogic(60, access, parameters, scaled=True),
+        'Webbed Walkways': lambda: access.canDefeat('Lonbrigius') and (
             (location.mapCheckID == 'TBOX03' and access.canSeeDark()) or 
             (location.mapCheckID != 'TBOX03')
         ),
-        'End': lambda: access.canSeeDark() and (access.canDefeat('Lonbrigius') or access.canDefeat('Gargantula')),
+        'End': lambda: access.canSeeDark() and access.canDefeat('Lonbrigius'),
         'Boss Arena': lambda: (
-            battleLogic(75, access, parameters) and 
+            battleLogic(75, access, parameters, scaled=True) and 
             access.canSeeDark() and 
-            (access.canDefeat('Lonbrigius') or access.hasDiscovery('Beached Remains')) and (
-                (location.mapCheckID != 'Psyches') or
-                (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(340, access, parameters) and 
-                 access.canDefeat('Gargantula')
-                )
+            location.mapCheckID != 'Psyches') or
+            (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
+                battleLogic(140, access, parameters) and 
+                access.canDefeat('Gargantula')
             )
-        )
+    }
+
+    return location_checks.get(location.locName, lambda: False)()
+
+def checkErodedValleyFromBack(location, access, parameters):
+    location_checks = {
+        'Entrance': lambda: access.canDefeat('Gargantula'),
+        'Cave': lambda: access.canDefeat('Gargantula'),
+        'Dark Passage': lambda: access.canSeeDark() and (battleLogic(155, access, parameters) or location.mapCheckID == 'Landmark'),
+        'Mid-Boss Arena': lambda: battleLogic(60, access, parameters, scaled=True) and access.canDefeat('Gargantula'),
+        'Webbed Walkways': lambda: access.canDefeat('Gargantula'),
+        'End': lambda: access.canDefeat('Gargantula'),
+        'Boss Arena': lambda: (
+            battleLogic(75, access, parameters, scaled=True) and 
+            access.canSeeDark() and 
+            location.mapCheckID != 'Psyches') or
+            (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
+                battleLogic(140, access, parameters) and 
+                access.canDefeat('Gargantula')
+            )
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -1059,11 +1112,12 @@ def checkBeastHills(location, access, parameters):
     location_checks = {
         'Valley (Where Hummel Joins)': lambda: True,
         'Collapsed Cliff': lambda: (
-            (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])) and (
+            (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard']) or access.canEnter('Nostalgia Cape - Nostalgia Cape')) and (
                 (location.mapCheckID == 'TBOX03' and access.canMove(15)) or
                 (location.mapCheckID != 'TBOX03')
-            )
-        )
+            )),
+        'Beast Hills - Camp South': lambda: access.hasDina(),
+        'Beast Hills - Camp North': lambda: True
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -1106,7 +1160,7 @@ def checkGreatRiverValley(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkRoaringSeashore(location, access, parameters):
-    if not (access.canDefeat('Clareon') or access.hasDiscovery('Metavolicalis') or (access.canMove(14) and access.hasDiscovery('Parasequoia'))):
+    if not (access.canEnter('Roaring Seashore - Metavolicalis') or access.hasDiscovery('Metavolicalis') or (access.canMove(14) and access.hasDiscovery('Parasequoia'))):
         return False
 
     location_checks = {
@@ -1126,10 +1180,10 @@ def checkToweringCoralForest(location, access, parameters):
     if access.hasDiscovery('Rainbow Falls') and coralForestFromRainbowFalls(location, access, parameters):
         return True
 
-    if (access.hasDiscovery('Metavolicalis') or (access.canMove(14) and access.hasDiscovery('Parasequoia'))) and coralForestFromRoaringSeashore(location, access, parameters):
+    if coralForestFromBack(location, access, parameters) and access.canEnter('Towering Coral Forest Dungeon Back'):
         return True
 
-    if not (coastNorthSideAccess(access, parameters)):
+    if not access.canEnter('Towering Coral Forest Dungeon Front'):
         return False
 
     location_checks = {
@@ -1139,16 +1193,17 @@ def checkToweringCoralForest(location, access, parameters):
             (location.mapCheckID in ['TBOX04', 'TBOX05'])
         ),
         'Midpoint': lambda: True,
+        'Mid-Boss Arena': lambda: battleLogic(0, access, parameters, scaled=True),
         'After Mid-Boss': lambda: (
             location.mapCheckID == 'Corpse' or (location.mapCheckID != 'Corpse' and access.canClimb())
         ),
         'Rainbow Falls': lambda: access.canClimb(),
         'End': lambda: access.canClimb(),
         'Boss Arena': lambda: (
-            battleLogic(30, access, parameters) and access.canClimb() and (
+            battleLogic(30, access, parameters, scaled=True) and access.canClimb() and (
                 location.mapCheckID != 'Psyches' or 
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(340, access, parameters) and access.canDefeat('Clareon'))
+                 battleLogic(140, access, parameters) and access.canDefeat('Clareon'))
             )
         )
     }
@@ -1164,25 +1219,29 @@ def coralForestFromRainbowFalls(location, access, parameters):
             (location.mapCheckID in ['TBOX04', 'TBOX05'])
         ),
         'Midpoint': lambda: True,
+        'Mid-Boss Arena': lambda: battleLogic(0, access, parameters, scaled=True),
         'After Mid-Boss': lambda: True,
         'Rainbow Falls': lambda: (
             location.mapCheckID == ['TBOX01','Landmark'] or access.canClimb()
             ),
         'End': lambda: access.canClimb(),
         'Boss Arena': lambda: (
-            battleLogic(30, access, parameters) and access.canClimb() and (
+            battleLogic(30, access, parameters, scaled=True) and access.canClimb() and (
                 location.mapCheckID != 'Psyches' or 
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(340, access, parameters) and access.canDefeat('Clareon'))
+                 battleLogic(140, access, parameters) and access.canDefeat('Clareon'))
             )
         )
     }
 
     return location_checks.get(location.locName, lambda: False)()
 
-def coralForestFromRoaringSeashore(location, access, parameters):
+def coralForestFromBack(location, access, parameters):
+    if location.mapCheckID == 'Exit to Roaring Seashore':
+        return True
+    
     if location.mapCheckID in ['Clareon Skill 1', 'Clareon Skill 2', 'Clareon']: 
-        return battleLogic(30, access, parameters)
+        return battleLogic(30, access, parameters, scaled=True)
     
     if not access.canDefeat('Clareon'):
         return False
@@ -1194,6 +1253,7 @@ def coralForestFromRoaringSeashore(location, access, parameters):
             (location.mapCheckID != 'TBOX03')
         ),
         'Midpoint': lambda: True,
+        'Mid-Boss Arena': lambda: battleLogic(0, access, parameters, scaled=True),
         'After Mid-Boss': lambda: (
             location.mapCheckID == 'Corpse' or (location.mapCheckID != 'Corpse' and access.canClimb())
         ),
@@ -1205,7 +1265,7 @@ def coralForestFromRoaringSeashore(location, access, parameters):
         'End': lambda: True,
         'Boss Arena': lambda: (
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(340, access, parameters))
+                 battleLogic(140, access, parameters))
             )
     }
     return location_checks.get(location.locName, lambda: False)()
@@ -1223,6 +1283,7 @@ def checkNamelessCoast(location, access, parameters):
         'North of Castaway Village (Where Adol Meets Laxia)': lambda: True,
         'Northwest of Laxia': lambda: True,
         'Shoreline South of Boulder': lambda: True,
+        'Nameless Coast - Camp': lambda: coastNorthSideAccess(access, parameters)
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -1242,10 +1303,10 @@ def checkCalmInlet(location, access, parameters):
 
 def checkIntercept(location, access, parameters):
     stage_logic = {
-        'Stage 2': lambda: access.memoCheck(1) and battleLogic(30, access, parameters),
-        'Stage 3': lambda: access.memoCheck(1) and battleLogic(75, access, parameters),
-        'Stage 5': lambda: access.memoCheck(1) and battleLogic(120, access, parameters),
-        'Stage 7': lambda: access.memoCheck(1) and access.hasFlameStones(3),
+        'Stage 2': lambda: access.memoCheck(1) and (battleLogic(30, access, parameters) and access.partySize(2)) or battleLogic(80, access, parameters),
+        'Stage 3': lambda: access.memoCheck(1) and (battleLogic(75, access, parameters) and access.partySize(2)) or battleLogic(110, access, parameters),
+        'Stage 5': lambda: access.memoCheck(1) and (battleLogic(120, access, parameters) and access.partySize(2)) or battleLogic(140, access, parameters),
+        'Stage 7': lambda: access.memoCheck(1) and access.hasFlameStones(3) and access.partySize(2),
         'Stage 9': lambda: access.memoCheck(3) and access.hasFlameStones(3) and battleLogic(200, access, parameters),
     }
 
@@ -1331,12 +1392,12 @@ def checkRicotta(location, access, parameters):
 
 def checkCastawayVillage(location, access, parameters):
     if location.mapCheckID in ['Silvia Skill 1', 'Silvia Skill 2', 'Silvia']:
-        return access.hasSilvia() and battleLogic(260, access, parameters)
+        return access.hasSilvia() and battleLogic(260, access, parameters, scaled=True)
     else:
         return True
 
 def checkWaterDropCave(location, access, parameters):
-    return True
+    return access.canEnter('Waterdrop Cave Dungeon')
 
 def checkWhiteSandCape(location, access, parameters):
     location_checks = {
@@ -1352,7 +1413,7 @@ def checkWhiteSandCape(location, access, parameters):
 
     return location_checks.get(location.locName, lambda: False)()
 
-def battleLogic(requiredStr,access,parameters):
+def battleLogic(requiredStr,access,parameters,**kwargs):
     #if battle logic isn't turned on we just skip this entire calculation and return true. 
     #battle logic is based entirely off current strength. 
     if parameters.battleLogic:
@@ -1360,6 +1421,43 @@ def battleLogic(requiredStr,access,parameters):
         armorStr = 0
         armStr = 0
         accStr = 0
+        
+        scaled = kwargs.get('scaled', False)
+        
+        if scaled:
+            bossCount = access.bossCount()
+            if bossCount >= 21:
+                requiredStr = 425
+            elif bossCount == 20:
+                requiredStr = 380
+            elif bossCount == 19:
+                requiredStr = 330
+            elif bossCount == 18:
+                requiredStr = 320
+            elif bossCount == 17:
+                requiredStr = 280
+            elif bossCount == 16:
+                requiredStr = 270
+            elif bossCount in [14,15]:
+                requiredStr = 260
+            elif bossCount == 13:
+                requiredStr = 250
+            elif bossCount in [10,11,12]:
+                requiredStr = 230
+            elif bossCount == 9:
+                requiredStr = 140 
+            elif bossCount in [7,8]:
+                requiredStr = 120
+            elif bossCount == 6:
+                requiredStr = 100
+            elif bossCount == 5:
+                requiredStr = 75
+            elif bossCount == 4:
+                requiredStr = 60
+            elif bossCount in [2,3]:
+                requiredStr = 30
+            else:
+                return True
 
         #weapon strength is based on rounded averages of accessible weapons at their base levels.
         #some basic checks will be made to make sure materials can be farmed as well
@@ -1369,26 +1467,31 @@ def battleLogic(requiredStr,access,parameters):
             weaponStr = 290
         elif access.hasFlameStones(7) and materialAccess('Dragon Crest Stone',access,parameters):
             weaponStr = 270
-        elif access.hasFlameStones(6) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters)): 
+        elif access.hasFlameStones(6) and ((materialAccess('Essence Stone',access,parameters) and 
+                                            materialAccess('Iron Ore',access,parameters) and 
+                                            materialAccess('Tectite Ore',access,parameters)) or
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina())): 
             weaponStr = 240
-        elif access.hasFlameStones(5) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters)): 
+        elif access.hasFlameStones(5) and ((materialAccess('Essence Stone',access,parameters) and 
+                                            materialAccess('Iron Ore',access,parameters) and 
+                                            materialAccess('Tectite Ore',access,parameters)) or 
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina())): 
             weaponStr = 210
-        elif access.hasFlameStones(4) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters) or
-                                           materialAccess('Tectite Ore',access,parameters)): 
+        elif access.hasFlameStones(4) and ((materialAccess('Essence Stone',access,parameters) and access.hasDina()) or 
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina()) or
+                                           (materialAccess('Iron Ore',access,parameters) and 
+                                            materialAccess('Tectite Ore',access,parameters))): 
             weaponStr = 180
         elif access.hasFlameStones(3): 
             weaponStr = 150
-        elif access.hasFlameStones(2) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters) or
-                                           materialAccess('Tectite Ore',access,parameters) or
+        elif access.hasFlameStones(2) and ((materialAccess('Essence Stone',access,parameters) and access.hasDina()) or 
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina()) or
+                                           (materialAccess('Tectite Ore',access,parameters) and access.hasDina()) or
                                            materialAccess('Iron Ore',access,parameters)): 
             weaponStr = 100
-        elif access.hasFlameStones(1) and (materialAccess('Essence Stone',access,parameters) or 
-                                           materialAccess('Dragon Crest Stone',access,parameters) or
-                                           materialAccess('Tectite Ore',access,parameters) or
+        elif access.hasFlameStones(1) and ((materialAccess('Essence Stone',access,parameters) and access.hasDina()) or 
+                                           (materialAccess('Dragon Crest Stone',access,parameters) and access.hasDina()) or
+                                           (materialAccess('Tectite Ore',access,parameters) and access.hasDina()) or
                                            materialAccess('Iron Ore',access,parameters)): 
             weaponStr = 50
         
@@ -1437,7 +1540,7 @@ def battleLogic(requiredStr,access,parameters):
             armStr = 30
         elif access.hasFlameStones(6) and access.hasEuron() and materialAccess('Saurian Scale',access,parameters) and materialAccess('Ancient Hide',access,parameters):
             armStr = 20
-        elif access.hasFlameStones(4) and access.hasEuron() and materialAccess('Dragon Crest Stone',access,parameters) and materialAccess('Essence Stone',access,parameters): 
+        elif access.hasFlameStones(4) and access.hasEuron() and materialAccess('Dragon Crest Stone',access,parameters) and materialAccess('Dandale Horn',access,parameters): 
             armStr = 10
 
         if armStr < foundArmStr:
@@ -1472,16 +1575,16 @@ def battleLogic(requiredStr,access,parameters):
                 otherAcc.append(10) #lightning stone
             if materialAccess('Thunder Claw',access,parameters) and materialAccess('Beast Parts',access,parameters):
                 bladeRings.append(30) #Blade Ring 3
-            if materialAccess('Essence Stone',access,parameters) and materialAccess('Tectite Ore',access,parameters):
+            if materialAccess('Dandale Stone',access,parameters) and materialAccess('Tectite Ore',access,parameters):
                 otherAcc.append(10) #crow stone
             if materialAccess('Tectite Ore',access,parameters) and materialAccess('Ancient Lumber',access,parameters):
                 otherAcc.append(10) #snake stone
         if access.hasEuron and access.hasFlameStones(5):
             if southSideOpen(access, parameters):
                 dragonAcc.append(10) #dragon pauldron
-            if materialAccess('Essence Stone',access,parameters):
+            if materialAccess('Dandale Stone',access,parameters):
                 dragonAcc.append(20) #dragon stone
-            if materialAccess('Essence Stone',access,parameters) and materialAccess('Dragon Crest Stone',access,parameters):
+            if materialAccess('Dandale Stone',access,parameters) and materialAccess('Dragon Crest Stone',access,parameters):
                 fenrirAcc.append(15) #fenrir stone
                 pyriosAcc.append(15) #pyrios stone
                 otherAcc.append(10) #nature talisman
@@ -1509,7 +1612,28 @@ def battleLogic(requiredStr,access,parameters):
         if accStr < foundAccStr:
             accStr = foundAccStr
 
-        if requiredStr >= 150:
+
+        if requiredStr >= 350:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(6) and quickGrind(access,parameters) and access.hasStrRecipe():
+                return True
+            else: return False
+        elif requiredStr >= 300:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(5) and quickGrind(access,parameters) and access.hasStrRecipe():
+                return True
+            else: return False
+        elif requiredStr >= 250:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(3) and quickGrind(access,parameters):
+                return True
+            else: return False
+        elif requiredStr >= 230:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2) and access.hasFlameStones(3) and quickGrind(access,parameters):
+                return True
+            else: return False
+        elif requiredStr >= 200:
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2) and access.hasFlameStones(2):
+                return True
+            else: return False
+        elif requiredStr >= 150:
             if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2):
                 return True
             else: return False
@@ -1520,6 +1644,10 @@ def battleLogic(requiredStr,access,parameters):
 
     else: return True #if battle logic isn't on then we skip everything and return true for access logic
 
+def quickGrind(access,parameters):
+    return (access.memoCheck(2) or ((access.canClimb() and southSideOpen(access, parameters) and access.past1()) or (access.canDefeat('Giasburn') and access.canClimb())) or \
+                        (coastNorthSideAccess(access, parameters) and access.canSeeDark()) or checkPangaiaPlainsNight(location=None,access=access,parameters=parameters))
+
 def materialAccess(material,access,parameters):
     match material:
         case 'Dragon Crest Stone': #Used for Acidic Liquid and Sunlight Fang too
@@ -1527,31 +1655,54 @@ def materialAccess(material,access,parameters):
             #Silent Tower Access
             (access.canDoubleJump() and access.canMove(24) and 
                 (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']))) or 
-            #Valley of Kings Access
-            (((access.canSwampWalk() or access.canUnderwater()) and ((
-                canAccessNorthSide(access, parameters) and 
-                templeOfGreatTreeOpen(access) and
-                access.past6() and 
-                access.canClimb()) or (
-                (access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.hasDiscovery('Sky Garden')))) or (
-            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
-            ) or 
+            #Pangai Plains Night
+            (canAccessNorthSide(access,parameters) and access.canSeeDark()) or
             #Octus Access
-            access.canDefeat('Octus Enterance') or 
+            access.canEnter('Octus Dungeon') or 
             #Lapis Mineral Vein Access
             (access.canUnderwater() and ((access.canMove(11) and access.canClimb()) or access.hasDiscovery('Zephyr Hill'))) 
-            or access.hasDiscovery('Lapis Mineral Vein'))
-        case 'Essence Stone': #blue feather and dandale horn are also used on this as it's the same requirements
+            or access.hasDiscovery('Lapis Mineral Vein') or
+            #Eternal Hill
+            (
+            canAccessNorthSide(access, parameters) and 
+            templeOfGreatTreeOpen(access) and
+            access.past6() and 
+            (access.canSwampWalk() or access.canUnderwater()) and 
+            access.past7()) 
+            or access.hasDiscovery('Graves of Ancient Heroes')                    
+            )
+        case 'Dandale Horn': #blue feather is also used on this as it's the same requirements
             #Access to Vista Ridge from Eternia or access to all of Lodinia
             return ((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or (lodiniaToVista(access) and access.canDoubleJump()))
+        case 'Essence Stone':
+            # East Coast Cave Access
+            return (((southSideOpen(access, parameters) and access.hasDina() and access.canDoubleJump()) or 
+            access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse'])  or 
+            (access.hasDiscovery('Beehive') and access.canDoubleJump())) or
+            # Underground Water Vein
+            ((access.canUnderwater() and ((access.canMove(11) and access.canClimb()) or access.hasDiscovery('Zephyr Hill'))) 
+            or access.hasDiscovery('Lapis Mineral Vein')) or
+            # Stone Pillar Wind Cave
+            (canAccessNorthSide(access, parameters) and access.canMove(18)) or
+            # Baja Tower
+            (eterniaOpen(access,parameters) and access.past4() and access.hasDana() and access.canClimb()) or
+            # Archeozoic Chasm
+            (eterniaOpen(access,parameters) and access.past5()) or 
+            # Silent Tower
+            (access.canDoubleJump() and (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])) and access.canMove(24))
+            )
         case 'Tectite Ore':
-            #Access to north side and Mountain Pinnacle Trail
-            return (access.hasDiscovery('Prismatic Mineral Vein') or (canAccessNorthSide(access,parameters) and access.past1()))
+            #Access to Mountain Pinnacle Trail, north side, gendarme, or western foot of gendarme
+            return (access.hasDiscovery('Prismatic Mineral Vein') or 
+                    (canAccessNorthSide(access,parameters)) or
+                    (access.canClimb() and southSideOpen(access, parameters) and access.past1()) or
+                    (access.canMove(11) and access.canSwampWalk()) or access.hasDiscovery('Airs Cairn')
+)
         case 'Iron Ore':
-            return (coastNorthSideAccess(access,parameters) or access.hasAnyDiscovery(['Milky White Vein','Indigo Mineral Vein']))
+            return (coastNorthSideAccess(access,parameters) or access.hasAnyDiscovery(['Milky White Vein','Indigo Mineral Vein','Lapis Mineral Vein']))
         case 'Underworld Parts':
             #Octus Access
-            return access.canDefeat('Octus Enterance')
+            return access.canEnter('Octus Dungeon')
         case 'Ancient Bone':
             #Valley of Kings Access
             return ((((access.canSwampWalk() or access.canUnderwater()) and ((
@@ -1609,19 +1760,10 @@ def materialAccess(material,access,parameters):
             return (((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or 
                      (lodiniaToVista(access) and access.canDoubleJump())) or (
             #Chasm Access
-            eterniaOpen(access,parameters) and access.past5()))
-        
-
-
-
-        
-
-    
-
-    
-        
-
-    
-            
-    
-    
+            eterniaOpen(access,parameters) and access.past5()) or
+            # lapis mineral vein
+            (access.hasDiscovery('Lapis Mineral Vein')) or
+            # Stone Pillar Wind Cave
+            (canAccessNorthSide(access, parameters) and access.canMove(18)) or
+            # Silent Tower
+            (access.canDoubleJump() and (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])) and access.canMove(24)))

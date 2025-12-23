@@ -1,7 +1,9 @@
 import shared.classr as classr
 from randomizer.accessLogic import *
 
-def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests, hints):
+shuffledEntranceList = []
+
+def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests):
     sphere = 0
     newInventory = []
     progressionLocations = []
@@ -30,11 +32,10 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Dogi Intercept Rewards: " + str(parameters.dogiRewards) + "\n")
     spoilerLog.write("Master Kong: " + str(parameters.mkRewards) + "\n")
     spoilerLog.write("Silvia: " + str(parameters.silvia) + "\n")
-    spoilerLog.write("Mephorash: " + str(parameters.maphorash) + "\n")
+    spoilerLog.write("Mephorash: " + str(parameters.Mephorash) + "\n")
     spoilerLog.write("Former Sanctuary Crypt: " + str(parameters.formerSanctuaryCrypt) + "\n")
     spoilerLog.write("Additional Intercept Rewards: " + str(parameters.intRewards) + "\n")
     spoilerLog.write("Experience Multiplier: " + str(parameters.expMult) + "\n")
-    spoilerLog.write("Exp Mult Growth Rate (%): " + str(int((parameters.expGrowth - 1)*100)) + "\n")
     spoilerLog.write("Battle Logic: " + str(parameters.battleLogic) + "\n")
     spoilerLog.write("Progressive Super Weapons: " + str(parameters.progressiveSuperWeapons) + "\n")
     spoilerLog.write("Open Octus Paths: " + str(parameters.openOctusPaths) + "\n")
@@ -52,6 +53,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Adventuring Gear Hints: " + str(parameters.adventuringGearHints) + "\n")
     spoilerLog.write("Castaway Hints: " + str(parameters.castawayHints) + "\n")
     spoilerLog.write("Foolish Location Hints: " + str(parameters.foolishHints) + "\n")
+    spoilerLog.write("Pirate Memo Hints: " + str(parameters.memoHints) + "\n")
     spoilerLog.write("Starting Loadout: \n\t")
     spoilerLog.write("Starting Level: " + str(parameters.startingLevel) + "\n\t")
     spoilerLog.write("Shop Level: " + str(parameters.shopLevel) + "\n\t")
@@ -85,18 +87,30 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         else:
             spoilerLog.write("\t" + str(char) + ": False\n")
     
+    locationsSorted = sorted(shuffledLocations, key=lambda x: (x.locRegion, x.locName, x.mapCheckID))
+    spoilerLog.write("\n")
+    spoilerLog.write("Entrance Shuffle: " + str(parameters.entranceShuffle) + "\n")
+
+    for location in locationsSorted:
+        if location.entrance or location.exit:
+            shuffledEntranceList.append(location)
+            location.writeSpoiler(spoilerLog)
+
     spoilerLog.write("\n")
     spoilerLog.write("Locations:\n")
 
-    locationsSorted = sorted(shuffledLocations, key=lambda x: (x.locRegion, x.locName, x.mapCheckID))
     for location in locationsSorted:
         #location.printSpoiler()
-        location.writeSpoiler(spoilerLog)
+        if not location.entrance and not location.exit:
+            location.writeSpoiler(spoilerLog)
+
+    playthroughAllProgression = classr.playthrough()
 
     for location in shuffledLocations:
         if location.locName == 'Opening Cutscene':
             openingCutscene = location
             progressionInventory.append(location)
+            playthroughAllProgression.build(location,sphere)
         else:
             accessibleLocation.append(location)
 
@@ -104,6 +118,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Playthrough:\n")
     print('Beginning playthrough')
     #We build an initial list of progression items on the way to the goal
+    attempt = 0
     while len(accessibleLocation) != 0 and not win:
         while True:
             itemFound = 0
@@ -116,12 +131,23 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
                         progressionLocations.append(newLocation)
                         itemFound+=1
                         
+                        playthroughAllProgression.build(newLocation,sphere)
                         if accessibleItem.itemName == 'End the Lacrimosa':
                             win = True
                             break
-                        
+
             if itemFound == 0 or win: break
         
+        print('unreached locations:')
+        for location in accessibleLocation:
+            if location.progression:
+                location.printSpoiler()
+        print('reached locations:')
+        for location in progressionLocations:
+            location.printSpoiler()
+        attempt +=1
+        if attempt >= 500: #Added this safety check in case there are other bugs in initial progression generation
+            raise Exception('Too many progression attempts, something is wrong with the logic')
         while len(newInventory) != 0:
             progressionInventory.append(newInventory.pop(0))
 
@@ -156,6 +182,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         spoilerLog.write('{ \n')
         if sphere == 0:
             openingCutscene.writeSpoiler(spoilerLog)
+
             playthrough.build(openingCutscene,sphere)
 
         while True:
@@ -177,13 +204,8 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         while len(foundLocations) != 0:
             location = foundLocations.pop(0)
             location.writeSpoiler(spoilerLog)
+
             playthrough.build(location,sphere)
-            # label required hints
-            if len(hints) > 0:
-                for hint in hints:
-                    if hint.locRegion == location.locRegion and hint.locName == location.locName and hint.mapCheckID == location.mapCheckID:
-                        hint.isRequired = True
-                        break 
         spoilerLog.write('} \n')
 
         while len(newInventory) != 0:
@@ -195,7 +217,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.flush()
     spoilerLog.close()
 
-    return playthrough #returning this though not doing anything with it yet.
+    return playthrough, playthroughAllProgression
 
 def testSeed(progressionLocations,parameters):
     progressionInventory = []

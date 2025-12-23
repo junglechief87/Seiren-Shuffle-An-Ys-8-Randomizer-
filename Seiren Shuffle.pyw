@@ -7,10 +7,12 @@ import shared.classr as classr
 from randomizer.rngPatcher import *
 from patch.chestPatcher import *
 from patch.miscPatches import *
+from patch.fileManagement import *
 import json
 import time
 import threading
 import webbrowser
+import traceback
 
 # Set appearance mode and color theme
 ctk.set_appearance_mode("System")  # Can be System, Dark, Light
@@ -22,8 +24,19 @@ FRAME_TITLE_STYLE = {
 }
 
 SETTINGS_FILE = "seirenShuffleSettings.json"
-ICON_PATH = "./shared/ysR Logo.ico"
 VERSION_NUM = "3.5.1"
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+ 
+    return os.path.join(base_path, relative_path)
+
+ICON_PATH = resource_path("./shared/ysR Logo.ico")
 
 class SeedFrame(ctk.CTkFrame):
   def __init__(self, master, ):
@@ -251,30 +264,35 @@ class ShuffleLocationsFrame(ctk.CTkFrame):
         self.landmark_checkbox = ctk.CTkCheckBox(self, text="Discovery-Sanity", variable=self.landmark_var)
         self.landmark_checkbox.grid(row=2, column=0, padx=5, pady=5, sticky="w")
 
+        #Dungeon Entrance Shuffle
+        self.entrance_var = ctk.BooleanVar(value=False)  # Default to False (unchecked)
+        self.entrance_checkbox = ctk.CTkCheckBox(self, text="Dungeon Entrance Shuffle", variable=self.entrance_var)
+        self.entrance_checkbox.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+
         # Dogi Intercept Rewards Checkbox
         self.dogi_intercept_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.dogi_intercept_checkbox = ctk.CTkCheckBox(self, text="Dogi Intercept Rewards", variable=self.dogi_intercept_var)
-        self.dogi_intercept_checkbox.grid(row=2, column=1, padx=5, pady=5, sticky="w")
+        self.dogi_intercept_checkbox.grid(row=2, column=2, padx=5, pady=5, sticky="w")
 
         # Master Kong Rewards Checkbox
         self.mk_rewards_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.mk_rewards_checkbox = ctk.CTkCheckBox(self, text="Master Kong Rewards", variable=self.mk_rewards_var)
-        self.mk_rewards_checkbox.grid(row=2, column=2, padx=5, pady=5, sticky="w")
+        self.mk_rewards_checkbox.grid(row=3, column=0, padx=5, pady=5, sticky="w")
 
         # Silvia Checkbox
         self.silvia_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.silvia_checkbox = ctk.CTkCheckBox(self, text="Silvia", variable=self.silvia_var)
-        self.silvia_checkbox.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.silvia_checkbox.grid(row=3, column=1, padx=5, pady=5, sticky="w")
 
         # Mephorash Checkbox
         self.mephorash_var = ctk.BooleanVar(value=True)  # Default to True (checked)
         self.mephorash_checkbox = ctk.CTkCheckBox(self, text="Mephorash", variable=self.mephorash_var)
-        self.mephorash_checkbox.grid(row=3, column=1, padx=5, pady=5, sticky="w")
+        self.mephorash_checkbox.grid(row=3, column=2, padx=5, pady=5, sticky="w")
 
         # Former Sanctuary Crypt Checkbox
         self.former_sanctuary_crypt_var = ctk.BooleanVar(value=False)  # Default to False (unchecked)
         self.former_sanctuary_crypt_checkbox = ctk.CTkCheckBox(self, text="Former Sanctuary Crypt", variable=self.former_sanctuary_crypt_var)
-        self.former_sanctuary_crypt_checkbox.grid(row=3, column=2, padx=5, pady=5, sticky="w")
+        self.former_sanctuary_crypt_checkbox.grid(row=4, column=0, padx=5, pady=5, sticky="w")
 
 class ProgressionPlacementModifiersFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -344,42 +362,10 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.experience_multiplier_scale = ctk.CTkSlider(self)
         self.experience_multiplier_scale.grid(row=1, column=1, padx=5, pady=5, sticky="ew", columnspan=3)
         self.experience_multiplier_scale.configure(from_=0, to=10, number_of_steps=20, command=self.update_experience_multiplier)
-        self.experience_multiplier_scale.set(4.0)
+        self.experience_multiplier_scale.set(3.0)
 
         self.experience_multiplier_value = ctk.CTkLabel(self, text="4.0", width=25)
         self.experience_multiplier_value.grid(row=1, column=4, padx=(0, 5), pady=5, sticky="w")
-        
-        # Exp Mult Growth Rate (Slider)
-        self.exp_mult_growth_rate_label = ctk.CTkLabel(self, text="Exp Mult Growth Rate (%): ")
-        self.exp_mult_growth_rate_label.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
-        
-        self.exp_mult_growth_rate_scale = ctk.CTkSlider(self)
-        self.exp_mult_growth_rate_scale.grid(row=2, column=1, padx=5, pady=5, sticky="ew", columnspan=3)
-        self.exp_mult_growth_rate_scale.configure(from_=0, to=10, number_of_steps=10, command=self.update_exp_mult_growth_rate)
-        self.exp_mult_growth_rate_scale.set(3.0)
-
-        self.exp_mult_growth_rate_value = ctk.CTkLabel(self, text="3.0", width=25) 
-        self.exp_mult_growth_rate_value.grid(row=2, column=4, padx=(0, 5), pady=5, sticky="w")
-
-
-        # Example of the exp growth
-        self.title = ctk.CTkLabel(self, text="Examples", fg_color="transparent")
-        self.title.grid(row=0, column=5, padx=(5,5), pady=(5, 0))
-
-        self.example_2_boss_label = ctk.CTkLabel(self, text="2 bosses: " + self.growthExample(2) + "x")
-        self.example_2_boss_label.grid(row=1, column=5, padx=(5,5), )
-        
-        self.example_3_boss_label = ctk.CTkLabel(self, text="3 bosses: " + self.growthExample(3) + "x")
-        self.example_3_boss_label.grid(row=2, column=5, padx=(5,5), )
-        
-        self.example_5_boss_label = ctk.CTkLabel(self, text="5 bosses: " + self.growthExample(5) + "x")
-        self.example_5_boss_label.grid(row=3, column=5, padx=(5,5), )
-
-        self.example_8_boss_label = ctk.CTkLabel(self, text="8 bosses: " + self.growthExample(8) + "x")
-        self.example_8_boss_label.grid(row=4, column=5, padx=(5,5), )
-
-        self.update_examples()
-    
 
         # Additional Intercept Rewards Checkbox
         self.int_rewards_var = ctk.BooleanVar(value=True)
@@ -403,7 +389,7 @@ class PacingModifiersFrame(ctk.CTkFrame):
 
         # Extra Flames Stones Checkbox
         self.ex_flame_stones_var = ctk.BooleanVar(value=True)
-        self.ex_flame_stones_checkbox = ctk.CTkCheckBox(self, text="Extra Flames Stones", variable=self.ex_flame_stones_var)
+        self.ex_flame_stones_checkbox = ctk.CTkCheckBox(self, text="Extra Flame Stones", variable=self.ex_flame_stones_var)
         self.ex_flame_stones_checkbox.grid(row=4, column=1, padx=5, pady=5, sticky="w")
 
         # Recipes Come w/ Ingredients Checkbox
@@ -450,34 +436,8 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.aeolus_urn_var = ctk.BooleanVar(value=False)
         self.eagle_eye_orb_var = ctk.BooleanVar(value=False)
 
-    def update_examples(self):
-        """ Update example labels dynamically based on the sliders' values. """
-        self.example_2_boss_label.configure(text=f"2 bosses: {self.growthExample(2)}x")
-        self.example_3_boss_label.configure(text=f"3 bosses: {self.growthExample(3)}x")
-        self.example_5_boss_label.configure(text=f"5 bosses: {self.growthExample(5)}x")
-        self.example_8_boss_label.configure(text=f"8 bosses: {self.growthExample(8)}x")
-
-        # Update UI immediately
-        self.update_idletasks()
-
-    # Update function for Experience Multiplier
     def update_experience_multiplier(self, value):
         self.experience_multiplier_value.configure(text=f"{float(value)}")
-        self.update_examples()
-
-    # Update function for Exp Mult Growth Rate
-    def update_exp_mult_growth_rate(self, value):
-        self.exp_mult_growth_rate_value.configure(text=f"{float(value)}")
-        self.update_examples()
-
-    def growthExample(self, bossCount):
-        baseExpMult = float(self.experience_multiplier_scale.get())
-        expMultGrowth = float(self.exp_mult_growth_rate_scale.get())
-
-        bossGrowthExample = baseExpMult * (pow((1 + expMultGrowth / 100), int(bossCount)))
-
-        # Doing this way to fix a problem where the frame would resize to adjust the extra digit in 10.04 as opposed to 9.04 (3 digits)... sad fix but a fix nonetheless 
-        return f"{bossGrowthExample:.1f}" if bossGrowthExample >= 10 else f"{bossGrowthExample:.2f}"
 
     def open_starting_options(self):
         # Create popup window
@@ -703,6 +663,7 @@ class MiscSettingsFrame(ctk.CTkFrame):
         self.adventuring_gear_hints = ctk.IntVar(value=1)
         self.castaway_hints = ctk.IntVar(value=3)
         self.foolish_location_hints = ctk.IntVar(value=5)
+        self.pirate_memo_hints = ctk.BooleanVar(value=False)
 
         # Starting Characters Button
         self.party_pool_button = ctk.CTkButton(self, text="Customize Starting Characters", command=self.open_start_character_pool)
@@ -807,8 +768,12 @@ class MiscSettingsFrame(ctk.CTkFrame):
         slider3.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
         ctk.CTkLabel(popup, textvariable=self.foolish_location_hints).grid(row=2, column=2, padx=10, pady=5)
 
+        # Memo Hints Button
+        self.memo_checkbox = ctk.CTkCheckBox(popup, text="Pirate Memo Hints", variable=self.pirate_memo_hints)
+        self.memo_checkbox.grid(row=3, column=0, padx=10, pady=5, sticky="ew")
+
         # Close button
-        ctk.CTkButton(popup, text="Close", command=popup.destroy).grid(row=3, column=0, columnspan=3, pady=10)
+        ctk.CTkButton(popup, text="Close", command=popup.destroy).grid(row=4, column=0, columnspan=3, pady=10)
 
 class CommandsFrame(ctk.CTkFrame):
     def __init__(self, master):
@@ -829,18 +794,23 @@ class CommandsFrame(ctk.CTkFrame):
         self.generate_seed_button = ctk.CTkButton(self, text="Open Readme", command=self.openReadme)
         self.generate_seed_button.grid(row=1, column=2, padx=5, pady=5, sticky="w")
 
-    
-        self.patch_files_button = ctk.CTkButton(self, text="Patch Files", command=self.patchFiles)
+        self.patch_files_button = ctk.CTkButton(self, text="Restore Original Files", command=self.restoreFiles)
         self.patch_files_button.grid(row=1, column=3, padx=5, pady=5)
 
+        self.patch_files_button = ctk.CTkButton(self, text="Patch Files", command=self.patchFiles)
+        self.patch_files_button.grid(row=1, column=4, padx=5, pady=5)
+
         self.generate_seed_button = ctk.CTkButton(self, text="Generate Seed", command=self.generateSeed)
-        self.generate_seed_button.grid(row=1, column=4, padx=5, pady=5)
+        self.generate_seed_button.grid(row=1, column=5, padx=5, pady=5)
 
         self.generate_seed_button = ctk.CTkButton(self, text="Launch Game", command=self.launchGame)
-        self.generate_seed_button.grid(row=1, column=5, padx=5, pady=5)
+        self.generate_seed_button.grid(row=1, column=6, padx=5, pady=5)
 
     def saveSettingsCallback(self):
         self.master.saveSettings()
+
+    def restoreFiles(self):
+        self.master.restore_files_callback()
 
     def patchFiles(self):
         self.master.patch_files_callback()
@@ -934,6 +904,7 @@ class App(ctk.CTk):
                 "party": self.shuffleLocationsFrame.party_var.get(),
                 "skills": self.shuffleLocationsFrame.skills_var.get(),
                 "discovery-Sanity": self.shuffleLocationsFrame.landmark_var.get(),
+                "entranceShuffle": self.shuffleLocationsFrame.entrance_var.get(),
                 "dogiIntercept": self.shuffleLocationsFrame.dogi_intercept_var.get(),
                 "mkRewards": self.shuffleLocationsFrame.mk_rewards_var.get(),
                 "silvia": self.shuffleLocationsFrame.silvia_var.get(),
@@ -948,8 +919,7 @@ class App(ctk.CTk):
                 "discoveries": self.progressionPlacementModifiersFrame.discoveries_option_menu.get(),
                 
                 # Pacing Modifiers
-                "experienceMultiplier": int(self.pacingModifiersFrame.experience_multiplier_scale.get()),
-                "expMultGrowthRate": int(self.pacingModifiersFrame.exp_mult_growth_rate_scale.get()),
+                "experienceMultiplier": float(self.pacingModifiersFrame.experience_multiplier_scale.get()),
                 "intRewards": self.pacingModifiersFrame.int_rewards_var.get(),
                 "battleLogic": self.pacingModifiersFrame.battle_logic_var.get(),
                 "superWeapons": self.pacingModifiersFrame.super_weapons_var.get(),
@@ -972,6 +942,7 @@ class App(ctk.CTk):
                 "adventuringGearHints": self.miscSettingsFrame.adventuring_gear_hints.get(),
                 "castawayHints": self.miscSettingsFrame.castaway_hints.get(),
                 "foolishLocationHints": self.miscSettingsFrame.foolish_location_hints.get(),
+                "pirateMemoHints": self.miscSettingsFrame.pirate_memo_hints.get(),
                 "startAdol": self.miscSettingsFrame.adol_var.get(),
                 "startLaxia": self.miscSettingsFrame.laxia_var.get(),
                 "startSahad": self.miscSettingsFrame.sahad_var.get(),
@@ -1047,6 +1018,7 @@ class App(ctk.CTk):
             self.shuffleLocationsFrame.party_var.set(settings.get("party", True))
             self.shuffleLocationsFrame.skills_var.set(settings.get("skills", True))
             self.shuffleLocationsFrame.landmark_var.set(settings.get("discovery-Sanity", True))
+            self.shuffleLocationsFrame.entrance_var.set(settings.get("entranceShuffle", False))
             self.shuffleLocationsFrame.dogi_intercept_var.set(settings.get("dogiIntercept", True))
             self.shuffleLocationsFrame.mk_rewards_var.set(settings.get("mkRewards", True))
             self.shuffleLocationsFrame.silvia_var.set(settings.get("silvia", True))
@@ -1067,14 +1039,9 @@ class App(ctk.CTk):
 
             # Pacing Modifiers
             exp_mult = settings.get("experienceMultiplier", 4)
-            growth_rate = settings.get("expMultGrowthRate", 3)            
-            # Convert to float and force update
+           
+            # Convert to float
             self.pacingModifiersFrame.experience_multiplier_scale.set(float(exp_mult))
-            self.pacingModifiersFrame.exp_mult_growth_rate_scale.set(float(growth_rate))
-            # Update labels and examples
-            self.pacingModifiersFrame.update_experience_multiplier(exp_mult)
-            self.pacingModifiersFrame.update_exp_mult_growth_rate(growth_rate)
-            self.pacingModifiersFrame.update_examples()
 
             self.pacingModifiersFrame.int_rewards_var.set(settings.get("intRewards", True))
             self.pacingModifiersFrame.battle_logic_var.set(settings.get("battleLogic", True))
@@ -1106,6 +1073,7 @@ class App(ctk.CTk):
                 settings.get("castawayHints", 3))
             self.miscSettingsFrame.foolish_location_hints.set(
                 settings.get("foolishLocationHints", 5))
+            self.miscSettingsFrame.pirate_memo_hints.set(settings.get("pirateMemoHints",False))
             self.miscSettingsFrame.adol_var.set(settings.get("startAdol", True))
             self.miscSettingsFrame.laxia_var.set(settings.get("startLaxia", True))
             self.miscSettingsFrame.sahad_var.set(settings.get("startSahad", True))
@@ -1137,6 +1105,11 @@ class App(ctk.CTk):
             self.pacingModifiersFrame.ares_seal_var.set(settings.get("aresSeal", False))
             self.pacingModifiersFrame.aeolus_urn_var.set(settings.get("aeolusUrn", False))
             self.pacingModifiersFrame.eagle_eye_orb_var.set(settings.get("eagleEyeOrb", False))
+
+            self.pacingModifiersFrame.update_experience_multiplier(exp_mult)
+            self.disable_enable_buttons(goal)
+            self.selectionsphereFrame.update_idletasks()
+            self.pacingModifiersFrame.update_idletasks()
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load settings: {str(e)}")
@@ -1187,6 +1160,7 @@ class App(ctk.CTk):
                 'Shuffle Crew': (self.shuffleLocationsFrame.crew_var, 'set'),
                 'Skills w/ Boss Bonuses': (self.shuffleLocationsFrame.skills_var, 'set'),
                 'Discovery-Sanity': (self.shuffleLocationsFrame.landmark_var, 'set'),
+                'Entrance Shuffle': (self.shuffleLocationsFrame.entrance_var, 'set'),
                 'Jewel Trades': (self.progressionPlacementModifiersFrame.jewel_trade_option_menu, 'set'),
                 'Discoveries': (self.progressionPlacementModifiersFrame.discoveries_option_menu, 'set'),
                 'Map Completion': (self.progressionPlacementModifiersFrame.map_completion_option_menu, 'set'),
@@ -1199,7 +1173,6 @@ class App(ctk.CTk):
                 'Former Sanctuary Crypt': (self.shuffleLocationsFrame.former_sanctuary_crypt_var, 'set'),
                 'Additional Intercept Rewards': (self.pacingModifiersFrame.int_rewards_var, 'set'),
                 'Experience Multiplier': (self.pacingModifiersFrame.experience_multiplier_scale, 'set'),
-                'Exp Mult Growth Rate (%)': (self.pacingModifiersFrame.exp_mult_growth_rate_scale, 'set'),
                 'Battle Logic': (self.pacingModifiersFrame.battle_logic_var, 'set'),
                 'Progressive Super Weapons': (self.pacingModifiersFrame.super_weapons_var, 'set'),
                 'Open Octus Paths': (self.pacingModifiersFrame.open_paths_var, 'set'),
@@ -1217,6 +1190,7 @@ class App(ctk.CTk):
                 'Adventuring Gear Hints': (self.miscSettingsFrame.adventuring_gear_hints, 'set_int'),
                 'Castaway Hints': (self.miscSettingsFrame.castaway_hints, 'set_int'),
                 'Foolish Location Hints': (self.miscSettingsFrame.foolish_location_hints, 'set_int'),
+                'Pirate Memo Hints': (self.miscSettingsFrame.pirate_memo_hints, 'set'),
                 'Adol': (self.miscSettingsFrame.adol_var, 'set'),
                 'Laxia': (self.miscSettingsFrame.laxia_var, 'set'),
                 'Sahad': (self.miscSettingsFrame.sahad_var, 'set'),
@@ -1290,21 +1264,15 @@ class App(ctk.CTk):
             # Pacing Modifiers
             exp_mult = float(settings.get("Experience Multiplier", 4))
             self.pacingModifiersFrame.experience_multiplier_scale.set(exp_mult)
-            self.pacingModifiersFrame.update_experience_multiplier(exp_mult)
-            
-            growth_rate = float(settings.get("Exp Mult Growth Rate (%)", 3))
-            self.pacingModifiersFrame.exp_mult_growth_rate_scale.set(growth_rate)
-            self.pacingModifiersFrame.update_exp_mult_growth_rate(growth_rate)
 
             # Force UI updates
+            self.pacingModifiersFrame.update_experience_multiplier(exp_mult)
+            self.disable_enable_buttons(goal)
             self.selectionsphereFrame.update_idletasks()
-            self.pacingModifiersFrame.update_examples()
+            self.pacingModifiersFrame.update_idletasks()
 
             # Update final boss dependencies
             self.finalBossSettingsFrame.finalBossChange(settings.get("Final Boss", "Theos de Endogram"))
-
-            # Update examples in pacing modifiers
-            self.pacingModifiersFrame.update_examples()
 
             self.show_notification("Seed imported successfully!")
 
@@ -1380,17 +1348,90 @@ class App(ctk.CTk):
         # Update any dependent UI components
         self.update_idletasks()
 
+    def restore_files_callback(self):
+        try:
+            progress = ctk.CTkToplevel(self)
+            progress.title("Restore Progress")
+            progress.geometry("240x140")
+            progress.grab_set()  # Make popup modal
+            progress.after(201, lambda: progress.iconbitmap(ICON_PATH))
+            progress.wait_visibility()
+            progress.lift()  # Bring to front
+
+            progressLabel = ctk.CTkLabel(progress, text="Restore in progress, please wait...")
+            progressLabel.grid(row=0, column=0, padx=10, pady=10)
+            progressBar = ctk.CTkProgressBar(progress, mode="determinate", determinate_speed = 50)
+            progressBar.grid(row=1, column=0, padx=10, pady=10, sticky="we")
+            self.update()
+
+            progressBar.set(0)
+            self.update()
+            restoreOriginalGameFiles()
+            progressBar.step()
+            self.update()
+            self.show_notification("Restore Complete!")
+            progress.destroy()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Backup files don't exist: {str(e)}")
+
     def patch_files_callback(self):
         try:
+            progress = ctk.CTkToplevel(self)
+            progress.title("Patching Progress")
+            progress.geometry("240x140")
+            progress.grab_set()  # Make popup modal
+            progress.after(201, lambda: progress.iconbitmap(ICON_PATH))
+            progress.wait_visibility()
+            progress.lift()  # Bring to front
+
+            progressLabel = ctk.CTkLabel(progress, text="Patching in progress, please wait...")
+            progressLabel.grid(row=0, column=0, padx=10, pady=10)
+            progressBar = ctk.CTkProgressBar(progress, mode="determinate", determinate_speed = 10)
+            progressBar.grid(row=1, column=0, padx=10, pady=10, sticky="we")
+            self.update()
+
+            progressBar.set(0)
+            progressLabel.configure(text="Backing up original game files...")
+            self.update()
+            copyOriginalGameFiles()
+            progressBar.step()
+            progressLabel.configure(text="Downloading files...")
+            self.update()
+            downloadFiles()
+            progressBar.step()
+            progressLabel.configure(text="Cleaning chests...")
+            self.update()
             cleanChests()
+            progressBar.step()
+            progressLabel.configure(text="Patching game files...")
+            self.update()
+            makeResourceDropsGuaraneteed()
+            progressBar.step()
+            progressLabel.configure(text="Final patches...")
+            self.update()
             miscFixes()
             AddWarpToFSCCrystal()
+            progressBar.step()
+            self.update()
             self.show_notification("Patch Complete!")
+            progress.destroy()
+
         except Exception as e:
             messagebox.showerror("Error", f"Patching failed: {str(e)}")
 
     def generate_seed_callback(self):
+            
         try:
+            explosivePlant = parent_directory + "/chr/enemy/m0660/m0660.mtb"
+            plantRespawn = readFileIntoBuffer(explosivePlant)
+
+            # this is the last file edited by the patcher
+            # if it's not equal to what the patcher sets it to then the files aren't yet patched 
+            print(plantRespawn[0xE05])
+            if plantRespawn[0xE05] != 0x3C: 
+                raise Exception("Files not yet patched!")
+            
             parameters = classr.guiInput()
             # Get all parameters from GUI components
             parameters.getSeed(self.seedFrame.seed_var.get())
@@ -1408,7 +1449,8 @@ class App(ctk.CTk):
                 self.shuffleLocationsFrame.party_var.get(),
                 self.shuffleLocationsFrame.crew_var.get(),
                 self.shuffleLocationsFrame.skills_var.get(),
-                self.shuffleLocationsFrame.landmark_var.get()
+                self.shuffleLocationsFrame.landmark_var.get(),
+                self.shuffleLocationsFrame.entrance_var.get()
             )
             
             # Progression Modifiers
@@ -1438,8 +1480,7 @@ class App(ctk.CTk):
             
             # Experience Multipliers
             parameters.getExpMult(
-                float(self.pacingModifiersFrame.experience_multiplier_scale.get()),
-                float(self.pacingModifiersFrame.exp_mult_growth_rate_scale.get())
+                float(self.pacingModifiersFrame.experience_multiplier_scale.get())
             )
             
             # Final Boss Settings
@@ -1459,6 +1500,7 @@ class App(ctk.CTk):
                 self.miscSettingsFrame.adventuring_gear_hints.get(),
                 self.miscSettingsFrame.castaway_hints.get(),
                 self.miscSettingsFrame.foolish_location_hints.get(),
+                self.miscSettingsFrame.pirate_memo_hints.get(),
                 self.miscSettingsFrame.adol_var.get(),
                 self.miscSettingsFrame.laxia_var.get(),
                 self.miscSettingsFrame.sahad_var.get(),
@@ -1498,6 +1540,7 @@ class App(ctk.CTk):
             self.show_notification("Seed Generation Complete!")
             
         except Exception as e:
+            traceback.print_exc()
             messagebox.showerror("Error", f"Seed generation failed: {str(e)}")
     
     def show_notification(self, message, color = "#90ee90"):

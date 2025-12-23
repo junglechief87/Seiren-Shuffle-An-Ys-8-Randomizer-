@@ -8,7 +8,8 @@ from randomizer.shuffle import *
 from randomizer.gameStartFunctions import *
 from patch.chestPatcher import *
 from randomizer.audioShuffle import *
-from patch.miscPatches import pastDanaFixes
+from patch.miscPatches import pastDanaFixes, randomizeOctoBosses, newExpMult
+from randomizer.buildEntrances import *
 
 #This is essentially the BnB for how this rando works. This script writes a big .scp file, the game's native scripting files, that we call for all randomized locations (as well as some other important functions for a rando)
 #This takes in the game's shuffled list of loctions and then builds the scripts.
@@ -40,8 +41,8 @@ def rngPatcherMain(parameters):
         randomize_bgmtbl(parameters.seed)
     else:
         restore_original_bgm()
-
-    shuffledLocations = shuffleLocations(parameters) #shuffle and fill functions run from this call
+    
+    shuffledLocations, playthrough, playthroughAllProgression = shuffleLocations(parameters) #shuffle and fill functions run from this call
 
     for inc in scpIncludeList:
         patchFile = patchFile + inc + '\n'
@@ -75,15 +76,25 @@ def rngPatcherMain(parameters):
         patchFile = patchFile + buildPsyches(shuffledLocations,parameters)
     if parameters.formerSanctuaryCrypt:
         patchFile = patchFile + buildFSCWarp()
-    patchFile = patchFile + expMult(parameters)
+    bossScalingScript, finalNonGoalBossLevel = bossScaling(playthroughAllProgression,parameters)
+    patchFile = patchFile + bossScalingScript
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
     patchFile = patchFile + octusGoal(parameters)
+    if parameters.openOctusPaths:
+        patchFile = patchFile + octoBosses(parameters, finalNonGoalBossLevel)
+    else:
+        #this is to restore the original values
+        randomizeOctoBosses(parameters)
     patchFile = patchFile + goal(parameters)
-    patchFile = patchFile + endingHandler(parameters)
+    patchFile = patchFile + endingHandler(parameters,finalNonGoalBossLevel)
+    if parameters.entranceShuffle:
+        patchFile = patchFile + buildEntrances()
     with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string
         fileToPatch.write(patchFile)
         fileToPatch.close()
+
+    expMult(parameters)
 
 #function used for all non-person item function generation
 def genericItemMessage(location,vanillaScript,parameters):    
@@ -174,6 +185,9 @@ function "{0}"
         script = script + buildBoat
     elif location.itemID in [569,570,571,572,573,574,575,576,577,578,579] and parameters.extraIngredients: #item IDs for recipes
         script = script + recipeIngredients(location.itemID)
+    
+    if location.itemID in [750,751,752,753,754,755,760,761,762,763] and parameters.memoHints:
+        script = script + memoHints(location.itemID)
         
     message = genericMessage
     script =  script + vanillaScript #append the original chest scripts to the end of the function
@@ -197,10 +211,6 @@ function "{0}"
 function "{0}"
 {{
     SetStopFlag(STOPFLAG_TALK)
-//    GetItem({1},{2})
-//    GetItemMessageExPlus({1},{2},{3},"{4}",0,0)
-//    WaitPrompt()
-//    WaitCloseWindow()
     {5}
    ResetStopFlag(STOPFLAG_TALK)
 }}
@@ -280,7 +290,7 @@ def buildSkillLocation(location,script):
     itemIcon = -1
     itemQuantity = 1
     itemSE = 'ITEMMSG_SE_NORMAL'
-    skillInfo = getSkillInfo(location.itemName) #retuns tuple: character,skill name,character name
+    skillInfo = getSkillInfo(location.itemName) #returns tuple: character,skill name,character name
     characterName = skillInfo[2]
     message = "#4C" + characterName + skillMessage + skillInfo[1] + "#4C."
     character = skillInfo[0]
@@ -408,6 +418,29 @@ def recipeIngredients(itemID):
         GetItem(ICON3D_FD_VG_PUMPKIN,4)
         """
         return ingredients
+
+def memoHints(itemID):
+    match itemID:
+        case 750:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_01,1)\n"
+        case 751:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_02,1)\n"
+        case 752:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_03,1)\n"
+        case 753:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_04,1)\n"
+        case 754:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_05,1)\n"
+        case 755:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_P_06,1)\n"
+        case 760:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_01,1)\n"
+        case 761:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_02,1)\n"
+        case 762:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_03,1)\n"
+        case 763:
+            return "\n\t\tSetFlag(GF_SUBEV_GET_MEMO_T_04,1)\n"
     
 #The glow stone will now trigger this script from the chest that has it. This unlocks night explorations.
 def makeGlowStoneUseful():
@@ -439,7 +472,7 @@ def danaPastEvents(pastItem):
         script = """
     if(!FLAG[GF_03MP1101_LEAVE_CAMP] ) //primordial passage access
     {
-        SetFlag(GF_TBOX_DUMMY131, 1) // activate load zone to pinnacle from temple approach
+        SetFlag(GF_TBOX_DUMMY131, 1) // activate load zone to pinnacle from temple approach, moved to primordial passage post entrance shuffle
         SetFlag(GF_03MP1101_LEAVE_CAMP,1)
         GetItemMessageExPlus(-1,0,ITEMMSG_SE_NORMAL,"The path up The Mountain is open.",0,0)
         WaitPrompt()
@@ -804,23 +837,65 @@ function "goal"
 """
     return selectionSphereAccess
 
+def octoBosses(parameters, finalNonGoalBossLevel):
+    random.seed(parameters.seed)
+    octoBossAliases = ['"ev_mons01"','"ev_mons02"','"ev_mons03"','"ev_mons04"','"ev_mons05"','"ev_mons06"','"ev_mons07"','"ev_mons08"','"ev_mons09"','"ev_mons10"']
+    HPmod = round(finalNonGoalBossLevel/80,2)
+    EXPMod = round((140)/finalNonGoalBossLevel,1)
+    script = '\tfunction "setOctoBossLevels"\n\t{\n'
+    for boss in octoBossAliases:
+        bossLevel = random.randrange(65,75)
+        script = script + '\t\tSetLevel(' + boss + ', ' + str(bossLevel) + ')\n'
+        script = script + '\t\tSetChrWork(' + boss + ', CWK_MAXHP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+        script = script + '\t\tSetChrWork(' + boss + ', CWK_HP, (' + boss.replace('"','') + '.CHRWORK[CWK_MAXHP]))\n'
+        script = script + '\t\tSetChrWorkGroup(' + boss + ', CWK_EXPMUL, ' + str(EXPMod) + 'f)\n'
+    script = script + '\t}\n'
+
+    randomizeOctoBosses(parameters)
+
+    return script
 #This sorts out our final boss settings.
 #First we figure out what phases we're doing then we run through our script that's called to start the final boss and what's used to call the ending cutscenes.
 #if we're only doing theos then the theos start script calls theos and the ending script calls the ending cutscene.
 #if we're doing both then the ending cutscene script instead calls origin.
 #if we're only doing origin then the theos start script calls the origin boss fight.
 #for Past Dana we only load the Io fight
-def endingHandler(parameters):
+def endingHandler(parameters, finalNonGoalBossLevel):
+    finalBossLevel = finalNonGoalBossLevel + 2
+
+    if parameters.charMode != 'Past Dana':
+        finalBossLevel = finalBossLevel + 2
+    if parameters.goal == 'Untouchable':
+        finalBossLevel = 80
+    if parameters.goal == 'release the psyches':
+        finalBossLevel = finalBossLevel + 2*parameters.numGoal
+    
+    finalBossLevelScript = """
+    function "finalBossLevel"
+    {{
+        SetChrWorkGroup(B020, CWK_LV, {0})
+        SetChrWorkGroup(B021, CWK_LV, {0})
+        SetChrWorkGroup(B021IVY, CWK_LV, {0})
+        SetChrWorkGroup(B022, CWK_LV, {0})
+        SetChrWorkGroup(B023, CWK_LV, {0})
+        SetChrWorkGroup(B024, CWK_LV, {0})
+        SetChrWorkGroup(B025, CWK_LV, {0})
+        SetChrWorkGroup(B009, CWK_LV, {1})
+        SetChrWorkGroup(B010, CWK_LV, {1})
+        SetChrWorkGroup(B030, CWK_LV, {0})
+    }}
+    """
+    finalBossLevelScript = finalBossLevelScript.format(str(finalBossLevel), str(finalBossLevel + 1))
 
     if parameters.charMode == 'Past Dana':
         ioFightLoad = """
     function "finalBoss"
     {
-        LoadArg("map/mp6569m/mp6569m.arg")
+        LoadArg("map/mp6569m/c.arg")
 	    EventCue("mp6569m:EV_RetryBoss")
     }
     """
-        return ioFightLoad
+        return ioFightLoad + finalBossLevelScript
     
     if parameters.theosPhase == 'First':
         theosPhase = ''
@@ -912,7 +987,7 @@ def endingHandler(parameters):
     """
         ending1 = ending1.format(originPhase,package)
 
-    return theosStartScript + ending1
+    return theosStartScript + ending1 + finalBossLevelScript
 
 #This flag was original tripped by the chest event from the chest on the Docks of East Coast Cave. Now it has been moved to the note that was originally in that chest.
 def pirateShipDocks():
@@ -1220,7 +1295,7 @@ def buildPsyches(shuffledLocations, parameters):
                'Minos': ['LoadArg("map/mp6306b/mp6306b.arg")', 'EventCue("mp6306b:EV_RetryBoss")', 'MN_D_MP6306b', 'B110'],
                'Nestor': ['LoadArg("map/mp6307b/mp6307b.arg")', 'EventCue("mp6307b:EV_RetryBoss")', 'MN_D_MP6307b', 'B111'],
                'Ura': ['LoadArg("map/mp6308b/mp6308b.arg")', 'EventCue("mp6308b:EV_RetryBoss")', 'MN_D_MP6308b', 'B008'],
-               'Le-Erythros': ['LoadArg("map/mp6409b/mp6409b.arg")', 'EventCue("mp6409b:EV_RetryBoss")', 'MN_D_MP6409B', 'b012'],
+               'Le-Erythros': ['LoadArg("map/mp6409b/mp6409b.arg")', 'EventCue("mp6409b:EV_RetryBoss")', 'MN_D_MP6409B', 'B012'],
                'Grazios': ['LoadArg("map/mp6519m/mp6519m.arg")', 'EventCue("mp6519m:EV_RetryBoss")', 'MN_D_MP6519M','B161'],
                'Nebritia': ['LoadArg("map/mp6529m/mp6529m.arg")', 'EventCue("mp6529m:EV_RetryBoss")', 'MN_D_MP6529M','B162'],
                'Argura': ['LoadArg("map/mp6539m/mp6539m.arg")', 'EventCue("mp6539m:EV_RetryBoss")', 'MN_D_MP6539M', 'B163'],
@@ -1257,6 +1332,92 @@ def buildPsyches(shuffledLocations, parameters):
         if location.itemName == 'Empty Psyches\Magma Fight(DANA)':
             bossFight5 = bossFlagDict[location.locRegion]
             bossLoc5 = location.locRegion
+
+    wardenScaling = """
+        SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
+        SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
+"""
+    lowAccessReqs = ['Towering Coral Forest','Eroded Valley']
+    midAccessReqs = ['Schlamm Jungle','Mont Gendarme','Temple of the Great Tree']
+    highAccessReqs = ['Baja Tower','Pirate Ship Eleftheria','Archeozoic Chasm','Valley of Kings','Silent Tower']
+
+    lowLevelWarden = random.randrange(38,42)
+    midLevelWarden = random.randrange(48,52)
+    highLevelWarden = random.randrange(58,62)
+    maxLevelRange = random.randrange(68,72)
+
+    if parameters.charMode == 'Past Dana':
+        lowLevelWarden = lowLevelWarden - 5
+        midLevelWarden = midLevelWarden - 5
+        highLevelWarden = highLevelWarden - 5
+        maxLevelRange = maxLevelRange - 5 
+
+    if bossLoc1 in lowAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
+    elif bossLoc1 in midAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
+    elif bossLoc1 in highAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
+    else:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
+
+    if bossLoc2 in lowAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
+    elif bossLoc2 in midAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
+    elif bossLoc2 in highAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
+    else:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
+    
+    if bossLoc3 in lowAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
+    elif bossLoc3 in midAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
+    elif bossLoc3 in highAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
+    else:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
+
+    if bossLoc4 in lowAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
+    elif bossLoc4 in midAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
+    elif bossLoc4 in highAccessReqs:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
+    else:
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
+
+    if parameters.charMode == 'Past Dana':
+        if bossLoc5 in lowAccessReqs:
+            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
+            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
+        elif bossLoc5 in midAccessReqs:
+            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
+            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
+        elif bossLoc5 in highAccessReqs:
+            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
+            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
+        else:
+            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
+            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
+
 
     ### Past Dana Mode Bosses
     if parameters.charMode == 'Past Dana':
@@ -1389,7 +1550,13 @@ def buildPsyches(shuffledLocations, parameters):
     
     }}
 
+    function "wardenScaling"
+    {{
+        {26} 
+    }}
+    
     {25}
+
 """
         bossReturn = """
         function "bossReturn"
@@ -1436,7 +1603,7 @@ def buildPsyches(shuffledLocations, parameters):
                                      bossCue[bossPool[0]][0],bossCue[bossPool[0]][1],bossCue[bossPool[1]][0],bossCue[bossPool[1]][1],
                                      bossCue[bossPool[2]][0],bossCue[bossPool[2]][1],bossCue[bossPool[3]][0],bossCue[bossPool[3]][1],
                                      bossCue[bossPool[4]][0],bossCue[bossPool[4]][1],
-                                     bossReturn)
+                                     bossReturn,wardenScaling)
     
     #### Standard Mode
 
@@ -1544,7 +1711,7 @@ def buildPsyches(shuffledLocations, parameters):
     
     }}
     
-    function "levelScaling"
+    function "wardenScaling"
     {{
         {8} 
     }}
@@ -1579,28 +1746,200 @@ def buildPsyches(shuffledLocations, parameters):
 """
     bossReturn = bossReturn.format(bossCue[bossPool[0]][2], bossCue[bossPool[1]][2], bossCue[bossPool[2]][2], bossCue[bossPool[3]][2])
 
-    levelScaling = """
-    SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
-    SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
-"""
-    if 'Melaiduma' in [bossPool]:
-        levelScaling = levelScaling + 'SetLevel("B170", 80)\n'
-    if bossLoc1 != 'Octus Overlook':
-        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[0]][3] + ', 60)\n'
-    if bossLoc2 != 'Octus Overlook':
-        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[1]][3] + ', 60)\n'
-    if bossLoc3 != 'Octus Overlook':
-        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[2]][3] + ', 60)\n'
-    if bossLoc4 != 'Octus Overlook':
-        levelScaling = levelScaling + 'SetLevel(' + bossCue[bossPool[3]][3] + ', 60)\n'
-    
     return bossCheckpoint.format(bossFight1,bossFight2,bossFight3,bossFight4,
-                                     bossLoc1,bossLoc2,bossLoc3,bossLoc4,levelScaling,
+                                     bossLoc1,bossLoc2,bossLoc3,bossLoc4,wardenScaling,
                                      bossPool[0],bossPool[1],bossPool[2],bossPool[3],
                                      bossCue[bossPool[0]][0],bossCue[bossPool[0]][1],bossCue[bossPool[1]][0],bossCue[bossPool[1]][1],
                                      bossCue[bossPool[2]][0],bossCue[bossPool[2]][1],bossCue[bossPool[3]][0],bossCue[bossPool[3]][1],
                                      bossReturn)
 
+def bossScaling(playthroughAllProgression,parameters):
+    bossLevels = [7,5,13,14,20,23,26,28,29,32,35,40,43,45,48,51,53,58,60,60,80]
+    bossIDs = {'Byfteriza': 'M0111',
+               'Avalodragil': 'B150',
+               'Serpentus': 'B100',
+               'Clareon': 'B000',
+               'Lonbrigius': 'B101B',
+               'Gargantula': 'B001',
+               'Magamandra': 'B102',
+               'Laspisus': 'B002',
+               'Kiergaard Weissman': 'B152',
+               'Avalodragil 2': 'B154',
+               'Giasburn': 'B003',
+               'Brachion': 'B006',
+               'Exmetal': 'B104',
+               'Carveros': 'B004',
+               'Pirate Revenant': 'B103',
+               'Coelacantos': 'B106',
+               'Oceanus': 'B007',
+               'Doxa Griel': 'B105',
+               'Basileus': 'B005',
+               'Mephorash': 'B153',
+               'Silvia': 'B155',}
+    remainingBosses = []
+    finalBossLevels = []
+
+    if not parameters.goal == 'Untouchable': # Make sure Melaiduma's level and ID are in the pool if he's not the goal
+        bossLevels.append(99) 
+        bossIDs['Melaiduma'] = 'B170' 
+
+    if not parameters.goal == 'Release the Psyches': # Make sure the Psyches' levels and IDs are in the pool if they aren't the goal
+        bossLevels.extend([67,70,73,75])
+        bossIDs['Psyche-Hydra'] = 'B112'
+        bossIDs['Psyche-Minos'] = 'B110'
+        bossIDs['Psyche-Nestor'] = 'B111'
+        bossIDs['Psyche-Ura'] = 'B008'
+
+    # build out a list of IDs for us to track what bosses aren't in the pool
+    for boss in bossIDs.keys():
+            remainingBosses.append(bossIDs.get(boss))
+
+    random.seed(parameters.seed)
+    # process bosses that are accessible before the goal in the seed and assign them levels in ascending order as the playthrough should have them in order
+    for boss in playthroughAllProgression.bosses:
+        if boss.mapCheckID in bossIDs.keys():
+            bossID = bossIDs.get(boss.mapCheckID)
+            bossLevel = bossLevels.pop(0)
+            finalNonGoalBossLevel = random.randrange(bossLevel-2,bossLevel+2)
+            finalBossLevels.append([remainingBosses.pop(remainingBosses.index(bossID)),random.randrange(bossLevel-2,bossLevel+2)])
+            
+    
+    # bosses post goal have their levels shuffled from among the remaining levels in the boss level pool
+    random.shuffle(bossLevels)
+    for bossID in remainingBosses:
+        bossLevel = bossLevels.pop(0)
+        finalBossLevels.append([bossID,random.randrange(bossLevel-2,bossLevel+2)])
+
+    fscBosses = ''
+    script = '\tfunction "bossScaling"\n\t{\n'
+    for boss in finalBossLevels:
+        script = script + '\t\tSetChrWorkGroup(' + boss[0] + ', CWK_LV, ' + str(boss[1]) + ')\n'
+        #handling special cases for bosses with forms or minions
+        if boss[0] == 'B005':
+            script = script + '\t\tSetChrWorkGroup(M0644, CWK_LV, ' + str(boss[1]) + ')\n'
+        if boss[0] == 'B101B':
+            script = script + '\t\tSetChrWorkGroup(B101, CWK_LV, ' + str(boss[1]) + ')\n'
+        if boss[0] == 'B170': # set FSC bosses relative to Melaiduma if Melaiduma is scaled
+            fscBosses = (f'\n\tfunction "fscBosses"\n'
+                         f'\t{{\n'
+                         f'\t\tSetChrWorkGroup(B103,	CWK_LV,	' + str(max(1,boss[1]-10)) + ')\n'
+                         f'\t\tSetChrWorkGroup(B006,	CWK_LV,	' + str(max(1,boss[1]-12)) + ')\n'
+                         f'\t\tSetChrWorkGroup(B001,	CWK_LV,	' + str(max(1,boss[1]-14)) + ')\n'
+                         f'\t\tSetChrWorkGroup(B105,	CWK_LV,	' + str(max(1,boss[1]-16)) + ')\n'
+                         f'\t\tSetChrWorkGroup(B161,	CWK_LV,	' + str(max(1,boss[1]-18)) + ')\n'
+                         f'\t}}\n')
+                        
+    script = script + '\t}'
+
+    return script + fscBosses, finalNonGoalBossLevel
+
+def buildFSCWarp():
+    function = ''
+    function = function + """
+function "FSC_warp"
+{
+    SetStopFlag(STOPFLAG_TALK)
+    SetFlag(TF_MENU_SELECT2, 0)
+    MenuReset()
+    MenuType(MENUTYPE_POPUP)
+
+    if(FLAG[GF_TBOX_DUMMY156])
+    {
+        MenuAdd(10, "1F - Chamber of Braziers, Ent")	
+    }
+    else if(!FLAG[GF_TBOX_DUMMY156])
+    {
+        MenuAdd(11, "1F - Chamber of Braziers, Ent")	
+    }
+
+
+    if(FLAG[GF_TBOX_DUMMY157])
+    {
+        MenuAdd(20, "2F - Chamber of Stone, Ent")	
+    }
+    else if(!FLAG[GF_TBOX_DUMMY157])
+    {
+        MenuAdd(21, "2F - Chamber of Stone, Ent")	
+    }
+
+    if(FLAG[GF_TBOX_DUMMY158])
+    {
+        MenuAdd(30, "3F - Chamber of Clairvoyance, Ent")	
+    }
+    else if(!FLAG[GF_TBOX_DUMMY158])
+    {
+        MenuAdd(31, "3F - Chamber of Clairvoyance, Ent")	
+    }
+
+    if(FLAG[GF_TBOX_DUMMY159])
+    {
+        MenuAdd(40, "4F - Chamber of Frost, Ent")	
+    }
+    else if(!FLAG[GF_TBOX_DUMMY159])
+    {
+        MenuAdd(41, "4F - Chamber of Frost, Ent")	
+    }
+
+    if(FLAG[GF_TBOX_DUMMY160])
+    {
+        MenuAdd(50, "5F - Chamber of Magma, Ent")	
+    }
+    else if(!FLAG[GF_TBOX_DUMMY160])
+    {
+        MenuAdd(51, "5F - Chamber of Magma, Ent")	
+    }
+
+    MenuEnable( 11, 0)
+    MenuEnable( 21, 0)
+    MenuEnable( 31, 0)
+    MenuEnable( 41, 0)
+    MenuEnable( 51, 0)
+    MenuOpen( TF_MENU_SELECT2 , 283 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
+    WaitMenu(0)
+    CloseMessage(6,0)
+    WaitCloseMessage(6)
+    MenuClose(10, 0)
+    
+    if(FLAG[TF_MENU_SELECT2] == 10)
+    {
+        MenuClose(10, 0)
+        LoadArg("map/mp6511/mp6511.arg")
+        EventCue("mp6511:init")
+        WaitFade()
+    }
+    else if(FLAG[TF_MENU_SELECT2] == 20)
+    {
+        MenuClose(20, 0)
+        LoadArg("map/mp6521/mp6521.arg")
+        EventCue("mp6521:init")
+        WaitFade()
+    }
+    else if(FLAG[TF_MENU_SELECT2] == 30)
+    {
+        MenuClose(30, 0)
+        LoadArg("map/mp6531/mp6531.arg")
+        EventCue("mp6531:init")
+        WaitFade()
+    }
+    else if(FLAG[TF_MENU_SELECT2] == 40)
+    {
+        MenuClose(40, 0)
+        LoadArg("map/mp6541/mp6541.arg")
+        EventCue("mp6541:init")
+        WaitFade()
+    }
+            else if(FLAG[TF_MENU_SELECT2] == 50)
+    {
+        MenuClose(50, 0)
+        LoadArg("map/mp6551/mp6551.arg")
+        EventCue("mp6551:init")
+        WaitFade()
+    }
+    ResetStopFlag(STOPFLAG_TALK)
+}
+"""
+    return function
+        
 def buildLandmarks(location,script):
     scriptName = buildLocScripts(location.locID, False)
     itemIcon = -1
@@ -1691,713 +2030,12 @@ function "{0}"
     return getLandmarkFunction.format(scriptName,itemIcon,itemQuantity,itemSE,message,landmarks[location.itemName]['flag'],landmarks[location.itemName]['marker'],script)
 
 
-def buildFSCWarp():
-    function = ''
-    function = function + """
-function "FSC_warp"
-    {
-        SetStopFlag(STOPFLAG_TALK)
-        
-        SetFlag(TF_MENU_SELECT2, 0)
-        MenuReset()
-        MenuType(MENUTYPE_POPUP)
-        
-        if(FLAG[GF_TBOX_DUMMY156])
-        {
-            MenuAdd(10, "1F - Chamber of Braziers, Ent")	
-        }
-        else if(!FLAG[GF_TBOX_DUMMY156])
-        {
-            MenuAdd(11, "1F - Chamber of Braziers, Ent")	
-        }
-        if(FLAG[GF_TBOX_DUMMY157])
-        {
-            MenuAdd(20, "2F - Chamber of Stone, Ent")	
-        }
-        else if(!FLAG[GF_TBOX_DUMMY157])
-        {
-            MenuAdd(21, "2F - Chamber of Stone, Ent")	
-        }
-        if(FLAG[GF_TBOX_DUMMY158])
-        {
-            MenuAdd(30, "3F - Chamber of Clairvoyance, Ent")	
-        }
-        else if(!FLAG[GF_TBOX_DUMMY158])
-        {
-            MenuAdd(31, "3F - Chamber of Clairvoyance, Ent")	
-        }
-        if(FLAG[GF_TBOX_DUMMY159])
-        {
-            MenuAdd(40, "4F - Chamber of Frost, Ent")	
-        }
-        else if(!FLAG[GF_TBOX_DUMMY159])
-        {
-            MenuAdd(41, "4F - Chamber of Frost, Ent")	
-        }
-        if(FLAG[GF_TBOX_DUMMY160])
-        {
-            MenuAdd(50, "5F - Chamber of Magma, Ent")	
-        }
-        else if(!FLAG[GF_TBOX_DUMMY160])
-        {
-            MenuAdd(51, "5F - Chamber of Magma, Ent")	
-        }
-        
-        MenuEnable( 11, 0)
-        MenuEnable( 21, 0)
-        MenuEnable( 31, 0)
-        MenuEnable( 41, 0)
-        MenuEnable( 51, 0)
-
-        MenuOpen( TF_MENU_SELECT2 , 283 , ADOLMENU_PPOSY , -2 , -2 , 10 , 1)
-        WaitMenu(0)
-        CloseMessage(6,0)
-        WaitCloseMessage(6)
-        MenuClose(10, 0)
-        
-        if(FLAG[TF_MENU_SELECT2] == 10)
-        {
-            MenuClose(10, 0)
-            LoadArg("map/mp6511/mp6511.arg")
-            EventCue("mp6511:init")
-            WaitFade()
-        }
-        else if(FLAG[TF_MENU_SELECT2] == 20)
-        {
-            MenuClose(20, 0)
-            LoadArg("map/mp6521/mp6521.arg")
-            EventCue("mp6521:init")
-            WaitFade()
-        }
-        else if(FLAG[TF_MENU_SELECT2] == 30)
-        {
-            MenuClose(30, 0)
-            LoadArg("map/mp6531/mp6531.arg")
-            EventCue("mp6531:init")
-            WaitFade()
-        }
-        else if(FLAG[TF_MENU_SELECT2] == 40)
-        {
-            MenuClose(40, 0)
-            LoadArg("map/mp6541/mp6541.arg")
-            EventCue("mp6541:init")
-            WaitFade()
-        }
-                else if(FLAG[TF_MENU_SELECT2] == 50)
-        {
-            MenuClose(50, 0)
-            LoadArg("map/mp6551/mp6551.arg")
-            EventCue("mp6551:init")
-            WaitFade()
-        }
-        ResetStopFlag(STOPFLAG_TALK)
-}
-"""
-    return function
-
-
-#this function runs once per map load. It's heavy handed but works to increase the exp of every enemy in the game.
-#there's a second similar formula we use for a growth rate, it's called per "major" boss defeat, which we do by just checking the flags that are set after each "major" boss and calling again.
-#this creates a compounding exp growth curve which should play well with this game's overall exp curve and help make sure levels don't come too quickly in "early game" while remaining relatively fast in "late game".
-#the idea is to flatten the overall exp curve in a way that makes sure grinding is never cumbersome in the rando while playthroughs remain fast but retain difficulty.
+# we're doing away with this old method and simplifying everything. Max exp is a character stat in this game and the status file contains an editable version of it.
+# so instead of the old method we're going to call a function to divide the character's max exp by our multiplier.
+# this achives the same effect as a global exp multiplier in a far cleaner way than our old method.
+# there is no growth rate anymore because honestly a lot of what it was going for is achieved through boss level scaling better
 def expMult(parameters):
-    scripExpMult = """
-function "expMult"
-{{
-    if(FLAG[SF_LOADMAP] || FLAG[GF_TBOX_DUMMY127])
-    {{
-        SetChrWorkGroup(B000,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B001,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B002,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B003,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B004,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B005,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B006,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B007,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B008,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B009,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B010,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B011,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B012,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B013,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B020,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B021,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B022,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B023,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B024,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B025,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B030,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B100,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B101,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B102,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B103,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B104,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B105,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B106,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B110,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B111,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B112,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B150,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B151,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B152,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B153,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B154,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B155,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B161,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B162,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B163,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B164,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B165,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(B170,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(G0001,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(G0002,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(G0003,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(G0004,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(G0005,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(G0006,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(G0007,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(G0008,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(G0009,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0100,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0101,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0102,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0103,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0104,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0105,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0106,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0107,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0108,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0109,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0110,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0111,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0112,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0113,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0120,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0121,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0122,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0123,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0124,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0140,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0141,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0142,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0143,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0144,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0145,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0146,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0147,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0148,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0149,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0150,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0151,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0200,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0201,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0202,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0203,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0220,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0221,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0222,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0223,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0224,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0225,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0226,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0240,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0241,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0300,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0301,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0302,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0303,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0340,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0341,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0400,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0401,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0402,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0403,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0440,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0441,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0442,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0500,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0501,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0502,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0503,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0504,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0600,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0601,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0602,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0603,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0604,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0605,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0620,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0621,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0622,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0623,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0640,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0641,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0642,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0643,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0644,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0660,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0661,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0662,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0663,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0664,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0680,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0700,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0701,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0800,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0801,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0805,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0806,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0810,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0811,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0815,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0816,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0830,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0831,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0840,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0841,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0850,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0851,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0860,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0861,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0870,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0871,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0881,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0882,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0883,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0884,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0885,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0886,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0887,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0888,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0889,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0890,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0900,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0901,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0902,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0903,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0910,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0911,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0915,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0916,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0920,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0925,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0926,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0930,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0931,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0935,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0936,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0940,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0941,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0942,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0945,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M0960,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1000,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1001,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1003,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1004,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1005,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1007,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1009,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1010,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1011,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1012,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1013,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1014,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1015,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1020,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1021,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1022,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1030,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1031,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1040,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1041,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1042,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1099,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1100,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1101,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1102,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1103,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1104,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1105,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1200,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1201,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1202,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1203,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1300,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1301,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1400,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1401,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1402,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1403,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1404,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1405,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1406,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1407,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1408,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1409,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1600,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1601,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1602,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1603,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1604,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1605,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1610,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1611,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1612,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M1613,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M2100,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M2101,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M2102,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M2103,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M9917,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M9918,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M9919,CWK_EXPMUL, {0}f)
-        SetChrWorkGroup(M9920,CWK_EXPMUL, {0}f)
-
-        SetFlag(GF_TBOX_DUMMY114,0)
-		SetFlag(GF_TBOX_DUMMY115,0)
-		SetFlag(GF_TBOX_DUMMY116,0)
-		SetFlag(GF_TBOX_DUMMY117,0)
-		SetFlag(GF_TBOX_DUMMY118,0)
-		SetFlag(GF_TBOX_DUMMY119,0)
-		SetFlag(GF_TBOX_DUMMY120,0)
-		SetFlag(GF_TBOX_DUMMY121,0)
-		SetFlag(GF_TBOX_DUMMY122,0)
-		SetFlag(GF_TBOX_DUMMY123,0)
-		SetFlag(GF_TBOX_DUMMY124,0)
-		SetFlag(GF_TBOX_DUMMY125,0)
-		SetFlag(GF_TBOX_DUMMY126,0)
-        
-        CallFunc("rng:bossCheck")
-    }}
-}}
-
-function "bossCheck"
-{{
-	
-    if(FLAG[GF_01MP1103_JOIN_SAHAD] && !FLAG[GF_TBOX_DUMMY114])
-    {{
-        SetFlag(GF_TBOX_DUMMY114,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_02MP1308_KILL_CHAMELEON] && !FLAG[GF_TBOX_DUMMY115])
-    {{
-        SetFlag(GF_TBOX_DUMMY115,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_TBOX_DUMMY074] && !FLAG[GF_TBOX_DUMMY116])
-    {{
-        SetFlag(GF_TBOX_DUMMY116,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_02MP2308_KILL_HIPPO] && !FLAG[GF_TBOX_DUMMY117])
-    {{
-        SetFlag(GF_TBOX_DUMMY117,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_02MP1103_KILL_KIERGAARD] && !FLAG[GF_TBOX_DUMMY118])
-    {{
-        SetFlag(GF_TBOX_DUMMY118,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_03MP4341_KILL_ANCIENT] && !FLAG[GF_TBOX_DUMMY119])
-    {{
-        SetFlag(GF_TBOX_DUMMY119,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_04MP6410_KILL_GUARDIAN] && !FLAG[GF_TBOX_DUMMY120])
-    {{
-        SetFlag(GF_TBOX_DUMMY120,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_05MP6329_KILL_BAHABOSS] && !FLAG[GF_TBOX_DUMMY121])
-    {{
-        SetFlag(GF_TBOX_DUMMY121,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_05MP0405_READ_REED] && !FLAG[GF_TBOX_DUMMY122])
-    {{
-        SetFlag(GF_TBOX_DUMMY122,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_TBOX_DUMMY078] && !FLAG[GF_TBOX_DUMMY123])
-    {{
-        SetFlag(GF_TBOX_DUMMY123,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_TBOX_DUMMY080] && !FLAG[GF_TBOX_DUMMY124])
-    {{
-        SetFlag(GF_TBOX_DUMMY124,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if((FLAG[GF_06MP6305_TALK_HYDRA] || FLAG[GF_06MP6306_TALK_MINOS] || FLAG[GF_06MP6307_TALK_NESTOR] || FLAG[GF_06MP6308_TALK_SARAI]) && !FLAG[GF_TBOX_DUMMY125])
-    {{
-        SetFlag(GF_TBOX_DUMMY125,1)
-        CallFunc("rng:expGrowth")
-    }}
-    if(FLAG[GF_SUBEV_06_6413_KILL_BOSS] && !FLAG[GF_TBOX_DUMMY126])
-    {{
-        SetFlag(GF_TBOX_DUMMY126,1)
-        CallFunc("rng:expGrowth")
-    }}
-}}
-
-function "expGrowth"
-{{
-    SetChrWorkGroup(B000,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B001,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B002,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B003,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B004,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B005,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B006,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B007,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B008,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B009,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B010,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B011,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B012,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B013,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B020,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B021,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B022,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B023,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B024,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B025,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B030,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B100,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B101,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B102,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B103,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B104,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B105,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B106,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B110,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B111,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B112,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B150,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B151,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B152,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B153,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B154,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B155,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B161,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B162,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B163,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B164,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B165,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(B170,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(G0001,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(G0002,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(G0003,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(G0004,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(G0005,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(G0006,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(G0007,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(G0008,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(G0009,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0100,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0101,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0102,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0103,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0104,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0105,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0106,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0107,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0108,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0109,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0110,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0111,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0112,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0113,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0120,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0121,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0122,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0123,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0124,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0140,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0141,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0142,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0143,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0144,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0145,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0146,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0147,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0148,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0149,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0150,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0151,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0200,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0201,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0202,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0203,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0220,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0221,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0222,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0223,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0224,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0225,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0226,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0240,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0241,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0300,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0301,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0302,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0303,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0340,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0341,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0400,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0401,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0402,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0403,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0440,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0441,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0442,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0500,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0501,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0502,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0503,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0504,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0600,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0601,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0602,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0603,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0604,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0605,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0620,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0621,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0622,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0623,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0640,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0641,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0642,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0643,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0644,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0660,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0661,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0662,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0663,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0664,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0680,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0700,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0701,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0800,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0801,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0805,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0806,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0810,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0811,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0815,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0816,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0830,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0831,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0840,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0841,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0850,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0851,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0860,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0861,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0870,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0871,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0881,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0882,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0883,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0884,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0885,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0886,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0887,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0888,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0889,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0890,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0900,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0901,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0902,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0903,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0910,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0911,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0915,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0916,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0920,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0925,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0926,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0930,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0931,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0935,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0936,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0940,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0941,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0942,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0945,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M0960,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1000,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1001,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1003,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1004,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1005,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1007,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1009,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1010,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1011,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1012,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1013,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1014,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1015,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1020,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1021,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1022,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1030,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1031,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1040,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1041,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1042,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1099,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1100,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1101,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1102,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1103,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1104,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1105,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1200,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1201,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1202,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1203,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1300,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1301,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1400,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1401,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1402,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1403,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1404,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1405,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1406,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1407,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1408,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1409,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1600,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1601,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1602,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1603,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1604,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1605,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1610,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1611,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1612,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M1613,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M2100,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M2101,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M2102,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M2103,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M9917,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M9918,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M9919,CWK_EXPMUL, {1}f)
-    SetChrWorkGroup(M9920,CWK_EXPMUL, {1}f)
-    CallFunc("rng:bossCheck")
-    
-}}
-""" 
-    return scripExpMult.format(parameters.expMult*2,parameters.expGrowth) 
-#Since exp scaling is removed by making the game think that the player level == enemy level the enemy exp in game is actually half of what the monster library shows as the base in game
-#I'm multiplying by 2 here so the base exp that's being multiplied matches what the player sees in game
+    newExpMult(parameters)
 
 
 

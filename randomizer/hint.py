@@ -140,7 +140,7 @@ class Hint:
         self.itemName = itemName
         self.quantity = quantity
         self.isFoolish = isFoolish
-        self.isRequired = isRequired #we will define this in spoiler log generation
+        self.isRequired = isRequired
         self.charPortrait = charPortrait
         self.locRegion = locRegion
         self.locName = locName
@@ -148,17 +148,19 @@ class Hint:
         self.displayFullLoc = displayFullLoc
 
 #This function will create and return a list of all hints that will be displayed ingame
-def createHints(shuffledLocations, parameters):
+def createHints(shuffledLocations, parameters, playthrough):
     random.seed(parameters.seed)
-    regionHasProgression = findBarrenRegions(shuffledLocations, parameters)
     barrenLocs = []
+    notBarrenLocs = []
     castawayLocs = []
     alreadyPickedKathleen = 0 #just a flag so select only 1 flame stone
     randomLocs = [] #I will be giving full location for random checks
     usefulAdventuringGearLocs = []
+    bossLocs = []
     nonRegions = ["Starting Skill", "Lombardia"]# We will also remove some awkward ones like "Adol Starting Skill" as these aren't really checks
-    nonItems = ["Defeated", "End the Lacrimosa"]# Removing the "Boss defeated" item
+    nonItems = ["End the Lacrimosa"]# Making bosses their own category as they're still useful information as to which are required
     seenBarrenRegions = set()
+    seenNotBarrenRegions = set()
 
     for location in shuffledLocations:
         if any(nonRegion in location.locRegion for nonRegion in nonRegions) or any(nonItem in location.itemName for nonItem in nonItems):
@@ -171,37 +173,50 @@ def createHints(shuffledLocations, parameters):
                     locName=location.locName,
                     mapCheckID=location.mapCheckID,
                 )
-        if regionHasProgression[location.locRegion] == True: #has progression
-            if location.itemName in ["Grip Gloves", "Glow Stone", "Archeopteryx Wings", "Gale Feather", "Hermit's Scale", "Purifying bell", "Float Shoes"]:
-                usefulAdventuringGearLocs.append(hint)
-            elif location.crew:
-                if location.itemID == 778 and alreadyPickedKathleen:
-                    hint.locName = location.locName
-                    hint.mapCheckID = location.mapCheckID
-                    hint.displayFullLoc = True
-                    randomLocs.append(hint)
-                else:
-                    if location.itemID == 778:
-                        hint.itemName == "Kathleen"
-                    castawayLocs.append(hint)
-                    alreadyPickedKathleen = 1
-            else:
+        
+        if location.locID in playthrough.locIDList:
+            hint.isRequired = True
+
+        if location.itemName in ["Grip Gloves", "Glow Stone", "Archeopteryx Wings", "Gale Feather", "Hermit's Scale", "Purifying bell", "Float Shoes"]:
+            usefulAdventuringGearLocs.append(hint)
+        elif location.crew:
+            if location.itemID == 778 and alreadyPickedKathleen:
                 hint.locName = location.locName
                 hint.mapCheckID = location.mapCheckID
                 hint.displayFullLoc = True
                 randomLocs.append(hint)
-        else: #region is barren
-            if hint.locRegion not in seenBarrenRegions:
-                hint.isFoolish = True
-                barrenLocs.append(hint)
-                seenBarrenRegions.add(hint.locRegion)
+            else:
+                if location.itemID == 778:
+                    hint.itemName == "Kathleen"
+                castawayLocs.append(hint)
+                alreadyPickedKathleen = 1
+        elif 'Defeated' in location.itemName:
+            hint.locName = location.locName
+            hint.mapCheckID = location.mapCheckID
+            hint.displayFullLoc = True
+            bossLocs.append(hint)
+        else:
+            hint.locName = location.locName
+            hint.mapCheckID = location.mapCheckID
+            hint.displayFullLoc = True
+            randomLocs.append(hint)
 
+        if hint.locRegion not in seenBarrenRegions and hint.locRegion not in playthrough.regions:
+            hint.isFoolish = True
+            barrenLocs.append(hint)
+            seenBarrenRegions.add(hint.locRegion)
+
+        if hint.locRegion not in seenNotBarrenRegions and hint.locRegion in playthrough.regions:
+            notBarrenLocs.append(hint)
+            seenNotBarrenRegions.add(hint.locRegion)
 
     #Now we shuffle the lists, and pick the ones we want, merge them in the same list and return
     random.shuffle(castawayLocs)
     random.shuffle(usefulAdventuringGearLocs)
     random.shuffle(randomLocs) #unused for now
     random.shuffle(barrenLocs)
+    random.shuffle(bossLocs)
+    random.shuffle(notBarrenLocs)
 
     #Here it is probably a good idea to set these quantities in the randomizer user interface for customizeable hints
     numberOfAdventureGearLocs = min(len(usefulAdventuringGearLocs), int(parameters.adventuringGearHints))
@@ -213,7 +228,20 @@ def createHints(shuffledLocations, parameters):
     selected_random_locs = randomLocs[:numberOfRandomLocs]
     selected_castaways = castawayLocs[:numberOfCastawayLocs]
     selected_barren_locs = barrenLocs[:numberOfBarrenLocs]
+    selected_boss_locs = bossLocs[:3]
+    selected_region_locs = notBarrenLocs[:3]
+    selected_memo_gear = usefulAdventuringGearLocs[numberOfAdventureGearLocs:numberOfAdventureGearLocs+2]
+    selected_memo_castaway = castawayLocs[numberOfCastawayLocs:numberOfCastawayLocs+2]
 
+    memoHints = []
+    if parameters.memoHints:
+        memoHints = (
+        selected_boss_locs
+        + selected_region_locs
+        + selected_memo_gear
+        + selected_memo_castaway
+        )
+    
     hints = (
     selected_useful_adventure_gear
     + selected_castaways
@@ -244,134 +272,7 @@ def createHints(shuffledLocations, parameters):
         print(f"  Map Check ID: {hint.mapCheckID}")
         print("-" * 30)
     '''
-    return hints #list of Hint of all hints to be displayed
-
-def determine_progression(shuffledLocations, parameters):
-    """
-    This function will determine whether some progression items that lock multiple checks are indeed progression or not.
-    if Mishy Rewards is barren then all recipes are junk
-    if Jewel Trade is barren then all prismatic jewel are junk
-    if Fish Trade is barren then fishing rod is junk
-    """
-    # Initial assumptions: both are progression
-    is_jewel_progression = False
-    is_recipe_progression = False
-    is_fish_progression = False
-    is_essence_key_progression = False
-
-    # Progression items for tracking
-    jewel_trade_rewards = []
-    mishy_rewards = []
-    fish_rewards = []
-    essence_key_rewards = []
-    for location in shuffledLocations:
-        if location.locName == "Mishy Rewards":
-            mishy_rewards.append(location)
-        elif location.locName == "Jewel Trade":
-            jewel_trade_rewards.append(location)
-        elif location.locName == "Fish Trade":
-            fish_rewards.append(location)
-        elif parameters.formerSanctuaryCrypt and "Former Sanctuary Crypt" in location.locRegion:
-        # Exclude the only 3 checks that don't require any essence key stone
-            if not (
-            location.locRegion == "Former Sanctuary Crypt - B1" and
-            location.locName == "Entrance" and
-            location.mapCheckID in {"TBOX01", "TBOX02", "TBOX03"}
-            ):
-                essence_key_rewards.append(location)
-
-    while True:
-        # Previous states for comparison
-        prev_jewel_progression = is_jewel_progression
-        prev_recipe_progression = is_recipe_progression
-        prev_fish_progression = is_fish_progression
-        prev_essence_key_progression = is_essence_key_progression
-
-        # Determine if Jewel Trade rewards progression
-        for location in jewel_trade_rewards:
-            if is_jewel_progression or (location.progression and location.itemName != "Prismatic Jewel" and "Recipe Book" not in location.itemName and location.itemName != "Fishing Rod" and location.itemName != "Essence Key Stone"):
-                is_jewel_progression = True
-            elif "Recipe Book" in location.itemName and is_recipe_progression:
-                is_jewel_progression = True
-            elif location.itemName == "Fishing Rod" and is_fish_progression:
-                is_jewel_progression = True
-            elif location.itemName == "Essence Key Stone" and is_essence_key_progression:
-                is_jewel_progression = True
-
-
-        # Determine if Mishy Rewards rewards progression
-        for location in mishy_rewards:
-            if is_recipe_progression or (location.progression and location.itemName != "Prismatic Jewel" and "Recipe Book" not in location.itemName and location.itemName != "Fishing Rod" and location.itemName != "Essence Key Stone"):
-                is_recipe_progression = True
-            elif location.itemName == "Prismatic Jewel" and is_jewel_progression:
-                is_recipe_progression = True
-            elif location.itemName == "Fishing Rod" and is_fish_progression:
-                is_recipe_progression = True
-            elif location.itemName == "Essence Key Stone" and is_essence_key_progression:
-                is_recipe_progression = True
-
-        
-        # Determine if fish rewards progression
-        for location in fish_rewards:
-            if is_fish_progression or (location.progression and location.itemName != "Prismatic Jewel" and "Recipe Book" not in location.itemName and location.itemName != "Fishing Rod" and location.itemName != "Essence Key Stone"):
-                is_fish_progression = True
-            elif location.itemName == "Prismatic Jewel" and is_jewel_progression:
-                is_fish_progression = True
-            elif "Recipe Book" in location.itemName and is_recipe_progression:
-                is_jewel_progression = True
-            elif location.itemName == "Essence Key Stone" and is_essence_key_progression:
-                is_jewel_progression = True
-        
-        for location in essence_key_rewards:
-            if is_essence_key_progression or (location.progression and location.itemName != "Prismatic Jewel" and "Recipe Book" not in location.itemName and location.itemName != "Fishing Rod" and location.itemName != "Essence Key Stone"):
-                is_essence_key_progression = True
-            elif location.itemName == "Prismatic Jewel" and is_jewel_progression:
-                is_fish_progression = True
-            elif "Recipe Book" in location.itemName and is_recipe_progression:
-                is_jewel_progression = True
-            elif location.itemName == "Fishing Rod" and is_fish_progression:
-                is_recipe_progression = True
-
-        # Break loop if no changes
-        if (is_jewel_progression == prev_jewel_progression and
-            is_recipe_progression == prev_recipe_progression and 
-            is_fish_progression == prev_fish_progression and
-            is_essence_key_progression == prev_essence_key_progression):
-            break
-
-    return {
-        "JewelTrade": is_jewel_progression,
-        "MishyRewards": is_recipe_progression,
-        "FishRewards": is_fish_progression,
-        "EssenceKey": is_essence_key_progression
-    }
-
-
-
-def findBarrenRegions(shuffledLocations, parameters):
-    # isRegionNotBarren["region"]: True => has progression
-    # isRegionNotBarren["region"]: False => is barren
-    isRegionNotBarren = defaultdict(bool)
-    nonItems = ["Defeated", "End the Lacrimosa", "Prismatic Jewel", "Fishing Rod", "Recipe Book", "Essence Key Stone"]# Removing the "Boss defeated" item
-    isChainLocsProgression = determine_progression(shuffledLocations, parameters)
-    isJewelProgression = isChainLocsProgression["JewelTrade"]
-    isRecipeProgression = isChainLocsProgression["MishyRewards"]
-    isRodProgression = isChainLocsProgression["FishRewards"]
-    isEssenceKeyProgression = isChainLocsProgression["EssenceKey"]
-
-    for location in shuffledLocations:
-        # once a location.progression = True, the value in the dict will always be true
-        isRegionNotBarren[location.locRegion] = (
-            isRegionNotBarren[location.locRegion] or 
-            location.itemName == "Gale Feather" or
-            (location.progression and not any(nonItem in location.itemName for nonItem in nonItems)) or 
-            (location.itemName == "Prismatic Jewel" and isJewelProgression) or
-            (location.itemName == "Fishing Rod" and isRodProgression) or
-            ("Recipe Book" in location.itemName and isRecipeProgression) or
-            (location.itemName == "Essence Key Stone" and isEssenceKeyProgression)
-            )
-
-    return isRegionNotBarren
+    return {'standard' : hints, 'memo' : memoHints} #list of Hint of all hints to be displayed
     
 
 def format_hint(itemName, quantity, hintNumber, isFoolish, isRequired, charPortrait, locRegion, displayFullLoc, locName = '', mapCheckID = ''):
@@ -414,13 +315,77 @@ They say that \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t
         f"[QUESTEND]\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\n"
     )
 
+def format_memo_hint(itemName, quantity, hintNumber, isFoolish, isRequired, charPortrait, locRegion, displayFullLoc, locName = '', mapCheckID = ''):
+    if hintNumber <=6:
+        hintNumberText = "GF_SUBEV_GET_MEMO_P_0" + str(hintNumber)
+    else:
+        hintNumberText = "GF_SUBEV_GET_MEMO_T_0" + str(hintNumber-6)
+
+    if "SKILL_" in itemName:
+        itemName = SKILLS[itemName]
+
+    itemText = ''
+    if 'Defeated' in itemName:
+        itemText = itemName[0:-len('Defeated')]
+    elif quantity == 1:
+          itemText =  itemName
+    else:
+        itemText = itemName + " x" + str(quantity)
+
+    # Because we know what size the memo hints will always be and the hint categories we'll use the hint number to specify our text
+    if hintNumber <= 3: # Boss hints
+        if isRequired:
+            formattedDescription = (
+                f"\tConfronting {itemText} is dangerous.\t\t\t\t\n"
+                f"\tBut I hear it's rewarding.\t\t\t\t")
+        else:
+            formattedDescription = (
+                f"\tSteer clear of {itemText}.\t\t\t\t\n"
+                f"\tIt's deadly and a waste of time.\t\t\t\t")
+    elif hintNumber <= 6: # Region hints, regions for memos are always required
+        formattedDescription = (
+                f"\tThe captain asked me to investigate {locRegion}.\t\t\t\t\n"
+                f"\tGlad I'm not coming back empty handed.\t\t\t\t")
+    elif hintNumber <= 8: # Adventure gear hints
+        if isRequired:
+            formattedDescription = (
+                f"\tI found a strange item at {locRegion} {locName}.\t\t\t\t\n"
+                f"\tCould be useful if I figure it out.\t\t\t\t")
+        else:
+            formattedDescription = (
+                f"\tI found a strange item at {locRegion} {locName}.\t\t\t\t\n"
+                f"\tSeems to be little more than garbage.\t\t\t\t")
+    elif hintNumber <= 10:
+        if isRequired:
+            formattedDescription = (
+                f"\tI saw another poor soul stranded at {locRegion} {locName}.\t\t\t\t\n"
+                f"\tThey seemed like they could be helpful.\t\t\t\t")
+        else:
+            formattedDescription = (
+                f"\tI saw another poor soul stranded at {locRegion} {locName}.\t\t\t\t\n"
+                f"\tThey seemed completely hopeless.\t\t\t\t")
+        
+    return (
+        f"[STORY]\tDIARY_TIPS\tPirate's Note {hintNumber}\tPirate's Note {hintNumber}\t0\t0\n"
+        f"{hintNumberText}{formattedDescription}\n"
+        f"[STORYEND]\t\t\t\t\t\n"
+        f"//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+        f"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+        f"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -"
+        f"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \t\t\t\t\t\n"
+    )
+
 # This function is responsible for writing the hints on the quest.csv file to display them in the bulletin board. If hints are off it will Clear the hints from the file
-def generateHint(hints, parameters):
+def generateHint(hints, parameters, hintType):
     random.seed(parameters.seed)
     exe_dir = os.path.dirname(sys.executable)
-    csv_path = os.path.join(exe_dir, 'text', 'en', 'quest.csv')
+    if hintType == 'quest':
+        csv_path = os.path.join(exe_dir, 'text', 'en', 'quest.csv')
+        ind = '[QUEST]'
+    if hintType == 'memo':
+        csv_path = os.path.join(exe_dir, 'text', 'en', 'diary.csv')
+        ind = 'GF_SUBEV_GET_MEMO'
     flag = "// Start of hints\n"
-    quest_ind = '[QUEST]'
 
     try:
         try:
@@ -433,7 +398,7 @@ def generateHint(hints, parameters):
         # Quests don't do anything in the rando except a couple of the flags are useful for some events
         # This makes the presentation a little cleaner.
         for index,line in enumerate(lines):
-            if quest_ind in line and line[0] != '/':
+            if ind in line and line[0] != '/':
                 newline = '//' + line
                 lines[index] = newline
 
@@ -447,20 +412,36 @@ def generateHint(hints, parameters):
 
         formattedHints = []
         for index, hint in enumerate(hints, start=1):
-            formattedHints.append(
-                format_hint(
-                    itemName=hint.itemName,
-                    hintNumber=index,
-                    isRequired=hint.isRequired,
-                    isFoolish=hint.isFoolish,
-                    charPortrait=hint.charPortrait,
-                    quantity=hint.quantity,
-                    locRegion=hint.locRegion,
-                    locName=hint.locName,
-                    mapCheckID=hint.mapCheckID,
-                    displayFullLoc=hint.displayFullLoc
+            if hintType == 'quest':
+                formattedHints.append(
+                    format_hint(
+                        itemName=hint.itemName,
+                        hintNumber=index,
+                        isRequired=hint.isRequired,
+                        isFoolish=hint.isFoolish,
+                        charPortrait=hint.charPortrait,
+                        quantity=hint.quantity,
+                        locRegion=hint.locRegion,
+                        locName=hint.locName,
+                        mapCheckID=hint.mapCheckID,
+                        displayFullLoc=hint.displayFullLoc
+                    )
                 )
-            )
+            elif hintType == 'memo':
+                formattedHints.append(
+                    format_memo_hint(
+                        itemName=hint.itemName,
+                        hintNumber=index,
+                        isRequired=hint.isRequired,
+                        isFoolish=hint.isFoolish,
+                        charPortrait=hint.charPortrait,
+                        quantity=hint.quantity,
+                        locRegion=hint.locRegion,
+                        locName=hint.locName,
+                        mapCheckID=hint.mapCheckID,
+                        displayFullLoc=hint.displayFullLoc
+                    )
+                )
 
         # Combine content above the flag with new hints
         updated_content = content_above_flag + formattedHints

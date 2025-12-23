@@ -2651,24 +2651,24 @@ enum {
 	GF_TBOX_DUMMY111, //flag for skill shuffle
 	GF_TBOX_DUMMY112, //flag for release the psyches
 	GF_TBOX_DUMMY113, //open octus paths
-	GF_TBOX_DUMMY114, //expMult boss check 1
-	GF_TBOX_DUMMY115, //expMult boss check 2
-	GF_TBOX_DUMMY116, //expMult boss check 3
-	GF_TBOX_DUMMY117, //expMult boss check 4
-	GF_TBOX_DUMMY118, //expMult boss check 5
-	GF_TBOX_DUMMY119, //expMult boss check 6
-	GF_TBOX_DUMMY120, //expMult boss check 7
-	GF_TBOX_DUMMY121, //expMult boss check 8
-	GF_TBOX_DUMMY122, //expMult boss check 9
-	GF_TBOX_DUMMY123, //expMult boss check 10
-	GF_TBOX_DUMMY124, //expMult boss check 11
-	GF_TBOX_DUMMY125, //expMult boss check 12
-	GF_TBOX_DUMMY126, //expMult boss check 13
+	GF_TBOX_DUMMY114, //dungeon entrance shuffle
+	GF_TBOX_DUMMY115, 
+	GF_TBOX_DUMMY116, 
+	GF_TBOX_DUMMY117, 
+	GF_TBOX_DUMMY118, 
+	GF_TBOX_DUMMY119, 
+	GF_TBOX_DUMMY120, 
+	GF_TBOX_DUMMY121, 
+	GF_TBOX_DUMMY122, 
+	GF_TBOX_DUMMY123, 
+	GF_TBOX_DUMMY124, 
+	GF_TBOX_DUMMY125, 
+	GF_TBOX_DUMMY126, 
 	GF_TBOX_DUMMY127, //Used to check if in a warden fight
 	GF_TBOX_DUMMY128, //Remove monolith flag from tower top
 	GF_TBOX_DUMMY129, //Past Dana Mode
 	GF_TBOX_DUMMY130, //Used for hints
-	GF_TBOX_DUMMY131, //Load zone from temple approach -> pinnacle
+	GF_TBOX_DUMMY131, //Check for primordial passage
 	//repurposing the next several to seperate discovery events from the game flags, finding item version of discoveries will still use the old GF which is what Austin counts for discovery totals
 	GF_TBOX_DUMMY132, //Birdsong Rock event
 	GF_TBOX_DUMMY133, //Cobalt Crag event
