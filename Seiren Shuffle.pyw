@@ -1411,6 +1411,7 @@ class App(ctk.CTk):
             progressLabel.configure(text="Final patches...")
             self.update()
             miscFixes()
+            AddWarpToFSCCrystal()
             progressBar.step()
             self.update()
             self.show_notification("Patch Complete!")

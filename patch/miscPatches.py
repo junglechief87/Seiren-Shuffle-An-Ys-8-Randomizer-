@@ -198,7 +198,7 @@ def pastDanaFixes(enable):
     if enable:
         disableVanish[0xD739:0xD73D] = [0x5F,0x4F,0x46,0x46] #Spells _OFF so it's easy to find in the file, changes the function name so it won't be able to call it from the enemy script
     else:
-        disableVanish[0xD739:0xD739] = [0x00,0x00,0x00,0x00] #Restores original script name
+        disableVanish[0xD739:0xD73D] = [0x00,0x00,0x00,0x00] #Restores original script name
 
     writeBufferIntoFile(originOfLife,disableVanish)
 
@@ -312,6 +312,48 @@ def newExpMult(parameters):
             writer.writerows(newStatusFile)
             csvFile.close()
     
+def AddWarpToFSCCrystal():
+    '''
+      if you ever want to undo this byte modifications we can just replace the same byte sequence for 2D (2D = "-") as the length of the sequence was never modified.
+    '''
+    exeDir = os.path.dirname(sys.executable)
+    fscFile = os.path.join(exeDir, 'map', 'mp6511', 'mp6511.arb')
+
+    try:
+        with open(fscFile, 'rb') as f:
+            data = bytearray(f.read())
+
+        # Find the 'chkpt' sequence (warp crystal object)
+        chkpt_pos = findByteSequence(data, 'chkpt')
+        #print(f"Found 'chkpt' at position: {chkpt_pos}")
+        # modification start position = (after 't' + 77 bytes)
+        #This is the byte sequence responsible for the custom function of the crystal
+        mod_pos = chkpt_pos + len('chkpt') + 77
+        #print(f"Modification starts at position: {mod_pos}")
+        # Writing the new bytes (custom function name)
+        new_data = 'mp6511:warp'
+        new_bytes = new_data.encode('ascii')
+
+        # Check if we have enough space
+        if mod_pos + len(new_bytes) > len(data):
+            raise ValueError("Not enough space in file for the modification")
+
+        # Modifying the bytes
+        #print("\nOriginal bytes to be modified:")
+        for i in range(len(new_bytes)):
+            byte_pos = mod_pos + i
+            #print(f"Position {byte_pos}: 0x{data[byte_pos]:02x} ({chr(data[byte_pos]) if 32 <= data[byte_pos] <= 126 else 'non-printable'})")
+            data[byte_pos] = new_bytes[i]
+
+        # Write the modified data back to the file
+        with open(fscFile, 'wb') as f:
+            f.write(data)
+
+        print("\nAdded warp to FSC crystal successfully!")
+
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 def readFileIntoBuffer(path):
     with open(path,"rb") as buffer:
@@ -324,3 +366,15 @@ def writeBufferIntoFile(path,array):
     with open(path,"wb") as buffer:
         buffer.write(array)
         buffer.close()
+
+def findByteSequence(binaryData, sequence):
+    """
+    Find the position of a word (byte sequence) in binary file
+    Returns the starting index of the byte sequence
+    """
+
+    sequenceBytes = sequence.encode('ascii')
+    index = binaryData.find(sequenceBytes)
+    if index == -1:
+        raise ValueError(f"Sequence '{sequence}' not found in file")
+    return index
