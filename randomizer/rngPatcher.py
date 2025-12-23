@@ -84,7 +84,6 @@ def rngPatcherMain(parameters):
         randomizeOctoBosses(parameters)
     patchFile = patchFile + goal(parameters)
     patchFile = patchFile + endingHandler(parameters,finalNonGoalBossLevel)
-    print(entrances)
     if parameters.entranceShuffle:
         patchFile = patchFile + buildEntrances()
     with open(rngScriptFile, 'w', encoding = 'Shift-JIS') as fileToPatch: #build the entire rng file from one big string

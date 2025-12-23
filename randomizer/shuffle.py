@@ -8,6 +8,7 @@ from randomizer.hint import createHints, generateHint
 #constants
 blacklistRegion = ['Sanctuary Crypt']
 duplicateChests = [47,48,49,179] #dawn versions of large shoreline for great river valley and valley of kings
+octusEntranceToRegion = 'Octus Overlook'
 
 def shuffleLocations(parameters):
     #take standard location list built from the locations.csv and build out shuffle locations and inventory lists
@@ -87,7 +88,7 @@ def findSkill(niceItem,character):
         for index,item in enumerate(niceItem):
             if item.itemName.find(characterSkill) > -1:
                 return index
-                
+            
 def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,blacklistRegion):
     progressionInventory = [] #progression items only
     niceItems = [] #nice to have items that will always exist in the world but don't contain logic
@@ -167,9 +168,9 @@ def fillShuffledLocations(inventory,fillLocations,shuffledLocations,parameters,b
 
             for locIndex,location in enumerate(fillLocations):
                 if location.mapCheckID == 'Psyches' and not (psycheToPlace.progression and (location.locID in progressionBanList or 
-                                                                                            (location.locRegion == 'Octus Overlook' and
+                                                                                            (location.locRegion == octusEntranceToRegion and
                                                                                              psycheInOctus >= parameters.numOctus))):
-                    if location.locRegion == 'Octus Overlook':
+                    if location.locRegion == octusEntranceToRegion:
                         psycheInOctus += 1
                     psycheToFill = fillLocations.pop(locIndex)
                     filledLocation = combineShuffledLocAndItem(psycheToFill,psycheToPlace)
@@ -402,6 +403,8 @@ def shuffleEntrancesAndExits(entrances,exits,northSideOpen,discoverySanity):
             entranceToFill = entranceLocations.pop(0)
             filledEntrance = combineShuffledLocAndItem(entranceToFill,entranceToPlace)
             shuffledEntrances.append(filledEntrance)
+            if entranceToPlace.itemName == 'Temple of the Great Tree - Great Tree Garden':
+                octusEntranceToRegion = entranceToFill.locRegion
 
         for entrance in shuffledEntrances:
             print("Entrance: " + entrance.locName + " in " + entrance.locRegion + '-' + entrance.mapCheckID + " leads to " + entrance.itemName)

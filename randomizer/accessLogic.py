@@ -554,7 +554,7 @@ def checkEastCoastCave(location, access, parameters):
         (
             (location.mapCheckID in ['TBOX01', 'TBOX03'] and access.canDoubleJump() and access.canDefeat('Gilkyra Encounter')) or 
             (location.mapCheckID == 'Gilkyra Encounter' and battleLogic(170, access, parameters)) or
-            (location.mapCheckID in ['TBOX02','Landmark'])
+            (location.mapCheckID in ['TBOX02','Landmark','Exit to Nostalgia Cape'])
         )
     }
 
@@ -585,10 +585,10 @@ def checkBajaTower(location, access, parameters):
         'Second Floor': lambda: True,
         'Third Floor': lambda: location.mapCheckID != 'TBOX03' or access.canDoubleJump(),
         'Mid-Boss Arena': lambda: battleLogic(230, access, parameters, scaled=True),
-        'Fifth Floor': lambda: access.canDoubleJump(),
-        'Sixth Floor': lambda: access.canDoubleJump(),
+        'Fifth Floor': lambda: access.canDoubleJump() and access.canClimb(),
+        'Sixth Floor': lambda: access.canDoubleJump() and access.canClimb(),
         'Boss Arena': lambda: (
-            battleLogic(280, access, parameters, scaled=True) and access.canDoubleJump() and 
+            battleLogic(280, access, parameters, scaled=True) and access.canDoubleJump() and access.canClimb() and 
             (location.mapCheckID != 'Psyches' or (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Carveros')))
         ),
         'Top Floor': lambda: access.canDefeat('Carveros')
@@ -603,15 +603,13 @@ def checkTowalHighway(location, access, parameters):
         ) or access.canEnter('Towal Highway - Camp')):
         return False
     
-    if location.mapCheckID == 'Katthew Join' and not access.canClimb():
-        # with northSideOpen, its possible to not have grip gloves on north side now
-        return False
-    
-    if location.mapCheckID == 'Baja Tower Entrance' and ((not access.canClimb() and not access.past4()) or not access.canEnter('Towal Highway - Camp')):
-        # with northSideOpen, its possible to not have grip gloves on north side now
-        return False
-    
-    return True
+    location_checks = {
+        'Cliff Overlooking Chasm': lambda: True,
+        'Baja Tower Approach': lambda: location.mapCheckID == 'Katthew Join' and access.canClimb() or location.mapCheckID != 'Katthew Join',
+        'Towal Highway - Camp': lambda: location.mapCheckID == 'Baja Tower Entrance' and ((access.canClimb() and access.past4()) or access.canEnter('Towal Highway - Camp'))
+    }
+
+    return location_checks.get(location.locName, lambda: False)()
 
 def checkStonePillarWindCave(location, access, parameters):
     if not (canAccessNorthSide(access, parameters) and access.canMove(18)):
@@ -760,7 +758,7 @@ def checkTitisPrimevalForest(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
     
 def checkMountainPinnacleTrail(location, access, parameters):
-    return canAccessNorthSide(access, parameters) or access.hasDiscovery('Prismatic Mineral Vein')
+    return canAccessNorthSide(access, parameters)
 
 def checkCavernOfTheAncientKing(location, access, parameters):
     return (access.canMove(11) and access.canSwampWalk()) or access.hasDiscovery('Airs Cairn')
@@ -825,9 +823,9 @@ def checkMontGendarme(location, access, parameters):
         'Entrance': lambda: True,
         'Southern Lower Cliffside Trail': lambda: True,
         'Northern Lower Cliffside Trail': lambda: True,
-        'Outside Cabin': lambda: True,
-        'Cliffside Midpoint': lambda: True,
-        'Mid-Boss Arena': lambda: battleLogic(140, access, parameters, scaled=True),
+        'Outside Cabin': lambda: access.canClimb(),
+        'Cliffside Midpoint': lambda: access.canClimb(),
+        'Mid-Boss Arena': lambda: battleLogic(140, access, parameters, scaled=True) and access.canClimb(),
         'Upper Cliffs 1': lambda: access.canDefeat('Avalodragil 2'),
         'Upper Cliffs 2': lambda: access.canDefeat('Avalodragil 2'),
         'Boss Arena': lambda: (

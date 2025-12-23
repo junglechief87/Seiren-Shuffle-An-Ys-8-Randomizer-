@@ -1,7 +1,7 @@
 import shared.classr as classr
 from randomizer.accessLogic import *
 
-entrances = []
+shuffledEntranceList = []
 
 def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests):
     sphere = 0
@@ -93,7 +93,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
 
     for location in locationsSorted:
         if location.entrance or location.exit:
-            entrances.append(location)
+            shuffledEntranceList.append(location)
             location.writeSpoiler(spoilerLog)
 
     spoilerLog.write("\n")
@@ -138,7 +138,12 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
 
             if itemFound == 0 or win: break
         
+        print('unreached locations:')
         for location in accessibleLocation:
+            if location.progression:
+                location.printSpoiler()
+        print('reached locations:')
+        for location in progressionLocations:
             location.printSpoiler()
         attempt +=1
         if attempt >= 500: #Added this safety check in case there are other bugs in initial progression generation
