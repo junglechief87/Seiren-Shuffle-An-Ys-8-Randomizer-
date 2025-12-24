@@ -206,13 +206,13 @@ def buildEntrances():
 			}}""".format(getEntrance('Mont Gendarme', 'Exit to Primordial Passage')[0], getEntrance('Mont Gendarme', 'Exit to Primordial Passage')[1])
 	
 	entranceScript = entranceScript + """
-			if(FLAG[SF_LASTENTRY_NO] == 0 && WORK[WK_MAPNAMENO] == MN_D_MP4331) //entrance from Primordial Passage - Mont Gendarme Front Entrance
+			if(FLAG[SF_LASTENTRY_NO] == 0 && WORK[WK_MAPNAMENO] == MN_D_MP4331) //entrance from The Primordial Passage - Mont Gendarme Front Entrance
 			{{
 				SetFlag(SF_LASTENTRY_NO, -2)
 				CallFunc("rng:warpmask")
 				LoadArg("{0}")
 				EventCue("{1}",1)	
-			}}""".format(getEntrance('Primordial Passage', 'Mont Gendarme Front Entrance')[0], getEntrance('Primordial Passage', 'Mont Gendarme Front Entrance')[1])
+			}}""".format(getEntrance('The Primordial Passage', 'Mont Gendarme Front Entrance')[0], getEntrance('The Primordial Passage', 'Mont Gendarme Front Entrance')[1])
 	
 	entranceScript = entranceScript + """
 			if(FLAG[SF_LASTENTRY_NO] == 1 && WORK[WK_MAPNAMENO] == MN_F_MP4107) //entrance from Mountain Pinnacle Trail - Mont Gendarme Back Entrance
@@ -325,7 +325,7 @@ def buildEntrances():
 			EventCue("{3}",1)
 		}}
 	}}
-	""".format(getEntrance('Primordial Passage', 'Mont Gendarme Front Entrance')[0], getEntrance('Primordial Passage', 'Mont Gendarme Front Entrance')[1],\
+	""".format(getEntrance('The Primordial Passage', 'Mont Gendarme Front Entrance')[0], getEntrance('The Primordial Passage', 'Mont Gendarme Front Entrance')[1],\
 			getEntrance('The Ruins of Eternia', 'Archeozoic Chasm Entrance')[0], getEntrance('The Ruins of Eternia', 'Archeozoic Chasm Entrance')[1])
 
 	entranceScript = entranceScript + """

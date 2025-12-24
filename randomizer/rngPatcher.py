@@ -1351,51 +1351,56 @@ def buildPsyches(shuffledLocations, parameters, bossLevelsDictByRegion, finalNon
         SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
         SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
 """
-    bossLevelsDictByRegion['Octus Overlook'] = finalNonGoalBossLevel + 5
 
     for boss in bossLevelsDictByRegion:
         print(boss + ': ' + str(bossLevelsDictByRegion[boss]))
 
+    danaWardenIncrease = 5
+    danaModerateWardenIncrease = 2
+    normalWardenIncrease = 10
+    moderateWardenIncrease = 5
+
     if parameters.charMode == 'Past Dana':
-        wardenIncrease = 5
+        
         try:
-            warden1Level = bossLevelsDictByRegion[bossLoc1] + wardenIncrease
+            warden1Level = bossLevelsDictByRegion[bossLoc1] + danaWardenIncrease
         except:
-            warden1Level = finalNonGoalBossLevel + wardenIncrease
+            warden1Level = finalNonGoalBossLevel + danaModerateWardenIncrease
         try:
-            warden2Level = bossLevelsDictByRegion[bossLoc2] + wardenIncrease
+            warden2Level = bossLevelsDictByRegion[bossLoc2] + danaWardenIncrease
         except:
-            warden2Level = finalNonGoalBossLevel + wardenIncrease
+            warden2Level = finalNonGoalBossLevel + danaModerateWardenIncrease
         try:
-            warden3Level = bossLevelsDictByRegion[bossLoc3] + wardenIncrease
+            warden3Level = bossLevelsDictByRegion[bossLoc3] + danaWardenIncrease
         except:
-            warden3Level = finalNonGoalBossLevel + wardenIncrease
+            warden3Level = finalNonGoalBossLevel + danaModerateWardenIncrease
         try:
-            warden4Level = bossLevelsDictByRegion[bossLoc4] + wardenIncrease
+            warden4Level = bossLevelsDictByRegion[bossLoc4] + danaWardenIncrease
         except:
-            warden4Level = finalNonGoalBossLevel + wardenIncrease
+            warden4Level = finalNonGoalBossLevel + danaModerateWardenIncrease
         try:
-            warden5Level = bossLevelsDictByRegion[bossLoc5] + wardenIncrease
+            warden5Level = bossLevelsDictByRegion[bossLoc5] + danaWardenIncrease
         except:
-            warden5Level = finalNonGoalBossLevel + wardenIncrease
+            warden5Level = finalNonGoalBossLevel + danaModerateWardenIncrease
     else:
-        wardenIncrease = 10
+        
+
         try:
-            warden1Level = bossLevelsDictByRegion[bossLoc1] + wardenIncrease
+            warden1Level = bossLevelsDictByRegion[bossLoc1] + normalWardenIncrease
         except:
-            warden1Level = finalNonGoalBossLevel + wardenIncrease
+            warden1Level = finalNonGoalBossLevel + moderateWardenIncrease
         try:
-            warden2Level = bossLevelsDictByRegion[bossLoc2] + wardenIncrease
+            warden2Level = bossLevelsDictByRegion[bossLoc2] + normalWardenIncrease
         except:
-            warden2Level = finalNonGoalBossLevel + wardenIncrease
+            warden2Level = finalNonGoalBossLevel + moderateWardenIncrease
         try:
-            warden3Level = bossLevelsDictByRegion[bossLoc3] + wardenIncrease
+            warden3Level = bossLevelsDictByRegion[bossLoc3] + normalWardenIncrease
         except:
-            warden3Level = finalNonGoalBossLevel + wardenIncrease
+            warden3Level = finalNonGoalBossLevel + moderateWardenIncrease
         try:
-            warden4Level = bossLevelsDictByRegion[bossLoc4] + wardenIncrease
+            warden4Level = bossLevelsDictByRegion[bossLoc4] + normalWardenIncrease
         except:
-            warden4Level = finalNonGoalBossLevel + wardenIncrease
+            warden4Level = finalNonGoalBossLevel + moderateWardenIncrease
 
     spoilerLog.write('\nPsyches Boss Assignments:\n')
     spoilerLog.write('\tPsyches of the Sky Era\Braziers Fight(DANA) Region: ' + bossLoc1 + " Warden:" + bossPool[0] + " Level:" + str(warden1Level) + '\n')

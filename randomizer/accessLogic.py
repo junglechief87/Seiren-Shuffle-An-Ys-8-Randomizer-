@@ -582,6 +582,7 @@ def checkBajaTower(location, access, parameters):
         return False
 
     location_checks = {
+        'Entrance': lambda: True,
         'Second Floor': lambda: True,
         'Third Floor': lambda: location.mapCheckID != 'TBOX03' or access.canDoubleJump(),
         'Mid-Boss Arena': lambda: battleLogic(230, access, parameters, scaled=True),
