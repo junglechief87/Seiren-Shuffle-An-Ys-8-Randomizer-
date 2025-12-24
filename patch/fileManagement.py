@@ -6,7 +6,7 @@ import fsspec
 parent_directory = os.path.join(os.path.dirname(sys.executable))
 #originalFiles = os.listdir(parent_directory)
 copiedFiles = os.path.join(parent_directory, 'Original Game Files')
-repo = fsspec.filesystem("github", org="junglechief87", repo="Seiren-Shuffle-An-Ys-8-Randomizer-", sha='test')
+repo = fsspec.filesystem("github", org="junglechief87", repo="Seiren-Shuffle-An-Ys-8-Randomizer-", sha='main')
 folders = ['script/',
            'inc/',
            'text/en/']

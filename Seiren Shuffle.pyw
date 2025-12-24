@@ -24,7 +24,7 @@ FRAME_TITLE_STYLE = {
 }
 
 SETTINGS_FILE = "seirenShuffleSettings.json"
-VERSION_NUM = "3.5.1"
+VERSION_NUM = "4.0.0"
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """

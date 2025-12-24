@@ -3,6 +3,7 @@ from randomizer.accessLogic import *
 
 shuffledEntranceList = []
 
+
 def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests):
     sphere = 0
     newInventory = []
@@ -94,6 +95,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     for location in locationsSorted:
         if location.entrance or location.exit:
             shuffledEntranceList.append(location)
+        if location.entrance:
             location.writeSpoiler(spoilerLog)
 
     spoilerLog.write("\n")
@@ -214,8 +216,6 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         
         if sphere >= 100: #Added this safety check in case there are other bugs in spoiler generation
             break 
-    spoilerLog.flush()
-    spoilerLog.close()
 
     return playthrough, playthroughAllProgression
 
@@ -237,3 +237,4 @@ def testSeed(progressionLocations,parameters):
                     return True   
         if itemFound == 0:
             return False
+    

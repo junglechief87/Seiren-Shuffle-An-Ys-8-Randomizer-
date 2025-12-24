@@ -2699,7 +2699,7 @@ enum {
 	GF_TBOX_DUMMY158, // warp to FSC F3
 	GF_TBOX_DUMMY159, // warp to FSC F4
 	GF_TBOX_DUMMY160, // warp to FSC F5
-	GF_TBOX_DUMMY161,
+	GF_TBOX_DUMMY161, // has the player entered Octus Overlook
 	GF_TBOX_DUMMY162,
 	GF_TBOX_DUMMY163,
 	GF_TBOX_DUMMY164,

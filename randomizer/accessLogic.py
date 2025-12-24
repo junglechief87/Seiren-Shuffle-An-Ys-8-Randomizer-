@@ -306,9 +306,9 @@ def checkValleyOfKings(location, access, parameters):
         'Entrance': lambda: True,
         'Northern Lower Level': lambda: True,
         'Mid-Boss Arena': lambda: access.canUndead() and battleLogic(270, access, parameters, scaled=True),
-        'Stairway (Statue Doors)': lambda: access.canUndead(),
+        'Stairway (Statue Doors)': lambda: access.canUndead() and battleLogic(270, access, parameters, scaled=True),
         'End': lambda: (
-            access.canUndead() and 
+            access.canUndead() and battleLogic(270, access, parameters, scaled=True) and
             ((location.mapCheckID in ['TBOX01', 'TBOX02'] and access.canDoubleJump()) or 
             location.mapCheckID in ['TBOX03', 'TBOX04'])
         ),

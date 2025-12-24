@@ -25,11 +25,12 @@ skillMessage = " has learned skill #2C"
 landmarkMessage = ' discovered.'
 rngScriptFile = getLocFile('rng','script')
 
-
 def rngPatcherMain(parameters):
     global patchFile
+    global spoilerLog
     patchFile = ''
-    
+    spoilerLog = open("Ys_8_" + str(parameters.seed) + ".txt", "a")
+
     if parameters.charMode == 'Past Dana':
         global partyMessage 
         partyMessage = " joined the Village."
@@ -72,12 +73,14 @@ def rngPatcherMain(parameters):
             elif location.landmark:
                 patchFile = patchFile + buildLandmarks(location,script)
 
+    bossScalingScript, finalNonGoalBossLevel, bossLevelsDictByRegion = bossScaling(playthroughAllProgression,parameters)
+    patchFile = patchFile + bossScalingScript
+
     if parameters.goal == 'Release the Psyches':
-        patchFile = patchFile + buildPsyches(shuffledLocations,parameters)
+        patchFile = patchFile + buildPsyches(shuffledLocations,parameters,bossLevelsDictByRegion,finalNonGoalBossLevel)
     if parameters.formerSanctuaryCrypt:
         patchFile = patchFile + buildFSCWarp()
-    bossScalingScript, finalNonGoalBossLevel = bossScaling(playthroughAllProgression,parameters)
-    patchFile = patchFile + bossScalingScript
+
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
     patchFile = patchFile + octusGoal(parameters)
@@ -95,6 +98,9 @@ def rngPatcherMain(parameters):
         fileToPatch.close()
 
     expMult(parameters)
+    
+    spoilerLog.flush()
+    spoilerLog.close()
 
 #function used for all non-person item function generation
 def genericItemMessage(location,vanillaScript,parameters):    
@@ -869,7 +875,15 @@ def endingHandler(parameters, finalNonGoalBossLevel):
         finalBossLevel = 80
     if parameters.goal == 'release the psyches':
         finalBossLevel = finalBossLevel + 2*parameters.numGoal
+
     
+    if parameters.finalBoss == 'Both':
+        spoilerLog.write('\nFinal Boss Level: ' + parameters.finalBoss + ' ' + str(finalBossLevel) + ',' + str(finalBossLevel + 1) + '\n')
+    elif parameters.finalBoss == 'Origin of Life':
+        spoilerLog.write('\nFinal Boss Level: ' + parameters.finalBoss + ' ' + str(finalBossLevel + 1) + '\n')
+    else:
+        spoilerLog.write('\nFinal Boss Level: ' + parameters.finalBoss + ' ' + str(finalBossLevel) + '\n')
+
     finalBossLevelScript = """
     function "finalBossLevel"
     {{
@@ -1276,10 +1290,10 @@ def interceptUnlock():
 #GF_TBOX_DUMMY112 is our flag for release the psyches so these won't get called outside this game mode.
 #New version of this script hacks the checkpoint in Castaway Village and uses the boss flags for activation of the custom shop
 #The boss menu is essentially a custom shop, it uses Dina's jewel trade menu as a base, there are two version of it depending on game mode
-def buildPsyches(shuffledLocations, parameters):
+def buildPsyches(shuffledLocations, parameters, bossLevelsDictByRegion, finalNonGoalBossLevel):
     #region: boss flag for region
     bossFlagDict = {'Silent Tower': 'FLAG[GF_SUBEV_06_6413_KILL_BOSS]',
-                    'Octus Overlook': 'FLAG[GF_06MP6409_OPEN_GATE]',
+                    'Octus Overlook': 'FLAG[GF_TBOX_DUMMY161]',
                     'Valley of Kings': 'FLAG[GF_TBOX_DUMMY080]',
                     'Archeozoic Chasm': 'FLAG[GF_TBOX_DUMMY078]',
                     'Pirate Ship Eleftheria': 'FLAG[GF_05MP0405_READ_REED]',
@@ -1337,87 +1351,75 @@ def buildPsyches(shuffledLocations, parameters):
         SetChrWork("b012", CWK_MAXHP, (b012.CHRWORK[CWK_MAXHP] * 3.0f))
         SetChrWork("b012", CWK_HP, (b012.CHRWORK[CWK_MAXHP]))
 """
-    lowAccessReqs = ['Towering Coral Forest','Eroded Valley']
-    midAccessReqs = ['Schlamm Jungle','Mont Gendarme','Temple of the Great Tree']
-    highAccessReqs = ['Baja Tower','Pirate Ship Eleftheria','Archeozoic Chasm','Valley of Kings','Silent Tower']
+    bossLevelsDictByRegion['Octus Overlook'] = finalNonGoalBossLevel + 5
 
-    lowLevelWarden = random.randrange(38,42)
-    midLevelWarden = random.randrange(48,52)
-    highLevelWarden = random.randrange(58,62)
-    maxLevelRange = random.randrange(68,72)
+    for boss in bossLevelsDictByRegion:
+        print(boss + ': ' + str(bossLevelsDictByRegion[boss]))
 
     if parameters.charMode == 'Past Dana':
-        lowLevelWarden = lowLevelWarden - 5
-        midLevelWarden = midLevelWarden - 5
-        highLevelWarden = highLevelWarden - 5
-        maxLevelRange = maxLevelRange - 5 
-
-    if bossLoc1 in lowAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
-        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
-    elif bossLoc1 in midAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
-        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
-    elif bossLoc1 in highAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
-        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
+        wardenIncrease = 5
+        try:
+            warden1Level = bossLevelsDictByRegion[bossLoc1] + wardenIncrease
+        except:
+            warden1Level = finalNonGoalBossLevel + wardenIncrease
+        try:
+            warden2Level = bossLevelsDictByRegion[bossLoc2] + wardenIncrease
+        except:
+            warden2Level = finalNonGoalBossLevel + wardenIncrease
+        try:
+            warden3Level = bossLevelsDictByRegion[bossLoc3] + wardenIncrease
+        except:
+            warden3Level = finalNonGoalBossLevel + wardenIncrease
+        try:
+            warden4Level = bossLevelsDictByRegion[bossLoc4] + wardenIncrease
+        except:
+            warden4Level = finalNonGoalBossLevel + wardenIncrease
+        try:
+            warden5Level = bossLevelsDictByRegion[bossLoc5] + wardenIncrease
+        except:
+            warden5Level = finalNonGoalBossLevel + wardenIncrease
     else:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
-        if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
+        wardenIncrease = 10
+        try:
+            warden1Level = bossLevelsDictByRegion[bossLoc1] + wardenIncrease
+        except:
+            warden1Level = finalNonGoalBossLevel + wardenIncrease
+        try:
+            warden2Level = bossLevelsDictByRegion[bossLoc2] + wardenIncrease
+        except:
+            warden2Level = finalNonGoalBossLevel + wardenIncrease
+        try:
+            warden3Level = bossLevelsDictByRegion[bossLoc3] + wardenIncrease
+        except:
+            warden3Level = finalNonGoalBossLevel + wardenIncrease
+        try:
+            warden4Level = bossLevelsDictByRegion[bossLoc4] + wardenIncrease
+        except:
+            warden4Level = finalNonGoalBossLevel + wardenIncrease
 
-    if bossLoc2 in lowAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
-        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
-    elif bossLoc2 in midAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
-        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
-    elif bossLoc2 in highAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
-        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
-    else:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
-        if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
+    spoilerLog.write('\nPsyches Boss Assignments:\n')
+    spoilerLog.write('\tPsyches of the Sky Era\Braziers Fight(DANA) Region: ' + bossLoc1 + " Warden:" + bossPool[0] + " Level:" + str(warden1Level) + '\n')
+    spoilerLog.write('\tPsyches of the Insectoid Era\Stone Fight(DANA) Region: ' + bossLoc2 + " Warden:" + bossPool[1] + " Level:" + str(warden2Level) + '\n')
+    spoilerLog.write('\tPsyches of the Frozen Era\Clairvoyance Fight(DANA) Region: ' + bossLoc3 + " Warden:" + bossPool[2] + " Level:" + str(warden3Level) + '\n')
+    spoilerLog.write('\tPsyches of the Ocean Era\Frost Fight(DANA) Region: ' + bossLoc4 + " Warden:" + bossPool[3] + " Level:" + str(warden4Level) + '\n')
+    if parameters.charMode == 'Past Dana':
+        spoilerLog.write('\tEmpty Psyches\Magma Fight(DANA) Region: ' + bossLoc5 + " Warden:" + bossPool[4] + " Level:" + str(warden5Level) + '\n')
+
+    wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[0]][3] + ', CWK_LV, ' + str(warden1Level) + ')\n'
+    if bossPool[0] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(warden1Level) + ')\n'
+
+    wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[1]][3] + ', CWK_LV, ' + str(warden2Level) + ')\n'
+    if bossPool[1] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(warden2Level) + ')\n'
     
-    if bossLoc3 in lowAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
-        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
-    elif bossLoc3 in midAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
-        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
-    elif bossLoc3 in highAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
-        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
-    else:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
-        if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
+    wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[2]][3] + ', CWK_LV, ' + str(warden3Level) + ')\n'
+    if bossPool[2] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(warden3Level) + ')\n'
 
-    if bossLoc4 in lowAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
-        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
-    elif bossLoc4 in midAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
-        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
-    elif bossLoc4 in highAccessReqs:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
-        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
-    else:
-        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
-        if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
+    wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[3]][3] + ', CWK_LV, ' + str(warden4Level) + ')\n'
+    if bossPool[3] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(warden4Level) + ')\n'
 
     if parameters.charMode == 'Past Dana':
-        if bossLoc5 in lowAccessReqs:
-            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(lowLevelWarden) + ')\n'
-            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(lowLevelWarden) + ')\n'
-        elif bossLoc5 in midAccessReqs:
-            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(midLevelWarden) + ')\n'
-            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(midLevelWarden) + ')\n'
-        elif bossLoc5 in highAccessReqs:
-            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(highLevelWarden) + ')\n'
-            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(highLevelWarden) + ')\n'
-        else:
-            wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(maxLevelRange) + ')\n'
-            if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(maxLevelRange) + ')\n'
-
+        wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(' + bossCue[bossPool[4]][3] + ', CWK_LV, ' + str(warden5Level) + ')\n'
+        if bossPool[4] == 'Ura': wardenScaling = wardenScaling + '\t\tSetChrWorkGroup(B008BIT, CWK_LV, ' + str(warden5Level) + ')\n'
 
     ### Past Dana Mode Bosses
     if parameters.charMode == 'Past Dana':
@@ -1778,6 +1780,7 @@ def bossScaling(playthroughAllProgression,parameters):
                'Silvia': 'B155',}
     remainingBosses = []
     finalBossLevels = []
+    bossLevelsDictByRegion = {}
 
     if not parameters.goal == 'Untouchable': # Make sure Melaiduma's level and ID are in the pool if he's not the goal
         bossLevels.append(99) 
@@ -1795,6 +1798,8 @@ def bossScaling(playthroughAllProgression,parameters):
             remainingBosses.append(bossIDs.get(boss))
 
     random.seed(parameters.seed)
+    spoilerLog.write(f'\n'
+                     f'Boss Levels:\n')   
     # process bosses that are accessible before the goal in the seed and assign them levels in ascending order as the playthrough should have them in order
     for boss in playthroughAllProgression.bosses:
         if boss.mapCheckID in bossIDs.keys():
@@ -1802,13 +1807,16 @@ def bossScaling(playthroughAllProgression,parameters):
             bossLevel = bossLevels.pop(0)
             finalNonGoalBossLevel = random.randrange(bossLevel-2,bossLevel+2)
             finalBossLevels.append([remainingBosses.pop(remainingBosses.index(bossID)),random.randrange(bossLevel-2,bossLevel+2)])
-            
+            spoilerLog.write(f'\tBoss: {boss.mapCheckID} - Level {finalBossLevels[-1][1]}\n')        
+            bossLevelsDictByRegion[boss.locRegion] = finalBossLevels[-1][1] #storing this for use with psyches
     
     # bosses post goal have their levels shuffled from among the remaining levels in the boss level pool
     random.shuffle(bossLevels)
     for bossID in remainingBosses:
         bossLevel = bossLevels.pop(0)
         finalBossLevels.append([bossID,random.randrange(bossLevel-2,bossLevel+2)])
+        bossName = [name for name, id in bossIDs.items() if id == bossID][0]
+        spoilerLog.write(f'\tBoss: {bossName} - Level {finalBossLevels[-1][1]}\n')
 
     fscBosses = ''
     script = '\tfunction "bossScaling"\n\t{\n'
@@ -1817,6 +1825,7 @@ def bossScaling(playthroughAllProgression,parameters):
         #handling special cases for bosses with forms or minions
         if boss[0] == 'B005':
             script = script + '\t\tSetChrWorkGroup(M0644, CWK_LV, ' + str(boss[1]) + ')\n'
+            script = script + '\t\tSetChrWorkGroup(M0643, CWK_LV, ' + str(boss[1]-1) + ')\n' #if you can beat these enemies you can reach basileus so scale them too
         if boss[0] == 'B101B':
             script = script + '\t\tSetChrWorkGroup(B101, CWK_LV, ' + str(boss[1]) + ')\n'
         if boss[0] == 'B170': # set FSC bosses relative to Melaiduma if Melaiduma is scaled
@@ -1831,7 +1840,7 @@ def bossScaling(playthroughAllProgression,parameters):
                         
     script = script + '\t}'
 
-    return script + fscBosses, finalNonGoalBossLevel
+    return script + fscBosses, finalNonGoalBossLevel, bossLevelsDictByRegion
 
 def buildFSCWarp():
     function = ''

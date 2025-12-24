@@ -52,7 +52,6 @@ def buildEntrances():
 
     	if(FLAG[GF_TBOX_DUMMY114])
 		{{
-			SetFlag(SF_NOCHANGEBGM, 1)
 			//Exits
 			if(FLAG[SF_LASTENTRY_NO] == 0 && WORK[WK_MAPNAMENO] == MN_D_EROSIONVALLEY_MP4301) //entrance from Beast Hills - Eroded Valley Front Entrance
 			{{
@@ -270,7 +269,7 @@ def buildEntrances():
 			}}""".format(getEntrance('The Ruins of Eternia', 'Archeozoic Chasm Entrance')[0], getEntrance('The Ruins of Eternia', 'Archeozoic Chasm Entrance')[1])
 	
 	entranceScript = entranceScript + """
-			if(FLAG[SF_LASTENTRY_NO] == 0 && WORK[WK_MAPNAMENO] == MN_F_MP6108) //entrance from Valley of Kings - Exit to Valley of Kings - Camp
+			if(FLAG[SF_LASTENTRY_NO] == 1 && WORK[WK_MAPNAMENO] == MN_F_MP6108) //entrance from Valley of Kings - Exit to Valley of Kings - Camp
 			{{
 				SetFlag(SF_LASTENTRY_NO, -2)
 				CallFunc("rng:warpmask")
@@ -279,7 +278,7 @@ def buildEntrances():
 			}}""".format(getEntrance('Valley of Kings', 'Exit to Valley of Kings - Camp')[0], getEntrance('Valley of Kings', 'Exit to Valley of Kings - Camp')[1])
 	
 	entranceScript = entranceScript + """
-			if(FLAG[SF_LASTENTRY_NO] == 2 && WORK[WK_MAPNAMENO] == MN_D_MP6341) //entrance from Lodinia Marshland - Valley of Kings Entrance
+			if(FLAG[SF_LASTENTRY_NO] == 0 && WORK[WK_MAPNAMENO] == MN_D_MP6341) //entrance from Lodinia Marshland - Valley of Kings Entrance
 			{{
 				SetFlag(SF_LASTENTRY_NO, -2)
 				CallFunc("rng:warpmask")
@@ -331,18 +330,7 @@ def buildEntrances():
 
 	entranceScript = entranceScript + """
 
-	function "Entry_warpout_mp6409_replace" //entrance from Octus Overlook - Exit to Temple of the Great Tree
-	{{
-		SetWork( WK_BGM , BGM_Nothing )
-		SetFlag(SF_LASTENTRY_NO, -2)
-		CallFunc("rng:warpmask")
-		LoadArg("{0}")
-		EventCue("{1}",1)
-	}}""".format(getEntrance('Octus Overlook', 'Exit to Temple of the Great Tree')[0], getEntrance('Octus Overlook', 'Exit to Temple of the Great Tree')[1])
-
-	entranceScript = entranceScript + """
-
-	function "Entry_warpout_mp6301_replace" //entrance from Temple of the Great Tree - Octus Entrance
+	function "Entry_warpout_mp6409_replace" //entrance from Temple of the Great Tree - Octus Entrance
 	{{
 		SetWork( WK_BGM , BGM_Nothing )
 		SetFlag(SF_LASTENTRY_NO, -2)
@@ -350,6 +338,17 @@ def buildEntrances():
 		LoadArg("{0}")
 		EventCue("{1}",1)
 	}}""".format(getEntrance('Temple of the Great Tree', 'Octus Entrance')[0], getEntrance('Temple of the Great Tree', 'Octus Entrance')[1])
+
+	entranceScript = entranceScript + """
+
+	function "Entry_warpout_mp6301_replace" //entrance from Octus Overlook - Exit to Temple of the Great Tree
+	{{
+		SetWork( WK_BGM , BGM_Nothing )
+		SetFlag(SF_LASTENTRY_NO, -2)
+		CallFunc("rng:warpmask")
+		LoadArg("{0}")
+		EventCue("{1}",1)
+	}}""".format(getEntrance('Octus Overlook', 'Exit to Temple of the Great Tree')[0], getEntrance('Octus Overlook', 'Exit to Temple of the Great Tree')[1])
 
 	entranceScript = entranceScript + """
 
