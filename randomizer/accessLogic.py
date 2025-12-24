@@ -362,7 +362,13 @@ def checkLodiniaMarshland(location, access, parameters):
                 (location.mapCheckID not in ['Fermented Sap','Landmark'])
             )
         ),
-        'Valley of Kings - Camp': lambda: access.hasDina() or location.mapCheckID == 'Valley of Kings Entrance'
+        'Valley of Kings - Camp': lambda: (
+            access.past6() and access.canClimb() and 
+            (access.canSwampWalk() or access.canUnderwater()) and 
+            (
+                access.hasDina() or location.mapCheckID == 'Valley of Kings Entrance'
+            )
+        ) 
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -398,7 +404,10 @@ def checkLodiniaMarshlandFromSkyGarden(location, access):
         'Exit to Valley of Kings': lambda: (
             (access.canSwampWalk() or access.canUnderwater()) or (location.mapCheckID in ['Fermented Sap','Landmark'])
         ),
-        'Valley of Kings - Camp': lambda: access.hasDina() or location.mapCheckID == 'Valley of Kings Entrance'
+        'Valley of Kings - Camp': lambda: ((access.canSwampWalk() or access.canUnderwater()) and 
+            (
+                access.hasDina() or location.mapCheckID == 'Valley of Kings Entrance'
+            ))
     }
     return location_checks.get(location.locName, lambda: False)()
 
@@ -1677,28 +1686,26 @@ def materialAccess(material,access,parameters):
             return ((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or (lodiniaToVista(access) and access.canDoubleJump()))
         case 'Essence Stone':
             # East Coast Cave Access
-            return (((southSideOpen(access, parameters) and access.hasDina() and access.canDoubleJump()) or 
-            access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse'])  or 
-            (access.hasDiscovery('Beehive') and access.canDoubleJump())) or
+            return ((access.canEnter('East Coast Cave Dungeon')) or
             # Underground Water Vein
             ((access.canUnderwater() and ((access.canMove(11) and access.canClimb()) or access.hasDiscovery('Zephyr Hill'))) 
             or access.hasDiscovery('Lapis Mineral Vein')) or
             # Stone Pillar Wind Cave
             (canAccessNorthSide(access, parameters) and access.canMove(18)) or
             # Baja Tower
-            (eterniaOpen(access,parameters) and access.past4() and access.hasDana() and access.canClimb()) or
+            (access.canEnter('Baja Tower Dungeon')) or
             # Archeozoic Chasm
-            (eterniaOpen(access,parameters) and access.past5()) or 
+            (access.canEnter('Archeozoic Chasm Dungeon')) or 
             # Silent Tower
             (access.canDoubleJump() and (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse'])) and access.canMove(24))
             )
         case 'Tectite Ore':
             #Access to Mountain Pinnacle Trail, north side, gendarme, or western foot of gendarme
-            return (access.hasDiscovery('Prismatic Mineral Vein') or 
+            return (access.canEnter('Mountain Pinnacle Trail - Top') or 
                     (canAccessNorthSide(access,parameters)) or
-                    (access.canClimb() and southSideOpen(access, parameters) and access.past1()) or
+                    (access.canEnter('Mont Gendarme Dungeon Front') or access.canEnter('Mont Gendarme Dungeon Back')) or
                     (access.canMove(11) and access.canSwampWalk()) or access.hasDiscovery('Airs Cairn')
-)
+                    )
         case 'Iron Ore':
             return (coastNorthSideAccess(access,parameters) or access.hasAnyDiscovery(['Milky White Vein','Indigo Mineral Vein','Lapis Mineral Vein']))
         case 'Underworld Parts':
@@ -1706,62 +1713,46 @@ def materialAccess(material,access,parameters):
             return access.canEnter('Octus Dungeon')
         case 'Ancient Bone':
             #Valley of Kings Access
-            return ((((access.canSwampWalk() or access.canUnderwater()) and ((
-                canAccessNorthSide(access, parameters) and 
-                templeOfGreatTreeOpen(access) and
-                access.past6() and 
-                access.canClimb()) or (
-                (access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.hasDiscovery('Sky Garden')))) or (
-            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
-            ) or (
+            return (access.canEnter('Valley of Kings Dungeon') or (
             #Eleftheria Access
-            (southSideOpen(access, parameters) and access.hasDina()) or 
-                access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse','Beehive'])) and 
+            (access.canEnter('East Coast Cave Dungeon')) and 
             access.canDoubleJump() and 
             access.readNote1() and 
-            access.canDefeat('Gilkyra Encounter') or (
+            access.canDefeat('Gilkyra Encounter')) or 
             #Chasm Access
-            eterniaOpen(access,parameters) and access.past5())
+            (access.canEnter('Archeozoic Chasm Dungeon'))
             )
         case 'Ancient Hide':
             #Temple of the Great Tree Access
             return (((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or 
-                     (lodiniaToVista(access) and access.canDoubleJump())) or (
+                     (lodiniaToVista(access) and access.canDoubleJump()) or (access.canEnter('Temple of the Great Tree - Great Tree Garden') and access.canDefeat('Brachion'))) or (
             #Eleftheria Access
-            (southSideOpen(access, parameters) and access.hasDina()) or 
-                access.hasAnyDiscovery(['Ship Graveyard','Hidden Pirate Storehouse','Beehive'])) and 
+            (access.canEnter('East Coast Cave Dungeon')) and 
             access.canDoubleJump() and 
             access.readNote1() and 
-            access.canDefeat('Gilkyra Encounter') or (
+            access.canDefeat('Gilkyra Encounter')) or 
             #Chasm Access
-            eterniaOpen(access,parameters) and access.past5())
+            (access.canEnter('Archeozoic Chasm Dungeon'))
             )
         case 'Saurian Scale':
             return canAccessNorthSide(access,parameters)
         case 'Beast Parts':
-            return (canAccessNorthSide(access, parameters) and access.past1()) or access.hasDiscovery('Prismatic Mineral Vein')
+            return access.canEnter('Mountain Pinnacle Trail - Top')
         case 'Accursed Shell':
-            return (southSideOpen(access, parameters) and access.past1() and access.canClimb()) or canAccessNorthSide(access,parameters)
+            return access.canEnter('Mountain Pinnacle Trail - Top') or canAccessNorthSide(access,parameters)
         case 'Razor Feather':
             return access.canDefeat('Gargantula') or access.canDefeat('Lonbrigius')
         case 'Thunder Claw':
             #Towal Highway Access
-            return ((eterniaOpen(access,parameters) and access.hasDana()) or (
+            return (((eterniaOpen(access,parameters) and access.hasDana()) or access.canEnter('Towal Highway - Camp')) or 
             #Valley of Kings Access 
-            ((access.canSwampWalk() or access.canUnderwater()) and ((
-                canAccessNorthSide(access, parameters) and 
-                templeOfGreatTreeOpen(access) and
-                access.past6() and 
-                access.canClimb()) or (
-                (access.hasDiscovery('Graves of Ancient Heroes') and access.past7()) or access.hasDiscovery('Sky Garden')))) or (
-            access.hasDiscovery('Soundless Hall') and access.canUnderwater() and access.canSeeDark() and access.canMove(22))
-            ))
+            (access.canEnter('Valley of Kings Dungeon')))
         case 'Ancient Lumber':
             #Temple of the Great Tree Access
             return (((canAccessNorthSide(access, parameters) and templeOfGreatTreeOpen(access)) or 
-                     (lodiniaToVista(access) and access.canDoubleJump())) or (
+                     (lodiniaToVista(access) and access.canDoubleJump()) or (access.canEnter('Temple of the Great Tree - Great Tree Garden') and access.canDefeat('Brachion'))) or 
             #Chasm Access
-            eterniaOpen(access,parameters) and access.past5()) or
+            (access.canEnter('Archeozoic Chasm Dungeon')) or
             # lapis mineral vein
             (access.hasDiscovery('Lapis Mineral Vein')) or
             # Stone Pillar Wind Cave

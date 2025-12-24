@@ -49,7 +49,11 @@ def buildEntrances():
 	entranceScript ="""
 	function "dungeonEntrances"
 	{{
-
+		if(FLAG[SF_LASTENTRY_NO] != -2)
+		{{
+			PlayBGM(0, 0)
+		}}
+		
     	if(FLAG[GF_TBOX_DUMMY114])
 		{{
 			//Exits
