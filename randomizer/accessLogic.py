@@ -704,7 +704,7 @@ def checkTempleOfGreatTree(location, access, parameters):
         return False
 
     location_checks = {
-        "Dana's Room": lambda: True,
+        "Dana's Room": lambda: danaRoomCheck(location, access, parameters),
         'Temple Boss Arena': lambda: (
             (
             location.mapCheckID == 'Psyches' and 
@@ -716,12 +716,17 @@ def checkTempleOfGreatTree(location, access, parameters):
             battleLogic(230,access,parameters,scaled=True)
             )
         ),
-        'Great Tree Garden': lambda: (access.canDefeat('Brachion') and 
+        'Great Tree Garden': lambda: ((access.canDefeat('Brachion') or access.canEnter('Temple of the Great Tree - Great Tree Garden')) and 
                                      ((location.mapCheckID != 'Octus Entrance') or (
                                       location.mapCheckID == 'Octus Entrance' and octusAccess(access,parameters)))),
     }
 
     return location_checks.get(location.locName, lambda: False)()
+
+def danaRoomCheck(location, access, parameters):
+    if not(canAccessNorthSide(access, parameters) and (lodiniaToVista(access) and access.canDoubleJump())): 
+        return access.canDefeat('Brachion') 
+    else: return True
 
 def checkRuinsOfEternia(location, access, parameters):
     if not (eterniaOpen(access,parameters)):

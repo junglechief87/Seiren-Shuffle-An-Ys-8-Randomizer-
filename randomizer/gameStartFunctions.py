@@ -568,6 +568,7 @@ function "startParameters"
     SetFlag(GF_NPC_4_02_SEE_THANATOS,1)
     SetFlag(GF_04MP6204_IN_PAGOIDA,1)
     SetFlag(GF_04MP6201_TALK_THANATOS,1)
+    SetFlag(GF_04MP6409_LOOKUP_ORITREE,1)
     //There are zero checks in temple of the great tree and the "puzzel" is simple to let's hurry the player along and open the doors for them.
     SetFlag(GF_04MP6402_CHECK_GIM,1)
     SetFlag(GF_MP6401_SWITCH_03,1)

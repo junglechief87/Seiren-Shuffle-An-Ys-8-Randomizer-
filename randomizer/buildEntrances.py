@@ -49,10 +49,20 @@ def buildEntrances():
 	entranceScript ="""
 	function "dungeonEntrances"
 	{{
-		if(FLAG[SF_LASTENTRY_NO] >= 0)
+		//Manually fixing some music issues
 		{{
-			SetWork( WK_BGM , BGM_Nothing )
-		}}
+			if(WORK[WK_MAPNAMENO] == MN_D_EROSIONVALLEY_MP4301)
+			{{
+				PlayBGM(BGM_DUNGEON_301,0)
+			}}
+			if(WORK[WK_MAPNAMENO] == MN_D_MP2301)
+			{{
+				PlayBGM(BGM_DUNGEON_201,0)
+			}}
+			if(WORK[WK_MAPNAMENO] == MN_D_MP4331)
+			{{
+				PlayBGM(BGM_DUNGEON_401,0)
+			}}
 
     	if(FLAG[GF_TBOX_DUMMY114])
 		{{
@@ -884,6 +894,7 @@ def buildEntrances():
 
 	function "warpmask"
 	{
+		SetWork( WK_BGM , BGM_Nothing )
 		FadeOut(FADE_BLACK,0)
 		SetStopFlag(STOPFLAG_SIMPLEEVENT2)
 		ResetStopFlag(STOPFLAG_NOCHARACLIP)
