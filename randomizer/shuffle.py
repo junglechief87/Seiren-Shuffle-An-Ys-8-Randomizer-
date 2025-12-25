@@ -56,9 +56,21 @@ def shuffleLocations(parameters):
             locToBeShuffled = vanillaLocations.pop(0)
             inventoryObject = classr.inventory(locToBeShuffled)
 
+            if parameters.expItems: #convert's exp items to some number based on exp multiplier to their lower tier variants
+                if inventoryObject.itemName == "Hermit's Elixir":
+                    bitterCount = (10000/parameters.expMult)/1000
+                    inventoryObject.itemName = "Bitter Remedy"
+                    inventoryObject.itemID = 521
+                    inventoryObject.quantity = min(int(round(bitterCount)),255)
+                elif inventoryObject.itemName == "Bitter Remedy":
+                    sweetCount = (1000/parameters.expMult)/100
+                    inventoryObject.itemName = "Sweet Remedy"
+                    inventoryObject.itemID = 520
+                    inventoryObject.quantity = min(int(round(sweetCount)),255)
             if locToBeShuffled.mapID != 'none': #for 'new to the randomizer' progression items we set their map to none, these locations will not exist. There will be fewer locations than items to shuffle.
                 shuffleLocationObject = classr.shuffledLocation(locToBeShuffled)
                 preShuffleLoc.append(shuffleLocationObject)
+
             inventory.append(inventoryObject)
             
         else:

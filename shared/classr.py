@@ -621,6 +621,7 @@ class guiInput:
     self.foolishHints = None
     self.partyPool = None
     self.infinityMode = None
+    self.expItems = None
     self.startingLevel = None
     self.shopLevel = None
     self.weaponLevel = None
@@ -674,7 +675,7 @@ class guiInput:
     self.silvia = silvia
     self.Mephorash = Mephorash
 
-  def getOtherToggles(self, intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients, northSideOpen, infinityMode):
+  def getOtherToggles(self, intRewards,battleLogic,superWeapons,openPaths,extraFlameStones,extraIngredients, northSideOpen, infinityMode,expItems):
     self.intRewards = intRewards
     self.battleLogic = battleLogic
     self.progressiveSuperWeapons = superWeapons
@@ -683,6 +684,7 @@ class guiInput:
     self.extraIngredients = extraIngredients
     self.northSideOpen = northSideOpen
     self.infinityMode = infinityMode
+    self.expItems = expItems
 
   def getExpMult(self, expMult):
     self.expMult = expMult

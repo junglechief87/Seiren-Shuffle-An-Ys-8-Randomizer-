@@ -44,6 +44,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Recipes Come w\ Ingredients: " + str(parameters.extraIngredients) + "\n")
     spoilerLog.write("North Side Open: " + str(parameters.northSideOpen) + "\n")
     spoilerLog.write("Infinity Mode: " + str(parameters.infinityMode) + "\n")
+    spoilerLog.write("Scale EXP Items: " + str(parameters.expItems) + "\n")
     spoilerLog.write("Final Boss: " + str(parameters.finalBoss) + "\n")
     spoilerLog.write("Theos Start Phase: " + str(parameters.theosPhase) + "\n")
     spoilerLog.write("Origin Start Phase: " + str(parameters.originPhase) + "\n")

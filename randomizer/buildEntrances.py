@@ -49,11 +49,11 @@ def buildEntrances():
 	entranceScript ="""
 	function "dungeonEntrances"
 	{{
-		if(FLAG[SF_LASTENTRY_NO] != -2)
+		if(FLAG[SF_LASTENTRY_NO] >= 0)
 		{{
-			PlayBGM(0, 0)
+			SetWork( WK_BGM , BGM_Nothing )
 		}}
-		
+
     	if(FLAG[GF_TBOX_DUMMY114])
 		{{
 			//Exits
@@ -507,6 +507,11 @@ def buildEntrances():
 		CallFunc("system:camera_reset")
 		ResetStopFlag(STOPFLAG_EVENT)
 		FadeIn(FADE_BLACK, FADE_FAST)
+		if( !FLAG[GF_TBOX_DUMMY066]){			// エアランと合流していない
+			//SetFlag( TF_MAPNAME_SHOWN, 1 )				// 地名表示した（テンポラリ）
+			SetFlag(GF_02MP2302_LOOK_MAN,1)  //get rid of scene later in dungeon
+			EventCue("mp2301:EV_M02S390_ED")
+		}
 	}
 				
 	function "2308_entry"
@@ -666,7 +671,7 @@ def buildEntrances():
 	{
 		if (!FLAG[GF_TBOX_DUMMY131])
 		{
-			CallFunc("disablePrimordialPassage")
+			CallFunc("rng:disablePrimordialPassage")
 		}
 		else
 		{
@@ -788,7 +793,7 @@ def buildEntrances():
 	{
 		if (!FLAG[GF_05MP6204_APPEAR_CASTLE])
 		{
-			CallFunc("disableRuinsOfEterniaPalace")
+			CallFunc("rng:disableRuinsOfEterniaPalace")
 		}
 		else
 		{

@@ -1812,8 +1812,12 @@ def bossScaling(playthroughAllProgression,parameters):
             bossLevel = bossLevels.pop(0)
             finalNonGoalBossLevel = random.randrange(bossLevel-2,bossLevel+2)
             finalBossLevels.append([remainingBosses.pop(remainingBosses.index(bossID)),random.randrange(bossLevel-2,bossLevel+2)])
-            spoilerLog.write(f'\tBoss: {boss.mapCheckID} - Level {finalBossLevels[-1][1]}\n')        
-            bossLevelsDictByRegion[boss.locRegion] = finalBossLevels[-1][1] #storing this for use with psyches
+            spoilerLog.write(f'\tBoss: {boss.mapCheckID} - Level {finalBossLevels[-1][1]}\n')
+
+            if boss.mapCheckID in ['Clareon','Gargantula','Laspisus','Giasburn','Brachion','Carveros','Pirate Revenant','Oceanus','Basileus','Mephorash']:  #only bosses with psyches flags 
+                bossLevelsDictByRegion[boss.locRegion] = finalBossLevels[-1][1] #storing this for use with psyches
+        elif boss.mapCheckID == 'Gilkyra Encounter':
+            finalBossLevels.append(['M0902', max(random.randrange(bossLevel-4,bossLevel+4), 5)])
     
     # bosses post goal have their levels shuffled from among the remaining levels in the boss level pool
     random.shuffle(bossLevels)

@@ -407,9 +407,14 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.infinityMode_checkbox = ctk.CTkCheckBox(self, text="Infinity Mode", variable=self.infinityMode_var)
         self.infinityMode_checkbox.grid(row=5, column=1, padx=5, pady=5, sticky="w")
 
+        # Infinity Mode checkbox
+        self.expItem_var = ctk.BooleanVar(value=False)
+        self.expItem_checkbox = ctk.CTkCheckBox(self, text="Scale Exp Items", variable=self.expItem_var)
+        self.expItem_checkbox.grid(row=5, column=1, padx=5, pady=5, sticky="w")
+
         # Starting Loadout Button
         self.customize_button = ctk.CTkButton(self, text="Starting Loadout", command=self.open_starting_options)
-        self.customize_button.grid(row=5, column=2, padx=0, pady=0, columnspan=2)
+        self.customize_button.grid(row=6, column=0, padx=0, pady=0, sticky="w")
 
         # Initialize variables
         self.starting_level = ctk.IntVar(value=3)
@@ -928,6 +933,7 @@ class App(ctk.CTk):
                 "extraIngredients": self.pacingModifiersFrame.extra_ingredients_var.get(),
                 "northsideOpen": self.pacingModifiersFrame.northsideOpen_var.get(),
                 "infinityMode": self.pacingModifiersFrame.infinityMode_var.get(),
+                "expItems": self.pacingModifiersFrame.expItem_var(),
                 
                 # Final Boss Settings
                 "finalBoss": self.finalBossSettingsFrame.final_boss_option.get(),
@@ -1051,6 +1057,7 @@ class App(ctk.CTk):
             self.pacingModifiersFrame.extra_ingredients_var.set(settings.get("extraIngredients", True))
             self.pacingModifiersFrame.northsideOpen_var.set(settings.get("northsideOpen", False))
             self.pacingModifiersFrame.infinityMode_var.set(settings.get("infinityMode", False))
+            self.pacingModifiersFrame.expItem_var.set(settings.get("expItems", False))
 
             # Final Boss Settings
             final_boss = settings.get("finalBoss", "Theos de Endogram")
@@ -1180,6 +1187,7 @@ class App(ctk.CTk):
                 'Recipes Come w\\ Ingredients': (self.pacingModifiersFrame.extra_ingredients_var, 'set'),
                 'North Side Open': (self.pacingModifiersFrame.northsideOpen_var, 'set'),
                 'Infinity Mode': (self.pacingModifiersFrame.infinityMode_var, 'set'),
+                'Scale EXP Items': (self.pacingModifiersFrame.expItem_var, 'set'),
                 'Final Boss': (self.finalBossSettingsFrame.final_boss_option, 'set'),
                 'Theos Start Phase': (self.finalBossSettingsFrame.theos_start_option, 'set'),
                 'Origin Start Phase': (self.finalBossSettingsFrame.origin_start_option, 'set'),
@@ -1475,7 +1483,8 @@ class App(ctk.CTk):
                 self.pacingModifiersFrame.ex_flame_stones_var.get(),
                 self.pacingModifiersFrame.extra_ingredients_var.get(),
                 self.pacingModifiersFrame.northsideOpen_var.get(),
-                self.pacingModifiersFrame.infinityMode_var.get()
+                self.pacingModifiersFrame.infinityMode_var.get(),
+                self.pacingModifiersFrame.expItem_var.get()
             )
             
             # Experience Multipliers

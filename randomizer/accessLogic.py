@@ -562,7 +562,7 @@ def checkEastCoastCave(location, access, parameters):
         'East Coast Cave': lambda: 
         (
             (location.mapCheckID in ['TBOX01', 'TBOX03'] and access.canDoubleJump() and access.canDefeat('Gilkyra Encounter')) or 
-            (location.mapCheckID == 'Gilkyra Encounter' and battleLogic(170, access, parameters)) or
+            (location.mapCheckID == 'Gilkyra Encounter' and battleLogic(170, access, parameters, scaled=True)) or
             (location.mapCheckID in ['TBOX02','Landmark','Exit to Nostalgia Cape'])
         )
     }
