@@ -1761,7 +1761,7 @@ def buildPsyches(shuffledLocations, parameters, bossLevelsDictByRegion, finalNon
                                      bossReturn)
 
 def bossScaling(playthroughAllProgression,parameters):
-    bossLevels = [7,5,13,14,20,23,26,28,29,32,35,40,43,45,48,51,53,58,60,60,80]
+    bossLevels = [5,7,13,14,20,23,26,28,29,32,35,40,43,45,48,51,53,58,60,60,80]
     bossIDs = {'Byfteriza': 'M0111',
                'Avalodragil': 'B150',
                'Serpentus': 'B100',
@@ -1786,6 +1786,9 @@ def bossScaling(playthroughAllProgression,parameters):
     remainingBosses = []
     finalBossLevels = []
     bossLevelsDictByRegion = {}
+    HPmod = 0.5
+    bossWithoutParty = 0
+    partySize = 0
 
     if not parameters.goal == 'Untouchable': # Make sure Melaiduma's level and ID are in the pool if he's not the goal
         bossLevels.append(99) 
@@ -1798,9 +1801,18 @@ def bossScaling(playthroughAllProgression,parameters):
         bossIDs['Psyche-Nestor'] = 'B111'
         bossIDs['Psyche-Ura'] = 'B008'
 
+    for location in playthroughAllProgression.locations:
+        if location.party:
+            partySize += 1
+            if partySize >= 2:
+                break
+            
+        if location.mapCheckID in bossIDs.keys():
+            bossWithoutParty += 1
+
     # build out a list of IDs for us to track what bosses aren't in the pool
     for boss in bossIDs.keys():
-            remainingBosses.append(bossIDs.get(boss))
+        remainingBosses.append(bossIDs.get(boss))
 
     random.seed(parameters.seed)
     spoilerLog.write(f'\n'
@@ -1828,9 +1840,40 @@ def bossScaling(playthroughAllProgression,parameters):
         spoilerLog.write(f'\tBoss: {bossName} - Level {finalBossLevels[-1][1]}\n')
 
     fscBosses = ''
+    fscBossesHP = ''
     script = '\tfunction "bossScaling"\n\t{\n'
     for boss in finalBossLevels:
         script = script + '\t\tSetChrWorkGroup(' + boss[0] + ', CWK_LV, ' + str(boss[1]) + ')\n'
+
+        #balance decision to lower boss HP if there are any bosses before party join, some fights are super tedious in early game if they show up and it's more punishing to lose them than we want for game pacing. 
+        if bossWithoutParty != 0:
+            script = script + '\t\tSetChrWork("' + boss[0].lower() + '", CWK_MAXHP, (' + boss[0].lower() + '.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+            script = script + '\t\tSetChrWork("' + boss[0].lower() + '", CWK_HP, (' + boss[0].lower() + '.CHRWORK[CWK_MAXHP]))\n'
+            bossWithoutParty -= 1
+
+            #handling special cases for bosses with forms or minions
+            if boss[0] == 'B005':
+                script = script + '\t\tSetChrWork("m0644", CWK_MAXHP, (m0644.CHRWORK[CWK_MAXHP] *' + str(HPmod) + '))\n'
+                script = script + '\t\tSetChrWork("m0644", CWK_HP, (m0644.CHRWORK[CWK_MAXHP]))\n'
+                script = script + '\t\tSetChrWork("m0643", CWK_MAXHP, (m0643.CHRWORK[CWK_MAXHP] *' + str(HPmod) + '))\n' #if you can beat these enemies you can reach basileus so scale them too
+                script = script + '\t\tSetChrWork("m0644", CWK_HP, (m0644.CHRWORK[CWK_MAXHP]))\n'
+            if boss[0] == 'B101B':
+                script = script + '\t\tSetChrWork("b101", CWK_MAXHP, (b101.CHRWORK[CWK_MAXHP] *' + str(HPmod) + '))\n'
+                script = script + '\t\tSetChrWork("b101", CWK_HP, (b101.CHRWORK[CWK_MAXHP]))\n'
+            if boss[0] == 'B170': 
+                fscBossesHP = (
+                            f'\t\tSetChrWork("b103",	CWK_MAXHP,	(b103.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWork("b103",	CWK_HP,	(b103.CHRWORK[CWK_MAXHP]))\n'
+                            f'\t\tSetChrWork("b006",	CWK_MAXHP,	(b006.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWork("b006",	CWK_HP,	(b006.CHRWORK[CWK_MAXHP]))\n'
+                            f'\t\tSetChrWork("b001",	CWK_MAXHP,	(b001.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWork("b001",	CWK_HP,	(b001.CHRWORK[CWK_MAXHP]))\n'
+                            f'\t\tSetChrWork("b105",	CWK_MAXHP,	(b105.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWork("b105",	CWK_HP,	(b105.CHRWORK[CWK_MAXHP]))\n'
+                            f'\t\tSetChrWork("b161",	CWK_MAXHP,	(b161.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWork("b161",	CWK_HP,	(b161.CHRWORK[CWK_MAXHP]))\n'
+                            )
+    
         #handling special cases for bosses with forms or minions
         if boss[0] == 'B005':
             script = script + '\t\tSetChrWorkGroup(M0644, CWK_LV, ' + str(boss[1]) + ')\n'
@@ -1845,6 +1888,7 @@ def bossScaling(playthroughAllProgression,parameters):
                          f'\t\tSetChrWorkGroup(B001,	CWK_LV,	' + str(max(1,boss[1]-14)) + ')\n'
                          f'\t\tSetChrWorkGroup(B105,	CWK_LV,	' + str(max(1,boss[1]-16)) + ')\n'
                          f'\t\tSetChrWorkGroup(B161,	CWK_LV,	' + str(max(1,boss[1]-18)) + ')\n'
+                         f'\n' + fscBossesHP + '\n'
                          f'\t}}\n')
                         
     script = script + '\t}'

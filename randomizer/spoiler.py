@@ -112,7 +112,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     for location in shuffledLocations:
         if location.locName == 'Opening Cutscene':
             openingCutscene = location
-            progressionInventory.append(location)
+            progressionInventory.append(classr.inventory(location))
             playthroughAllProgression.build(location,sphere)
         else:
             accessibleLocation.append(location)
@@ -121,7 +121,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
     spoilerLog.write("Playthrough:\n")
     print('Beginning playthrough')
     #We build an initial list of progression items on the way to the goal
-    attempt = 0
+    testSphere = 0
     while len(accessibleLocation) != 0 and not win:
         while True:
             itemFound = 0
@@ -134,11 +134,10 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
                         progressionLocations.append(newLocation)
                         itemFound+=1
                         
-                        playthroughAllProgression.build(newLocation,sphere)
+                        playthroughAllProgression.build(newLocation,testSphere)
                         if accessibleItem.itemName == 'End the Lacrimosa':
                             win = True
                             break
-
             if itemFound == 0 or win: break
         
         print('unreached locations:')
@@ -148,15 +147,21 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         print('reached locations:')
         for location in progressionLocations:
             location.printSpoiler()
-        attempt +=1
-        if attempt >= 500: #Added this safety check in case there are other bugs in initial progression generation
-            raise Exception('Too many progression attempts, something is wrong with the logic')
+            
         while len(newInventory) != 0:
             progressionInventory.append(newInventory.pop(0))
+        testSphere+=1
 
+    
     #We trim down the list by removing each progression location one at a time and seeing if the seed is still beatable, if it is then we remove the location completely
     print('testing playthrough')
-    progressionLocations.append(openingCutscene)
+    for location in progressionLocations:
+        location.printSpoiler()
+
+    progressionLocations.insert(0,openingCutscene)
+    progressionLocations.reverse() #Reverse to try removing later items first, as they are more likely to be non-essential
+    for location in progressionLocations:
+        location.printSpoiler()
     while True:
         removed = False
         for locIndex,location in enumerate(progressionLocations):
@@ -170,14 +175,17 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         if not removed: break
 
     #We take the final list and do our playthrough using only the minimum required items
+    progressionLocations.reverse() #Reverse back to original order for our final playthrough build
     print('building playthrough')
     playthrough = classr.playthrough()
     win = False
     progressionInventory = []
-    for location in progressionLocations:
+    for index,location in enumerate(progressionLocations):
         if location.locName == 'Opening Cutscene':
-            openingCutscene = location
-            progressionInventory.append(openingCutscene)
+            openingCutscene = progressionLocations.pop(index)
+            startingCharacter = classr.inventory(openingCutscene)
+            progressionInventory.append(startingCharacter)
+            break
 
     while len(progressionLocations) != 0 and not win:
         itemFound = 0
@@ -185,7 +193,6 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         spoilerLog.write('{ \n')
         if sphere == 0:
             openingCutscene.writeSpoiler(spoilerLog)
-
             playthrough.build(openingCutscene,sphere)
 
         while True:
@@ -217,7 +224,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         
         if sphere >= 100: #Added this safety check in case there are other bugs in spoiler generation
             break 
-
+    
     return playthrough, playthroughAllProgression
 
 def testSeed(progressionLocations,parameters):
@@ -227,15 +234,16 @@ def testSeed(progressionLocations,parameters):
         progressionLocationsToTest.append(location)
 
     while True:
-        itemFound = 0
+        itemFound = False
         for index,location in enumerate(progressionLocationsToTest):
             if canAccess(progressionInventory,location,parameters) or location.locName == 'Opening Cutscene':
                 newLocation = progressionLocationsToTest.pop(index)
                 accessibleItem = classr.inventory(newLocation)
                 progressionInventory.append(accessibleItem)
-                itemFound+=1
+                itemFound = True
                 if accessibleItem.itemName == 'End the Lacrimosa':
-                    return True   
-        if itemFound == 0:
+                    return True
+                break   
+        if not itemFound:
             return False
     

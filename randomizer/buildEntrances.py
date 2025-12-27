@@ -49,20 +49,6 @@ def buildEntrances():
 	entranceScript ="""
 	function "dungeonEntrances"
 	{{
-		//Manually fixing some music issues
-		{{
-			if(WORK[WK_MAPNAMENO] == MN_D_EROSIONVALLEY_MP4301)
-			{{
-				PlayBGM(BGM_DUNGEON_301,0)
-			}}
-			if(WORK[WK_MAPNAMENO] == MN_D_MP2301)
-			{{
-				PlayBGM(BGM_DUNGEON_201,0)
-			}}
-			if(WORK[WK_MAPNAMENO] == MN_D_MP4331)
-			{{
-				PlayBGM(BGM_DUNGEON_401,0)
-			}}
 
     	if(FLAG[GF_TBOX_DUMMY114])
 		{{

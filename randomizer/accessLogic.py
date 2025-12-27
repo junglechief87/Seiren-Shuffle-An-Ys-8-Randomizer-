@@ -39,12 +39,15 @@ def canAccessNorthSide(access, parameters):
              access.hasAnyDiscovery(['Unicalamites','Breath Fountain','Ancient Tree','Prismatic Mineral Vein']) or 
              (((lodiniaToVista(access) and access.canDoubleJump()) or access.canEnter('Temple of the Great Tree - Great Tree Garden')) and ((access.hasDana()) or (access.past3() and access.past2()))) or
              ((access.canEnter('Towal Highway - Camp') and access.hasDana()) and (access.past3() or access.past2()))
-        )
+            )
 
 def eterniaOpen(access,parameters):
-    return ((canAccessNorthSide(access, parameters) and access.past2()) or (access.past3() and lodiniaToVista(access) and access.canDoubleJump())) or \
-        (access.canEnter('Temple of the Great Tree - Great Tree Garden') and access.past3()) or (access.canEnter('The Ruins of Eternia - Palace Ruins') and access.past5()) or \
-        (access.hasDana() and access.canEnter('Towal Highway - Camp'))
+    return ((canAccessNorthSide(access, parameters) and access.past2()) or 
+            (access.past3() and lodiniaToVista(access) and access.canDoubleJump()) or 
+            (access.canEnter('Temple of the Great Tree - Great Tree Garden') and access.past3()) or 
+            (access.canEnter('The Ruins of Eternia - Palace Ruins') and access.past5()) or 
+            (access.hasDana() and access.canEnter('Towal Highway - Camp'))
+            )
 
 def templeOfGreatTreeOpen(access):
     return ( (access.past2() and access.past3()) or access.hasDana()) or access.canEnter('Temple of the Great Tree - Great Tree Garden')
@@ -461,7 +464,7 @@ def checkArcheozoicChasm(location, access, parameters):
             location.mapCheckID != 'TBOX02'
         ),
         'Whirlpools': lambda: True,
-        'Mid-Boss Arena': lambda: battleLogic(250, access, parameters),
+        'Mid-Boss Arena': lambda: battleLogic(250, access, parameters, scaled=True),
         'Submerged Cave': lambda: ( 
         (
         location.mapCheckID == 'TBOX01' and 
@@ -476,7 +479,7 @@ def checkArcheozoicChasm(location, access, parameters):
             (location.mapCheckID != 'Psyches' and 
             battleLogic(320, access, parameters, scaled=True) and 
             access.canUnderwater()) or 
-            (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters, ) and access.canDefeat('Oceanus'))
+            (parameters.goal == 'Release the Psyches' and battleLogic(340, access, parameters) and access.canDefeat('Oceanus'))
         ),
     }
 

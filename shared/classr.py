@@ -18,7 +18,7 @@ class playthrough:
       self.regions.append(location.locRegion)
 
     if 'Defeated' in location.itemName:
-      self.bosses.append(location) 
+      self.bosses.append(location)
 
 class location:
   def __init__(self,locID,mapID,locRegion,locName,mapCheckID,event,itemID,itemName,quantity,progression,nice,party,crew,item,script,skill,landmark,entrance,exit):
