@@ -83,6 +83,7 @@ def rngPatcherMain(parameters):
 
     patchFile = patchFile + interceptionHandler(parameters)
     patchFile = patchFile + jewelTrade(shuffledLocations)
+    patchFile = patchFile + talkHints(shuffledLocations)
     patchFile = patchFile + octusGoal(parameters)
     if parameters.openOctusPaths:
         patchFile = patchFile + octoBosses(parameters, finalNonGoalBossLevel)
@@ -1229,6 +1230,166 @@ function "newTradeHandler"
     item9 = dinasItems[8].itemName + ' x ' + str(dinasItems[8].quantity)
     item10 = dinasItems[9].itemName + ' x ' + str(dinasItems[9].quantity)
     return script.format(item1,item2,item3,item4,item5,item6,item7,item8,item9,item10)
+
+#function to give hints for long checks, NPCs will tell you once the check is unlocked what is behind it
+def talkHints(shuffledLocations):
+    dogiHints = 'function "interceptRewardPreview"\n{\n'
+    ricottaHints = 'function "mkRewardsPreview"\n{\n'
+    intReward = [None] * 5
+    mkRewards = [None] * 6
+
+    for location in shuffledLocations:
+        if location.locName == 'Intercept':
+            if location.mapCheckID == 'Stage 2':
+                if location.quantity > 1:
+                    intReward[0] = location.itemName + ' x ' + str(location.quantity)
+                else:
+                    intReward[0] = location.itemName
+            elif location.mapCheckID == 'Stage 3':
+                if location.quantity > 1:
+                    intReward[1] = location.itemName + ' x ' + str(location.quantity)
+                else:
+                    intReward[1] = location.itemName
+            elif location.mapCheckID == 'Stage 5':
+                if location.quantity > 1:
+                    intReward[2] = location.itemName + ' x ' + str(location.quantity)
+                else:
+                    intReward[2] = location.itemName
+            elif location.mapCheckID == 'Stage 7':
+                if location.quantity > 1:
+                    intReward[3] = location.itemName + ' x ' + str(location.quantity)
+                else:
+                    intReward[3] = location.itemName
+            elif location.mapCheckID == 'Stage 9':
+                if location.quantity > 1:
+                    intReward[4] = location.itemName + ' x ' + str(location.quantity)
+                else:
+                    intReward[4] = location.itemName
+        elif location.mapCheckID == 'Master Kong Skill Ricotta':
+            if location.quantity > 1:
+                mkRewards[0] = location.itemName + ' x ' + str(location.quantity)
+            else:
+                mkRewards[0] = location.itemName
+        elif location.mapCheckID == 'Master Kong Skill Sahad':
+            if location.quantity > 1:
+                mkRewards[1] = location.itemName + ' x ' + str(location.quantity)
+            else:
+                mkRewards[1] = location.itemName
+        elif location.mapCheckID == 'Master Kong Skill Dana':
+            if location.quantity > 1:
+                mkRewards[2] = location.itemName + ' x ' + str(location.quantity)
+            else:
+                mkRewards[2] = location.itemName
+        elif location.mapCheckID == 'Master Kong Skill Laxia':
+            if location.quantity > 1:
+                mkRewards[3] = location.itemName + ' x ' + str(location.quantity)
+            else:
+                mkRewards[3] = location.itemName
+        elif location.mapCheckID == 'Master Kong Skill Hummel':
+            if location.quantity > 1:
+                mkRewards[4] = location.itemName + ' x ' + str(location.quantity)
+            else:
+                mkRewards[4] = location.itemName
+        elif location.mapCheckID == 'Master Kong Skill Adol':
+            if location.quantity > 1:
+                mkRewards[5] = location.itemName + ' x ' + str(location.quantity)
+            else:
+                mkRewards[5] = location.itemName
+
+    dogiHints += """
+    if(FLAG[GF_TBOX_DUMMY100] && !FLAG[GF_TBOX_DUMMY102])
+    {{ 
+        TalkPopup("Dogi",0,2,0,0,0)
+        {{
+            "Hey! Look what I got for you!"
+            "If you clear stage 2: #2C {0}#0C"
+            "If you clear stage 3: #2C {1}#0C"
+            "If you clear stage 5: #2C {2}#0C"
+            "If you clear stage 7: #2C {3}#0C"
+        }}
+        WaitPrompt()
+        WaitCloseWindow()
+        
+        Wait(5)
+    }}
+    if(FLAG[GF_TBOX_DUMMY102])
+    {{ 
+        TalkPopup("Dogi",0,2,0,0,0)
+        {{
+            "Hey! Look what I got for you!"
+            "If you clear stage 2: #2C {0}#0C"
+            "If you clear stage 3: #2C {1}#0C"
+            "If you clear stage 5: #2C {2}#0C"
+            "If you clear stage 7: #2C {3}#0C"
+            "If you clear stage 9: #2C {4}#0C"
+        }}
+        WaitPrompt()
+        WaitCloseWindow()
+        
+        Wait(5)
+    }}
+}}
+    """.format(intReward[1],intReward[2],intReward[3],intReward[4],intReward[5])
+
+    ricottaHints += """
+    TalkPopup("Ricotta",0,2,0,0,0)
+    {{
+        "Master says he can give the following:"
+        "#2C {0}#0C for me!"
+    }}
+    WaitPrompt()
+    WaitCloseWindow()
+
+    if(FLAG[SF_SAHAD_JOINED])
+    {{
+        TalkPopup("Ricotta",0,2,0,0,0)
+        {{
+            "#2C {1}#0C for Sahad!"
+        }}
+        WaitPrompt()
+        WaitCloseWindow()
+    }}
+    if(FLAG[SF_DANA_JOINED])
+    {{
+        TalkPopup("Ricotta",0,2,0,0,0)
+        {{
+            "#2C {2}#0C for Dana!"
+        }}
+        WaitPrompt()
+        WaitCloseWindow()
+    }}
+    if(FLAG[SF_LAXIA_JOINED])
+    {{
+        TalkPopup("Ricotta",0,2,0,0,0)
+        {{
+            "#2C {3}#0C for Laxia!"
+        }}
+        WaitPrompt()
+        WaitCloseWindow()
+    }}
+    if(FLAG[SF_HUMMEL_JOINED])
+    {{
+        TalkPopup("Ricotta",0,2,0,0,0)
+        {{
+            "#2C {4}#0C for Hummel!"
+        }}
+        WaitPrompt()
+        WaitCloseWindow()
+    }}
+    if(FLAG[SF_ADOL_JOINED])
+    {{
+        TalkPopup("Ricotta",0,2,0,0,0)
+        {{
+            "#2C {5}#0C for Adol!"
+        }}
+        WaitPrompt()
+        WaitCloseWindow()
+    }}
+    Wait(5)
+    
+}}
+    """.format(mkRewards[0],mkRewards[1],mkRewards[2],mkRewards[3],mkRewards[4],mkRewards[5])
+    return dogiHints + '\n' + ricottaHints
 
 #the order intercepts unlock for finding T's Memos
 def interceptUnlock():
