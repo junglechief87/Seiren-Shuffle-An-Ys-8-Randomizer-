@@ -1233,68 +1233,61 @@ function "newTradeHandler"
 
 #function to give hints for long checks, NPCs will tell you once the check is unlocked what is behind it
 def talkHints(shuffledLocations):
+
+    def formatHint(location):
+        if location.skill:
+            skillInfo = getSkillInfo(location.itemName)
+            return skillInfo[2] + " Skill -" + skillInfo[1]
+        elif location.quantity > 1:
+            return location.itemName + ' x ' + str(location.quantity)
+        else:
+            return location.itemName
+        
     dogiHints = 'function "interceptRewardPreview"\n{\n'
     ricottaHints = 'function "mkRewardsPreview"\n{\n'
+    shoebillHints = 'function "fishRewardPreview"\n{\n'
     intReward = [None] * 5
     mkRewards = [None] * 6
+    fishRewards = [None] * 6
 
     for location in shuffledLocations:
         if location.locName == 'Intercept':
             if location.mapCheckID == 'Stage 2':
-                if location.quantity > 1:
-                    intReward[0] = location.itemName + ' x ' + str(location.quantity)
-                else:
-                    intReward[0] = location.itemName
+                intReward[0] = formatHint(location)
             elif location.mapCheckID == 'Stage 3':
-                if location.quantity > 1:
-                    intReward[1] = location.itemName + ' x ' + str(location.quantity)
-                else:
-                    intReward[1] = location.itemName
+                intReward[1] = formatHint(location)
             elif location.mapCheckID == 'Stage 5':
-                if location.quantity > 1:
-                    intReward[2] = location.itemName + ' x ' + str(location.quantity)
-                else:
-                    intReward[2] = location.itemName
+                intReward[2] = formatHint(location)
             elif location.mapCheckID == 'Stage 7':
-                if location.quantity > 1:
-                    intReward[3] = location.itemName + ' x ' + str(location.quantity)
-                else:
-                    intReward[3] = location.itemName
+                intReward[3] = formatHint(location)
             elif location.mapCheckID == 'Stage 9':
-                if location.quantity > 1:
-                    intReward[4] = location.itemName + ' x ' + str(location.quantity)
-                else:
-                    intReward[4] = location.itemName
+                intReward[4] = formatHint(location)
         elif location.mapCheckID == 'Master Kong Skill Ricotta':
-            if location.quantity > 1:
-                mkRewards[0] = location.itemName + ' x ' + str(location.quantity)
-            else:
-                mkRewards[0] = location.itemName
+            mkRewards[0] = formatHint(location)
         elif location.mapCheckID == 'Master Kong Skill Sahad':
-            if location.quantity > 1:
-                mkRewards[1] = location.itemName + ' x ' + str(location.quantity)
-            else:
-                mkRewards[1] = location.itemName
+            mkRewards[1] = formatHint(location)
         elif location.mapCheckID == 'Master Kong Skill Dana':
-            if location.quantity > 1:
-                mkRewards[2] = location.itemName + ' x ' + str(location.quantity)
-            else:
-                mkRewards[2] = location.itemName
+            mkRewards[2] = formatHint(location)
         elif location.mapCheckID == 'Master Kong Skill Laxia':
-            if location.quantity > 1:
-                mkRewards[3] = location.itemName + ' x ' + str(location.quantity)
-            else:
-                mkRewards[3] = location.itemName
+            mkRewards[3] = formatHint(location)
         elif location.mapCheckID == 'Master Kong Skill Hummel':
-            if location.quantity > 1:
-                mkRewards[4] = location.itemName + ' x ' + str(location.quantity)
-            else:
-                mkRewards[4] = location.itemName
+            mkRewards[4] = formatHint(location)
         elif location.mapCheckID == 'Master Kong Skill Adol':
-            if location.quantity > 1:
-                mkRewards[5] = location.itemName + ' x ' + str(location.quantity)
-            else:
-                mkRewards[5] = location.itemName
+            mkRewards[5] = formatHint(location)
+        elif location.locName == 'Fish Trade':
+            if location.mapCheckID == 'Fish 4':
+                fishRewards[0] = formatHint(location)
+            elif location.mapCheckID == 'Fish 8':
+                fishRewards[1] = formatHint(location)
+            elif location.mapCheckID == 'Fish 12':
+                fishRewards[2] = formatHint(location)
+            elif location.mapCheckID == 'Fish 16':
+                fishRewards[3] = formatHint(location)
+            elif location.mapCheckID == 'Fish 20':
+                fishRewards[4] = formatHint(location)
+            elif location.mapCheckID == 'Fish 24':
+                fishRewards[5] = formatHint(location)
+        
 
     dogiHints += """
     if(FLAG[GF_TBOX_DUMMY100] && !FLAG[GF_TBOX_DUMMY102])
@@ -1329,7 +1322,7 @@ def talkHints(shuffledLocations):
         Wait(5)
     }}
 }}
-    """.format(intReward[1],intReward[2],intReward[3],intReward[4],intReward[5])
+    """.format(intReward[0],intReward[1],intReward[2],intReward[3],intReward[4])
 
     ricottaHints += """
     TalkPopup("Ricotta",0,2,0,0,0)
@@ -1389,7 +1382,33 @@ def talkHints(shuffledLocations):
     
 }}
     """.format(mkRewards[0],mkRewards[1],mkRewards[2],mkRewards[3],mkRewards[4],mkRewards[5])
-    return dogiHints + '\n' + ricottaHints
+
+    shoebillHints += """
+        TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{{
+			"Skwaaaa!" 
+            "(The Shoebill gestures broadly in a pantomime."
+            "It seems to be signaling about the fishing rewards.)"
+		}}
+
+		WaitPrompt()
+		WaitCloseWindow()
+
+        TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
+		{{
+			"({0})"
+            "({1})"
+            "({2})"
+            "({3})"
+            "({4})"
+            "({5})"
+		}}
+
+		WaitPrompt()
+		WaitCloseWindow()
+}}
+    """.format(fishRewards[0],fishRewards[1],fishRewards[2],fishRewards[3],fishRewards[4],fishRewards[5])
+    return dogiHints + '\n' + ricottaHints + '\n' + shoebillHints
 
 #the order intercepts unlock for finding T's Memos
 def interceptUnlock():
@@ -2008,31 +2027,31 @@ def bossScaling(playthroughAllProgression,parameters):
 
         #balance decision to lower boss HP if there are any bosses before party join, some fights are super tedious in early game if they show up and it's more punishing to lose them than we want for game pacing. 
         if bossWithoutParty != 0:
-            script = script + '\t\tSetChrWork("' + boss[0].lower() + '", CWK_MAXHP, (' + boss[0].lower() + '.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
-            script = script + '\t\tSetChrWork("' + boss[0].lower() + '", CWK_HP, (' + boss[0].lower() + '.CHRWORK[CWK_MAXHP]))\n'
+            script = script + '\t\tSetChrWorkGroup(' + boss[0] + ', CWK_MAXHP, (' + boss[0] + '.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+            script = script + '\t\tSetChrWorkGroup(' + boss[0] + ', CWK_HP, (' + boss[0] + '.CHRWORK[CWK_MAXHP]))\n'
             bossWithoutParty -= 1
 
             #handling special cases for bosses with forms or minions
             if boss[0] == 'B005':
-                script = script + '\t\tSetChrWork("m0644", CWK_MAXHP, (m0644.CHRWORK[CWK_MAXHP] *' + str(HPmod) + '))\n'
-                script = script + '\t\tSetChrWork("m0644", CWK_HP, (m0644.CHRWORK[CWK_MAXHP]))\n'
-                script = script + '\t\tSetChrWork("m0643", CWK_MAXHP, (m0643.CHRWORK[CWK_MAXHP] *' + str(HPmod) + '))\n' #if you can beat these enemies you can reach basileus so scale them too
-                script = script + '\t\tSetChrWork("m0644", CWK_HP, (m0644.CHRWORK[CWK_MAXHP]))\n'
+                script = script + '\t\tSetChrWorkGroup(M0644, CWK_MAXHP, (M0644.CHRWORK[CWK_MAXHP] *' + str(HPmod) + '))\n'
+                script = script + '\t\tSetChrWorkGroup(M0644, CWK_HP, (M0644.CHRWORK[CWK_MAXHP]))\n'
+                script = script + '\t\tSetChrWorkGroup(M0643, CWK_MAXHP, (M0643.CHRWORK[CWK_MAXHP] *' + str(HPmod) + '))\n' #if you can beat these enemies you can reach basileus so scale them too
+                script = script + '\t\tSetChrWorkGroup(M0644, CWK_HP, (M0644.CHRWORK[CWK_MAXHP]))\n'
             if boss[0] == 'B101B':
-                script = script + '\t\tSetChrWork("b101", CWK_MAXHP, (b101.CHRWORK[CWK_MAXHP] *' + str(HPmod) + '))\n'
-                script = script + '\t\tSetChrWork("b101", CWK_HP, (b101.CHRWORK[CWK_MAXHP]))\n'
+                script = script + '\t\tSetChrWorkGroup(B101, CWK_MAXHP, (B101.CHRWORK[CWK_MAXHP] *' + str(HPmod) + '))\n'
+                script = script + '\t\tSetChrWorkGroup(B101, CWK_HP, (B101.CHRWORK[CWK_MAXHP]))\n'
             if boss[0] == 'B170': 
                 fscBossesHP = (
-                            f'\t\tSetChrWork("b103",	CWK_MAXHP,	(b103.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
-                            f'\t\tSetChrWork("b103",	CWK_HP,	(b103.CHRWORK[CWK_MAXHP]))\n'
-                            f'\t\tSetChrWork("b006",	CWK_MAXHP,	(b006.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
-                            f'\t\tSetChrWork("b006",	CWK_HP,	(b006.CHRWORK[CWK_MAXHP]))\n'
-                            f'\t\tSetChrWork("b001",	CWK_MAXHP,	(b001.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
-                            f'\t\tSetChrWork("b001",	CWK_HP,	(b001.CHRWORK[CWK_MAXHP]))\n'
-                            f'\t\tSetChrWork("b105",	CWK_MAXHP,	(b105.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
-                            f'\t\tSetChrWork("b105",	CWK_HP,	(b105.CHRWORK[CWK_MAXHP]))\n'
-                            f'\t\tSetChrWork("b161",	CWK_MAXHP,	(b161.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
-                            f'\t\tSetChrWork("b161",	CWK_HP,	(b161.CHRWORK[CWK_MAXHP]))\n'
+                            f'\t\tSetChrWorkGroup(B103,	CWK_MAXHP,	(B103.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWorkGroup(B103,	CWK_HP,	(B103.CHRWORK[CWK_MAXHP]))\n'
+                            f'\t\tSetChrWorkGroup(B006,	CWK_MAXHP,	(B006.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWorkGroup(B006,	CWK_HP,	(B006.CHRWORK[CWK_MAXHP]))\n'
+                            f'\t\tSetChrWorkGroup(B001,	CWK_MAXHP,	(B001.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWorkGroup(B001,	CWK_HP,	(B001.CHRWORK[CWK_MAXHP]))\n'
+                            f'\t\tSetChrWorkGroup(B105,	CWK_MAXHP,	(B105.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWorkGroup(B105,	CWK_HP,	(B105.CHRWORK[CWK_MAXHP]))\n'
+                            f'\t\tSetChrWorkGroup(B161,	CWK_MAXHP,	(B161.CHRWORK[CWK_MAXHP] * ' + str(HPmod) + '))\n'
+                            f'\t\tSetChrWorkGroup(B161,	CWK_HP,	(B161.CHRWORK[CWK_MAXHP]))\n'
                             )
     
         #handling special cases for bosses with forms or minions
