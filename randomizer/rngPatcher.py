@@ -1389,6 +1389,7 @@ def talkHints(shuffledLocations):
 			"Skwaaaa!" 
             "(The Shoebill gestures broadly in a pantomime."
             "It seems to be signaling about the fishing rewards.)"
+            ""
 		}}
 
 		WaitPrompt()
@@ -1396,12 +1397,12 @@ def talkHints(shuffledLocations):
 
         TalkPopup(UNDEF,0,3,STOPPER_PPOSX,STOPPER_PPOSY,0)
 		{{
-			"({0})"
-            "({1})"
-            "({2})"
-            "({3})"
-            "({4})"
-            "({5})"
+			"(#2C {0}#0C)"
+            "(#2C {1}#0C)"
+            "(#2C {2}#0C)"
+            "(#2C {3}#0C)"
+            "(#2C {4}#0C)"
+            "(#2C {5}#0C)"
 		}}
 
 		WaitPrompt()
@@ -2027,9 +2028,24 @@ def bossScaling(playthroughAllProgression,parameters):
 
         #balance decision to lower boss HP if there are any bosses before party join, some fights are super tedious in early game if they show up and it's more punishing to lose them than we want for game pacing. 
         if bossWithoutParty != 0:
-            script = script + '\t\tSetChrWorkGroup(' + boss[0] + ', CWK_MAXHP, (' + boss[0] + '.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
-            script = script + '\t\tSetChrWorkGroup(' + boss[0] + ', CWK_HP, (' + boss[0] + '.CHRWORK[CWK_MAXHP]))\n'
-            bossWithoutParty -= 1
+            if boss[0] == 'M0111':
+                script = script + '\t\tSetChrWork("tu_m0111_01", CWK_MAXHP, (tu_m0111_01.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+                script = script + '\t\tSetChrWork("tu_m0111_01", CWK_HP, (tu_m0111_01.CHRWORK[CWK_MAXHP]))\n'
+            elif boss[0] == 'B101B':
+                script = script + '\t\SetChrWork("b101a", CWK_MAXHP, (b101a.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+                script = script + '\t\SetChrWork("b101a", CWK_HP, (b101a.CHRWORK[CWK_MAXHP]))\n'
+                script = script + '\t\SetChrWork("b101b", CWK_MAXHP, (b101b.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+                script = script + '\t\SetChrWork("b101b", CWK_HP, (b101b.CHRWORK[CWK_MAXHP]))\n'
+                script = script + '\t\SetChrWork("b101c", CWK_MAXHP, (b101c.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+                script = script + '\t\SetChrWork("b101c", CWK_HP, (b101c.CHRWORK[CWK_MAXHP]))\n'
+                script = script + '\t\SetChrWork("b101d", CWK_MAXHP, (b101d.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+                script = script + '\t\SetChrWork("b101d", CWK_HP, (b101d.CHRWORK[CWK_MAXHP]))\n'
+                script = script + '\t\SetChrWork("b101", CWK_MAXHP, (b101.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+                script = script + '\t\SetChrWork("b101", CWK_HP, (b101.CHRWORK[CWK_MAXHP]))\n'
+            else:
+                script = script + '\t\tSetChrWorkGroup(' + boss[0] + ', CWK_MAXHP, (' + boss[0] + '.CHRWORK[CWK_MAXHP] * '+ str(HPmod) +'))\n'
+                script = script + '\t\tSetChrWorkGroup(' + boss[0] + ', CWK_HP, (' + boss[0] + '.CHRWORK[CWK_MAXHP]))\n'
+                bossWithoutParty -= 1
 
             #handling special cases for bosses with forms or minions
             if boss[0] == 'B005':
