@@ -847,8 +847,11 @@ function "goal"
 def octoBosses(parameters, finalNonGoalBossLevel):
     random.seed(parameters.seed)
     octoBossAliases = ['"ev_mons01"','"ev_mons02"','"ev_mons03"','"ev_mons04"','"ev_mons05"','"ev_mons06"','"ev_mons07"','"ev_mons08"','"ev_mons09"','"ev_mons10"']
-    HPmod = round(finalNonGoalBossLevel/80,2)
-    EXPMod = round((140)/finalNonGoalBossLevel,1)
+    #octus bosses exp and HP go up based on bosses leading into the end game. This is to help prep for the final boss.
+    #the HP mod is just a percentage of a rough approcimation of the highest level the final boss could get to if unlucky.
+    #the EXP mod is aiming for roughly double exp at 60, triple at 70, quadruple at 80, and anything higher ballooning from there. 
+    HPmod = max(round(finalNonGoalBossLevel/110,2),0.25)
+    EXPMod = max(round(finalNonGoalBossLevel^2.11*0.00036,1),1)
     script = '\tfunction "setOctoBossLevels"\n\t{\n'
     for boss in octoBossAliases:
         bossLevel = random.randrange(65,75)
