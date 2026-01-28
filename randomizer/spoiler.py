@@ -140,6 +140,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
                             break
             if itemFound == 0 or win: break
         
+        """
         print('unreached locations:')
         for location in accessibleLocation:
             if location.progression:
@@ -147,6 +148,7 @@ def generateSpoiler(shuffledLocations,parameters,blacklistRegion,duplicateChests
         print('reached locations:')
         for location in progressionLocations:
             location.printSpoiler()
+        """
             
         while len(newInventory) != 0:
             progressionInventory.append(newInventory.pop(0))

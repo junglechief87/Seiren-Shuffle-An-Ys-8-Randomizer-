@@ -576,7 +576,6 @@ def checkNostalgiaCape(location, access, parameters):
     if not ((southSideOpen(access, parameters) and access.hasDina() and access.canDoubleJump()) or 
             access.hasDiscovery('Ship Graveyard') or 
             (access.hasDiscovery('Beehive') and access.canDoubleJump()) or
-            access.canDefeat('Gilkyra Encounter') or
             access.canEnter('Nostalgia Cape - Nostalgia Cape')):
         return False
 
@@ -636,7 +635,7 @@ def checkStonePillarWindCave(location, access, parameters):
         return True
 
 def checkSilentTower(location, access, parameters):
-    if not (access.canDoubleJump() and (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']) or access.canDefeat('Gilkyra Encounter')) and access.canMove(24)):
+    if not (access.canDoubleJump() and (access.hasDina() or access.hasAnyDiscovery(['Beehive','Ship Graveyard']) or access.canEnter('Nostalgia Cape - Nostalgia Cape')) and access.canMove(24)):
         return False
 
     location_checks = {
@@ -658,7 +657,7 @@ def checkSilentTower(location, access, parameters):
     return location_checks.get(location.locName, lambda: False)()
 
 def checkWaterAndWoodHills(location, access, parameters):
-    if not ((access.hasDina() and southSideOpen(access, parameters)) or access.hasAnyDiscovery(['Beehive','Ship Graveyard','Hidden Pirate Storehouse']) or access.canDefeat('Gilkyra Encounter')):
+    if not ((access.hasDina() and southSideOpen(access, parameters)) or access.hasAnyDiscovery(['Beehive','Ship Graveyard']) or access.canEnter('Nostalgia Cape - Nostalgia Cape')):
         return False
 
     location_checks = {
@@ -684,6 +683,7 @@ def checkMontGendarmeNight(location, access, parameters):
         return (
             access.canEnter('Primordial Passage - Camp') and 
             isValidCheckIfNorth(location, access)
+            and access.past1()
         )
 
     def isValidCheckIfNorth(location, access):
@@ -806,14 +806,13 @@ def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
     if not access.canDefeat('Giasburn'):
         return False
     
-    # If you come from northside, you can already defeat giasburn => can defeat avalodragil 2
     location_checks = {
-        'Entrance': lambda: True,
-        'Southern Lower Cliffside Trail': lambda: True,
-        'Northern Lower Cliffside Trail': lambda: True,
-        'Outside Cabin': lambda: True,
-        'Cliffside Midpoint': lambda: True,
-        'Mid-Boss Arena': lambda: True,
+        'Entrance': lambda: access.canDefeat('Avalodragil 2'),
+        'Southern Lower Cliffside Trail': lambda: access.canDefeat('Avalodragil 2'),
+        'Northern Lower Cliffside Trail': lambda: access.canDefeat('Avalodragil 2'),
+        'Outside Cabin': lambda: access.canDefeat('Avalodragil 2'),
+        'Cliffside Midpoint': lambda: access.canDefeat('Avalodragil 2'),
+        'Mid-Boss Arena': lambda: (battleLogic(140, access, parameters, scaled=True) and access.canClimb()),
         'Upper Cliffs 1': lambda: True,
         'Upper Cliffs 2': lambda: True,
         'Boss Arena': lambda: (
@@ -822,7 +821,7 @@ def checkMontGendarmeWhenNorthSideOpen(location, access, parameters):
              access.canDefeat('Master Kong Dana')
             ) or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-             battleLogic(240, access, parameters))
+             battleLogic(340, access, parameters))
             ),
         'Mishy Rewards': lambda: mishyRewards(location,access) # Moved here because it was making the logic think food was required for gendarme access
     }
@@ -848,13 +847,13 @@ def checkMontGendarme(location, access, parameters):
         'Upper Cliffs 2': lambda: access.canDefeat('Avalodragil 2'),
         'Boss Arena': lambda: (
             (location.mapCheckID in ['Giasburn Skill 1', 'Giasburn Skill 2', 'Giasburn'] and 
-             battleLogic(230, access, parameters)) or
+             battleLogic(230, access, parameters,  scaled=True)) or
             (location.mapCheckID in ['Master Kong Skill Laxia', 'Master Kong Laxia'] and 
              access.hasLaxia() and 
              access.canDefeat('Master Kong Dana') and 
              access.canDefeat('Giasburn')) or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-             battleLogic(240, access, parameters, scaled=True) and access.canDefeat('Giasburn'))
+             battleLogic(340, access, parameters) and access.canDefeat('Giasburn'))
              ),
         'Mishy Rewards': lambda: access.canDefeat('Avalodragil 2') and mishyRewards(location,access)
     }
@@ -929,7 +928,7 @@ def checkSchlammJungle(location, access, parameters):
             battleLogic(100, access, parameters, scaled=True) and access.canDefeat('Magamandra') and access.canSwampWalk() and (
                 (location.mapCheckID != 'Psyches') or
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
-                 battleLogic(240, access, parameters) and access.canDefeat('Laspisus'))
+                 battleLogic(340, access, parameters) and access.canDefeat('Laspisus'))
             )
         )
     }
@@ -959,7 +958,7 @@ def schlammJungleFromField(location, access, parameters):
             battleLogic(100, access, parameters, scaled=True) and access.hasDina() and access.canSwampWalk() and (
                 (location.mapCheckID != 'Psyches') or
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
-                 battleLogic(240, access, parameters) and access.canDefeat('Laspisus'))
+                 battleLogic(340, access, parameters) and access.canDefeat('Laspisus'))
             )
         )
     }
@@ -995,7 +994,7 @@ def schlammJungleFromBack(location, access, parameters):
         ),
         'End': lambda: True,
         'Boss Arena': lambda: (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and
-                 battleLogic(240, access, parameters) and access.canDefeat('Laspisus'))
+                 battleLogic(340, access, parameters) and access.canDefeat('Laspisus'))
     }
 
     return location_checks.get(location.locName, lambda: False)()
@@ -1091,12 +1090,12 @@ def checkErodedValley(location, access, parameters):
             (location.mapCheckID != 'TBOX03')
         ),
         'End': lambda: access.canSeeDark() and access.canDefeat('Lonbrigius'),
-        'Boss Arena': lambda: (
+        'Boss Arena': lambda: access.canDefeat('Lonbrigius') and (
             battleLogic(75, access, parameters, scaled=True) and 
             access.canSeeDark() and 
             location.mapCheckID != 'Psyches') or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                battleLogic(140, access, parameters) and 
+                battleLogic(340, access, parameters) and 
                 access.canDefeat('Gargantula')
             )
     }
@@ -1116,7 +1115,7 @@ def checkErodedValleyFromBack(location, access, parameters):
             access.canSeeDark() and 
             location.mapCheckID != 'Psyches') or
             (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                battleLogic(140, access, parameters) and 
+                battleLogic(340, access, parameters) and 
                 access.canDefeat('Gargantula')
             )
     }
@@ -1212,16 +1211,16 @@ def checkToweringCoralForest(location, access, parameters):
         ),
         'Midpoint': lambda: True,
         'Mid-Boss Arena': lambda: battleLogic(0, access, parameters, scaled=True),
-        'After Mid-Boss': lambda: (
+        'After Mid-Boss': lambda: access.canDefeat('Serpentus') and (
             location.mapCheckID == 'Corpse' or (location.mapCheckID != 'Corpse' and access.canClimb())
         ),
-        'Rainbow Falls': lambda: access.canClimb(),
-        'End': lambda: access.canClimb(),
-        'Boss Arena': lambda: (
+        'Rainbow Falls': lambda: access.canDefeat('Serpentus') and access.canClimb(),
+        'End': lambda: access.canDefeat('Serpentus') and access.canClimb(),
+        'Boss Arena': lambda: access.canDefeat('Serpentus') and (
             battleLogic(30, access, parameters, scaled=True) and access.canClimb() and (
                 location.mapCheckID != 'Psyches' or 
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(140, access, parameters) and access.canDefeat('Clareon'))
+                 battleLogic(340, access, parameters) and access.canDefeat('Clareon'))
             )
         )
     }
@@ -1247,7 +1246,7 @@ def coralForestFromRainbowFalls(location, access, parameters):
             battleLogic(30, access, parameters, scaled=True) and access.canClimb() and (
                 location.mapCheckID != 'Psyches' or 
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(140, access, parameters) and access.canDefeat('Clareon'))
+                 battleLogic(340, access, parameters) and access.canDefeat('Clareon'))
             )
         )
     }
@@ -1283,7 +1282,7 @@ def coralForestFromBack(location, access, parameters):
         'End': lambda: True,
         'Boss Arena': lambda: (
                 (location.mapCheckID == 'Psyches' and parameters.goal == 'Release the Psyches' and 
-                 battleLogic(140, access, parameters))
+                 battleLogic(340, access, parameters))
             )
     }
     return location_checks.get(location.locName, lambda: False)()
@@ -1321,9 +1320,9 @@ def checkCalmInlet(location, access, parameters):
 
 def checkIntercept(location, access, parameters):
     stage_logic = {
-        'Stage 2': lambda: access.memoCheck(1) and (battleLogic(30, access, parameters) and access.partySize(2)) or battleLogic(80, access, parameters),
-        'Stage 3': lambda: access.memoCheck(1) and (battleLogic(75, access, parameters) and access.partySize(2)) or battleLogic(110, access, parameters),
-        'Stage 5': lambda: access.memoCheck(1) and (battleLogic(120, access, parameters) and access.partySize(2)) or battleLogic(140, access, parameters),
+        'Stage 2': lambda: access.memoCheck(1) and ((battleLogic(30, access, parameters) and access.partySize(2)) or battleLogic(80, access, parameters)),
+        'Stage 3': lambda: access.memoCheck(1) and ((battleLogic(75, access, parameters) and access.partySize(2)) or battleLogic(110, access, parameters)),
+        'Stage 5': lambda: access.memoCheck(1) and ((battleLogic(120, access, parameters) and access.partySize(2)) or battleLogic(140, access, parameters)),
         'Stage 7': lambda: access.memoCheck(1) and access.hasFlameStones(3) and access.partySize(2),
         'Stage 9': lambda: access.memoCheck(3) and access.hasFlameStones(3) and battleLogic(200, access, parameters),
     }
@@ -1632,19 +1631,19 @@ def battleLogic(requiredStr,access,parameters,**kwargs):
 
 
         if requiredStr >= 350:
-            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(6) and quickGrind(access,parameters) and access.hasStrRecipe():
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(6) and quickGrind(access,parameters,60) and access.hasStrRecipe():
                 return True
             else: return False
         elif requiredStr >= 300:
-            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(5) and quickGrind(access,parameters) and access.hasStrRecipe():
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(5) and quickGrind(access,parameters,50) and access.hasStrRecipe():
                 return True
             else: return False
         elif requiredStr >= 250:
-            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(3) and quickGrind(access,parameters):
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(3) and access.hasFlameStones(3) and quickGrind(access,parameters,40):
                 return True
             else: return False
         elif requiredStr >= 230:
-            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2) and access.hasFlameStones(3) and quickGrind(access,parameters):
+            if (weaponStr + armorStr + armStr + accStr) >= requiredStr and access.partySize(2) and access.hasFlameStones(3) and quickGrind(access,parameters,30):
                 return True
             else: return False
         elif requiredStr >= 200:
@@ -1662,9 +1661,20 @@ def battleLogic(requiredStr,access,parameters,**kwargs):
 
     else: return True #if battle logic isn't on then we skip everything and return true for access logic
 
-def quickGrind(access,parameters):
-    return (access.memoCheck(2) or ((access.canClimb() and southSideOpen(access, parameters) and access.past1()) or (access.canDefeat('Giasburn') and access.canClimb())) or \
-                        (coastNorthSideAccess(access, parameters) and access.canSeeDark()) or checkPangaiaPlainsNight(location=None,access=access,parameters=parameters))
+def quickGrind(access,parameters,level):
+    grindLevel = 0
+    if access.canEnter('Nameless Coast - Camp') and access.canSeeDark():
+        grindLevel = 30
+    if access.canEnter('Primordial Passage - Camp') and access.canSeeDark() and access.past1():
+        grindLevel = 40
+    if checkPangaiaPlainsNight(location=None,access=access,parameters=parameters):
+        grindLevel = 50
+    if access.memoCheck(2):
+        grindLevel = 60
+    if (access.memoCheck(2) and access.canSwampWalk()) or access.canEnter('Octus Dungeon'):
+        grindLevel = 70
+
+    return grindLevel >= level
 
 def materialAccess(material,access,parameters):
     match material:

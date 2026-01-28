@@ -418,11 +418,11 @@ def shuffleEntrancesAndExits(entrances,exits,northSideOpen,discoverySanity):
             if entranceToPlace.itemName == 'Temple of the Great Tree - Great Tree Garden':
                 octusEntranceToRegion = entranceToFill.locRegion
 
-        for entrance in shuffledEntrances:
-            print("Entrance: " + entrance.locName + " in " + entrance.locRegion + '-' + entrance.mapCheckID + " leads to " + entrance.itemName)
+        #for entrance in shuffledEntrances:
+        #    print("Entrance: " + entrance.locName + " in " + entrance.locRegion + '-' + entrance.mapCheckID + " leads to " + entrance.itemName)
 
     for exit in exits:
-            print(exit.locName)
+            #print(exit.locName)
             itemizedExits.append(classr.inventory(exit))
             exitLocations.append(classr.shuffledLocation(exit))
 
@@ -459,7 +459,7 @@ def shuffleEntrancesAndExits(entrances,exits,northSideOpen,discoverySanity):
                          'Valley of Kings Dungeon':'Exit to Valley of Kings - Camp',}
     
     for entrance in shuffledEntrances:
-        print("Entrance: " + entrance.locName + " in " + entrance.locRegion + '-' + entrance.mapCheckID + " leads to " + entrance.itemName)
+        #print("Entrance: " + entrance.locName + " in " + entrance.locRegion + '-' + entrance.mapCheckID + " leads to " + entrance.itemName)
         exitLocation = findPairedExitLocation(entranceItemExitPairs[entrance.itemName],exitLocations)
         exitItem = findPairedExitItem(entranceExitItemPairs[entrance.mapCheckID],itemizedExits)
         shuffledExits.append(combineShuffledLocAndItem(exitLocation,exitItem))
@@ -471,15 +471,15 @@ def shuffleEntrancesAndExits(entrances,exits,northSideOpen,discoverySanity):
 
 def findPairedExitLocation(exitName,exitLocations):
     for exit in exitLocations:
-        print(exit.mapCheckID)
-        print(exitName)
+        #print(exit.mapCheckID)
+        #print(exitName)
         if exit.mapCheckID == exitName:
             return exit
                     
 def findPairedExitItem(itemName,itemizedExits):
     for item in itemizedExits:
-        print(item.itemName)
-        print(itemName)
+        #print(item.itemName)
+        #print(itemName)
         if item.itemName == itemName:
             return item
         
@@ -523,8 +523,8 @@ def feasibilityCheck(shuffledEntrances,northSideOpen,discoverySanity):
             noIsolatedAreas = False
             break
     
-    print("North Side Access: " + str(northSideAccess))
-    print("No Isolated Areas: " + str(noIsolatedAreas))
+    #print("North Side Access: " + str(northSideAccess))
+    #print("No Isolated Areas: " + str(noIsolatedAreas))
 
     return northSideAccess and noIsolatedAreas
         

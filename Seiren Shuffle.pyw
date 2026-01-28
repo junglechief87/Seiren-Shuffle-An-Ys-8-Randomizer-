@@ -364,7 +364,7 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.experience_multiplier_scale.configure(from_=0, to=10, number_of_steps=20, command=self.update_experience_multiplier)
         self.experience_multiplier_scale.set(3.0)
 
-        self.experience_multiplier_value = ctk.CTkLabel(self, text="4.0", width=25)
+        self.experience_multiplier_value = ctk.CTkLabel(self, text="3.0", width=25)
         self.experience_multiplier_value.grid(row=1, column=4, padx=(0, 5), pady=5, sticky="w")
 
         # Additional Intercept Rewards Checkbox
@@ -407,10 +407,10 @@ class PacingModifiersFrame(ctk.CTkFrame):
         self.infinityMode_checkbox = ctk.CTkCheckBox(self, text="Infinity Mode", variable=self.infinityMode_var)
         self.infinityMode_checkbox.grid(row=5, column=1, padx=5, pady=5, sticky="w")
 
-        # Infinity Mode checkbox
+        # Exp Item Scale checkbox
         self.expItem_var = ctk.BooleanVar(value=False)
         self.expItem_checkbox = ctk.CTkCheckBox(self, text="Scale Exp Items", variable=self.expItem_var)
-        self.expItem_checkbox.grid(row=5, column=1, padx=5, pady=5, sticky="w")
+        self.expItem_checkbox.grid(row=5, column=2, padx=5, pady=5, sticky="w")
 
         # Starting Loadout Button
         self.customize_button = ctk.CTkButton(self, text="Starting Loadout", command=self.open_starting_options)
@@ -933,7 +933,7 @@ class App(ctk.CTk):
                 "extraIngredients": self.pacingModifiersFrame.extra_ingredients_var.get(),
                 "northsideOpen": self.pacingModifiersFrame.northsideOpen_var.get(),
                 "infinityMode": self.pacingModifiersFrame.infinityMode_var.get(),
-                "expItems": self.pacingModifiersFrame.expItem_var(),
+                "expItems": self.pacingModifiersFrame.expItem_var.get(),
                 
                 # Final Boss Settings
                 "finalBoss": self.finalBossSettingsFrame.final_boss_option.get(),

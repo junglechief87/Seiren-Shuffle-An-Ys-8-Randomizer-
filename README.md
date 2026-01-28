@@ -5,13 +5,11 @@ Ys 8 is a game about an adventurer, Adol, who gets stranded on the deserted Isla
 
 ## Installation
 
-Installation should be pretty simple. 
-1. Download the SeirenShuffle.zip file from the latest release.
-2. (Note that before this next step you might want to copy your Ys 8 "Scripts" and "Maps" folders as those are going to be edited heavily during installation of the rando and you'll need to do a fresh install to return the game to normal functionality otherwise.) Extract the contents of the SeirenShuffle.zip to the root directory of Ys8.
-3. Select yes to overwrite any files it prompts you on.
-5. Once this step is finished the rando gui can be launched by simply selecting the "Seiren Shuffle.exe".
-6. Before generating a seed the first thing that should be done is clicking the "Patch Files"(This only needs to be done the first time running the randomizer), this will do another round of file edits to the base game needed for the rando.
-7. Once that patch is complete feel free to toy with settings and generate a seed, start the game, then select new game, and you should be good to go.
+Installation should be pretty simple. (If you've previously installed SeirenShuffle on a version earlier than 4.0.0 it is recommended you make a fresh install of Ys8 as the install handles a bit differently post 4.0.0)
+1. Download the SeirenShuffle.exe file from the latest release.
+2. Place it in the root folder for Ys8. If you're running it on steam it'll be under ".\SteamLibrary\steamapps\common\Ys VIII Lacrimosa of Dana"
+3. Run SeirenShuffle.exe and select patch files. The process now automatically backs up your current Ys8 directory to a new folder called "Original Game Files" which will be placed under the current directory, you can restore the game to it's previous non-randomizer state by clicking the "Restore Original Game Files" button.
+4. Once that patch is complete feel free to toy with settings and generate a seed, start the game, then select new game, and you should be good to go.
 *A note on the edits this makes to the original game - The rando messes with the game's intended structure heavily so loading saves from the vanilla game will have unintended consequences, the saves won't be broken or anything just don't expect your old save files to work as intended while the rando is installed, saves from the rando will work fine.
 
 
@@ -50,6 +48,8 @@ This sets the goal for your seed and the required amount. The goal and the requi
 
 **Discovery-Sanity**: This setting puts the landmarks in the pool, the landmarks themselves also become checks. Finding a landmark unlocks the ability to warp to it on the map. This mode drastically changes logic and movement around the world.
 
+**Dungeon Entrance Shuffle**: This shuffles the entrances to dungeon maps. So the entrance to Towering Coral Forest could lead to the Water Drop Cave or vice versa. Pirate Ship Eleftheria has some caveat with how it's entrance works so instead East Coast Cave is treated as the entrance for that dungeon with this setting on.
+
 ### Progression Placement Modifiers:
 These are settings that modify how much players may need to do of certain activities other than running around the island and exploring. These settings only affect where progression items will land, other useful non-progression items, could still land in the spots you have turned off.
 
@@ -76,11 +76,9 @@ These are settings that modify how much players may need to do of certain activi
 ### Pacing Modifiers:
 These are settings that help with the pacing of the rando. Like most randos Seiren Shuffle is designed to be complete-able in a single sitting, these settings are meant to help with that.   
 
-**Experience Multiplier**: Pretty straighforward, classic multiplier to EXP. I generally reccomend higher values here than what you might be used to in other randos. The new version removes the game's EXP scaling based on enemy level to help smooth the curve out and keep the player from "slingshotting" to high levels too quickly. This has the consequence that enemies give half their base EXP(the base exp value for enemies in Ys 8 is based on them being slightly higher level than the player, if they're considered the same level as the player then they drop to almost half EXP and the scaling patch makes the game think the player is always equal level to the enemy).  
+**Experience Multiplier**: This actually divides character's min and max Exp values allowing for quicker leveling. Default is set to 3, which the game plays pretty well at. 
 
-**Exp Mult Growth Rate**: There are 13 bosses that are considered Major or Dungeon Bosses, each will add an small multiplier to the base EXP multiplier. The right side of the pacing modifiers breaks down how the math plays out to help the player determine how they'd like these options set.  
-
-**Additional Intercept Rewards**: This settings causes intercepts to give out up to four additional rewards after returning to Castaway Village post intercept. Tempest Elixirs are always given out at some rate but there are also rewards to help players upgrade weapons as well as exp and stat increasing food rewards. This setting is highly encouraged as it helps a lot with endgame prep work.  
+**Additional Intercept Rewards**: This settings causes intercepts to give out up to four additional rewards after returning to Castaway Village post intercept. 
 
 **Battle Logic**: This attempts to help smooth over the combat pacing by guaranteeing the player always has access to some amount of strength for each boss, highly recommended this be left on expecially for Inferno.  
 
@@ -96,6 +94,8 @@ These are settings that help with the pacing of the rando. Like most randos Seir
 And it also means that you may need to explore the North Side while underlevelled.  
 
 **Infinity Mode**: This activates Infinity Mode in the game. This is a New Game+ modes that drastically scales up enemy levels. It is recommended you upgrade your starting loadout drastically with this setting on. The lowest level enemies are in the mid-60s and the highest level enemy is 120 with this flag set.
+
+**Scale Exp Items**: With the exp multiplier cutting exp to level items like Hermit's Elixer and Bitter Remedy can be very powerful. This gives you the option to scale the rewards from chests with your exp multiplier setting for those two items types. For example: on the default exp multiplier of 3.0 a Hermit's Elixer check will be converted to 3 Bitter Remedy. This is done by taking the exp total for Hermit's Elixer(10000), then dividing by the exp multiplier(3.0), then dividing that number by the exp item tier below that(Bitter Remedy(1000)), and rounding the result to the nearest integer to get the quantity of the lower tier reward given. 
 
 **Starting Loadout**: This extra menu lets you start the game with a variety of helpful tools.
 ![settings example](https://github.com/junglechief87/Seiren-Shuffle-An-Ys-8-Randomizer-/blob/main/shared/Starting%20Loadout.png?raw=true)
@@ -130,6 +130,7 @@ And it also means that you may need to explore the North Side while underlevelle
   The only hintable Adventuring Gears are the ones that lock progression and the Gale Feather
   - *Castaway Hints*: Hints the Region where you will find a mentioned Castaway.
   - *Foolish Location Hints*: Hints a region where you will not find any progression items.
+  - *Pirate Memo Hints*: These hints are added to the journal upon finding any of the Pirate Logs. They are "way style" hints that give you clues about which items, regions, bosses, etc. appear in the playthrough of the spoiler log. 
 
 **Customize Starting Characters**: Lets the player set which starting characters they're allowed to get. Setting only one in the pool guarantees that is the starting character.
 
@@ -179,13 +180,16 @@ The player can still access the *enhance* feature for weapons before getting Kat
 ## Final Notes
 Here is a list of all checks in the rando for assistance, as well as some other useful lists: [Checks](https://docs.google.com/spreadsheets/d/e/2PACX-1vTk6waI_Ymz1SiK90FnF1b2hDCgdZCVTrhFAX-O2-K_ovf0R3HA07AI90D5vQXPKrYBoMxH4Zu7tclx/pubhtml)
 
-At this point everything in the game should be randomized other than quest rewards, which I ultimately decided weren't worth it and flagged most of the quests as completed on startup (a majority of the quest rewards are pretty meh and the quests are mostly about building rep for the "good ending" and the few quest rewards that were decent were added to the shuffle and have the potential to still appear). The only quest that's tied to logic in any way is defeating Master Kong. There is one check tied to the event for beating Master Kong all six times, where he joined the village in the original game, and the quest becomes available when Ricotta is found. If you find anything that you think isn't randomized that isn't a quest reward feel free to let me know. Locations generally aren't difficult to add.
+At this point everything in the game should be randomized other than quest rewards, which I ultimately decided weren't worth it and flagged most of the quests as completed on startup (a majority of the quest rewards are pretty meh and the quests are mostly about building rep for the "good ending" and the few quest rewards that were decent were added to the shuffle and have the potential to still appear). The only quest that's tied to logic in any way is defeating Master Kong. If you find anything that you think isn't randomized that isn't a quest reward feel free to let me know. Locations generally aren't difficult to add.
 
-The core of the randomizer uses a large script file to drive what items are and what items do, this is much more flexible than simply placing new items in chests. Ys 8 chests take a script as an agrument that is then executed on open and this is what's used to give out rewards from the chests. To make sure the chests stay closed junk has been filled into every chest that does nothing, this is why you see an initial chest popup before the actual item you get. I would love to find a way to supress the initial chest message. I spent some time dissecting the chest function in Cheat Engine looking for a way to do this but didn't find one. If you'd like to look into this then let me know and I can provide some of the notes I took on the game's chest function. 
+There are hints that are always on: 
+- If you speak with Dogi and select intercepts you'll get a list of items Dogi will reward for each stage you've unlocked. 
+- Once you get Ricotta you can speak with her to see what rewards Master Kong has for each character you've found and what you get for Master Kong joining.
+- Once you get the Fishing Rod you can speak with Shoebill to see what all the fishing rewards are.
 
-The "Seiren Shuffle.exe" can sometimes flag as a virus by windows defender, it's a false positive. This is a known issue with pyinstaller's single ".exe" compiles. 
+The game now scales the levels for every forced encounter, all bosses and a couple progression specific enemy groups but not Master Kong currently. Level scaling is based on the original boss order and their respective levels from the vanilla game with some randomness thrown in because... well it's a randomizer (it just rolls a number within a 5 integer range with the vanilla boss level as a center point). In "Release the Psyches" the Psyche bosses have their levels scaled based on the boss encounter that unlocks them. Bosses that are logically accessible before you get a second party member have their HP halved.  
 
-I don't know why but the close method that appJar uses seems kinda sloppy, so the gui seems to always need to have close hit twice to actually close. The extra "Yes/No" close menus is for feedback, so you know it did something when you hit close. 
+The "Seiren Shuffle.exe" can sometimes flag as a virus by windows defender, it's a false positive. This is a known issue with pyinstaller's single ".exe" compiles.  
 
 This project is open source and I accept all who would like to help or add to the rando.
 
