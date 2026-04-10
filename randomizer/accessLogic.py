@@ -148,7 +148,7 @@ def checkFSC_B6(location, access, parameters):
     return (
         FormerSanctuaryCryptOpen(access, parameters) and 
         access.canDoubleJump() and
-        access.hasEssenceKeyStone(6) and 
+        access.hasEssenceKeyStone(9) and 
         access.canUndead() and
         access.canSwampWalk()
     )
@@ -156,7 +156,7 @@ def checkFSC_B6(location, access, parameters):
 def checkFSC_B5(location, access, parameters):
     if not (FormerSanctuaryCryptOpen(access, parameters) and 
         access.canDoubleJump() and
-        access.hasEssenceKeyStone(6) and 
+        access.hasEssenceKeyStone(7) and 
         access.canUndead() and
         access.canSwampWalk()
     ):
@@ -181,7 +181,7 @@ def checkFSC_B5(location, access, parameters):
 def checkFSC_B4(location, access, parameters):
     if not (FormerSanctuaryCryptOpen(access, parameters) and 
             access.canDoubleJump() and
-            access.hasEssenceKeyStone(3) and 
+            access.hasEssenceKeyStone(4) and 
             access.canUndead() and
             access.canSwampWalk()
             ):
@@ -192,17 +192,17 @@ def checkFSC_B4(location, access, parameters):
             location.mapCheckID != 'TBOX02' or access.canUnderwater()
         ),
         'Frozen Statue Room': lambda: (
-            access.hasEssenceKeyStone(6) and 
+            access.hasEssenceKeyStone(7) and 
             (location.mapCheckID not in ['TBOX01', 'TBOX04'] or access.canUnderwater())
         ),
-        'Boss Arena': lambda: access.hasEssenceKeyStone(6),
+        'Boss Arena': lambda: access.hasEssenceKeyStone(7),
     }
     return location_checks.get(location.locName, lambda: False)()
 
 def checkFSC_B3(location, access, parameters):
     if not (FormerSanctuaryCryptOpen(access, parameters) and 
             access.canDoubleJump() and
-            access.hasEssenceKeyStone(3) and 
+            access.hasEssenceKeyStone(4) and 
             access.canUndead() and
             access.canSwampWalk()
             ):
@@ -222,14 +222,14 @@ def checkFSC_B3(location, access, parameters):
 def checkFSC_B2(location, access, parameters):
     if not (FormerSanctuaryCryptOpen(access, parameters) and 
             access.canDoubleJump() and
-            access.hasEssenceKeyStone(1)
+            access.hasEssenceKeyStone(2)
             ):
         return False
     
     location_checks = {
         'Entrance': lambda: True,
-        'Stone and Rock Block Puzzle': lambda: access.hasEssenceKeyStone(3),
-        'Boss Arena': lambda: access.hasEssenceKeyStone(3) and access.canUndead(),
+        'Stone and Rock Block Puzzle': lambda: access.hasEssenceKeyStone(4),
+        'Boss Arena': lambda: access.hasEssenceKeyStone(4) and access.canUndead(),
     }
     return location_checks.get(location.locName, lambda: False)()
 
@@ -240,7 +240,7 @@ def checkFSC_B1(location, access, parameters):
     location_checks = {
         'Entrance': lambda: location.mapCheckID in ['TBOX01', 'TBOX03'] or (location.mapCheckID == 'TBOX02' and access.canDoubleJump()),
         'First Brazier': lambda: access.hasEssenceKeyStone(1),
-        'Boss Arena': lambda: access.hasEssenceKeyStone(1),
+        'Boss Arena': lambda: access.hasEssenceKeyStone(2),
         'North Brazier Room': lambda:  access.hasEssenceKeyStone(9),
     }
     return location_checks.get(location.locName, lambda: False)()
