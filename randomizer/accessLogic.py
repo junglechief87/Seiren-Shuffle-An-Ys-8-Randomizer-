@@ -1081,9 +1081,10 @@ def checkErodedValley(location, access, parameters):
         return False
 
     location_checks = {
-        'Entrance': lambda: True,
+        'Entrance': lambda: location.mapCheckID in ['TBOX03', 'TBOX05'] and access.canDefeat('Lonbrigius'),
         'Cave': lambda: True,
         'Dark Passage': lambda: access.canSeeDark() and (battleLogic(155, access, parameters) or location.mapCheckID == 'Landmark'),
+        'Midpoint': lambda: True,
         'Mid-Boss Arena': lambda: battleLogic(60, access, parameters, scaled=True),
         'Webbed Walkways': lambda: access.canDefeat('Lonbrigius') and (
             (location.mapCheckID == 'TBOX03' and access.canSeeDark()) or 
@@ -1107,6 +1108,7 @@ def checkErodedValleyFromBack(location, access, parameters):
         'Entrance': lambda: access.canDefeat('Gargantula'),
         'Cave': lambda: access.canDefeat('Gargantula'),
         'Dark Passage': lambda: access.canSeeDark() and (battleLogic(155, access, parameters) or location.mapCheckID == 'Landmark'),
+        'Midpoint': lambda: access.canDefeat('Gargantula'),
         'Mid-Boss Arena': lambda: battleLogic(60, access, parameters, scaled=True) and access.canDefeat('Gargantula'),
         'Webbed Walkways': lambda: access.canDefeat('Gargantula'),
         'End': lambda: access.canDefeat('Gargantula'),
