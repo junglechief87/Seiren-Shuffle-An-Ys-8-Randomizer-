@@ -480,16 +480,6 @@ class access:
       return True
     return False
   
-  def hasEssenceKeyStone(self, requiredEssenceKeyStone):
-    count = 0
-    for item in self.inventoryObjects:
-      if item.itemID == 703: #Essence key stone
-        count += 1
-    
-    if count >= requiredEssenceKeyStone:
-      return True
-    return False
-  
   def hasDiscovery(self,discovery):
     for item in self.inventoryObjects:
       if item.itemName == discovery:
