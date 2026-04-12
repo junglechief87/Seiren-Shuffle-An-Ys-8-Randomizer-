@@ -1187,7 +1187,7 @@ def checkRoaringSeashore(location, access, parameters):
         'Parasequoia': lambda: (
             (access.canMove(14) or access.hasDiscovery('Parasequoia')) and (
                 (location.mapCheckID in ['Master Kong Skill Ricotta', 'Master Kong Ricotta'] and
-                 access.hasRicotta() and battleLogic(220, access, parameters)) or
+                 access.hasRicotta() and battleLogic(220, access, parameters) and access.canEnter('Primordial Passage - Camp') and access.canSeeDark()) or
                 (location.mapCheckID not in ['Master Kong Skill Ricotta', 'Master Kong Ricotta'])
             )
         )
