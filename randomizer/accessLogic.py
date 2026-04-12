@@ -978,7 +978,7 @@ def schlammJungleFromBack(location, access, parameters):
     location_checks = {
         'Entrance': lambda: access.canSwampWalk() and (
             (location.mapCheckID == 'TBOX03' and access.canDefeat('Magamandra')) or
-            (location.mapCheckID == 'TBOX02' and access.canClimb() and access.canDefeat('Magamandra')) or
+            (location.mapCheckID == 'TBOX02' and access.canClimb() and access.hasDina() and access.canDefeat('Magamandra')) or
             (location.mapCheckID in ['TBOX01', 'Euron Join', 'Exit to Beast Hills South'] and access.canDefeat('Magamandra'))
         ),
         'North of Entrance': lambda: access.canSwampWalk() and (access.canClimb() and access.canDefeat('Magamandra')),
