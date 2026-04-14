@@ -410,12 +410,6 @@ class access:
         return True
     return False
   
-  def hasStunRecipe(self):
-    for item in self.inventoryObjects:
-      if item.itemID in [579,571]: # Recipe Book/Great Pumpkin Pie, Recipe Book/Colorful Meuniere
-        return True
-    return False
-  
   def hasAlison(self):
     for item in self.inventoryObjects:
       if item.itemName == 'Alison':
