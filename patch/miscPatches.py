@@ -51,8 +51,8 @@ def miscFixes():
 
     writeBufferIntoFile(explosivePlant,plantRespawn)
 
-def randomizeOctoBosses(parameters):
-    random.seed(parameters.seed)
+def randomizeOctoBosses(options):
+    random.seed(options.seed)
     octus1 = getLocFile('mp6301','map')
     octus2 = getLocFile('mp6302','map')
     octus3 = getLocFile('mp6303','map')
@@ -81,7 +81,7 @@ def randomizeOctoBosses(parameters):
     octus1Mons = ['ev_mons09','ev_mons10']
     for index,octoMon in enumerate(octus1Mons):
         octoMonLoc = octus1bytes.find(octoMon.encode('utf-8'))
-        if parameters.openOctusPaths:
+        if options.octus_paths_opened == 1:
             selectedOctoMon = random.choice(list(octoMonData.items()))
         else:
             #this is to restore the original values
@@ -100,7 +100,7 @@ def randomizeOctoBosses(parameters):
     octus2Mons = ['ev_mons01','ev_mons02','ev_mons03']
     for index,octoMon in enumerate(octus2Mons):
         octoMonLoc = octus2bytes.find(octoMon.encode('utf-8'))
-        if parameters.openOctusPaths:
+        if options.octus_paths_opened == 1:
             selectedOctoMon = random.choice(list(octoMonData.items()))
         else:
             #this is to restore the original values
@@ -119,7 +119,7 @@ def randomizeOctoBosses(parameters):
     octus3Mons = ['ev_mons04','ev_mons05','ev_mons06']
     for index,octoMon in enumerate(octus3Mons):
         octoMonLoc = octus3bytes.find(octoMon.encode('utf-8'))
-        if parameters.openOctusPaths:
+        if options.octus_paths_opened == 1:
             selectedOctoMon = random.choice(list(octoMonData.items()))
         else:
             #this is to restore the original values
@@ -138,7 +138,7 @@ def randomizeOctoBosses(parameters):
     octus4Mons = ['ev_mons07','ev_mons08']
     for index,octoMon in enumerate(octus4Mons):
         octoMonLoc = octus4bytes.find(octoMon.encode('utf-8'))
-        if parameters.openOctusPaths:
+        if options.octus_paths_opened == 1:
             selectedOctoMon = random.choice(list(octoMonData.items()))
         else:
             #this is to restore the original values
@@ -269,24 +269,26 @@ def makeResourceDropsGuaraneteed():
                 
     writeBufferIntoFile(resourcePointDropTable,makeDropsGuaranteed)
 
-def newExpMult(parameters):
+def newExpMult(exp_multiplier):
     statusFileLoc = parent_directory + '/text/en/status.csv'
     defaultExpValues = {'ADOL': {'EXPMIN':100, 'EXPMAX':500000},
                         'LAXIA':{'EXPMIN':95, 'EXPMAX':450000},
                         'SAHAD':{'EXPMIN':105, 'EXPMAX':550000},
                         'HUMMEL':{'EXPMIN':90, 'EXPMAX':420000},
                         'RICOTTA':{'EXPMIN':97, 'EXPMAX':480000},
-                        'DANA':{'EXPMIN':102, 'EXPMAX':520000},}
+                        'DANA':{'EXPMIN':102, 'EXPMAX':520000},
+                        'DANA2':{'EXPMIN':102, 'EXPMAX':520000},
+                        'DANA3':{'EXPMIN':102, 'EXPMAX':520000},}
     
-    monsterNestExpValues = {'G0001':{'EXPMIN':300, 'EXPMAX':300},
-                        'G0002':{'EXPMIN':310, 'EXPMAX':310},
-                        'G0003':{'EXPMIN':320, 'EXPMAX':320},
-                        'G0004':{'EXPMIN':330, 'EXPMAX':330},
-                        'G0005':{'EXPMIN':340, 'EXPMAX':340},
-                        'G0006':{'EXPMIN':350, 'EXPMAX':350},
-                        'G0007':{'EXPMIN':360, 'EXPMAX':360},
-                        'G0008':{'EXPMIN':370, 'EXPMAX':370},
-                        'G0009':{'EXPMIN':380, 'EXPMAX':380},}
+    monsterNestExpValues = {'G0001':{'EXPMIN':150, 'EXPMAX':150},
+                        'G0002':{'EXPMIN':160, 'EXPMAX':160},
+                        'G0003':{'EXPMIN':170, 'EXPMAX':170},
+                        'G0004':{'EXPMIN':180, 'EXPMAX':180},
+                        'G0005':{'EXPMIN':190, 'EXPMAX':190},
+                        'G0006':{'EXPMIN':200, 'EXPMAX':200},
+                        'G0007':{'EXPMIN':210, 'EXPMAX':210},
+                        'G0008':{'EXPMIN':220, 'EXPMAX':220},
+                        'G0009':{'EXPMIN':230, 'EXPMAX':230},}
 
     with open (statusFileLoc, 'r', encoding='utf-8') as csvFile:
         statusFile = csv.DictReader(csvFile,delimiter='\t',lineterminator='\n',strict=True)
@@ -298,8 +300,8 @@ def newExpMult(parameters):
             if len(fieldNames) == 0:
                 fieldNames = statusFile.fieldnames
             if row['キャラＩＤ'] in defaultExpValues.keys():
-                row['EXPMIN'] = int(defaultExpValues[row['キャラＩＤ']]['EXPMIN'] / (parameters.expMult))
-                row['EXPMAX'] = int(defaultExpValues[row['キャラＩＤ']]['EXPMAX'] / (parameters.expMult))
+                row['EXPMIN'] = int(defaultExpValues[row['キャラＩＤ']]['EXPMIN'] / exp_multiplier)
+                row['EXPMAX'] = int(defaultExpValues[row['キャラＩＤ']]['EXPMAX'] / exp_multiplier)
             if row['キャラＩＤ'] in monsterNestExpValues.keys():
                 row['EXPMIN'] = int(monsterNestExpValues[row['キャラＩＤ']]['EXPMIN'])
                 row['EXPMAX'] = int(monsterNestExpValues[row['キャラＩＤ']]['EXPMAX'])
