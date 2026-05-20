@@ -909,7 +909,7 @@ def endingHandler(parameters, finalNonGoalBossLevel):
         ioFightLoad = """
     function "finalBoss"
     {
-        LoadArg("map/mp6569m/c.arg")
+        LoadArg("map/mp6569m/mp6569m.arg")
 	    EventCue("mp6569m:EV_RetryBoss")
     }
     """
